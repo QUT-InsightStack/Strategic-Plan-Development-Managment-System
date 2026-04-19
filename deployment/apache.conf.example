@@ -1,0 +1,63 @@
+# SPMS — Apache Production Configuration
+# Replace spms.dost.gov.ph with the actual domain before use
+# Requires: mod_ssl, mod_rewrite, mod_headers
+#
+# To activate:
+#   1. Copy this file to /etc/apache2/sites-available/spms.conf
+#   2. Edit all placeholder values
+#   3. Run: sudo a2ensite spms.conf
+#   4. Run: sudo a2enmod ssl rewrite headers
+#   5. Run: sudo systemctl reload apache2
+
+# ─── Redirect HTTP → HTTPS ──────────────────────────────────────────────────
+<VirtualHost *:80>
+    ServerName spms.dost.gov.ph
+
+    RewriteEngine On
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}$1 [R=301,L]
+</VirtualHost>
+
+# ─── HTTPS Server ───────────────────────────────────────────────────────────
+<VirtualHost *:443>
+    ServerName spms.dost.gov.ph
+
+    # ── Document Root ────────────────────────────────────────────────────
+    # Laravel's public/ folder is the web root — not the project root
+    DocumentRoot /var/www/spms/public
+
+    # ── TLS Certificate (Let's Encrypt via Certbot) ──────────────────────
+    SSLEngine on
+    SSLCertificateFile    /etc/letsencrypt/live/spms.dost.gov.ph/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/spms.dost.gov.ph/privkey.pem
+
+    # ── TLS Hardening ────────────────────────────────────────────────────
+    SSLProtocol -all +TLSv1.2 +TLSv1.3
+    SSLCipherSuite ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384
+    SSLHonorCipherOrder off
+    SSLSessionTickets off
+
+    # ── Security Headers ─────────────────────────────────────────────────
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # ── Laravel Directory Config ─────────────────────────────────────────
+    <Directory /var/www/spms/public>
+        AllowOverride All
+        Require all granted
+        Options -Indexes
+
+        # Laravel URL routing via .htaccess
+        RewriteEngine On
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteCond %{REQUEST_FILENAME} !-d
+        RewriteRule ^ index.php [L]
+    </Directory>
+
+    # ── Block access to hidden files (.env, .git, etc.) ──────────────────
+    <FilesMatch "^\.">
+        Require all denied
+    </FilesMatch>
+
+</VirtualHost>
