@@ -1,0 +1,5 @@
+Contact: itd-security@dost.gov.ph
+Expires: 2027-04-20T00:00:00.000Z
+Preferred-Languages: en, fil
+Scope: https://spms.dost.gov.ph/
+Policy: Internal system — report vulnerabilities to ITD directly
