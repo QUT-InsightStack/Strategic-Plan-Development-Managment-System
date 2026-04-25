@@ -37,4 +37,29 @@ class UserController extends Controller
             'data'    => $user->fresh(),   // reload from DB
         ], 200);
     }
+
+      /**
+     * Remove the specific user.
+     * DELETE /api/users/{id}
+     */
+    public function destroy(int $id): JsonResponse
+    {
+        $user = User::find($id);
+
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'User not found.',
+            ], 404);
+        }
+
+
+        $user->delete();
+
+
+        return response()->json([
+            'message' => 'User deleted successfully.',
+        ], 200);
+    }
+
 }
