@@ -248,7 +248,7 @@ SOURCE init_db.sql;
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=db_spdms
+DB_DATABASE=dbspdms
 DB_USERNAME=your_username
 DB_PASSWORD=your_password
 
