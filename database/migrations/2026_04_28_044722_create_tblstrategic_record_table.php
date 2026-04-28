@@ -1,0 +1,56 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('tblstrategic_record', function (Blueprint $table) {
+            $table->id('record_id');
+            $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->string('level');
+            $table->text('content');
+            $table->unsignedBigInteger('mission');
+            $table->unsignedBigInteger('vision');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+
+             $table->foreign('created_by')
+                  ->references('user_id')
+                  ->on('tblusers')
+                  ->onDelete('cascade');
+
+             $table->foreign('updated_by')
+                  ->references('user_id')
+                  ->on('tblusers')
+                  ->nullOnDelete('cascade');
+            
+            $table->foreign('mission')
+                ->references('foundation_id')
+                ->on('tblstrategic_foundations')
+                ->onDelete('cascade');
+            $table->foreign('vision')
+                ->references('foundation_id')
+                ->on('tblstrategic_foundations')
+                ->onDelete('cascade');
+            
+                $table->index('mission');
+                $table->index('vision');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('tblstrategic_record');
+    }
+};

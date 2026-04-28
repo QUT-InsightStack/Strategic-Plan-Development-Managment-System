@@ -261,8 +261,7 @@ DB_PASSWORD=your_password
 
 php artisan migrate
 
-(Optional)
-
+# Local development only: seed manual test data.
 php artisan db:seed
 
 ---
