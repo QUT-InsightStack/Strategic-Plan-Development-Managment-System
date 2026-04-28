@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('tblrole_permissions', function (Blueprint $table) {
-            $table->id();
+            $table->id('relation_id');
             $table->unsignedBigInteger('role_id');
             $table->unsignedBigInteger('permission_id');
             $table->timestamps();
