@@ -17,6 +17,8 @@ class Strategic extends Model
         'updated_by',
         'level',
         'content',
+        'mission',
+        'vision',
     ];
 
     public function creator()
@@ -27,5 +29,60 @@ class Strategic extends Model
     public function updater()
     {
         return $this->belongsTo(User::class, 'updated_by', 'user_id');
+    }
+
+    public function missionFoundation()
+    {
+        return $this->belongsTo(StrategicFoundations::class, 'mission', 'foundation_id');
+    }
+
+    public function visionFoundation()
+    {
+        return $this->belongsTo(StrategicFoundations::class, 'vision', 'foundation_id');
+    }
+
+    public function parents()
+    {
+        return $this->belongsToMany(
+            Strategic::class,
+            'tblrelation_map',
+            'record_id',
+            'parent_id'
+        )->withPivot('created_by')->withTimestamps();
+    }
+
+    public function children()
+    {
+        return $this->belongsToMany(
+            Strategic::class,
+            'tblrelation_map',
+            'parent_id',
+            'record_id'
+        )->withPivot('created_by')->withTimestamps();
+    }
+
+    public function parentRelations()
+    {
+        return $this->hasMany(Relation::class, 'record_id', 'record_id');
+    }
+
+    public function childRelations()
+    {
+        return $this->hasMany(Relation::class, 'parent_id', 'record_id');
+    }
+
+    public function coreValueLinks()
+    {
+        return $this->hasMany(Link::class, 'plan_id', 'record_id');
+    }
+
+    public function coreValues()
+    {
+        return $this->belongsToMany(
+            StrategicFoundations::class,
+            'tblplan_core_value',
+            'plan_id',
+            'core_value_id'
+        )->withPivot(['created_by', 'updated_by'])->withTimestamps();
     }
 }
