@@ -9,8 +9,19 @@ abstract class BaseCrudController extends Controller
 {
     protected $service;
 
-    // Subclasses must implement this method and return the corresponding Service
+    
     abstract protected function getService();
+
+    // Override these in child controllers to add validation
+    protected function getStoreRules(): array
+    {
+        return [];
+    }
+
+    protected function getUpdateRules(int $id): array
+    {
+        return [];
+    }
 
     public function index(): JsonResponse
     {
@@ -29,14 +40,14 @@ abstract class BaseCrudController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $data = $request->validated();
+        $data = $request->validate($this->getStoreRules());
         $record = $this->getService()->create($data);
         return response()->json(['message' => 'Created', 'data' => $record], 201);
     }
 
     public function update(Request $request, int $id): JsonResponse
     {
-        $data = $request->validated();
+        $data = $request->validate($this->getUpdateRules($id));
         $updated = $this->getService()->update($id, $data);
         if (!$updated) {
             return response()->json(['message' => 'Not found or update failed'], 404);
