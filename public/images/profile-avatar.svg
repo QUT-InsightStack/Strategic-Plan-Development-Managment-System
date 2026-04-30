@@ -1,0 +1,23 @@
+<svg width="160" height="160" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Default profile avatar</title>
+  <desc id="desc">Illustrated user portrait for the profile settings page.</desc>
+  <defs>
+    <linearGradient id="bg" x1="20" y1="16" x2="140" y2="146" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f7d9bd"/>
+      <stop offset="1" stop-color="#a9c6df"/>
+    </linearGradient>
+    <linearGradient id="hair" x1="44" y1="22" x2="126" y2="96" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7b3a24"/>
+      <stop offset="1" stop-color="#2c1b18"/>
+    </linearGradient>
+  </defs>
+  <rect width="160" height="160" rx="80" fill="url(#bg)"/>
+  <path d="M43 78c0-33 18-54 43-54 24 0 41 17 41 49 0 22-7 40-22 49H64C51 112 43 98 43 78Z" fill="url(#hair)"/>
+  <path d="M55 139c5-23 18-35 35-35s30 12 35 35c-10 8-22 13-35 13s-25-5-35-13Z" fill="#214f9f"/>
+  <path d="M66 81c3 19 10 32 24 32s22-13 25-32c3-2 5-7 4-12-1-4-3-6-6-6-3-22-13-32-26-32S64 43 61 64c-3 1-5 4-5 8 0 5 4 8 10 9Z" fill="#f2c7aa"/>
+  <path d="M60 65c14-2 27-11 38-26 4 12 10 20 20 25-3-25-15-38-32-38-15 0-27 13-26 39Z" fill="#5a2819"/>
+  <path d="M72 79c4-3 8-3 12 0M96 79c4-3 8-3 12 0" stroke="#2d1a17" stroke-width="3" stroke-linecap="round"/>
+  <path d="M84 95c5 4 11 4 17 0" stroke="#b45b62" stroke-width="3" stroke-linecap="round"/>
+  <path d="M77 111c7 7 19 8 28 0" fill="#f4d0bc"/>
+  <circle cx="80" cy="80" r="76" fill="none" stroke="#ffffff" stroke-width="4"/>
+</svg>
