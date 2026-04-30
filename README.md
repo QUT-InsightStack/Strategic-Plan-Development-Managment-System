@@ -191,7 +191,7 @@ C:\Users<username>\AppData\Roaming\Composer\auth.json
 
 Clone the project from GitHub:
 
-git clone https://github.com/Yufei0122/Strategic-Plan-Development-Management-System
+git clone https://github.com/QUT-InsightStack/Strategic-Plan-Development-Managment-System
 
 Navigate into the project directory:
 
