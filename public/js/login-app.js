@@ -9,6 +9,32 @@ const messages = {
     accessibility: 'Accessibility information is not connected yet.',
 };
 
+const rootElement = document.getElementById('root');
+
+const apiConfig = {
+    loginUrl: rootElement.dataset.loginUrl || '/api/login',
+};
+
+async function loginRequest(credentials) {
+    const response = await fetch(apiConfig.loginUrl, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(data.message || 'Invalid credentials.');
+    }
+
+    return data;
+}
+
 function Brand() {
     return React.createElement(
         'a',
@@ -81,7 +107,7 @@ function EyeIcon({ hidden }) {
 }
 
 function LoginForm({ status, setStatus }) {
-    const [userAccount, setUserAccount] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [remember, setRemember] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -89,19 +115,22 @@ function LoginForm({ status, setStatus }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        const savedAccount = window.localStorage.getItem('spms.rememberedAccount');
+        const savedEmail = window.localStorage.getItem('spms.rememberedEmail');
 
-        if (savedAccount) {
-            setUserAccount(savedAccount);
+        if (savedEmail) {
+            setEmail(savedEmail);
             setRemember(true);
         }
     }, []);
 
     function validate() {
         const nextErrors = {};
+        const emailValue = email.trim();
 
-        if (!userAccount.trim()) {
-            nextErrors.userAccount = 'Please enter your user account.';
+        if (!emailValue) {
+            nextErrors.email = 'Please enter your email.';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
+            nextErrors.email = 'Please enter a valid email address.';
         }
 
         if (!password.trim()) {
@@ -112,7 +141,7 @@ function LoginForm({ status, setStatus }) {
         return Object.keys(nextErrors).length === 0;
     }
 
-    function handleSubmit(event) {
+    async function handleSubmit(event) {
         event.preventDefault();
 
         if (!validate()) {
@@ -123,16 +152,24 @@ function LoginForm({ status, setStatus }) {
         setIsSubmitting(true);
         setStatus('Checking your sign in details...', 'info');
 
-        window.setTimeout(() => {
+        try {
+            await loginRequest({
+                email: email.trim(),
+                password,
+            });
+
             if (remember) {
-                window.localStorage.setItem('spms.rememberedAccount', userAccount.trim());
+                window.localStorage.setItem('spms.rememberedEmail', email.trim());
             } else {
-                window.localStorage.removeItem('spms.rememberedAccount');
+                window.localStorage.removeItem('spms.rememberedEmail');
             }
 
+            setStatus('Signed in successfully.', 'success');
+        } catch (error) {
+            setStatus(error.message, 'error');
+        } finally {
             setIsSubmitting(false);
-            setStatus('Front-end sign in interaction is ready. Connect this form to your login API next.', 'success');
-        }, 700);
+        }
     }
 
     return React.createElement(
@@ -149,18 +186,18 @@ function LoginForm({ status, setStatus }) {
             { className: 'login-form', noValidate: true, onSubmit: handleSubmit },
             React.createElement(
                 'div',
-                { className: `field-group ${errors.userAccount ? 'has-error' : ''}` },
-                React.createElement('label', { htmlFor: 'userAccount' }, 'User account'),
+                { className: `field-group ${errors.email ? 'has-error' : ''}` },
+                React.createElement('label', { htmlFor: 'email' }, 'User account'),
                 React.createElement('input', {
-                    id: 'userAccount',
-                    name: 'userAccount',
-                    type: 'text',
-                    autoComplete: 'username',
+                    id: 'email',
+                    name: 'email',
+                    type: 'email',
+                    autoComplete: 'email',
                     placeholder: 'Please sign in to continue...',
-                    value: userAccount,
-                    onChange: (event) => setUserAccount(event.target.value),
+                    value: email,
+                    onChange: (event) => setEmail(event.target.value),
                 }),
-                React.createElement(FieldError, { message: errors.userAccount })
+                React.createElement(FieldError, { message: errors.email })
             ),
             React.createElement(
                 'div',
@@ -256,4 +293,4 @@ function LoginApp() {
     );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(LoginApp));
+ReactDOM.createRoot(rootElement).render(React.createElement(LoginApp));
