@@ -191,7 +191,7 @@ C:\Users<username>\AppData\Roaming\Composer\auth.json
 
 Clone the project from GitHub:
 
-git clone https://github.com/Yufei0122/Strategic-Plan-Development-Management-System
+git clone https://github.com/QUT-InsightStack/Strategic-Plan-Development-Managment-System
 
 Navigate into the project directory:
 
@@ -248,7 +248,7 @@ SOURCE init_db.sql;
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=db_spdms
+DB_DATABASE=dbspdms
 DB_USERNAME=your_username
 DB_PASSWORD=your_password
 
