@@ -119,8 +119,8 @@ button {
     grid-template-columns: minmax(280px, 420px) minmax(320px, 526px);
     align-items: center;
     justify-content: center;
-    gap: 130px;
-    padding: 70px 56px;
+    gap: 96px;
+    padding: 24px 48px;
 }
 
 .access-intro {
@@ -128,9 +128,9 @@ button {
 }
 
 .access-icon {
-    width: 68px;
-    height: 68px;
-    margin-bottom: 30px;
+    width: 56px;
+    height: 56px;
+    margin-bottom: 20px;
     color: var(--primary-dark);
 }
 
@@ -142,8 +142,8 @@ button {
 
 .access-intro h1 {
     max-width: 390px;
-    margin: 0 0 28px;
-    font-size: 34px;
+    margin: 0 0 18px;
+    font-size: 32px;
     line-height: 1.14;
     font-weight: 700;
 }
@@ -158,19 +158,19 @@ button {
 
 .login-card {
     width: 100%;
-    max-width: 526px;
-    min-height: 640px;
+    max-width: 500px;
+    height:auto;
     border-radius: 8px;
-    padding: 88px 90px 56px;
+    padding: 34px 56px 28px;
     background: var(--panel);
 }
 
 .card-heading {
-    margin-bottom: 58px;
+    margin-bottom: 28px;
 }
 
 .card-heading h2 {
-    margin: 0 0 14px;
+    margin: 0 0 8px;
     color: var(--primary);
     font-size: 16px;
     font-weight: 700;
@@ -179,22 +179,22 @@ button {
 .card-heading p {
     margin: 0;
     color: var(--muted);
-    font-size: 16px;
+    font-size: 15px;
 }
 
 .login-form {
     display: grid;
-    gap: 28px;
+    gap: 14px;
 }
 
 .field-group {
     display: grid;
-    gap: 8px;
+    gap: 6px;
 }
 
 .field-group label {
     color: var(--primary);
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
 }
 
@@ -202,7 +202,7 @@ button {
 .field-group input[type='email'],
 .field-group input[type='password'] {
     width: 100%;
-    min-height: 46px;
+    min-height: 40px;
     border: 2px solid #c3c3c3;
     border-radius: 6px;
     padding: 0 42px 0 40px;
@@ -264,8 +264,8 @@ button {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    margin-top: -6px;
+    gap: 12px;
+    margin-top: -2px;
 }
 
 .remember-option {
@@ -301,7 +301,7 @@ button {
 .signin-button {
     justify-self: center;
     width: 180px;
-    min-height: 48px;
+    min-height: 42px;
     border: 0;
     border-radius: 6px;
     color: #ffffff;
@@ -326,8 +326,8 @@ button {
 }
 
 .form-status {
-    min-height: 18px;
-    margin: -10px 0 0;
+    min-height: 14px;
+    margin: -4px 0 0;
     text-align: center;
     font-size: 12px;
     font-weight: 700;
@@ -347,7 +347,7 @@ button {
     margin: 0 auto;
     color: #000000;
     font-size: 9px;
-    line-height: 1.35;
+    line-height: 1.25;
 }
 
 .app-footer {
