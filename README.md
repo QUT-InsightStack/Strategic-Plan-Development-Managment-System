@@ -10,10 +10,12 @@ Before setting up the project, ensure the following tools are installed:
 
 * PHP (>= 8.3)
 * Composer
-* Node.js and npm
+* Node.js(>=20.19.0) and npm
 * Git
 
 This project requires PHP and Composer to be installed and properly configured before proceeding.
+
+This project is built with Laravel and Vite. Because Vite requires a relatively recent version of Node.js, using an outdated Node.js version may cause the frontend to fail at runtime due to missing dependencies. Please install the latest stable version of Node.js and complete the frontend environment setup before running the project.
 
 ---
 
@@ -366,6 +368,8 @@ If dependencies are missing:
 composer install
 npm install
 
+If frontend dependencies still fail to install or the frontend reports missing modules at runtime, verify that your local Node.js version meets the project requirement before reinstalling dependencies.
+
 ---
 
 ### Port Already in Use
@@ -385,6 +389,8 @@ Run:
 ```bash
 npm run dev
 ```
+
+If the issue persists, check whether your Node.js version is up to date, then run `npm install` again.
 
 ---
 
