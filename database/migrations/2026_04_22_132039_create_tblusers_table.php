@@ -14,10 +14,19 @@ return new class extends Migration
         Schema::create('tblusers', function (Blueprint $table) {
             $table->id('user_id');
             $table->unsignedBigInteger('role_id')->nullable();
-            $table->string('name', 255);
-            $table->string('department', 255)->nullable();
+            $table->string('first_name', 255);
+            $table->string('last_name', 255)->nullable();
             $table->string('email', 255)->unique();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->timestamp('email_verified_at')->nullable();            
+            $table->string('mobile', 20)->nullable();
+            $table->string('address', 255)->nullable();
+            $table->boolean("gender")->nullable();
+            $table->date('date_of_birth')->nullable();
+            $table->string('profile_picture')->nullable();
+            $table->string('department', 255)->nullable();
+            $table->string('unit', 255)->nullable();
+            $table->string('office',255)->nullable();
+            $table->string('position', 255)->nullable();            
             $table->string('password');
             $table->enum('status', ['active', 'inactive', 'suspended'])
                   ->default('active');
