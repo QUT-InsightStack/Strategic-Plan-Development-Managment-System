@@ -35,6 +35,33 @@ return Application::configure(basePath: dirname(__DIR__))
     // ── Exception Handling ───────────────────────────────────────
     ->withExceptions(function (Exceptions $exceptions) {
 
+
+        // ── Force JSON responses for all api/* requests ───────────
+        // Forces Laravel to treat every api/* request 
+        // as "expecting JSON", even without the Accept header.
+        // Validation, auth, throttle — all return JSON.
+        $exceptions->shouldRenderJsonWhen(function (Request $request) {
+            return $request->is('api/*') || $request->expectsJson();
+        });
+
+
+        // ── ValidationException ───────────────────────────────────
+        // Inline $request->validate() on a plain Request redirects on failure
+        // when Accept: application/json is absent (e.g. index() filter params).
+        // This forces JSON 422 for all api/* routes — no redirect ever.
+        $exceptions->render(function (ValidationException $e, Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed.',
+                    'errors'  => $e->errors(),
+                ], 422);
+            }
+        });
+
+
+
+
         // never redirect on 401 — always return JSON.
         $exceptions->render(function (AuthenticationException $e, Request $request) {
             // Trigger for any request that hits api/* OR expects JSON
