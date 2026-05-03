@@ -6,7 +6,7 @@ use App\Models\Permission;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
-class PremissionRepository
+class PermissionRepository
 {
     protected $model;
 

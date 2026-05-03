@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RelationController;
 use App\Http\Controllers\StrategicController;
 use App\Http\Controllers\FoundationsController;
@@ -55,6 +56,7 @@ Route::get('strategic-records/{recordId}/relations', [RelationController::class,
 Route::put('strategic-records/{recordId}/relations', [RelationController::class, 'syncParents']);
 Route::get('strategic-records/{planId}/core-values', [LinkController::class, 'byPlan']);
 Route::put('strategic-records/{planId}/core-values', [LinkController::class, 'syncCoreValues']);
+Route::apiResource('permissions', PermissionController::class);
 Route::apiResource('strategic-foundations', FoundationsController::class);
 Route::apiResource('strategic-records', StrategicController::class);
 Route::apiResource('relations', RelationController::class);

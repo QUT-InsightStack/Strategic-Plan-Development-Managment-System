@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use App\Services\UserService;
+use Illuminate\Http\JsonResponse;
 
 class UserController extends BaseCrudController
 {
@@ -18,31 +21,20 @@ class UserController extends BaseCrudController
         return $this->userService;
     }
 
-    protected function getStoreRules(): array
+    public function store(StoreUserRequest $request): JsonResponse
     {
-        return [
-            'name'       => ['required', 'string', 'max:255'],
-            'email'      => ['required', 'email', 'max:255', 'unique:tblusers,email'],
-            'password'   => ['required', 'string', 'min:8'],
-            'department' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'role_id'    => ['sometimes', 'nullable', 'integer', 'exists:tblroles,role_id'],
-            'status'     => ['sometimes', 'in:active,inactive,suspended'],
-        ];
+        $record = $this->getService()->create($request->validated());
+        return response()->json(['message' => 'Created', 'data' => $record], 201);
     }
 
-
-    protected function getUpdateRules(int $id): array
+    public function update(UpdateUserRequest $request, int $id): JsonResponse
     {
-        return [
-            'name'       => ['sometimes', 'string', 'max:255'],
-            'email'      => ['sometimes', 'email', 'max:255', "unique:tblusers,email,{$id},user_id"],
-            'department' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'role_id'    => ['sometimes', 'nullable', 'integer', 'exists:tblroles,role_id'],
-            'status'     => ['sometimes', 'in:active,inactive,suspended'],
-            'password'   => ['sometimes', 'string', 'min:8'],
-        ];
+        $updated = $this->getService()->update($id, $request->validated());
+
+        if (! $updated) {
+            return response()->json(['message' => 'Not found or update failed'], 404);
+        }
+
+        return response()->json(['message' => 'Updated'], 200);
     }
-
-
-
 }

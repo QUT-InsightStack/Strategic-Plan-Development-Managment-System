@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Relation;
+use App\Http\Requests\StoreRelationRequest;
+use App\Http\Requests\UpdateRelationRequest;
 use App\Services\RelationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,26 +34,22 @@ class RelationController extends Controller
         return response()->json(['data' => $relation], 200);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreRelationRequest $request): JsonResponse
     {
-        $data = $request->validate($this->rules());
-        $relation = $this->relationService->create($data);
+        $relation = $this->relationService->create($request->validated());
 
         return response()->json(['message' => 'Created', 'data' => $relation], 201);
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateRelationRequest $request, int $id): JsonResponse
     {
-        $relation = Relation::find($id);
+        $updated = $this->relationService->update($id, $request->validated());
 
-        if (!$relation) {
-            return response()->json(['message' => 'Not found'], 404);
+        if (!$updated) {
+            return response()->json(['message' => 'Not found or update failed'], 404);
         }
 
-        $data = $request->validate($this->rules($relation));
-        $updated = $this->relationService->update($id, $data);
-
-        return response()->json(['message' => 'Updated', 'data' => $updated], 200);
+        return response()->json(['message' => 'Updated'], 200);
     }
 
     public function destroy(int $id): JsonResponse
@@ -73,10 +70,12 @@ class RelationController extends Controller
         ], 200);
     }
 
+    // syncParents kept with inline validation — it is a custom action, not a
+    // standard store/update, so dedicated FormRequest is not warranted here.
     public function syncParents(Request $request, int $recordId): JsonResponse
     {
         $data = $request->validate([
-            'parent_ids' => ['array'],
+            'parent_ids'   => ['array'],
             'parent_ids.*' => [
                 'integer',
                 'distinct',
@@ -93,34 +92,5 @@ class RelationController extends Controller
         );
 
         return response()->json(['message' => 'Updated', 'data' => $relations], 200);
-    }
-
-    protected function rules(?Relation $relation = null): array
-    {
-        $recordId = request('record_id', $relation?->record_id);
-        $parentId = request('parent_id', $relation?->parent_id);
-
-        return [
-            'record_id' => [
-                $relation ? 'sometimes' : 'required',
-                'integer',
-                Rule::exists('tblstrategic_record', 'record_id'),
-                Rule::notIn([$parentId]),
-            ],
-            'parent_id' => [
-                $relation ? 'sometimes' : 'required',
-                'integer',
-                Rule::exists('tblstrategic_record', 'record_id'),
-                Rule::notIn([$recordId]),
-                Rule::unique('tblrelation_map')
-                    ->where('record_id', $recordId)
-                    ->ignore($relation?->relation_id, 'relation_id'),
-            ],
-            'created_by' => [
-                $relation ? 'sometimes' : 'required',
-                'integer',
-                Rule::exists('tblusers', 'user_id'),
-            ],
-        ];
     }
 }

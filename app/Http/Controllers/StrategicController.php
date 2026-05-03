@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Strategic;
+use App\Http\Requests\StoreStrategicRequest;
+use App\Http\Requests\UpdateStrategicRequest;
 use App\Services\StrategicService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class StrategicController extends Controller
 {
@@ -33,26 +32,22 @@ class StrategicController extends Controller
         return response()->json(['data' => $strategic], 200);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreStrategicRequest $request): JsonResponse
     {
-        $data = $request->validate($this->rules());
-        $strategic = $this->strategicService->create($data);
+        $strategic = $this->strategicService->create($request->validated());
 
         return response()->json(['message' => 'Created', 'data' => $strategic], 201);
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateStrategicRequest $request, int $id): JsonResponse
     {
-        $strategic = Strategic::find($id);
+        $updated = $this->strategicService->update($id, $request->validated());
 
-        if (!$strategic) {
-            return response()->json(['message' => 'Not found'], 404);
+        if (!$updated) {
+            return response()->json(['message' => 'Not found or update failed'], 404);
         }
 
-        $data = $request->validate($this->rules($strategic));
-        $updated = $this->strategicService->update($id, $data);
-
-        return response()->json(['message' => 'Updated', 'data' => $updated], 200);
+        return response()->json(['message' => 'Updated'], 200);
     }
 
     public function destroy(int $id): JsonResponse
@@ -64,40 +59,5 @@ class StrategicController extends Controller
         }
 
         return response()->json(['message' => 'Deleted'], 200);
-    }
-
-    protected function rules(?Strategic $strategic = null): array
-    {
-        return [
-            'created_by' => [
-                $strategic ? 'sometimes' : 'required',
-                'integer',
-                Rule::exists('tblusers', 'user_id'),
-            ],
-            'updated_by' => [
-                'nullable',
-                'integer',
-                Rule::exists('tblusers', 'user_id'),
-            ],
-            'level' => [$strategic ? 'sometimes' : 'required', 'string', 'max:255'],
-            'content' => [$strategic ? 'sometimes' : 'required', 'string'],
-            'mission' => [
-                $strategic ? 'sometimes' : 'required',
-                'integer',
-                Rule::exists('tblstrategic_foundations', 'foundation_id'),
-            ],
-            'vision' => [
-                $strategic ? 'sometimes' : 'required',
-                'integer',
-                Rule::exists('tblstrategic_foundations', 'foundation_id'),
-            ],
-            'parent_ids' => ['array'],
-            'parent_ids.*' => [
-                'integer',
-                'distinct',
-                Rule::exists('tblstrategic_record', 'record_id'),
-                Rule::notIn([$strategic?->record_id]),
-            ],
-        ];
     }
 }
