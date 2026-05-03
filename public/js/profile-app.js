@@ -1,19 +1,20 @@
-const { useRef, useState } = React;
+const { useRef, useState, useEffect } = React;
 
 const rootElement = document.getElementById('root');
 
 const apiConfig = {
-    profileUrl: rootElement.dataset.profileUrl || '/api/user',
+    profileUrl: rootElement?.dataset?.profileUrl || '/api/me',
+    updateUrl: '/api/profile',
 };
 
 const initialProfile = {
-    employeeId: '',
-    password: '',
+    user_id: '',
+    first_name: '',
+    last_name: '',
     email: '',
-    firstName: '',
-    lastName: '',
-    phone: '',
+    mobile: '',
     address: '',
+    profile_picture: '',
 };
 
 const messages = {
@@ -28,7 +29,7 @@ const messages = {
 function Brand() {
     return React.createElement(
         'a',
-        { className: 'brand', href: './login.html', 'aria-label': 'Strategic planning Management System home' },
+        { className: 'brand', href: './', 'aria-label': 'Strategic planning Management System home' },
         React.createElement(
             'span',
             { className: 'brand-mark', 'aria-hidden': 'true' },
@@ -41,7 +42,7 @@ function Brand() {
     );
 }
 
-function Header({ onMessage }) {
+function Header({ onMessage, onLogout }) {
     return React.createElement(
         'header',
         { className: 'app-header', 'aria-label': 'Application header' },
@@ -51,7 +52,8 @@ function Header({ onMessage }) {
             { className: 'top-nav', 'aria-label': 'Primary navigation' },
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.help) }, 'Help'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.contact) }, 'Contact'),
-            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.support) }, 'Support')
+            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.support) }, 'Support'),
+            React.createElement('button', { className: 'nav-link logout-link', type: 'button', onClick: onLogout }, 'Logout')
         )
     );
 }
@@ -88,7 +90,13 @@ function ProfileSideCard({ avatar, onAvatarSelect }) {
             return;
         }
 
-        onAvatarSelect(URL.createObjectURL(file));
+        // For now, just create a data URL. In production, you'd upload to server
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const dataUrl = e.target.result;
+            onAvatarSelect(dataUrl);
+        };
+        reader.readAsDataURL(file);
     }
 
     return React.createElement(
@@ -97,7 +105,7 @@ function ProfileSideCard({ avatar, onAvatarSelect }) {
         React.createElement(
             'div',
             { className: 'avatar-frame' },
-            React.createElement('img', { className: 'avatar-image', src: avatar, alt: 'Profile avatar preview' })
+            React.createElement('img', { className: 'avatar-image', src: avatar || './images/profile-avatar.svg', alt: 'Profile avatar preview' })
         ),
         React.createElement(
             'div',
@@ -116,7 +124,7 @@ function ProfileSideCard({ avatar, onAvatarSelect }) {
     );
 }
 
-function TextField({ id, label, value, error, type = 'text', icon, helperText, onHelperClick, onChange }) {
+function TextField({ id, label, value, error, type = 'text', icon, helperText, onHelperClick, onChange, disabled = false }) {
     return React.createElement(
         'div',
         { className: `field-group ${error ? 'has-error' : ''}` },
@@ -135,19 +143,81 @@ function TextField({ id, label, value, error, type = 'text', icon, helperText, o
             name: id,
             type,
             value,
+            disabled,
             onChange: (event) => onChange(event.target.value),
         }),
         React.createElement('p', { className: 'field-error' }, error || '')
     );
 }
 
-function ProfileForm({ status, setStatus }) {
-    const [profile, setProfile] = useState(() => {
-        const savedProfile = window.localStorage.getItem('spms.profileDraft');
-        return savedProfile ? JSON.parse(savedProfile) : initialProfile;
-    });
-    const [savedProfile, setSavedProfile] = useState(profile);
+function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
+    const [profile, setProfile] = useState(initialProfile);
+    const [originalProfile, setOriginalProfile] = useState(initialProfile);
     const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        loadProfile();
+    }, []);
+
+    useEffect(() => {
+        // Sync profile_picture with avatar when avatar changes (e.g., from image upload)
+        if (avatar && avatar !== './images/profile-avatar.svg' && avatar !== profile.profile_picture) {
+            updateField('profile_picture', avatar);
+        }
+    }, [avatar]);
+
+    function getAuthToken() {
+        return localStorage.getItem('auth_token');
+    }
+
+    function loadProfile() {
+        const token = getAuthToken();
+        if (!token) {
+            setStatus('Authentication required. Please log in.', 'error');
+            setLoading(false);
+            return;
+        }
+
+        fetch(apiConfig.profileUrl, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load profile');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const payload = data.user && typeof data.user === 'object' ? data.user : data;
+            const profileData = {
+                user_id: payload.user_id || payload.id || '',
+                first_name: payload.first_name || '',
+                last_name: payload.last_name || '',
+                email: payload.email || '',
+                mobile: payload.mobile || payload.phone || '',
+                address: payload.address || '',
+                profile_picture: payload.profile_picture || '',
+            };
+
+            setProfile(profileData);
+            setOriginalProfile(profileData);
+
+            if (profileData.profile_picture) {
+                onAvatarChange(profileData.profile_picture);
+            }
+
+            setLoading(false);
+        })
+        .catch(error => {
+            console.error('Error loading profile:', error);
+            setStatus('Failed to load profile data.', 'error');
+            setLoading(false);
+        });
+    }
 
     function updateField(field, value) {
         setProfile((current) => ({
@@ -159,8 +229,12 @@ function ProfileForm({ status, setStatus }) {
     function validate() {
         const nextErrors = {};
 
-        if (!profile.employeeId.trim()) {
-            nextErrors.employeeId = 'Employee ID is required.';
+        if (!profile.first_name.trim()) {
+            nextErrors.first_name = 'First name is required.';
+        }
+
+        if (!profile.last_name.trim()) {
+            nextErrors.last_name = 'Last name is required.';
         }
 
         if (!profile.email.trim()) {
@@ -169,12 +243,8 @@ function ProfileForm({ status, setStatus }) {
             nextErrors.email = 'Enter a valid email address.';
         }
 
-        if (!profile.firstName.trim()) {
-            nextErrors.firstName = 'First name is required.';
-        }
-
-        if (!profile.lastName.trim()) {
-            nextErrors.lastName = 'Last name is required.';
+        if (profile.mobile && !/^[\d\s\-\+\(\)]+$/.test(profile.mobile.trim())) {
+            nextErrors.mobile = 'Enter a valid phone number.';
         }
 
         setErrors(nextErrors);
@@ -185,125 +255,210 @@ function ProfileForm({ status, setStatus }) {
         event.preventDefault();
 
         if (!validate()) {
-            setStatus('Check the highlighted fields and try again.', 'error');
+            setStatus('Please check the highlighted fields and try again.', 'error');
             return;
         }
 
-        window.localStorage.setItem('spms.profileDraft', JSON.stringify(profile));
-        setSavedProfile(profile);
-        setStatus(`Profile is ready to save through ${apiConfig.profileUrl}.`, 'success');
+        const token = getAuthToken();
+        if (!token) {
+            setStatus('Authentication required. Please log in.', 'error');
+            return;
+        }
+
+        setStatus('Saving...', 'info');
+
+        fetch(apiConfig.updateUrl, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                first_name: profile.first_name.trim(),
+                last_name: profile.last_name.trim(),
+                email: profile.email.trim(),
+                mobile: profile.mobile.trim(),
+                address: profile.address.trim(),
+                profile_picture: profile.profile_picture,
+            }),
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.message || 'Failed to update profile');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            setOriginalProfile(profile);
+            setStatus('Profile updated successfully!', 'success');
+        })
+        .catch(error => {
+            console.error('Error updating profile:', error);
+            setStatus(error.message || 'Failed to update profile.', 'error');
+        });
     }
 
     function handleCancel() {
-        setProfile(savedProfile);
+        setProfile(originalProfile);
         setErrors({});
         setStatus('Changes were cancelled.', 'info');
     }
 
-    return React.createElement(
-        'section',
-        { className: 'profile-card', 'aria-labelledby': 'profile-form-title' },
+    if (loading) {
+        return React.createElement(
+            'section',
+            { className: 'profile-card' },
+            React.createElement('p', null, 'Loading profile...')
+        );
+    }
+
+return React.createElement(
+    'section',
+    { className: 'profile-card modern-card', 'aria-labelledby': 'profile-form-title' },
+
+    // HEADER
+    React.createElement(
+        'div',
+        { className: 'profile-card-header' },
         React.createElement(
             'div',
-            { className: 'profile-card-header' },
-            React.createElement('h2', { id: 'profile-form-title' }, 'Personal an Account Information'),
-            React.createElement('p', null, 'update your details below')
-        ),
+            { className: 'header-copy' },
+            React.createElement('h2', { id: 'profile-form-title' }, 'Edit Profile'),
+            React.createElement('p', { className: 'subtitle' }, 'Update your personal and account details')
+        )
+    ),
+
+    // FORM
+    React.createElement(
+        'form',
+        { className: 'profile-form', noValidate: true, onSubmit: handleSave },
+
+        // TWO COLUMN LAYOUT
         React.createElement(
-            'form',
-            { className: 'profile-form', noValidate: true, onSubmit: handleSave },
+            'div',
+            { className: 'form-columns' },
+
+            // ACCOUNT SECTION
             React.createElement(
                 'div',
-                { className: 'form-columns' },
+                { className: 'form-section' },
+                React.createElement('h3', null, 'Account Information'),
+
                 React.createElement(
                     'div',
-                    { className: 'form-section' },
-                    React.createElement('h3', null, 'Account information'),
-                    React.createElement(
-                        'div',
-                        { className: 'field-stack' },
-                        React.createElement(TextField, {
-                            id: 'employeeId',
-                            label: 'Employee ID',
-                            icon: 'employee',
-                            value: profile.employeeId,
-                            error: errors.employeeId,
-                            onChange: (value) => updateField('employeeId', value),
-                        }),
-                        React.createElement(TextField, {
-                            id: 'password',
-                            label: 'Password',
-                            type: 'password',
-                            icon: 'lock',
-                            helperText: 'Change password ?',
-                            value: profile.password,
-                            error: errors.password,
-                            onHelperClick: () => setStatus('Password changes should be connected to a secure backend endpoint.', 'info'),
-                            onChange: (value) => updateField('password', value),
-                        }),
-                        React.createElement(TextField, {
-                            id: 'email',
-                            label: 'Email',
-                            type: 'email',
-                            icon: 'email',
-                            value: profile.email,
-                            error: errors.email,
-                            onChange: (value) => updateField('email', value),
-                        })
-                    )
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'form-section personal-section' },
-                    React.createElement('h3', null, 'Personal Information'),
-                    React.createElement(
-                        'div',
-                        { className: 'field-stack' },
-                        React.createElement(TextField, {
-                            id: 'firstName',
-                            label: 'First Name',
-                            value: profile.firstName,
-                            error: errors.firstName,
-                            onChange: (value) => updateField('firstName', value),
-                        }),
-                        React.createElement(TextField, {
-                            id: 'lastName',
-                            label: 'Last Name',
-                            value: profile.lastName,
-                            error: errors.lastName,
-                            onChange: (value) => updateField('lastName', value),
-                        }),
-                        React.createElement(TextField, {
-                            id: 'phone',
-                            label: 'phone',
-                            type: 'tel',
-                            value: profile.phone,
-                            error: errors.phone,
-                            onChange: (value) => updateField('phone', value),
-                        })
-                    )
+                    { className: 'field-stack' },
+
+                    React.createElement(TextField, {
+                        id: 'user_id',
+                        label: 'Employee ID',
+                        icon: 'employee',
+                        value: profile.user_id,
+                        disabled: true,
+                        onChange: () => {},
+                    }),
+
+                    React.createElement(TextField, {
+                        id: 'email',
+                        label: 'Email',
+                        type: 'email',
+                        icon: 'email',
+                        value: profile.email,
+                        error: errors.email,
+                        onChange: (value) => updateField('email', value),
+                    })
                 )
             ),
+
+            // PERSONAL SECTION
             React.createElement(
                 'div',
-                { className: 'address-field' },
-                React.createElement(TextField, {
-                    id: 'address',
-                    label: 'Address',
-                    value: profile.address,
-                    error: errors.address,
-                    onChange: (value) => updateField('address', value),
-                })
-            ),
+                { className: 'form-section personal-section' },
+                React.createElement('h3', null, 'Personal Information'),
+
+                React.createElement(
+                    'div',
+                    { className: 'field-stack' },
+
+                    React.createElement(TextField, {
+                        id: 'first_name',
+                        label: 'First Name',
+                        value: profile.first_name,
+                        error: errors.first_name,
+                        onChange: (value) => updateField('first_name', value),
+                    }),
+
+                    React.createElement(TextField, {
+                        id: 'last_name',
+                        label: 'Last Name',
+                        value: profile.last_name,
+                        error: errors.last_name,
+                        onChange: (value) => updateField('last_name', value),
+                    }),
+
+                    React.createElement(TextField, {
+                        id: 'mobile',
+                        label: 'Phone',
+                        type: 'tel',
+                        value: profile.mobile,
+                        error: errors.mobile,
+                        onChange: (value) => updateField('mobile', value),
+                    })
+                )
+            )
+        ),
+
+        // ADDRESS FULL WIDTH
+        React.createElement(
+            'div',
+            { className: 'address-field modern-field' },
+            React.createElement(TextField, {
+                id: 'address',
+                label: 'Address',
+                value: profile.address,
+                error: errors.address,
+                onChange: (value) => updateField('address', value),
+            })
+        ),
+
+        // ACTION BUTTONS
+        React.createElement(
+            'div',
+            { className: 'form-actions modern-actions' },
+
             React.createElement(
-                'div',
-                { className: 'form-actions' },
-                React.createElement('button', { className: 'action-button secondary', type: 'button', onClick: handleCancel }, 'cancel'),
-                React.createElement('button', { className: 'action-button', type: 'submit' }, 'Save changes')
+                'button',
+                {
+                    className: 'action-button secondary',
+                    type: 'button',
+                    onClick: handleCancel,
+                },
+                'Reset'
             ),
-            React.createElement('p', { className: `form-status is-${status.type}`, role: 'status', 'aria-live': 'polite' }, status.message)
+
+            React.createElement(
+                'button',
+                {
+                    className: 'action-button primary',
+                    type: 'submit',
+                },
+                'Save Changes'
+            )
+        ),
+
+        // STATUS MESSAGE
+        React.createElement(
+            'p',
+            {
+                className: `form-status modern-status is-${status.type}`,
+                role: 'status',
+            },
+            status.message
         )
-    );
+    )
+);
 }
 
 function Footer({ onMessage }) {
@@ -325,10 +480,39 @@ function ProfileApp() {
         setStatusState({ message, type });
     }
 
+    function handleLogout() {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            window.location.href = '/';
+            return;
+        }
+
+        fetch('/api/logout', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+            },
+        })
+        .then(() => {
+            localStorage.removeItem('auth_token');
+            window.location.href = '/';
+        })
+        .catch(() => {
+            // Even if logout fails, clear token and redirect
+            localStorage.removeItem('auth_token');
+            window.location.href = '/';
+        });
+    }
+
+    function handleAvatarSelect(avatarUrl) {
+        setAvatar(avatarUrl);
+    }
+
     return React.createElement(
         'div',
         { className: 'profile-shell' },
-        React.createElement(Header, { onMessage: (message) => setStatus(message, 'info') }),
+        React.createElement(Header, { onMessage: (message) => setStatus(message, 'info'), onLogout: handleLogout }),
         React.createElement(
             'main',
             { className: 'profile-main' },
@@ -344,8 +528,8 @@ function ProfileApp() {
                 React.createElement(
                     'div',
                     { className: 'profile-layout' },
-                    React.createElement(ProfileSideCard, { avatar, onAvatarSelect: setAvatar }),
-                    React.createElement(ProfileForm, { status, setStatus })
+                    React.createElement(ProfileSideCard, { avatar, onAvatarSelect: handleAvatarSelect }),
+                    React.createElement(ProfileForm, { status, setStatus, avatar, onAvatarChange: setAvatar })
                 )
             )
         ),

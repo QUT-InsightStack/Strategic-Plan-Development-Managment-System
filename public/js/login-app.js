@@ -153,10 +153,13 @@ function LoginForm({ status, setStatus }) {
         setStatus('Checking your sign in details...', 'info');
 
         try {
-            await loginRequest({
+            const data = await loginRequest({
                 email: email.trim(),
                 password,
             });
+
+            // Store the token
+            localStorage.setItem('auth_token', data.token);
 
             if (remember) {
                 window.localStorage.setItem('spms.rememberedEmail', email.trim());
@@ -165,6 +168,10 @@ function LoginForm({ status, setStatus }) {
             }
 
             setStatus('Signed in successfully.', 'success');
+            // Redirect to profile page
+            setTimeout(() => {
+                window.location.href = '/profile.html';
+            }, 1000);
         } catch (error) {
             setStatus(error.message, 'error');
         } finally {

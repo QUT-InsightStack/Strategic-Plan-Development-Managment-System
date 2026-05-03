@@ -16,11 +16,16 @@ class User extends Authenticatable implements JWTSubject
 
     protected $fillable = [
         'name',
+        'first_name',
+        'last_name',
         'department',
         'email',
         'password',
         'role_id',
         'status',
+        'mobile',
+        'address',
+        'profile_picture',
     ];
 
     protected $hidden = [
@@ -34,6 +39,20 @@ class User extends Authenticatable implements JWTSubject
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
         ];
+    }
+
+    // Accessor for name (combines first_name and last_name)
+    public function getNameAttribute(): string
+    {
+        return trim($this->first_name . ' ' . $this->last_name);
+    }
+
+    // Mutator for name (splits into first_name and last_name)
+    public function setNameAttribute(string $value): void
+    {
+        $parts = explode(' ', $value, 2);
+        $this->first_name = $parts[0] ?? '';
+        $this->last_name = $parts[1] ?? '';
     }
 
     // ─── JWTSubject interface — required by tymon/jwt-auth ───────────────────

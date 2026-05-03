@@ -82,16 +82,45 @@ if (loginPage) {
         submitButton.textContent = 'Signing in...';
         setStatus('Checking your sign in details...', 'info');
 
-        window.setTimeout(() => {
-            if (rememberInput.checked) {
-                window.localStorage.setItem('spms.rememberedAccount', userAccount);
-            } else {
-                window.localStorage.removeItem('spms.rememberedAccount');
+        fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                email: userAccount,
+                password: password,
+            }),
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Invalid credentials');
             }
-
+            return response.json();
+        })
+        .then(data => {
+            if (data.token) {
+                // Store token
+                localStorage.setItem('auth_token', data.token);
+                if (rememberInput.checked) {
+                    localStorage.setItem('spms.rememberedAccount', userAccount);
+                } else {
+                    localStorage.removeItem('spms.rememberedAccount');
+                }
+                setStatus('Login successful! Redirecting...', 'success');
+                // Redirect to dashboard or profile
+                window.location.href = '/profile.html';
+            } else {
+                throw new Error(data.error || 'Login failed');
+            }
+        })
+        .catch(error => {
+            setStatus(error.message, 'error');
+        })
+        .finally(() => {
             submitButton.disabled = false;
             submitButton.textContent = 'Sign in';
-            setStatus('Front-end sign in interaction is ready. Connect this form to your login API next.', 'success');
-        }, 700);
+        });
     });
 }
