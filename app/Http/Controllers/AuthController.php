@@ -143,4 +143,29 @@ class AuthController extends Controller
             'Lax'
         );
     }
+
+    public function updateProfile(Request $request): JsonResponse
+{
+    $user = Auth::guard('api')->user();
+
+    $request->validate([
+        'first_name'      => 'required|string|max:255',
+        'last_name'       => 'nullable|string|max:255',
+        'email'           => 'required|email|unique:tblusers,email,' . $user->user_id . ',user_id',
+        'mobile'          => 'nullable|string|max:20',
+        'address'         => 'nullable|string|max:255',
+        'profile_picture' => 'nullable|string',
+    ]);
+
+    $user->update($request->only([
+        'first_name', 'last_name', 'email',
+        'mobile', 'address', 'profile_picture',
+    ]));
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Profile updated successfully.',
+        'data'    => $user->fresh(),
+    ]);
+}
 }

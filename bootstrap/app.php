@@ -4,6 +4,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 
@@ -30,6 +31,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             \App\Http\Middleware\JwtCookieMiddleware::class,
         ]);
+
+
+        $middleware->alias([
+            'jwt.auth'    => \Tymon\JWTAuth\Middleware\GetUserFromToken::class,
+            'jwt.refresh' => \Tymon\JWTAuth\Middleware\RefreshToken::class,
+        ]);
+
     })
 
     // ── Exception Handling ───────────────────────────────────────
