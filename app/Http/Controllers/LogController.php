@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Log;
+use App\Http\Requests\StoreLogRequest;
+use App\Http\Requests\UpdateLogRequest;
 use App\Services\LogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,11 +18,12 @@ class LogController extends Controller
         $this->logService = $logService;
     }
 
+    // GET filter validation kept inline — read-only filter, not a write operation
     public function index(Request $request): JsonResponse
     {
         $filters = $request->validate([
             'user_id' => ['nullable', 'integer', Rule::exists('tblusers', 'user_id')],
-            'states' => ['nullable', 'string', 'max:255'],
+            'states'  => ['nullable', 'string', 'max:255'],
         ]);
 
         return response()->json([
@@ -40,26 +42,22 @@ class LogController extends Controller
         return response()->json(['data' => $log], 200);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreLogRequest $request): JsonResponse
     {
-        $data = $request->validate($this->rules());
-        $log = $this->logService->create($data);
+        $log = $this->logService->create($request->validated());
 
         return response()->json(['message' => 'Created', 'data' => $log], 201);
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateLogRequest $request, int $id): JsonResponse
     {
-        $log = Log::find($id);
+        $updated = $this->logService->update($id, $request->validated());
 
-        if (!$log) {
-            return response()->json(['message' => 'Not found'], 404);
+        if (!$updated) {
+            return response()->json(['message' => 'Not found or update failed'], 404);
         }
 
-        $data = $request->validate($this->rules($log));
-        $updated = $this->logService->update($id, $data);
-
-        return response()->json(['message' => 'Updated', 'data' => $updated], 200);
+        return response()->json(['message' => 'Updated'], 200);
     }
 
     public function destroy(int $id): JsonResponse
@@ -71,18 +69,5 @@ class LogController extends Controller
         }
 
         return response()->json(['message' => 'Deleted'], 200);
-    }
-
-    protected function rules(?Log $log = null): array
-    {
-        return [
-            'user_id' => [
-                $log ? 'sometimes' : 'required',
-                'integer',
-                Rule::exists('tblusers', 'user_id'),
-            ],
-            'operation' => [$log ? 'sometimes' : 'required', 'string'],
-            'states' => ['nullable', 'string', 'max:255'],
-        ];
     }
 }

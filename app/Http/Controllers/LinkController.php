@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Link;
+use App\Http\Requests\StoreLinkRequest;
+use App\Http\Requests\UpdateLinkRequest;
 use App\Services\LinkService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,11 +18,18 @@ class LinkController extends Controller
         $this->linkService = $linkService;
     }
 
+    // GET filter validation is intentionally kept inline — it is not a
+    // write operation and doesn't need a dedicated FormRequest.
     public function index(Request $request): JsonResponse
     {
         $filters = $request->validate([
             'plan_id' => ['nullable', 'integer', Rule::exists('tblstrategic_record', 'record_id')],
-            'core_value_id' => ['nullable', 'integer', $this->coreValueExistsRule()],
+            'core_value_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('tblstrategic_foundations', 'foundation_id')
+                    ->where('type', 'CORE_VALUE'),
+            ],
         ]);
 
         return response()->json([
@@ -40,26 +48,22 @@ class LinkController extends Controller
         return response()->json(['data' => $link], 200);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreLinkRequest $request): JsonResponse
     {
-        $data = $request->validate($this->rules());
-        $link = $this->linkService->create($data);
+        $link = $this->linkService->create($request->validated());
 
         return response()->json(['message' => 'Created', 'data' => $link], 201);
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateLinkRequest $request, int $id): JsonResponse
     {
-        $link = Link::find($id);
+        $updated = $this->linkService->update($id, $request->validated());
 
-        if (!$link) {
-            return response()->json(['message' => 'Not found'], 404);
+        if (!$updated) {
+            return response()->json(['message' => 'Not found or update failed'], 404);
         }
 
-        $data = $request->validate($this->rules($link));
-        $updated = $this->linkService->update($id, $data);
-
-        return response()->json(['message' => 'Updated', 'data' => $updated], 200);
+        return response()->json(['message' => 'Updated'], 200);
     }
 
     public function destroy(int $id): JsonResponse
@@ -83,11 +87,12 @@ class LinkController extends Controller
     public function syncCoreValues(Request $request, int $planId): JsonResponse
     {
         $data = $request->validate([
-            'core_value_ids' => ['array'],
+            'core_value_ids'   => ['array'],
             'core_value_ids.*' => [
                 'integer',
                 'distinct',
-                $this->coreValueExistsRule(),
+                Rule::exists('tblstrategic_foundations', 'foundation_id')
+                    ->where('type', 'CORE_VALUE'),
             ],
             'created_by' => ['required', 'integer', Rule::exists('tblusers', 'user_id')],
             'updated_by' => ['required', 'integer', Rule::exists('tblusers', 'user_id')],
@@ -101,42 +106,5 @@ class LinkController extends Controller
         );
 
         return response()->json(['message' => 'Updated', 'data' => $links], 200);
-    }
-
-    protected function rules(?Link $link = null): array
-    {
-        $planId = request('plan_id', $link?->plan_id);
-
-        return [
-            'core_value_id' => [
-                $link ? 'sometimes' : 'required',
-                'integer',
-                $this->coreValueExistsRule(),
-                Rule::unique('tblplan_core_value')
-                    ->where('plan_id', $planId)
-                    ->ignore($link?->link_id, 'link_id'),
-            ],
-            'plan_id' => [
-                $link ? 'sometimes' : 'required',
-                'integer',
-                Rule::exists('tblstrategic_record', 'record_id'),
-            ],
-            'created_by' => [
-                $link ? 'sometimes' : 'required',
-                'integer',
-                Rule::exists('tblusers', 'user_id'),
-            ],
-            'updated_by' => [
-                $link ? 'sometimes' : 'required',
-                'integer',
-                Rule::exists('tblusers', 'user_id'),
-            ],
-        ];
-    }
-
-    protected function coreValueExistsRule()
-    {
-        return Rule::exists('tblstrategic_foundations', 'foundation_id')
-            ->where('type', 'CORE_VALUE');
     }
 }

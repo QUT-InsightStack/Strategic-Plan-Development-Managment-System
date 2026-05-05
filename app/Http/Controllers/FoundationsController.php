@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\StrategicFoundations;
+use App\Http\Requests\StoreFoundationsRequest;
+use App\Http\Requests\UpdateFoundationsRequest;
 use App\Services\FoundationsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ class FoundationsController extends Controller
     public function index(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'type' => ['nullable', 'string', Rule::in($this->types())],
+            'type' => ['nullable', 'string', Rule::in(['MISSION', 'VISION', 'CORE_VALUE'])],
         ]);
 
         return response()->json([
@@ -39,26 +40,22 @@ class FoundationsController extends Controller
         return response()->json(['data' => $foundation], 200);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreFoundationsRequest $request): JsonResponse
     {
-        $data = $request->validate($this->rules());
-        $foundation = $this->foundationsService->create($data);
+        $foundation = $this->foundationsService->create($request->validated());
 
         return response()->json(['message' => 'Created', 'data' => $foundation], 201);
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateFoundationsRequest $request, int $id): JsonResponse
     {
-        $foundation = StrategicFoundations::find($id);
+        $updated = $this->foundationsService->update($id, $request->validated());
 
-        if (!$foundation) {
-            return response()->json(['message' => 'Not found'], 404);
+        if (!$updated) {
+            return response()->json(['message' => 'Not found or update failed'], 404);
         }
 
-        $data = $request->validate($this->rules($foundation));
-        $updated = $this->foundationsService->update($id, $data);
-
-        return response()->json(['message' => 'Updated', 'data' => $updated], 200);
+        return response()->json(['message' => 'Updated'], 200);
     }
 
     public function destroy(int $id): JsonResponse
@@ -70,37 +67,5 @@ class FoundationsController extends Controller
         }
 
         return response()->json(['message' => 'Deleted'], 200);
-    }
-
-    protected function rules(?StrategicFoundations $foundation = null): array
-    {
-        return [
-            'created_by' => [
-                $foundation ? 'sometimes' : 'required',
-                'integer',
-                Rule::exists('tblusers', 'user_id'),
-            ],
-            'updated_by' => [
-                'nullable',
-                'integer',
-                Rule::exists('tblusers', 'user_id'),
-            ],
-            'type' => [
-                $foundation ? 'sometimes' : 'required',
-                'string',
-                Rule::in($this->types()),
-            ],
-            'content' => [$foundation ? 'sometimes' : 'required', 'string'],
-            'version' => [$foundation ? 'sometimes' : 'required', 'string', 'max:255'],
-        ];
-    }
-
-    protected function types(): array
-    {
-        return [
-            'MISSION',
-            'VISION',
-            'CORE_VALUE',
-        ];
     }
 }

@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\RolePremission;
+use App\Http\Requests\StoreRolePremissionRequest;
+use App\Http\Requests\UpdateRolePremissionRequest;
 use App\Services\RolePremissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ class RolePremissionController extends Controller
     public function index(Request $request): JsonResponse
     {
         $filters = $request->validate([
-            'role_id' => ['nullable', 'integer', Rule::exists('tblroles', 'role_id')],
+            'role_id'       => ['nullable', 'integer', Rule::exists('tblroles', 'role_id')],
             'permission_id' => ['nullable', 'integer', Rule::exists('tblpermissions', 'permission_id')],
         ]);
 
@@ -40,26 +41,22 @@ class RolePremissionController extends Controller
         return response()->json(['data' => $rolePremission], 200);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreRolePremissionRequest $request): JsonResponse
     {
-        $data = $request->validate($this->rules());
-        $rolePremission = $this->rolePremissionService->create($data);
+        $rolePremission = $this->rolePremissionService->create($request->validated());
 
         return response()->json(['message' => 'Created', 'data' => $rolePremission], 201);
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateRolePremissionRequest $request, int $id): JsonResponse
     {
-        $rolePremission = RolePremission::find($id);
+        $updated = $this->rolePremissionService->update($id, $request->validated());
 
-        if (!$rolePremission) {
-            return response()->json(['message' => 'Not found'], 404);
+        if (!$updated) {
+            return response()->json(['message' => 'Not found or update failed'], 404);
         }
 
-        $data = $request->validate($this->rules($rolePremission));
-        $updated = $this->rolePremissionService->update($id, $data);
-
-        return response()->json(['message' => 'Updated', 'data' => $updated], 200);
+        return response()->json(['message' => 'Updated'], 200);
     }
 
     public function destroy(int $id): JsonResponse
@@ -83,7 +80,7 @@ class RolePremissionController extends Controller
     public function syncPermissions(Request $request, int $roleId): JsonResponse
     {
         $data = $request->validate([
-            'permission_ids' => ['array'],
+            'permission_ids'   => ['array'],
             'permission_ids.*' => [
                 'integer',
                 'distinct',
@@ -97,26 +94,5 @@ class RolePremissionController extends Controller
         );
 
         return response()->json(['message' => 'Updated', 'data' => $relations], 200);
-    }
-
-    protected function rules(?RolePremission $rolePremission = null): array
-    {
-        $roleId = request('role_id', $rolePremission?->role_id);
-
-        return [
-            'role_id' => [
-                $rolePremission ? 'sometimes' : 'required',
-                'integer',
-                Rule::exists('tblroles', 'role_id'),
-            ],
-            'permission_id' => [
-                $rolePremission ? 'sometimes' : 'required',
-                'integer',
-                Rule::exists('tblpermissions', 'permission_id'),
-                Rule::unique('tblrole_permissions')
-                    ->where('role_id', $roleId)
-                    ->ignore($rolePremission?->relation_id, 'relation_id'),
-            ],
-        ];
     }
 }

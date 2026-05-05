@@ -2,90 +2,170 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\LoginRequest;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use Tymon\JWTAuth\Facades\JWTAuth;
-use Tymon\JWTAuth\Exceptions\JWTException;
-use App\Models\User;
+use Symfony\Component\HttpFoundation\Cookie;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string|min:6',
-        ]);
+    // ─── Login ───────────────────────────────────────────────────────
 
+    public function login(LoginRequest $request): JsonResponse
+    {
         $credentials = $request->only('email', 'password');
 
-        try {
-            if (!$token = JWTAuth::attempt($credentials)) {
-                return response()->json(['error' => 'Invalid credentials'], 401);
-            }
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'Could not create token'], 500);
-        }
+        $token = Auth::guard('api')->attempt($credentials);
 
-        $user = Auth::user();
+        if (! $token) {
+            // generic message — never reveal whether the email exists
+            return response()->json([
+                'success' => false,
+                'message' => 'The provided credentials are incorrect.',
+            ], 401);
+        }
 
         return response()->json([
-            'message' => 'Login successful',
-            'user' => $user,
-            'token' => $token,
-        ]);
+            'success' => true,
+            'message' => 'Logged in successfully.',
+        ])->withCookie($this->makeAccessCookie($token));
     }
 
-    public function logout(Request $request)
+    // ─── Logout ──────────────────────────────────────────────────────
+
+    public function logout(): JsonResponse
     {
-        try {
-            JWTAuth::invalidate(JWTAuth::getToken());
-            return response()->json(['message' => 'Successfully logged out']);
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'Failed to logout'], 500);
-        }
-    }
-
-    public function refresh()
-    {
-        try {
-            $token = JWTAuth::refresh(JWTAuth::getToken());
-            return response()->json(['token' => $token]);
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'Token refresh failed'], 401);
-        }
-    }
-
-    public function me()
-    {
-        return response()->json(Auth::user());
-    }
-
-    public function updateProfile(Request $request)
-    {
-        $user = Auth::user();
-
-        $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'nullable|string|max:255',
-            'email' => 'required|email|unique:tblusers,email,' . $user->user_id . ',user_id',
-            'mobile' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:255',
-            'profile_picture' => 'nullable|string',
-        ]);
-
-        $user->update($request->only([
-            'first_name',
-            'last_name',
-            'email',
-            'mobile',
-            'address',
-            'profile_picture',
-        ]));
+        Auth::guard('api')->logout();       // blacklists current token
 
         return response()->json([
-            'message' => 'Profile updated successfully',
-            'user' => $user->fresh(),
+            'success' => true,
+            'message' => 'Logged out successfully.',
+        ])->withCookie($this->forgetAccessCookie());
+    }
+
+    // ─── Refresh ─────────────────────────────────────────────────────
+
+    /**
+     * Rotate the JWT. This accepts expired tokens (within the
+     * refresh_ttl window) so it must not sit behind auth:api
+     * middleware which rejects expired tokens outright.
+     */
+    public function refresh(): JsonResponse
+    {
+        try {
+            $newToken = Auth::guard('api')->refresh();
+        } catch (\Tymon\JWTAuth\Exceptions\TokenInvalidException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token is invalid.',
+            ], 401)->withCookie($this->forgetAccessCookie());
+        } catch (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token has expired and cannot be refreshed.',
+            ], 401)->withCookie($this->forgetAccessCookie());
+        } catch (\Tymon\JWTAuth\Exceptions\JWTException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to refresh token.',
+            ], 401)->withCookie($this->forgetAccessCookie());
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Token refreshed successfully.',
+        ])->withCookie($this->makeAccessCookie($newToken));
+    }
+
+    // ─── Me ──────────────────────────────────────────────────────────
+
+    public function me(): JsonResponse
+    {
+        $user = Auth::guard('api')->user();
+        $user->load('role');
+
+        return response()->json([
+            'success' => true,
+            'data'    => $user,
         ]);
     }
+
+    // ─── Cookie Helpers ──────────────────────────────────────────────
+
+    /**
+     * to build the HttpOnly access_token cookie.
+     *
+     * - HttpOnly = true  → JavaScript cannot read it (XSS protection)
+     * - Secure   = env   → true in production (HTTPS only), false for local HTTP
+     * - SameSite = Lax   → blocks cross-site POST (CSRF protection)
+     * - TTL      = jwt   → cookie expires when the JWT expires
+     */
+    protected function makeAccessCookie(string $token): Cookie
+    {
+        $minutes = (int) config('jwt.ttl', 30);
+        $secure  = filter_var(
+            env('JWT_COOKIE_SECURE', false),
+            FILTER_VALIDATE_BOOLEAN
+        );
+
+        return cookie(
+            'access_token',     // name
+            $token,             // value
+            $minutes,           // lifetime in minutes
+            '/',                // path — sent on every request to this domain
+            null,               // domain — current domain
+            $secure,            // Secure flag
+            true,               // HttpOnly flag
+            false,              // raw
+            'Lax'               // SameSite
+        );
+    }
+
+    /**
+     * Create an expired cookie to clear the token from the browser.
+     */
+    protected function forgetAccessCookie(): Cookie
+    {
+        $secure = filter_var(
+            env('JWT_COOKIE_SECURE', false),
+            FILTER_VALIDATE_BOOLEAN
+        );
+
+        return cookie(
+            'access_token',
+            '',
+            -1,                 // negative = expired immediately
+            '/',
+            null,
+            $secure,
+            true,
+            false,
+            'Lax'
+        );
+    }
+
+    public function updateProfile(Request $request): JsonResponse
+{
+    $user = Auth::guard('api')->user();
+
+    $request->validate([
+        'first_name'      => 'required|string|max:255',
+        'last_name'       => 'nullable|string|max:255',
+        'email'           => 'required|email|unique:tblusers,email,' . $user->user_id . ',user_id',
+        'mobile'          => 'nullable|string|max:20',
+        'address'         => 'nullable|string|max:255',
+        'profile_picture' => 'nullable|string',
+    ]);
+
+    $user->update($request->only([
+        'first_name', 'last_name', 'email',
+        'mobile', 'address', 'profile_picture',
+    ]));
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Profile updated successfully.',
+        'data'    => $user->fresh(),
+    ]);
+}
 }
