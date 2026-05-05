@@ -10,10 +10,13 @@ Before setting up the project, ensure the following tools are installed:
 
 * PHP (>= 8.3)
 * Composer
-* Node.js and npm
+* Node.js(>=20.19.0) and npm
+⚠️ It is strongly recommended to use the latest Node.js LTS version instead of the Current release version, as some frontend dependencies may not be fully compatible with non-LTS releases.
 * Git
 
 This project requires PHP and Composer to be installed and properly configured before proceeding.
+
+This project is built with Laravel and Vite. Because Vite requires a relatively recent version of Node.js, using an outdated Node.js version may cause the frontend to fail at runtime due to missing dependencies. Please install the latest stable version of Node.js and complete the frontend environment setup before running the project.
 
 ---
 
@@ -191,7 +194,7 @@ C:\Users<username>\AppData\Roaming\Composer\auth.json
 
 Clone the project from GitHub:
 
-git clone https://github.com/Yufei0122/Strategic-Plan-Development-Management-System
+git clone https://github.com/QUT-InsightStack/Strategic-Plan-Development-Managment-System
 
 Navigate into the project directory:
 
@@ -248,7 +251,7 @@ SOURCE init_db.sql;
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=db_spdms
+DB_DATABASE=dbspdms
 DB_USERNAME=your_username
 DB_PASSWORD=your_password
 
@@ -270,31 +273,47 @@ php artisan db:seed
 
 After completing the environment and database configuration, the application can be started as follows.
 
+⚠️ During development, both the Laravel backend server and the Vite frontend development server must be running at the same time.
+
 ---
 
 ### Step 1: Start Laravel Development Server
 
-Run the following command:
+Open the first terminal in the project root directory and run:
 
 ```bash
 php artisan serve
 ```
 
-The application will be available at:
+The Laravel backend server will start at:
 
+```txt
 http://127.0.0.1:8000
+```
+
+Keep this terminal running during development.
 
 ---
 
 ### Step 2: Start Frontend Development Server
 
-In a separate terminal, run:
+Open a second terminal in the same project directory and run:
 
 ```bash
 npm run dev
 ```
 
-This compiles frontend assets using Vite.
+If successful, the terminal should display output similar to:
+
+```txt
+VITE v8.x.x ready
+
+➜ Local:   http://localhost:5173/
+```
+
+This starts the Vite development server for frontend asset compilation.
+
+Keep this terminal running during development.
 
 ---
 
@@ -302,11 +321,30 @@ This compiles frontend assets using Vite.
 
 Open your browser and visit:
 
+```txt
 http://127.0.0.1:8000
+```
 
 If the Laravel welcome page is displayed, the application is running successfully.
 
 ---
+
+## Important Notes
+
+* Both terminals must remain running during development
+* `php artisan serve` runs the Laravel backend server
+* `npm run dev` runs the Vite frontend development server
+* Do NOT close either terminal while developing
+
+If the frontend server is not running, Laravel may report errors such as:
+
+```txt
+Vite manifest not found at:
+public/build/manifest.json
+```
+
+This usually means the Vite development server has not been started.
+
 
 ## 11. Verification
 
@@ -366,6 +404,8 @@ If dependencies are missing:
 composer install
 npm install
 
+If frontend dependencies still fail to install or the frontend reports missing modules at runtime, verify that your local Node.js version meets the project requirement before reinstalling dependencies.
+
 ---
 
 ### Port Already in Use
@@ -385,6 +425,24 @@ Run:
 ```bash
 npm run dev
 ```
+
+If the issue persists, check whether your Node.js version is up to date, then run `npm install` again.
+
+If you encounter the following error:
+
+```txt
+Vite manifest not found at:
+public/build/manifest.json
+```
+
+Ensure that the frontend development server is running:
+
+```bash
+npm run dev
+```
+
+This project uses Laravel + Vite, which requires the Vite development server during local development.
+
 
 ---
 

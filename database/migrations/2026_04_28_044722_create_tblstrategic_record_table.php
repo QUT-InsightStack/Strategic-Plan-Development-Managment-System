@@ -16,9 +16,11 @@ return new class extends Migration
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->string('level');
-            $table->text('content');
-            $table->unsignedBigInteger('mission');
-            $table->unsignedBigInteger('vision');
+            $table->string('title', 255);
+            $table->text('description')->nullable();
+            $table->string('file_path')->nullable();
+            $table->unsignedBigInteger('mission_id');
+            $table->unsignedBigInteger('vision_id');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
 
@@ -32,17 +34,17 @@ return new class extends Migration
                   ->on('tblusers')
                   ->nullOnDelete('cascade');
             
-            $table->foreign('mission')
+            $table->foreign('mission_id')
                 ->references('foundation_id')
                 ->on('tblstrategic_foundations')
                 ->onDelete('cascade');
-            $table->foreign('vision')
+            $table->foreign('vision_id')
                 ->references('foundation_id')
                 ->on('tblstrategic_foundations')
                 ->onDelete('cascade');
             
-                $table->index('mission');
-                $table->index('vision');
+                $table->index('mission_id');
+                $table->index('vision_id');
         });
     }
 

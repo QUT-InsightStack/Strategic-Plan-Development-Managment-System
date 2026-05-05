@@ -1,1 +1,1 @@
-CREATE DATABASE db_spdms;
+CREATE DATABASE dbspdms;

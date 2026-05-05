@@ -42,6 +42,13 @@ Route::middleware('auth:api')->group(function () {
 // ╚═══════════════════════════════════════════════════════════════════╝
 
 
+// Auth routes
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('jwt.auth');
+Route::post('/refresh', [AuthController::class, 'refresh'])->middleware('jwt.refresh');
+Route::get('/me', [AuthController::class, 'me'])->middleware('jwt.auth');
+Route::put('/profile', [AuthController::class, 'updateProfile'])->middleware('jwt.auth');
+
 // Use resource routes to define complete CRUD operations
 // Laravel's Route::resource automatically creates the following routes for UserController:
 // GET /users -> index() method, list all users
