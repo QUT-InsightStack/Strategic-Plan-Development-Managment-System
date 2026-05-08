@@ -4,7 +4,7 @@ const rootElement = document.getElementById('root');
 
 const apiConfig = {
     profileUrl: rootElement?.dataset?.profileUrl || '/api/me',
-    updateUrl: '/api/profile',
+    updateUrl: rootElement?.dataset?.updateUrl || '/api/profile',
 };
 
 const initialProfile = {
@@ -29,7 +29,7 @@ const messages = {
 function Brand() {
     return React.createElement(
         'a',
-        { className: 'brand', href: './', 'aria-label': 'Strategic planning Management System home' },
+        { className: 'brand', href: '/dashboard.html', 'aria-label': 'Strategic planning Management System home' },
         React.createElement(
             'span',
             { className: 'brand-mark', 'aria-hidden': 'true' },
@@ -50,6 +50,7 @@ function Header({ onMessage, onLogout }) {
         React.createElement(
             'nav',
             { className: 'top-nav', 'aria-label': 'Primary navigation' },
+            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => window.location.href = '/dashboard.html' }, 'Dashboard'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.help) }, 'Help'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.contact) }, 'Contact'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.support) }, 'Support'),
@@ -167,32 +168,29 @@ function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
         }
     }, [avatar]);
 
-    function getAuthToken() {
-        return localStorage.getItem('auth_token');
-    }
-
     function loadProfile() {
-        const token = getAuthToken();
-        if (!token) {
-            setStatus('Authentication required. Please log in.', 'error');
-            setLoading(false);
-            return;
-        }
-
         fetch(apiConfig.profileUrl, {
+            method: 'GET',
+            credentials: 'include',
             headers: {
-                'Authorization': `Bearer ${token}`,
                 'Accept': 'application/json',
             },
         })
         .then(response => {
             if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    window.location.href = '/login.html';
+                }
                 throw new Error('Failed to load profile');
             }
             return response.json();
         })
         .then(data => {
-            const payload = data.user && typeof data.user === 'object' ? data.user : data;
+            if (data.success === false) {
+                throw new Error(data.message || 'Failed to load profile data.');
+            }
+
+            const payload = data?.data || data?.user || data;
             const profileData = {
                 user_id: payload.user_id || payload.id || '',
                 first_name: payload.first_name || '',
@@ -259,18 +257,12 @@ function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
             return;
         }
 
-        const token = getAuthToken();
-        if (!token) {
-            setStatus('Authentication required. Please log in.', 'error');
-            return;
-        }
-
         setStatus('Saving...', 'info');
 
         fetch(apiConfig.updateUrl, {
             method: 'PUT',
+            credentials: 'include',
             headers: {
-                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
             },
@@ -286,6 +278,9 @@ function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
         .then(response => {
             if (!response.ok) {
                 return response.json().then(data => {
+                    if (data.errors && typeof data.errors === 'object') {
+                        setErrors(data.errors);
+                    }
                     throw new Error(data.message || 'Failed to update profile');
                 });
             }
@@ -381,7 +376,6 @@ return React.createElement(
                 React.createElement(
                     'div',
                     { className: 'field-stack' },
-
                     React.createElement(TextField, {
                         id: 'first_name',
                         label: 'First Name',
@@ -481,27 +475,21 @@ function ProfileApp() {
     }
 
     function handleLogout() {
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-            window.location.href = '/';
-            return;
-        }
-
         fetch('/api/logout', {
             method: 'POST',
+            credentials: 'include',
             headers: {
-                'Authorization': `Bearer ${token}`,
                 'Accept': 'application/json',
             },
         })
         .then(() => {
             localStorage.removeItem('auth_token');
-            window.location.href = '/';
+            window.location.href = '/login.html';
         })
         .catch(() => {
             // Even if logout fails, clear token and redirect
             localStorage.removeItem('auth_token');
-            window.location.href = '/';
+            window.location.href = '/login.html';
         });
     }
 

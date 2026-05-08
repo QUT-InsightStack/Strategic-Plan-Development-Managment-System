@@ -16,9 +16,11 @@ class Strategic extends Model
         'created_by',
         'updated_by',
         'level',
-        'content',
-        'mission',
-        'vision',
+        'title',
+        'description',
+        'file_path',
+        'mission_id',
+        'vision_id',
     ];
 
     public function creator()
@@ -33,12 +35,12 @@ class Strategic extends Model
 
     public function missionFoundation()
     {
-        return $this->belongsTo(StrategicFoundations::class, 'mission', 'foundation_id');
+        return $this->belongsTo(StrategicFoundations::class, 'mission_id', 'foundation_id');
     }
 
     public function visionFoundation()
     {
-        return $this->belongsTo(StrategicFoundations::class, 'vision', 'foundation_id');
+        return $this->belongsTo(StrategicFoundations::class, 'vision_id', 'foundation_id');
     }
 
     public function parents()
