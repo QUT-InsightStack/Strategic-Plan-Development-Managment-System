@@ -20,8 +20,18 @@ class StoreStrategicRequest extends ApiFormRequest
             'title'        => ['required', 'string', 'max:255'],
             'description'  => ['sometimes', 'nullable', 'string'],
             'file_path'    => ['sometimes', 'nullable', 'string', 'max:255'],
-            'mission_id'   => ['required', 'integer', Rule::exists('tblstrategic_foundations', 'foundation_id')],
-            'vision_id'    => ['required', 'integer', Rule::exists('tblstrategic_foundations', 'foundation_id')],
+            'mission_id'   => [
+                'required',
+                'integer',
+                Rule::exists('tblstrategic_foundations', 'foundation_id')
+                    ->where('type', 'MISSION'),         // ← only accepts MISSION type
+            ],
+            'vision_id'    => [
+                'required',
+                'integer',
+                Rule::exists('tblstrategic_foundations', 'foundation_id')
+                    ->where('type', 'VISION'),          // ← only accepts VISION type
+            ],
             'parent_ids'   => ['sometimes', 'array'],
             'parent_ids.*' => [
                 'integer',
