@@ -16,9 +16,12 @@ class Strategic extends Model
         'created_by',
         'updated_by',
         'level',
-        'content',
-        'mission',
-        'vision',
+        'title',
+        'description',
+        'file_path',
+        'mission_id',
+        'vision_id',
+
     ];
 
     public function creator()
