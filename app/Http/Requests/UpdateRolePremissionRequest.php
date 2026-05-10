@@ -31,7 +31,7 @@ class UpdateRolePremissionRequest extends ApiFormRequest
                 Rule::exists('tblpermissions', 'permission_id'),
                 Rule::unique('tblrole_permissions')
                     ->where('role_id', $roleId)
-                    ->ignore($rolePremissionId, 'id'),
+                    ->ignore($rolePremissionId, 'relation_id'),
             ],
         ];
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Cookie;
 
@@ -28,6 +29,7 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Logged in successfully.',
+            'token'   => $token,
         ])->withCookie($this->makeAccessCookie($token));
     }
 
