@@ -13,7 +13,6 @@ class UpdateStrategicRequest extends ApiFormRequest
 
     public function rules(): array
     {
-        // Route::apiResource('strategic-records', ...) → parameter name: {strategic_record}
         $recordId = $this->route('strategic_record');
 
         return [
@@ -21,17 +20,36 @@ class UpdateStrategicRequest extends ApiFormRequest
             'updated_by'   => ['nullable', 'integer', Rule::exists('tblusers', 'user_id')],
             'level'        => ['sometimes', 'string', 'max:255'],
             'title'        => ['sometimes', 'string', 'max:255'],
-            'description'  => ['nullable', 'string'],
-            'file_path'    => ['nullable', 'string', 'max:255'],
-            'mission_id'   => ['sometimes', 'integer', Rule::exists('tblstrategic_foundations', 'foundation_id')],
-            'vision_id'    => ['sometimes', 'integer', Rule::exists('tblstrategic_foundations', 'foundation_id')],
+            'description'  => ['sometimes', 'nullable', 'string'],
+            'file_path'    => ['sometimes', 'nullable', 'string', 'max:255'],
+            'mission_id'   => [
+                'sometimes',
+                'integer',
+                Rule::exists('tblstrategic_foundations', 'foundation_id')
+                    ->where('type', 'MISSION'),         // ← only accepts MISSION type
+            ],
+            'vision_id'    => [
+                'sometimes',
+                'integer',
+                Rule::exists('tblstrategic_foundations', 'foundation_id')
+                    ->where('type', 'VISION'),          // ← only accepts VISION type
+            ],
             'parent_ids'   => ['sometimes', 'array'],
             'parent_ids.*' => [
                 'integer',
                 'distinct',
                 Rule::exists('tblstrategic_record', 'record_id'),
-                Rule::notIn([$recordId]),   // prevent self-reference
+                Rule::notIn([$recordId]),
             ],
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'mission_id' => 'mission',
+            'vision_id'  => 'vision',
+            'file_path'  => 'file',
         ];
     }
 }
