@@ -158,8 +158,9 @@ function LoginForm({ status, setStatus }) {
                 password,
             });
 
-            // Store the token
-            localStorage.setItem('auth_token', data.token);
+            if (!data.success) {
+                throw new Error(data.message || 'Unable to sign in.');
+            }
 
             if (remember) {
                 window.localStorage.setItem('spms.rememberedEmail', email.trim());
@@ -167,10 +168,9 @@ function LoginForm({ status, setStatus }) {
                 window.localStorage.removeItem('spms.rememberedEmail');
             }
 
-            setStatus('Signed in successfully.', 'success');
-            // Redirect to profile page
+            setStatus('Signed in successfully. Redirecting...', 'success');
             setTimeout(() => {
-                window.location.href = '/profile.html';
+                window.location.href = '/dashboard.html';
             }, 1000);
         } catch (error) {
             setStatus(error.message, 'error');
@@ -194,13 +194,13 @@ function LoginForm({ status, setStatus }) {
             React.createElement(
                 'div',
                 { className: `field-group ${errors.email ? 'has-error' : ''}` },
-                React.createElement('label', { htmlFor: 'email' }, 'User account'),
+                React.createElement('label', { htmlFor: 'email' }, 'Email'),
                 React.createElement('input', {
                     id: 'email',
                     name: 'email',
                     type: 'email',
                     autoComplete: 'email',
-                    placeholder: 'Please sign in to continue...',
+                    placeholder: 'Enter your email address',
                     value: email,
                     onChange: (event) => setEmail(event.target.value),
                 }),

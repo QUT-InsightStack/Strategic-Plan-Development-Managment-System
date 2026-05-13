@@ -36,12 +36,12 @@ class Strategic extends Model
 
     public function missionFoundation()
     {
-        return $this->belongsTo(StrategicFoundations::class, 'mission', 'foundation_id');
+        return $this->belongsTo(StrategicFoundations::class, 'mission_id', 'foundation_id');
     }
 
     public function visionFoundation()
     {
-        return $this->belongsTo(StrategicFoundations::class, 'vision', 'foundation_id');
+        return $this->belongsTo(StrategicFoundations::class, 'vision_id', 'foundation_id');
     }
 
     public function parents()

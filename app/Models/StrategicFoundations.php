@@ -32,12 +32,12 @@ class StrategicFoundations extends Model
 
     public function missionRecords()
     {
-        return $this->hasMany(Strategic::class, 'mission', 'foundation_id');
+        return $this->hasMany(Strategic::class, 'mission_id', 'foundation_id');
     }
 
     public function visionRecords()
     {
-        return $this->hasMany(Strategic::class, 'vision', 'foundation_id');
+        return $this->hasMany(Strategic::class, 'vision_id', 'foundation_id');
     }
 
     public function coreValueLinks()
