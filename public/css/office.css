@@ -1,0 +1,582 @@
+/* ── office.css — Figma Design System (SPDMS-211) ──────────────────────────── */
+
+body {
+    background-color: #f5f7fa;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────────── */
+
+.sidebar {
+    width: 230px;
+    height: 100vh;
+    background: #ffffff;
+    border-right: 1px solid #dce3eb;
+    padding: 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    transition: width 0.3s;
+    overflow: hidden;
+}
+
+.sidebar.collapsed {
+    width: 70px;
+}
+
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 28px;
+    text-decoration: none;
+}
+
+.sidebar-logo-mark {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 3px;
+    padding: 4px;
+    border-radius: 6px;
+    background: #1f4fa5;
+    flex-shrink: 0;
+}
+
+.sidebar-logo-mark span {
+    border-radius: 2px;
+    background: #ffffff;
+}
+
+.sidebar-logo-mark span:nth-child(2),
+.sidebar-logo-mark span:nth-child(3) {
+    background: #5eb7ff;
+}
+
+.sidebar-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1f4fa5;
+    white-space: nowrap;
+    margin: 0;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    margin-bottom: 2px;
+    border-radius: 6px;
+    color: #333;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-item:hover,
+.sidebar-item.active {
+    background-color: #e7f1ff;
+    color: #0d6efd;
+}
+
+.sidebar-item-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.sidebar-item-label {
+    overflow: hidden;
+    transition: opacity 0.2s;
+}
+
+.sidebar.collapsed .sidebar-item-label,
+.sidebar.collapsed .sidebar-title {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.collapse-btn {
+    margin-top: 20px;
+    width: 100%;
+    border: none;
+    background: #e7f1ff;
+    padding: 8px;
+    border-radius: 6px;
+    color: #0d6efd;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.collapse-btn:hover {
+    background: #d0e4ff;
+}
+
+/* ── Main Content ─────────────────────────────────────────────────────────── */
+
+.main-content {
+    margin-left: 230px;
+    padding: 30px;
+    min-height: 100vh;
+    transition: margin-left 0.3s;
+}
+
+.main-content.expanded {
+    margin-left: 70px;
+}
+
+/* ── Page Header ──────────────────────────────────────────────────────────── */
+
+.office-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.office-page-title {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+    color: #1a1a2e;
+}
+
+.office-page-subtitle {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.office-header-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* ── Filter Box ───────────────────────────────────────────────────────────── */
+
+.filter-box {
+    background: #fff;
+    border: 1px solid #dce3eb;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+/* ── Task / Section Cards ─────────────────────────────────────────────────── */
+
+.task-card {
+    background: #fff;
+    border: 1px solid #dce3eb;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.task-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #dce3eb;
+}
+
+.task-card-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a2e;
+}
+
+.task-card-icon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.task-card-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.icon-mission { background: #e7f1ff; color: #0d6efd; }
+.icon-vision  { background: #ecfdf5; color: #059669; }
+.icon-values  { background: #fff7ed; color: #ea580c; }
+
+.task-card-subtitle {
+    margin: 0 0 16px;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.task-card-body {
+    display: grid;
+    gap: 14px;
+}
+
+/* ── Display text (read mode) ─────────────────────────────────────────────── */
+
+.office-display-block {
+    background: #f5f7fa;
+    border: 1px solid #dce3eb;
+    border-radius: 8px;
+    padding: 14px 16px;
+    min-height: 56px;
+}
+
+.office-display-text {
+    margin: 0;
+    font-size: 14px;
+    color: #1a1a2e;
+    line-height: 1.7;
+}
+
+.office-empty-hint {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+/* ── Form Fields ──────────────────────────────────────────────────────────── */
+
+.office-field-group {
+    display: grid;
+    gap: 6px;
+}
+
+.office-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.office-label .required-mark {
+    color: #dc2626;
+    margin-left: 2px;
+}
+
+.office-input,
+.office-textarea {
+    width: 100%;
+    border: 1px solid #dce3eb;
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-size: 14px;
+    font-family: 'Segoe UI', sans-serif;
+    color: #1a1a2e;
+    background: #fff;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.office-input:focus,
+.office-textarea:focus {
+    border-color: #0d6efd;
+    outline: 3px solid rgba(13, 110, 253, 0.15);
+}
+
+.office-textarea {
+    resize: vertical;
+    line-height: 1.6;
+    min-height: 100px;
+}
+
+.office-textarea--sm {
+    min-height: 70px;
+}
+
+.office-field-group.has-error .office-input,
+.office-field-group.has-error .office-textarea {
+    border-color: #dc2626;
+}
+
+.office-field-error {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: #dc2626;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+
+.office-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Segoe UI', sans-serif;
+    cursor: pointer;
+    border: 1px solid transparent;
+    text-decoration: none;
+    transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.office-btn-primary {
+    background: #0d6efd;
+    color: #fff;
+    border-color: #0d6efd;
+}
+
+.office-btn-primary:hover {
+    background: #0b5ed7;
+    border-color: #0b5ed7;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+}
+
+.office-btn-secondary {
+    background: #fff;
+    color: #374151;
+    border-color: #dce3eb;
+}
+
+.office-btn-secondary:hover {
+    background: #e7f1ff;
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+.office-btn-danger {
+    background: #fff1f0;
+    color: #dc2626;
+    border-color: #fca5a5;
+}
+
+.office-btn-danger:hover {
+    background: #fee2e2;
+    border-color: #dc2626;
+}
+
+.office-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.office-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* ── Status messages ──────────────────────────────────────────────────────── */
+
+.office-status {
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.office-status.is-success {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+}
+
+.office-status.is-error {
+    background: #fff1f0;
+    color: #dc2626;
+    border: 1px solid #fca5a5;
+}
+
+.office-status.is-info {
+    background: #e7f1ff;
+    color: #0d6efd;
+    border: 1px solid #bfdbfe;
+}
+
+/* ── Core Values List ─────────────────────────────────────────────────────── */
+
+.cv-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+}
+
+.cv-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    background: #f5f7fa;
+    border: 1px solid #dce3eb;
+    border-radius: 8px;
+    padding: 12px 14px;
+    transition: box-shadow 0.15s;
+}
+
+.cv-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+.cv-item--editing {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    background: #fff;
+}
+
+.cv-item-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.cv-badge {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #0d6efd;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.cv-item-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.cv-item-title {
+    margin: 0 0 3px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+.cv-item-description {
+    margin: 0;
+    font-size: 13px;
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+.cv-item-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.cv-edit-grid {
+    display: grid;
+    gap: 10px;
+}
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+
+.office-empty-state {
+    text-align: center;
+    padding: 24px;
+    border: 1px dashed #dce3eb;
+    border-radius: 8px;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+/* ── Add form ─────────────────────────────────────────────────────────────── */
+
+.office-add-form {
+    background: #f5f7fa;
+    border: 1px solid #dce3eb;
+    border-radius: 8px;
+    padding: 16px;
+    display: grid;
+    gap: 12px;
+}
+
+.office-add-form-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #374151;
+}
+
+/* ── Top bar (logout/profile) ─────────────────────────────────────────────── */
+
+.office-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.office-topbar-btn {
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+
+.office-topbar-btn:hover {
+    background: #e7f1ff;
+    color: #0d6efd;
+}
+
+.office-topbar-btn.logout {
+    color: #dc2626;
+}
+
+.office-topbar-btn.logout:hover {
+    background: #fff1f0;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 70px;
+    }
+
+    .sidebar-item-label,
+    .sidebar-title {
+        display: none;
+    }
+
+    .main-content {
+        margin-left: 70px;
+        padding: 20px 16px;
+    }
+}
