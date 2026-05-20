@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile Settings | Strategic Planning Management System</title>
-    <link rel="stylesheet" href="./css/profile.css">
+    <title>Resource Form | Strategic Planning Management System</title>
+    @vite(['resources/css/profile.css', 'resources/js/resource-form-app.js'])
 </head>
 <body>
-    <div id="root" data-profile-url="/api/me" data-update-url="/api/profile"></div>
+    <div id="root"></div>
 
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-    <script src="./js/profile-app.js"></script>
 </body>
 </html>

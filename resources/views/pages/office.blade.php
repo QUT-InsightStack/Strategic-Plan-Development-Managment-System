@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="./css/office.css">
+    @vite(['resources/css/office.css', 'resources/js/office.js'])
 </head>
 
 <body>
@@ -123,14 +123,6 @@
         </div>
 
     </div>
-
-    <!-- JS for Sidebar -->
-    <script>
-        function toggleSidebar() {
-            document.getElementById("sidebar").classList.toggle("collapsed");
-            document.getElementById("mainContent").classList.toggle("expanded");
-        }
-    </script>
 
 </body>
 </html>

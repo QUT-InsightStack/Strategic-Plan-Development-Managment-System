@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="./css/office.css">
+    @vite(['resources/css/office.css', 'resources/js/strategic-plan-app.js'])
 </head>
 
 <body>
@@ -24,7 +24,5 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script src="./js/strategic-plan-app.js"></script>
 </body>
 </html>

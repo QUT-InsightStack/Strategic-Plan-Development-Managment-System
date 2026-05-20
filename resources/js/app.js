@@ -110,7 +110,7 @@ if (loginPage) {
                 }
                 setStatus('Login successful! Redirecting...', 'success');
                 // Redirect to dashboard or profile
-                window.location.href = '/profile.html';
+                window.location.href = '/profile';
             } else {
                 throw new Error(data.error || 'Login failed');
             }

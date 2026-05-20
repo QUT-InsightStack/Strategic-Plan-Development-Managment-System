@@ -10,6 +10,7 @@ const messages = {
 };
 
 const rootElement = document.getElementById('root');
+const dashboardUrl = '/dashboard';
 
 const apiConfig = {
     loginUrl: rootElement.dataset.loginUrl || '/api/login',
@@ -170,7 +171,7 @@ function LoginForm({ status, setStatus }) {
 
             setStatus('Signed in successfully. Redirecting...', 'success');
             setTimeout(() => {
-                window.location.href = '/dashboard.html';
+                window.location.href = dashboardUrl;
             }, 1000);
         } catch (error) {
             setStatus(error.message, 'error');

@@ -15,7 +15,7 @@ class UsersSeeder extends Seeder
             return;
         }
 
-        $defaultPassword = env('SEEDER_DEFAULT_PASSWORD', 'ChangeMe123!');
+        $defaultPassword = env('SEEDER_DEFAULT_PASSWORD', '123456');
 
         $users = [
             [
