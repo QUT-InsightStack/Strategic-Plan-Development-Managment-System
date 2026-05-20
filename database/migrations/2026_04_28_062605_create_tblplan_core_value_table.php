@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('core_value_id');
             $table->unsignedBigInteger('plan_id');
             $table->unsignedBigInteger('created_by');
-            $table->unsignedBigInteger('updated_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
 

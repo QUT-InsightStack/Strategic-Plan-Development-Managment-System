@@ -17,7 +17,6 @@ return new class extends Migration
             $table->unsignedBigInteger('permission_id');
             $table->timestamps();
     
-    
             $table->foreign('role_id')
                   ->references('role_id')
                   ->on('tblroles')
