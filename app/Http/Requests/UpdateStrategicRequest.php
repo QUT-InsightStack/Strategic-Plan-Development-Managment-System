@@ -18,7 +18,7 @@ class UpdateStrategicRequest extends ApiFormRequest
         return [
             'created_by'   => ['sometimes', 'integer', Rule::exists('tblusers', 'user_id')],
             'updated_by'   => ['nullable', 'integer', Rule::exists('tblusers', 'user_id')],
-            'level'        => ['sometimes', 'string', 'max:255'],
+            'level' => ['sometimes','string',Rule::in(['strategic_plan', 'goal']),],
             'title'        => ['sometimes', 'string', 'max:255'],
             'description'  => ['sometimes', 'nullable', 'string'],
             'file_path'    => ['sometimes', 'nullable', 'string', 'max:255'],
