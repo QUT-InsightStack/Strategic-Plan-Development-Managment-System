@@ -16,7 +16,7 @@ class StoreStrategicRequest extends ApiFormRequest
         return [
             'created_by'   => ['required', 'integer', Rule::exists('tblusers', 'user_id')],
             'updated_by'   => ['nullable', 'integer', Rule::exists('tblusers', 'user_id')],
-            'level'        => ['required', 'string', 'max:255'],
+            'level' => ['required','string', Rule::in(['strategic_plan','goal']),],
             'title'        => ['required', 'string', 'max:255'],
             'description'  => ['sometimes', 'nullable', 'string'],
             'file_path'    => ['sometimes', 'nullable', 'string', 'max:255'],
