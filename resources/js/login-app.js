@@ -11,6 +11,7 @@ const messages = {
 
 const rootElement = document.getElementById('root');
 const dashboardUrl = '/dashboard';
+const logoUrl = new URL('../images/logo.png', import.meta.url).href;
 
 const apiConfig = {
     loginUrl: rootElement.dataset.loginUrl || '/api/login',
@@ -40,14 +41,11 @@ function Brand() {
     return React.createElement(
         'a',
         { className: 'brand', href: '#', 'aria-label': 'Strategic planning Management System home' },
-        React.createElement(
-            'span',
-            { className: 'brand-mark', 'aria-hidden': 'true' },
-            React.createElement('span'),
-            React.createElement('span'),
-            React.createElement('span'),
-            React.createElement('span')
-        ),
+        React.createElement('img', {
+            className: 'brand-logo',
+            src: logoUrl,
+            alt: 'Strategic Planning Management System logo',
+        }),
         React.createElement('span', { className: 'brand-name' }, 'Strategic planning Management System')
     );
 }

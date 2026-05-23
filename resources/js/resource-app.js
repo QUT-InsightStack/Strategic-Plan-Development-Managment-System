@@ -11,19 +11,17 @@ const loginUrl = '/login';
 const resourceName = new URLSearchParams(window.location.search).get('resource') || '';
 const apiUrl = resourceName ? `/api/${resourceName}` : '';
 const schema = crud.getSchema(resourceName);
+const logoUrl = new URL('../images/logo.png', import.meta.url).href;
 
 function Brand() {
     return React.createElement(
         'a',
         { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic planning Management System home' },
-        React.createElement(
-            'span',
-            { className: 'brand-mark', 'aria-hidden': 'true' },
-            React.createElement('span'),
-            React.createElement('span'),
-            React.createElement('span'),
-            React.createElement('span')
-        ),
+        React.createElement('img', {
+            className: 'brand-logo',
+            src: logoUrl,
+            alt: 'Strategic Planning Management System logo',
+        }),
         React.createElement('span', { className: 'brand-name' }, 'Strategic planning Management System')
     );
 }

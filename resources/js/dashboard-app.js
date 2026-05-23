@@ -5,6 +5,7 @@ const profileUrl = '/profile';
 const resourceUrl = '/resource';
 const loginUrl = '/login';
 const strategicPlanUrl = '/strategic-plan';
+const logoUrl = new URL('../images/logo.png', import.meta.url).href;
 
 const modules = [
     { id: 'users', title: 'Users', description: 'Manage user accounts and active employees.' },
@@ -35,14 +36,11 @@ function Brand() {
     return React.createElement(
         'a',
         { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic planning Management System home' },
-        React.createElement(
-            'span',
-            { className: 'brand-mark', 'aria-hidden': 'true' },
-            React.createElement('span'),
-            React.createElement('span'),
-            React.createElement('span'),
-            React.createElement('span')
-        ),
+        React.createElement('img', {
+            className: 'brand-logo',
+            src: logoUrl,
+            alt: 'Strategic Planning Management System logo',
+        }),
         React.createElement('span', { className: 'brand-name' }, 'Strategic planning Management System')
     );
 }

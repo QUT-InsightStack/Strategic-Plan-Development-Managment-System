@@ -5,6 +5,7 @@ const { useRef, useState, useEffect } = React;
 const rootElement = document.getElementById('root');
 const dashboardUrl = '/dashboard';
 const loginUrl = '/login';
+const logoUrl = new URL('../images/logo.png', import.meta.url).href;
 
 const apiConfig = {
     profileUrl: rootElement?.dataset?.profileUrl || '/api/me',
@@ -34,14 +35,11 @@ function Brand() {
     return React.createElement(
         'a',
         { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic planning Management System home' },
-        React.createElement(
-            'span',
-            { className: 'brand-mark', 'aria-hidden': 'true' },
-            React.createElement('span'),
-            React.createElement('span'),
-            React.createElement('span'),
-            React.createElement('span')
-        ),
+        React.createElement('img', {
+            className: 'brand-logo',
+            src: logoUrl,
+            alt: 'Strategic Planning Management System logo',
+        }),
         React.createElement('span', { className: 'brand-name' }, 'Strategic planning Management System')
     );
 }

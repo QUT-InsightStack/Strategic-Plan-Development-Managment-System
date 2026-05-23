@@ -4,6 +4,7 @@ const dashboardUrl = '/dashboard';
 const profileUrl = '/profile';
 const strategicPlanUrl = '/strategic-plan';
 const loginUrl = '/login';
+const logoUrl = new URL('../images/logo.png', import.meta.url).href;
 
 // SPDMS-212: Static/sample data for demonstration
 const STATIC_DATA = {
@@ -31,14 +32,11 @@ function Sidebar({ collapsed, onToggle }) {
         React.createElement(
             'a',
             { href: dashboardUrl, className: 'sidebar-logo' },
-            React.createElement(
-                'span',
-                { className: 'sidebar-logo-mark' },
-                React.createElement('span'),
-                React.createElement('span'),
-                React.createElement('span'),
-                React.createElement('span')
-            ),
+            React.createElement('img', {
+                className: 'sidebar-logo-image',
+                src: logoUrl,
+                alt: 'Strategic Planning Management System logo',
+            }),
             !collapsed && React.createElement('p', { className: 'sidebar-title' }, 'SPDMS')
         ),
         React.createElement(
