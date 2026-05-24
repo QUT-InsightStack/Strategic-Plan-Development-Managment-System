@@ -6,7 +6,6 @@ const params = new URLSearchParams(window.location.search);
 const resourceName = params.get('resource') || '';
 const recordId = params.get('id') || '';
 const schema = crud.getSchema(resourceName);
-const apiUrl = resourceName ? `/api/${resourceName}` : '';
 
 function Brand() {
     return React.createElement(
@@ -109,6 +108,10 @@ function getValidationMessage(field, value, isEditMode) {
         return Array.isArray(value) && value.length ? '' : `${field.label} is required.`;
     }
 
+    if (typeof value === 'string') {
+        return value.trim() ? '' : `${field.label} is required.`;
+    }
+
     return value !== '' && value !== null && value !== undefined ? '' : `${field.label} is required.`;
 }
 
@@ -171,6 +174,7 @@ function FieldControl({ field, value, error, options, onChange, recordId: curren
     } else if (field.type === 'select') {
         const optionItems = field.options || options[field.name] || [];
         const selectValue = field.multiple ? (Array.isArray(value) ? value.map(String) : []) : String(value ?? '');
+        const placeholderLabel = optionItems.length || !field.optionsResource ? 'Select an option' : 'No options available';
 
         control = React.createElement(
             'select',
@@ -187,8 +191,8 @@ function FieldControl({ field, value, error, options, onChange, recordId: curren
                     onChange(event.target.value);
                 },
             },
-            !field.multiple && (field.allowEmpty || !field.required)
-                ? React.createElement('option', { value: '' }, 'Select an option')
+            !field.multiple
+                ? React.createElement('option', { value: '', disabled: Boolean(field.required && !field.allowEmpty) }, placeholderLabel)
                 : null,
             optionItems.map((option) => {
                 const optionValue = option.value ?? crud.resolveId(field.optionsResource, option);
@@ -261,8 +265,8 @@ function ResourceFormApp() {
         const optionFields = schema.fields.filter((field) => field.optionsResource);
         const entries = await Promise.all(
             optionFields.map(async (field) => {
-                const response = await crud.requestJson(`/api/${field.optionsResource}${field.optionQuery || ''}`);
-                const list = crud.extractData(response);
+                const response = await crud.listResource(field.optionsResource);
+                const list = response.data;
                 return [field.name, Array.isArray(list) ? list : []];
             })
         );
@@ -275,8 +279,8 @@ function ResourceFormApp() {
             return null;
         }
 
-        const response = await crud.requestJson(`${apiUrl}/${recordId}`);
-        return crud.extractData(response);
+        const response = await crud.getResource(resourceName, recordId);
+        return response.data;
     }
 
     async function loadForm() {
@@ -351,13 +355,10 @@ function ResourceFormApp() {
         try {
             const payload = buildPayload(schema.fields, values, isEditMode);
 
-            await crud.requestJson(isEditMode ? `${apiUrl}/${recordId}` : apiUrl, {
-                method: isEditMode ? 'PUT' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
+            const response = await crud.saveResource(resourceName, recordId, payload);
+            const sourceNote = response.source === 'api' ? '' : ' in sample data';
 
-            setStatusMessage(isEditMode ? 'Record updated successfully.' : 'Record created successfully.', 'success');
+            setStatusMessage(isEditMode ? `Record updated successfully${sourceNote}.` : `Record created successfully${sourceNote}.`, 'success');
             window.setTimeout(() => {
                 window.location.href = `/resource.html?resource=${resourceName}`;
             }, 650);
@@ -374,8 +375,8 @@ function ResourceFormApp() {
 
     return React.createElement(
         'div',
-        { className: 'profile-shell' },
-        React.createElement(Header, { onMessage: setStatusMessage, onLogout: handleLogout }),
+        { className: 'profile-shell with-sidebar' },
+        React.createElement(window.AppShell.Sidebar, { activeResource: resourceName, onMessage: setStatusMessage, onLogout: handleLogout }),
         React.createElement(
             'main',
             { className: 'profile-main' },

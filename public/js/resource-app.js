@@ -2,7 +2,6 @@ const { useState, useEffect } = React;
 const rootElement = document.getElementById('root');
 const crud = window.ResourceCrud;
 const resourceName = new URLSearchParams(window.location.search).get('resource') || '';
-const apiUrl = resourceName ? `/api/${resourceName}` : '';
 const schema = crud.getSchema(resourceName);
 
 function Brand() {
@@ -53,7 +52,45 @@ function getColumns(items) {
     return [...preferred, ...extras].slice(0, 9);
 }
 
-function ResourceTable({ items, onDelete }) {
+function itemMatchesSearch(item, searchTerm) {
+    if (!searchTerm.trim()) {
+        return true;
+    }
+
+    const needle = searchTerm.trim().toLowerCase();
+    return Object.values(item).some((value) => crud.formatCellValue(value).toLowerCase().includes(needle));
+}
+
+function ResourceToolbar({ searchTerm, selectedCount, onSearchChange, onBulkDelete }) {
+    return React.createElement(
+        'section',
+        { className: 'resource-filter-card modern-card', 'aria-label': 'Search and filter' },
+        React.createElement('h2', null, 'Search and filter'),
+        React.createElement(
+            'div',
+            { className: 'resource-filter-row' },
+            React.createElement('input', {
+                className: 'crud-input resource-search-input',
+                type: 'search',
+                value: searchTerm,
+                placeholder: 'Search',
+                onChange: (event) => onSearchChange(event.target.value),
+            }),
+            React.createElement(
+                'button',
+                { className: 'action-button secondary', type: 'button', onClick: () => onSearchChange('') },
+                'Clear'
+            ),
+            React.createElement(
+                'button',
+                { className: 'action-button danger', type: 'button', disabled: selectedCount === 0, onClick: onBulkDelete },
+                `Bulk Delete${selectedCount ? ` (${selectedCount})` : ''}`
+            )
+        )
+    );
+}
+
+function ResourceTable({ items, selectedIds, onToggleOne, onToggleAll, onDelete }) {
     if (!Array.isArray(items)) {
         return React.createElement('pre', null, JSON.stringify(items, null, 2));
     }
@@ -68,6 +105,8 @@ function ResourceTable({ items, onDelete }) {
     }
 
     const columns = getColumns(items);
+    const selectableItems = items.filter((item) => crud.resolveId(resourceName, item));
+    const allSelected = selectableItems.length > 0 && selectableItems.every((item) => selectedIds.includes(String(crud.resolveId(resourceName, item))));
 
     return React.createElement(
         'table',
@@ -78,6 +117,16 @@ function ResourceTable({ items, onDelete }) {
             React.createElement(
                 'tr',
                 null,
+                React.createElement(
+                    'th',
+                    { className: 'checkbox-cell' },
+                    React.createElement('input', {
+                        type: 'checkbox',
+                        checked: allSelected,
+                        onChange: (event) => onToggleAll(event.target.checked, selectableItems),
+                        'aria-label': 'Select all rows',
+                    })
+                ),
                 columns.map((column) => React.createElement('th', { key: column }, crud.formatLabel(column))),
                 React.createElement('th', { key: 'actions' }, 'Actions')
             )
@@ -87,10 +136,23 @@ function ResourceTable({ items, onDelete }) {
             null,
             items.slice(0, 50).map((item, index) => {
                 const id = crud.resolveId(resourceName, item);
+                const idString = id ? String(id) : '';
 
                 return React.createElement(
                     'tr',
                     { key: id || index },
+                    React.createElement(
+                        'td',
+                        { className: 'checkbox-cell', 'data-label': 'Select' },
+                        id
+                            ? React.createElement('input', {
+                                  type: 'checkbox',
+                                  checked: selectedIds.includes(idString),
+                                  onChange: (event) => onToggleOne(idString, event.target.checked),
+                                  'aria-label': `Select ${schema.singular.toLowerCase()} ${id}`,
+                              })
+                            : null
+                    ),
                     columns.map((column) =>
                         React.createElement(
                             'td',
@@ -133,6 +195,8 @@ function ResourceTable({ items, onDelete }) {
 
 function ResourceApp() {
     const [items, setItems] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedIds, setSelectedIds] = useState([]);
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState({ message: '', type: 'info' });
     const [refreshKey, setRefreshKey] = useState(0);
@@ -165,10 +229,11 @@ function ResourceApp() {
         setStatusMessage(`Loading ${schema.title.toLowerCase()}...`, 'info');
 
         try {
-            const response = await crud.requestJson(apiUrl);
-            const loaded = crud.extractData(response);
+            const response = await crud.listResource(resourceName);
+            const loaded = response.data;
             setItems(Array.isArray(loaded) ? loaded : [loaded]);
-            setStatusMessage(`${schema.title} loaded.`, 'success');
+            setSelectedIds([]);
+            setStatusMessage(`${schema.title} loaded${response.source === 'api' ? '' : ' from sample data'}.`, 'success');
         } catch (error) {
             setStatusMessage(error.message || 'Unable to load the selected resource.', 'error');
             setItems([]);
@@ -179,6 +244,36 @@ function ResourceApp() {
 
     function handleRefresh() {
         setRefreshKey((current) => current + 1);
+    }
+
+    function handleToggleOne(id, checked) {
+        setSelectedIds((current) => (checked ? [...new Set([...current, id])] : current.filter((item) => item !== id)));
+    }
+
+    function handleToggleAll(checked, rows) {
+        setSelectedIds(checked ? rows.map((item) => String(crud.resolveId(resourceName, item))) : []);
+    }
+
+    async function handleBulkDelete() {
+        if (selectedIds.length === 0) {
+            return;
+        }
+
+        const confirmed = window.confirm(`Delete ${selectedIds.length} selected ${schema.title.toLowerCase()} record(s)?`);
+
+        if (!confirmed) {
+            return;
+        }
+
+        setStatusMessage('Deleting selected records...', 'info');
+
+        try {
+            await Promise.all(selectedIds.map((id) => crud.deleteResource(resourceName, id)));
+            setStatusMessage('Selected records deleted successfully.', 'success');
+            handleRefresh();
+        } catch (error) {
+            setStatusMessage(error.message || 'Failed to delete selected records.', 'error');
+        }
     }
 
     async function handleDelete(item) {
@@ -198,7 +293,7 @@ function ResourceApp() {
         setStatusMessage('Deleting record...', 'info');
 
         try {
-            await crud.requestJson(`${apiUrl}/${id}`, { method: 'DELETE' });
+            const response = await crud.deleteResource(resourceName, id);
             setStatusMessage('Record deleted successfully.', 'success');
             handleRefresh();
         } catch (error) {
@@ -206,10 +301,12 @@ function ResourceApp() {
         }
     }
 
+    const visibleItems = items.filter((item) => itemMatchesSearch(item, searchTerm));
+
     return React.createElement(
         'div',
-        { className: 'profile-shell' },
-        React.createElement(Header, { onMessage: setStatusMessage, onLogout: handleLogout }),
+        { className: 'profile-shell with-sidebar' },
+        React.createElement(window.AppShell.Sidebar, { activeResource: resourceName, onMessage: setStatusMessage, onLogout: handleLogout }),
         React.createElement(
             'main',
             { className: 'profile-main' },
@@ -243,12 +340,24 @@ function ResourceApp() {
                         'Back to Dashboard'
                     )
                 ),
+                React.createElement(ResourceToolbar, {
+                    searchTerm,
+                    selectedCount: selectedIds.length,
+                    onSearchChange: setSearchTerm,
+                    onBulkDelete: handleBulkDelete,
+                }),
                 React.createElement(
                     'div',
                     { className: 'resource-card modern-card' },
                     loading
                         ? React.createElement('p', { className: 'empty-state' }, 'Loading records...')
-                        : React.createElement(ResourceTable, { items, onDelete: handleDelete })
+                        : React.createElement(ResourceTable, {
+                              items: visibleItems,
+                              selectedIds,
+                              onToggleOne: handleToggleOne,
+                              onToggleAll: handleToggleAll,
+                              onDelete: handleDelete,
+                          })
                 ),
                 React.createElement(
                     'p',

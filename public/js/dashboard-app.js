@@ -1,16 +1,19 @@
 const { useState, useEffect } = React;
 const rootElement = document.getElementById('root');
+const crud = window.ResourceCrud;
 
 const modules = [
     { id: 'users', title: 'Users', description: 'Manage user accounts and active employees.' },
     { id: 'roles', title: 'Roles', description: 'Create and assign role definitions.' },
     { id: 'permissions', title: 'Permissions', description: 'Control module access and privileges.' },
-    { id: 'strategic-foundations', title: 'Strategic Foundations', description: 'Manage your strategic goals and values.' },
+    { id: 'missions', title: 'Mission', description: 'Maintain the organization mission statement.' },
+    { id: 'visions', title: 'Vision', description: 'Maintain the organization vision statement.' },
+    { id: 'core-values', title: 'Core Values', description: 'Add, edit, view, and delete core value entries.' },
     { id: 'strategic-records', title: 'Strategic Records', description: 'Review and maintain strategic plan records.' },
     { id: 'relations', title: 'Relations', description: 'Manage relationships between strategic items.' },
-    { id: 'logs', title: 'Activity Logs', description: 'Inspect audit and event history.' },
     { id: 'role-premissions', title: 'Role Permissions', description: 'Sync permissions for each role.' },
-    { id: 'plan-core-values', title: 'Plan Core Values', description: 'Link plans with core values.' },
+    { id: 'plan-core-values', title: 'Plan/Core Mapping', description: 'Link strategic records with core values.' },
+    { id: 'logs', title: 'Activity Logs', description: 'Inspect audit and event history.' },
 ];
 
 const messages = {
@@ -56,12 +59,14 @@ function Header({ onMessage, onLogout }) {
 }
 
 function ModuleCard({ module, count }) {
+    const countLabel = count === undefined ? 'Loading...' : count !== null ? `${count} records` : 'Unavailable';
+
     return React.createElement(
         'article',
         { className: 'dashboard-card' },
         React.createElement('h3', null, module.title),
         React.createElement('p', null, module.description),
-        React.createElement('p', { className: 'dashboard-count' }, count !== null ? `${count} records` : 'Loading...'),
+        React.createElement('p', { className: 'dashboard-count' }, countLabel),
         React.createElement(
             'div',
             { className: 'dashboard-actions' },
@@ -95,33 +100,33 @@ function DashboardApp() {
         setStatusMessage('Refreshing counts...', 'info');
 
         Promise.all(
-            modules.map((module) =>
-                fetch(`/api/${module.id}`, {
-                    credentials: 'include',
-                    headers: { Accept: 'application/json' },
-                })
-                    .then((response) => {
-                        if (!response.ok) {
-                            if (response.status === 401 || response.status === 403) {
-                                window.location.href = '/login.html';
-                            }
-                            throw new Error('Failed to load');
-                        }
-                        return response.json();
-                    })
-                    .then((data) => {
-                        const payload = data?.data ?? data;
-                        if (Array.isArray(payload)) {
-                            return { id: module.id, count: payload.length };
-                        }
-                        return { id: module.id, count: null };
-                    })
-                    .catch(() => ({ id: module.id, count: null }))
-            )
+            modules.map(async (module) => {
+                try {
+                    if (crud?.getSchema(module.id)) {
+                        const response = await crud.listResource(module.id);
+                        return { id: module.id, count: Array.isArray(response.data) ? response.data.length : null };
+                    }
+
+                    const response = await fetch(`/api/${module.id}`, {
+                        credentials: 'include',
+                        headers: { Accept: 'application/json' },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to load');
+                    }
+
+                    const data = await response.json();
+                    const payload = data?.data ?? data;
+                    return { id: module.id, count: Array.isArray(payload) ? payload.length : null };
+                } catch (error) {
+                    return { id: module.id, count: null };
+                }
+            })
         ).then((results) => {
             const nextCounts = results.reduce((acc, next) => ({ ...acc, [next.id]: next.count }), {});
             setCounts(nextCounts);
-            setStatusMessage('Dashboard ready.', 'success');
+            setStatusMessage('Dashboard ready. Sample data is shown where APIs are unavailable.', 'success');
         });
     }
 
@@ -141,8 +146,8 @@ function DashboardApp() {
 
     return React.createElement(
         'div',
-        { className: 'profile-shell' },
-        React.createElement(Header, { onMessage: setStatusMessage, onLogout: handleLogout }),
+        { className: 'profile-shell with-sidebar' },
+        React.createElement(window.AppShell.Sidebar, { active: 'dashboard', onMessage: setStatusMessage, onLogout: handleLogout }),
         React.createElement(
             'main',
             { className: 'profile-main' },
@@ -172,7 +177,7 @@ function DashboardApp() {
                 React.createElement(
                     'div',
                     { className: 'dashboard-grid' },
-                    modules.map((module) => React.createElement(ModuleCard, { key: module.id, module, count: counts[module.id] ?? null }))
+                    modules.map((module) => React.createElement(ModuleCard, { key: module.id, module, count: counts[module.id] }))
                 ),
                 React.createElement(
                     'p',

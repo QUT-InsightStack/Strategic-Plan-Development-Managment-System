@@ -499,8 +499,8 @@ function ProfileApp() {
 
     return React.createElement(
         'div',
-        { className: 'profile-shell' },
-        React.createElement(Header, { onMessage: (message) => setStatus(message, 'info'), onLogout: handleLogout }),
+        { className: 'profile-shell with-sidebar' },
+        React.createElement(window.AppShell.Sidebar, { onMessage: (message) => setStatus(message, 'info'), onLogout: handleLogout }),
         React.createElement(
             'main',
             { className: 'profile-main' },
@@ -520,8 +520,7 @@ function ProfileApp() {
                     React.createElement(ProfileForm, { status, setStatus, avatar, onAvatarChange: setAvatar })
                 )
             )
-        ),
-        React.createElement(Footer, { onMessage: (message) => setStatus(message, 'info') })
+        )
     );
 }
 
