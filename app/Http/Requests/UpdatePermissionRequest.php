@@ -16,22 +16,24 @@ class UpdatePermissionRequest extends ApiFormRequest
         $permissionId = $this->route('permission');
 
         return [
-            'permission_name' => [
+            'permission_name' => ['sometimes', 'string', 'max:255'],
+            'description'     => ['sometimes', 'nullable', 'string'],
+            'code'            => [
                 'sometimes',
                 'string',
-                'max:255',
-                Rule::unique('tblpermissions', 'permission_name')
-                    ->ignore($permissionId, 'permission_id'),
-            ],
-            'code' => [
-                'sometimes',
-                'string',
-                'max:255',
+                'max:100',
                 Rule::unique('tblpermissions', 'code')
                     ->ignore($permissionId, 'permission_id'),
             ],
-            'module' => ['sometimes', 'string', 'max:255'],
-            'description' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'module'          => ['sometimes', 'string', 'max:100'],
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'permission_name' => 'permission name',
+            'code'            => 'permission code',
         ];
     }
 }

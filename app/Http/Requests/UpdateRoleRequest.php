@@ -19,10 +19,10 @@ class UpdateRoleRequest extends ApiFormRequest
             'role_name'   => [
                 'sometimes',
                 'string',
-                'max:255',
+                'max:100',                              
                 Rule::unique('tblroles', 'role_name')->ignore($roleId, 'role_id'),
             ],
-            'description' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'description' => ['sometimes', 'nullable', 'string'],  // text column — no max
         ];
     }
 }

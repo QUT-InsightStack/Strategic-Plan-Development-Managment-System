@@ -17,10 +17,10 @@ class StoreRoleRequest extends ApiFormRequest
             'role_name'   => [
                 'required',
                 'string',
-                'max:255',
+                'max:100',                             
                 Rule::unique('tblroles', 'role_name'),
             ],
-            'description' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'description' => ['sometimes', 'nullable', 'string'],  // text column — no max
         ];
     }
 }

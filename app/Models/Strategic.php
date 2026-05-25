@@ -21,6 +21,7 @@ class Strategic extends Model
         'file_path',
         'mission_id',
         'vision_id',
+
     ];
 
     public function creator()

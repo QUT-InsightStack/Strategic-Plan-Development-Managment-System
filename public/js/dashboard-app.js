@@ -16,6 +16,10 @@ const modules = [
     { id: 'logs', title: 'Activity Logs', description: 'Inspect audit and event history.' },
 ];
 
+const staticModules = [
+    { id: 'strategic-plan', title: 'Strategic Plan', description: 'Manage Mission, Vision, and Core Values for your organisation.', href: '/strategic-plan.html' },
+];
+
 const messages = {
     help: 'Help resources are not connected yet.',
     contact: 'Contact details will be provided by the system administrator.',
@@ -79,6 +83,24 @@ function ModuleCard({ module, count }) {
                 'a',
                 { className: 'action-button secondary', href: `/resource.html?resource=${module.id}` },
                 'Explore'
+            )
+        )
+    );
+}
+
+function StaticModuleCard({ module }) {
+    return React.createElement(
+        'article',
+        { className: 'dashboard-card' },
+        React.createElement('h3', null, module.title),
+        React.createElement('p', null, module.description),
+        React.createElement(
+            'div',
+            { className: 'dashboard-actions', style: { marginTop: 'auto' } },
+            React.createElement(
+                'a',
+                { className: 'action-button primary', href: module.href },
+                'Open'
             )
         )
     );
@@ -177,7 +199,10 @@ function DashboardApp() {
                 React.createElement(
                     'div',
                     { className: 'dashboard-grid' },
-                    modules.map((module) => React.createElement(ModuleCard, { key: module.id, module, count: counts[module.id] }))
+                    // modules.map((module) => React.createElement(ModuleCard, { key: module.id, module, count: counts[module.id] }))
+
+                    staticModules.map((module) => React.createElement(StaticModuleCard, { key: module.id, module })),
+                    modules.map((module) => React.createElement(ModuleCard, { key: module.id, module, count: counts[module.id] ?? null }))
                 ),
                 React.createElement(
                     'p',
