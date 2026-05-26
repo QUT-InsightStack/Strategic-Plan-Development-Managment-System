@@ -1,5 +1,11 @@
 const { useState, useEffect } = React;
 const rootElement = document.getElementById('root');
+const dashboardUrl = '/dashboard';
+const profileUrl = '/profile';
+const resourceUrl = '/resource';
+const loginUrl = '/login';
+const strategicPlanUrl = '/strategic-plan';
+const logoUrl = new URL('../images/logo.png', import.meta.url).href;
 
 const modules = [
     { id: 'users', title: 'Users', description: 'Manage user accounts and active employees.' },
@@ -14,7 +20,7 @@ const modules = [
 ];
 
 const staticModules = [
-    { id: 'strategic-plan', title: 'Strategic Plan', description: 'Manage Mission, Vision, and Core Values for your organisation.', href: '/strategic-plan.html' },
+    { id: 'strategic-plan', title: 'Strategic Plan', description: 'Manage Mission, Vision, and Core Values for your organisation.', href: strategicPlanUrl },
 ];
 
 const messages = {
@@ -29,15 +35,12 @@ const messages = {
 function Brand() {
     return React.createElement(
         'a',
-        { className: 'brand', href: '/dashboard.html', 'aria-label': 'Strategic planning Management System home' },
-        React.createElement(
-            'span',
-            { className: 'brand-mark', 'aria-hidden': 'true' },
-            React.createElement('span'),
-            React.createElement('span'),
-            React.createElement('span'),
-            React.createElement('span')
-        ),
+        { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic planning Management System home' },
+        React.createElement('img', {
+            className: 'brand-logo',
+            src: logoUrl,
+            alt: 'Strategic Planning Management System logo',
+        }),
         React.createElement('span', { className: 'brand-name' }, 'Strategic planning Management System')
     );
 }
@@ -50,7 +53,7 @@ function Header({ onMessage, onLogout }) {
         React.createElement(
             'nav',
             { className: 'top-nav', 'aria-label': 'Primary navigation' },
-            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => window.location.href = '/profile.html' }, 'Profile'),
+            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => window.location.href = profileUrl }, 'Profile'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.help) }, 'Help'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.contact) }, 'Contact'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.support) }, 'Support'),
@@ -71,12 +74,12 @@ function ModuleCard({ module, count }) {
             { className: 'dashboard-actions' },
             React.createElement(
                 'a',
-                { className: 'action-button primary', href: `/resource.html?resource=${module.id}` },
+                { className: 'action-button primary', href: `${resourceUrl}?resource=${module.id}` },
                 'Open'
             ),
             React.createElement(
                 'a',
-                { className: 'action-button secondary', href: `/resource.html?resource=${module.id}` },
+                { className: 'action-button secondary', href: `${resourceUrl}?resource=${module.id}` },
                 'Explore'
             )
         )
@@ -125,7 +128,7 @@ function DashboardApp() {
                     .then((response) => {
                         if (!response.ok) {
                             if (response.status === 401 || response.status === 403) {
-                                window.location.href = '/login.html';
+                                window.location.href = loginUrl;
                             }
                             throw new Error('Failed to load');
                         }
@@ -154,10 +157,10 @@ function DashboardApp() {
             headers: { Accept: 'application/json' },
         })
             .then(() => {
-                window.location.href = '/login.html';
+                window.location.href = loginUrl;
             })
             .catch(() => {
-                window.location.href = '/login.html';
+                window.location.href = loginUrl;
             });
     }
 
@@ -187,7 +190,7 @@ function DashboardApp() {
                     ),
                     React.createElement(
                         'a',
-                        { className: 'action-button secondary', href: '/profile.html' },
+                        { className: 'action-button secondary', href: profileUrl },
                         'Open Profile'
                     )
                 ),

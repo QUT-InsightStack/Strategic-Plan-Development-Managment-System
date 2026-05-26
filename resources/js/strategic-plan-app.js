@@ -1,5 +1,10 @@
 const { useState, useEffect } = React;
 const rootElement = document.getElementById('root');
+const dashboardUrl = '/dashboard';
+const profileUrl = '/profile';
+const strategicPlanUrl = '/strategic-plan';
+const loginUrl = '/login';
+const logoUrl = new URL('../images/logo.png', import.meta.url).href;
 
 // SPDMS-212: Static/sample data for demonstration
 const STATIC_DATA = {
@@ -16,9 +21,9 @@ const STATIC_DATA = {
 
 function Sidebar({ collapsed, onToggle }) {
     const navItems = [
-        { label: 'Dashboard', icon: 'bi-house', href: '/dashboard.html' },
-        { label: 'Strategic Plan', icon: 'bi-bullseye', href: '/strategic-plan.html', active: true },
-        { label: 'Profile', icon: 'bi-person', href: '/profile.html' },
+        { label: 'Dashboard', icon: 'bi-house', href: dashboardUrl },
+        { label: 'Strategic Plan', icon: 'bi-bullseye', href: strategicPlanUrl, active: true },
+        { label: 'Profile', icon: 'bi-person', href: profileUrl },
     ];
 
     return React.createElement(
@@ -26,15 +31,12 @@ function Sidebar({ collapsed, onToggle }) {
         { className: `sidebar${collapsed ? ' collapsed' : ''}`, id: 'sidebar' },
         React.createElement(
             'a',
-            { href: '/dashboard.html', className: 'sidebar-logo' },
-            React.createElement(
-                'span',
-                { className: 'sidebar-logo-mark' },
-                React.createElement('span'),
-                React.createElement('span'),
-                React.createElement('span'),
-                React.createElement('span')
-            ),
+            { href: dashboardUrl, className: 'sidebar-logo' },
+            React.createElement('img', {
+                className: 'sidebar-logo-image',
+                src: logoUrl,
+                alt: 'Strategic Planning Management System logo',
+            }),
             !collapsed && React.createElement('p', { className: 'sidebar-title' }, 'SPDMS')
         ),
         React.createElement(
@@ -63,7 +65,7 @@ function TopBar({ onLogout }) {
     return React.createElement(
         'div',
         { className: 'office-topbar' },
-        React.createElement('button', { className: 'office-topbar-btn', onClick: () => { window.location.href = '/profile.html'; } }, React.createElement('i', { className: 'bi bi-person me-1' }), 'Profile'),
+        React.createElement('button', { className: 'office-topbar-btn', onClick: () => { window.location.href = profileUrl; } }, React.createElement('i', { className: 'bi bi-person me-1' }), 'Profile'),
         React.createElement('button', { className: 'office-topbar-btn logout', onClick: onLogout }, React.createElement('i', { className: 'bi bi-box-arrow-right me-1' }), 'Logout')
     );
 }
@@ -458,7 +460,7 @@ function StrategicPlanApp() {
     function handleLogout() {
         fetch('/api/logout', { method: 'POST', credentials: 'include', headers: { Accept: 'application/json' } })
             .catch(() => null)
-            .finally(() => { window.location.href = '/login.html'; });
+            .finally(() => { window.location.href = loginUrl; });
     }
 
     function handleSaveFoundation(field, value) {
@@ -500,7 +502,7 @@ function StrategicPlanApp() {
                 ),
                 React.createElement(
                     'a',
-                    { href: '/dashboard.html', className: 'office-btn office-btn-secondary' },
+                    { href: dashboardUrl, className: 'office-btn office-btn-secondary' },
                     React.createElement('i', { className: 'bi bi-arrow-left me-1' }),
                     'Back to Dashboard'
                 )

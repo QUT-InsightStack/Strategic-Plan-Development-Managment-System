@@ -1,6 +1,11 @@
+import defaultAvatar from '../images/profile-avatar.svg';
+
 const { useRef, useState, useEffect } = React;
 
 const rootElement = document.getElementById('root');
+const dashboardUrl = '/dashboard';
+const loginUrl = '/login';
+const logoUrl = new URL('../images/logo.png', import.meta.url).href;
 
 const apiConfig = {
     profileUrl: rootElement?.dataset?.profileUrl || '/api/me',
@@ -29,15 +34,12 @@ const messages = {
 function Brand() {
     return React.createElement(
         'a',
-        { className: 'brand', href: '/dashboard.html', 'aria-label': 'Strategic planning Management System home' },
-        React.createElement(
-            'span',
-            { className: 'brand-mark', 'aria-hidden': 'true' },
-            React.createElement('span'),
-            React.createElement('span'),
-            React.createElement('span'),
-            React.createElement('span')
-        ),
+        { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic planning Management System home' },
+        React.createElement('img', {
+            className: 'brand-logo',
+            src: logoUrl,
+            alt: 'Strategic Planning Management System logo',
+        }),
         React.createElement('span', { className: 'brand-name' }, 'Strategic planning Management System')
     );
 }
@@ -50,7 +52,7 @@ function Header({ onMessage, onLogout }) {
         React.createElement(
             'nav',
             { className: 'top-nav', 'aria-label': 'Primary navigation' },
-            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => window.location.href = '/dashboard.html' }, 'Dashboard'),
+            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => window.location.href = dashboardUrl }, 'Dashboard'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.help) }, 'Help'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.contact) }, 'Contact'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.support) }, 'Support'),
@@ -106,7 +108,7 @@ function ProfileSideCard({ avatar, onAvatarSelect }) {
         React.createElement(
             'div',
             { className: 'avatar-frame' },
-            React.createElement('img', { className: 'avatar-image', src: avatar || './images/profile-avatar.svg', alt: 'Profile avatar preview' })
+            React.createElement('img', { className: 'avatar-image', src: avatar || defaultAvatar, alt: 'Profile avatar preview' })
         ),
         React.createElement(
             'div',
@@ -163,7 +165,7 @@ function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
 
     useEffect(() => {
         // Sync profile_picture with avatar when avatar changes (e.g., from image upload)
-        if (avatar && avatar !== './images/profile-avatar.svg' && avatar !== profile.profile_picture) {
+        if (avatar && avatar !== defaultAvatar && avatar !== profile.profile_picture) {
             updateField('profile_picture', avatar);
         }
     }, [avatar]);
@@ -179,7 +181,7 @@ function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
         .then(response => {
             if (!response.ok) {
                 if (response.status === 401 || response.status === 403) {
-                    window.location.href = '/login.html';
+                    window.location.href = loginUrl;
                 }
                 throw new Error('Failed to load profile');
             }
@@ -467,7 +469,7 @@ function Footer({ onMessage }) {
 }
 
 function ProfileApp() {
-    const [avatar, setAvatar] = useState('./images/profile-avatar.svg');
+    const [avatar, setAvatar] = useState(defaultAvatar);
     const [status, setStatusState] = useState({ message: '', type: 'info' });
 
     function setStatus(message, type = 'info') {
@@ -484,12 +486,12 @@ function ProfileApp() {
         })
         .then(() => {
             localStorage.removeItem('auth_token');
-            window.location.href = '/login.html';
+            window.location.href = loginUrl;
         })
         .catch(() => {
             // Even if logout fails, clear token and redirect
             localStorage.removeItem('auth_token');
-            window.location.href = '/login.html';
+            window.location.href = loginUrl;
         });
     }
 

@@ -1,4 +1,6 @@
 (function () {
+    const loginUrl = '/login';
+
     const messages = {
         help: 'Help resources are not connected yet.',
         contact: 'Contact details will be provided by the system administrator.',
@@ -382,7 +384,7 @@
         });
 
         if (response.status === 401 || response.status === 403) {
-            window.location.href = '/login.html';
+            window.location.href = loginUrl;
             throw new Error('Authentication is required.');
         }
 

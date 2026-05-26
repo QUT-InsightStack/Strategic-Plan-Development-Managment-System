@@ -1,25 +1,29 @@
+import './resource-crud-config.js';
+
 const { useEffect, useState } = React;
 
 const rootElement = document.getElementById('root');
 const crud = window.ResourceCrud;
+const dashboardUrl = '/dashboard';
+const profileUrl = '/profile';
+const resourceUrl = '/resource';
+const loginUrl = '/login';
 const params = new URLSearchParams(window.location.search);
 const resourceName = params.get('resource') || '';
 const recordId = params.get('id') || '';
 const schema = crud.getSchema(resourceName);
 const apiUrl = resourceName ? `/api/${resourceName}` : '';
+const logoUrl = new URL('../images/logo.png', import.meta.url).href;
 
 function Brand() {
     return React.createElement(
         'a',
-        { className: 'brand', href: '/dashboard.html', 'aria-label': 'Strategic planning Management System home' },
-        React.createElement(
-            'span',
-            { className: 'brand-mark', 'aria-hidden': 'true' },
-            React.createElement('span'),
-            React.createElement('span'),
-            React.createElement('span'),
-            React.createElement('span')
-        ),
+        { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic planning Management System home' },
+        React.createElement('img', {
+            className: 'brand-logo',
+            src: logoUrl,
+            alt: 'Strategic Planning Management System logo',
+        }),
         React.createElement('span', { className: 'brand-name' }, 'Strategic planning Management System')
     );
 }
@@ -32,8 +36,8 @@ function Header({ onMessage, onLogout }) {
         React.createElement(
             'nav',
             { className: 'top-nav', 'aria-label': 'Primary navigation' },
-            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => window.location.href = '/dashboard.html' }, 'Dashboard'),
-            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => window.location.href = '/profile.html' }, 'Profile'),
+            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => window.location.href = dashboardUrl }, 'Dashboard'),
+            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => window.location.href = profileUrl }, 'Profile'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(crud.messages.help) }, 'Help'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(crud.messages.contact) }, 'Contact'),
             React.createElement('button', { className: 'nav-link logout-link', type: 'button', onClick: onLogout }, 'Logout')
@@ -244,7 +248,7 @@ function ResourceFormApp() {
             .catch(() => null)
             .finally(() => {
                 localStorage.removeItem('auth_token');
-                window.location.href = '/login.html';
+                window.location.href = loginUrl;
             });
     }
 
@@ -359,7 +363,7 @@ function ResourceFormApp() {
 
             setStatusMessage(isEditMode ? 'Record updated successfully.' : 'Record created successfully.', 'success');
             window.setTimeout(() => {
-                window.location.href = `/resource.html?resource=${resourceName}`;
+                window.location.href = `${resourceUrl}?resource=${resourceName}`;
             }, 650);
         } catch (error) {
             const validationErrors = getErrorMap(error);
@@ -393,7 +397,7 @@ function ResourceFormApp() {
                     { className: 'resource-header-actions' },
                     React.createElement(
                         'a',
-                        { className: 'action-button secondary', href: `/resource.html?resource=${resourceName}` },
+                        { className: 'action-button secondary', href: `${resourceUrl}?resource=${resourceName}` },
                         'Back to List'
                     )
                 ),
@@ -425,7 +429,7 @@ function ResourceFormApp() {
                                   { className: 'crud-form-actions' },
                                   React.createElement(
                                       'a',
-                                      { className: 'action-button secondary', href: `/resource.html?resource=${resourceName}` },
+                                      { className: 'action-button secondary', href: `${resourceUrl}?resource=${resourceName}` },
                                       'Cancel'
                                   ),
                                   React.createElement(

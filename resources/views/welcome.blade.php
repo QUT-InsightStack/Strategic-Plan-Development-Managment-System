@@ -12,11 +12,9 @@
 <body>
     <div class="login-shell" data-login-page>
         <header class="app-header" aria-label="Application header">
-            <a class="brand" href="/" aria-label="Strategic planning Management System home">
-                <span class="brand-mark" aria-hidden="true">
-                    <span></span><span></span><span></span><span></span>
-                </span>
-                <span class="brand-name">Strategic planning Management System</span>
+            <a class="brand" href="/" aria-label="Strategic Planning Management System home">
+                <img class="brand-logo" src="{{ Vite::asset('resources/images/logo.png') }}" alt="Strategic Planning Management System logo">
+                <span class="brand-name">Strategic Planning Management System</span>
             </a>
 
             <nav class="top-nav" aria-label="Primary navigation">

@@ -1,22 +1,27 @@
+import './resource-crud-config.js';
+
 const { useState, useEffect } = React;
 const rootElement = document.getElementById('root');
 const crud = window.ResourceCrud;
+const dashboardUrl = '/dashboard';
+const profileUrl = '/profile';
+const resourceUrl = '/resource';
+const resourceFormUrl = '/resource-form';
+const loginUrl = '/login';
 const resourceName = new URLSearchParams(window.location.search).get('resource') || '';
 const apiUrl = resourceName ? `/api/${resourceName}` : '';
 const schema = crud.getSchema(resourceName);
+const logoUrl = new URL('../images/logo.png', import.meta.url).href;
 
 function Brand() {
     return React.createElement(
         'a',
-        { className: 'brand', href: '/dashboard.html', 'aria-label': 'Strategic planning Management System home' },
-        React.createElement(
-            'span',
-            { className: 'brand-mark', 'aria-hidden': 'true' },
-            React.createElement('span'),
-            React.createElement('span'),
-            React.createElement('span'),
-            React.createElement('span')
-        ),
+        { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic planning Management System home' },
+        React.createElement('img', {
+            className: 'brand-logo',
+            src: logoUrl,
+            alt: 'Strategic Planning Management System logo',
+        }),
         React.createElement('span', { className: 'brand-name' }, 'Strategic planning Management System')
     );
 }
@@ -29,8 +34,8 @@ function Header({ onMessage, onLogout }) {
         React.createElement(
             'nav',
             { className: 'top-nav', 'aria-label': 'Primary navigation' },
-            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => window.location.href = '/dashboard.html' }, 'Dashboard'),
-            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => window.location.href = '/profile.html' }, 'Profile'),
+            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => window.location.href = dashboardUrl }, 'Dashboard'),
+            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => window.location.href = profileUrl }, 'Profile'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(crud.messages.help) }, 'Help'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(crud.messages.contact) }, 'Contact'),
             React.createElement('button', { className: 'nav-link logout-link', type: 'button', onClick: onLogout }, 'Logout')
@@ -109,7 +114,7 @@ function ResourceTable({ items, onDelete }) {
                                       'a',
                                       {
                                           className: 'action-button secondary',
-                                          href: `/resource-form.html?resource=${resourceName}&id=${id}`,
+                                          href: `${resourceFormUrl}?resource=${resourceName}&id=${id}`,
                                       },
                                       'Edit'
                                   ),
@@ -150,7 +155,7 @@ function ResourceApp() {
             .catch(() => null)
             .finally(() => {
                 localStorage.removeItem('auth_token');
-                window.location.href = '/login.html';
+                window.location.href = loginUrl;
             });
     }
 
@@ -228,7 +233,7 @@ function ResourceApp() {
                     schema
                         ? React.createElement(
                               'a',
-                              { className: 'action-button primary', href: `/resource-form.html?resource=${resourceName}` },
+                              { className: 'action-button primary', href: `${resourceFormUrl}?resource=${resourceName}` },
                               `Create ${schema.singular}`
                           )
                         : null,
@@ -239,7 +244,7 @@ function ResourceApp() {
                     ),
                     React.createElement(
                         'a',
-                        { className: 'action-button secondary', href: '/dashboard.html' },
+                        { className: 'action-button secondary', href: dashboardUrl },
                         'Back to Dashboard'
                     )
                 ),
