@@ -235,8 +235,81 @@ cp .env.example .env
 php artisan key:generate
 
 ---
+##8. Configure JWT Authentication
 
-## 8. Configure Database
+This project uses JWT (JSON Web Token) for API authentication.
+
+Step 1: Generate JWT Secret
+
+After creating the .env file and generating the Laravel application key, generate a JWT secret:
+
+php artisan jwt:secret
+
+This command automatically adds a JWT secret to the .env file:
+
+JWT_SECRET=your_generated_secret
+
+⚠️ Important:
+
+* Do not commit your personal .env file to Git.
+* Each developer must generate their own local JWT secret.
+* Ensure that .env.example contains the JWT_SECRET placeholder.
+
+⸻
+
+Step 2: Clear Configuration Cache
+
+After generating the JWT secret or making any changes to the .env file, clear Laravel’s configuration cache:
+
+php artisan config:clear
+php artisan cache:clear
+php artisan optimize:clear
+
+This ensures Laravel loads the latest authentication configuration.
+
+⸻
+
+Step 3: Verify JWT Configuration
+
+Ensure the following JWT configuration exists in config/auth.php:
+
+'guards' => [
+    'api' => [
+        'driver' => 'jwt',
+        'provider' => 'users',
+    ],
+],
+
+Ensure the User model implements the JWTSubject interface:
+
+use Tymon\JWTAuth\Contracts\JWTSubject;
+class User extends Authenticatable implements JWTSubject
+{
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+    public function getJWTCustomClaims()
+    {
+        return [];
+    }
+}
+
+These configurations are already included in the repository and normally do not require modification.
+
+⸻
+
+Step 4: Using JWT Tokens
+
+After successful authentication, the API returns a JWT token.
+
+For all protected API endpoints, include the token in the request header:
+
+Authorization: Bearer <token>
+
+Requests without a valid Bearer token will be rejected.
+
+## 9. Configure Database
 
 ### Step 1: Create Database
 
@@ -260,7 +333,7 @@ DB_PASSWORD=your_password
 - Use lowercase `mysql` as the connection name (not `MySQL`)
 ---
 
-## 9. Run Database Migrations
+## 10. Run Database Migrations
 
 php artisan migrate
 
@@ -269,7 +342,7 @@ php artisan db:seed
 
 ---
 
-## 10. Run the Application
+## 11. Run the Application
 
 After completing the environment and database configuration, the application can be started as follows.
 
@@ -346,7 +419,7 @@ public/build/manifest.json
 This usually means the Vite development server has not been started.
 
 
-## 11. Verification
+## 12. Verification
 
 To verify that the setup is successful:
 
@@ -356,7 +429,7 @@ To verify that the setup is successful:
 
 ---
 
-## 12. Notes
+## 13. Notes
 
 * Ensure both backend and frontend servers are running during development
 * The frontend server (`npm run dev`) is required for asset compilation
@@ -374,7 +447,7 @@ php artisan config:clear
 
 ---
 
-## 13. Common Issues
+## 14. Common Issues
 
 ### Xdebug Timeout Message
 
@@ -453,10 +526,11 @@ Run:
 ```bash
 php artisan config:clear
 php artisan cache:clear
+php artisan optimize:clear
 ```
 ---
 
-## 14. Security Considerations
+## 15. Security Considerations
 
 * Each team member must use their own GitHub token
 * Follow the principle of least privilege (read-only access where possible)
@@ -466,7 +540,7 @@ php artisan cache:clear
 
 ---
 
-## 15. About Laravel
+## 16. About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
 
@@ -480,7 +554,7 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
-## 16. Version Control
+## 17. Version Control
 
 This project uses a Laravel-standard `.gitignore` configuration to exclude:
 
@@ -490,7 +564,7 @@ This project uses a Laravel-standard `.gitignore` configuration to exclude:
 
 This ensures security and consistency across development environments.
 
-## 17. Summary
+## 18. Summary
 
 To set up the project locally:
 
