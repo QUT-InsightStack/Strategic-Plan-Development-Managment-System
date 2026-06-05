@@ -235,7 +235,7 @@ cp .env.example .env
 php artisan key:generate
 
 ---
-##8. Configure JWT Authentication
+## 8. Configure JWT Authentication
 
 This project uses JWT (JSON Web Token) for API authentication.
 
