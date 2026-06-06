@@ -237,77 +237,107 @@ php artisan key:generate
 ---
 ## 8. Configure JWT Authentication
 
-This project uses JWT (JSON Web Token) for API authentication.
+This project uses `tymon/jwt-auth` for API authentication. JWT is configured in `config/jwt.php`, and the API guard is configured in `config/auth.php` with the `jwt` driver.
 
-Step 1: Generate JWT Secret
+### Step 1: Generate JWT Secret
 
-After creating the .env file and generating the Laravel application key, generate a JWT secret:
+After creating the `.env` file and generating the Laravel application key, generate a JWT signing secret:
 
+```bash
 php artisan jwt:secret
+```
 
-This command automatically adds a JWT secret to the .env file:
+This command adds a generated secret to `.env`:
 
+```env
 JWT_SECRET=your_generated_secret
+```
 
-⚠️ Important:
+Important:
 
-* Do not commit your personal .env file to Git.
+* Do not commit your personal `.env` file to Git.
 * Each developer must generate their own local JWT secret.
-* Ensure that .env.example contains the JWT_SECRET placeholder.
+* Keep the `JWT_SECRET` placeholder in `.env.example`; never store a real secret in the repository.
 
-⸻
+### Step 2: Check JWT Environment Values
 
-Step 2: Clear Configuration Cache
+The default JWT values are already included in `.env.example`:
 
-After generating the JWT secret or making any changes to the .env file, clear Laravel’s configuration cache:
+```env
+JWT_SECRET=
+JWT_TTL=30
+JWT_REFRESH_TTL=10080
+JWT_BLACKLIST_ENABLED=true
+JWT_COOKIE_SECURE=false
+```
 
+Meaning:
+
+* `JWT_TTL=30` keeps access tokens valid for 30 minutes.
+* `JWT_REFRESH_TTL=10080` allows refresh for 7 days.
+* `JWT_BLACKLIST_ENABLED=true` invalidates tokens on logout/refresh.
+* `JWT_COOKIE_SECURE=false` supports local HTTP development. Set this to `true` in production when the app runs over HTTPS.
+
+After generating the JWT secret or changing `.env`, clear Laravel's cached configuration:
+
+```bash
 php artisan config:clear
 php artisan cache:clear
 php artisan optimize:clear
+```
 
-This ensures Laravel loads the latest authentication configuration.
+### Step 3: How JWT Is Used In This Project
 
-⸻
+On successful login, the API returns the JWT token in the JSON response and also sets it as an HttpOnly cookie named `access_token`.
 
-Step 3: Verify JWT Configuration
+Browser requests should use cookies:
 
-Ensure the following JWT configuration exists in config/auth.php:
+* The login frontend posts to `/api/login` with `credentials: 'include'`.
+* The `access_token` cookie is HttpOnly, so JavaScript cannot read it directly.
+* `JwtCookieMiddleware` copies the cookie into an `Authorization: Bearer <token>` header internally so `jwt-auth` can authenticate the request.
 
-'guards' => [
-    'api' => [
-        'driver' => 'jwt',
-        'provider' => 'users',
-    ],
-],
+External API clients can send the token manually:
 
-Ensure the User model implements the JWTSubject interface:
-
-use Tymon\JWTAuth\Contracts\JWTSubject;
-class User extends Authenticatable implements JWTSubject
-{
-    public function getJWTIdentifier()
-    {
-        return $this->getKey();
-    }
-    public function getJWTCustomClaims()
-    {
-        return [];
-    }
-}
-
-These configurations are already included in the repository and normally do not require modification.
-
-⸻
-
-Step 4: Using JWT Tokens
-
-After successful authentication, the API returns a JWT token.
-
-For all protected API endpoints, include the token in the request header:
-
+```http
 Authorization: Bearer <token>
+```
 
-Requests without a valid Bearer token will be rejected.
+Requests without a valid JWT will receive a JSON `401 Unauthenticated` response.
+
+### Step 4: Auth Endpoints
+
+Login:
+
+```http
+POST /api/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password"
+}
+```
+
+Response includes:
+
+```json
+{
+  "success": true,
+  "message": "Logged in successfully.",
+  "token": "<jwt_token>"
+}
+```
+
+Current auth routes:
+
+* `POST /api/login` - login and issue JWT.
+* `POST /api/logout` - blacklist the current JWT and clear the cookie.
+* `POST /api/refresh` - rotate the JWT within the refresh window.
+* `GET /api/me` - return the authenticated user.
+* `PUT /api/profile` - update the authenticated user's profile.
+
+The project also exposes `/api/auth/login`, `/api/auth/logout`, `/api/auth/refresh`, `/api/auth/me`, and `/api/auth/profile` variants.
 
 ## 9. Configure Database
 
