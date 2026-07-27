@@ -1,0 +1,40 @@
+.code-logo.code-logo {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    flex-shrink: 0;
+    overflow: visible;
+}
+
+.code-logo::before {
+    position: absolute;
+    z-index: 0;
+    inset: 25%;
+    background: #000000;
+    content: '';
+}
+
+.code-logo .logo-circle {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+}
+
+.code-logo .logo-top-left {
+    background: conic-gradient(#231f20 0deg 90deg, #ffffff 90deg 180deg, #08a9e0 180deg 270deg, #231f20 270deg 360deg);
+}
+
+.code-logo .logo-top-right {
+    background: conic-gradient(#231f20 0deg 180deg, #ffffff 180deg 270deg, #08a9e0 270deg 360deg);
+}
+
+.code-logo .logo-bottom-left {
+    background: conic-gradient(#ffffff 0deg 90deg, #08a9e0 90deg 180deg, #231f20 180deg 360deg);
+}
+
+.code-logo .logo-bottom-right {
+    background: conic-gradient(#08a9e0 0deg 90deg, #231f20 90deg 270deg, #ffffff 270deg 360deg);
+}

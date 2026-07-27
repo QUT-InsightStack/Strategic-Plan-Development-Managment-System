@@ -13,7 +13,13 @@
     <div class="login-shell" data-login-page>
         <header class="app-header" aria-label="Application header">
             <a class="brand" href="/" aria-label="Strategic Planning Management System home">
-                <img class="brand-logo" src="{{ Vite::asset('resources/images/logo.png') }}" alt="Strategic Planning Management System logo">
+               <span class="brand-logo code-logo" role="img"
+                    aria-label="Strategic Planning Management System logo">
+                    <span class="logo-circle logo-top-left"></span>
+                    <span class="logo-circle logo-top-right"></span>
+                    <span class="logo-circle logo-bottom-left"></span>
+                    <span class="logo-circle logo-bottom-right"></span>
+               </span>
                 <span class="brand-name">Strategic Planning Management System</span>
             </a>
 

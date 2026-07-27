@@ -1,0 +1,42 @@
+:root {
+    /* DOST official digital colors */
+    --color-brand-cyan: #00aeef;
+    --color-brand-black: #000000;
+    --color-brand-white: #ffffff;
+
+    /* Interface colors */
+    --color-primary: #174c8f;
+    --color-primary-hover: #123d73;
+    --color-primary-active: #0e315d;
+    --color-primary-soft: #eaf4fb;
+    --color-gray-950: #171717;
+    --color-gray-800: #292929;
+    --color-gray-600: #5f6368;
+    --color-gray-500: #737373;
+    --color-gray-400: #a3a3a3;
+    --color-gray-300: #d4d4d4;
+    --color-gray-200: #e5e7eb;
+    --color-gray-100: #f3f4f6;
+    --color-gray-50: #f8fafc;
+    --color-success: #18794e;
+    --color-warning: #9a6700;
+    --color-danger: #b42318;
+    --color-info: #1769aa;
+
+    /* Typography */
+    --font-family-sans: "Segoe UI", Arial, Helvetica, sans-serif;
+    --font-size-xs: 12px;
+    --font-size-sm: 14px;
+    --font-size-md: 16px;
+    --font-size-lg: 18px;
+    --font-size-xl: 20px;
+    --font-size-2xl: 24px;
+    --font-size-3xl: 28px;
+    --line-height-tight: 1.25;
+    --line-height-heading: 1.35;
+    --line-height-body: 1.5;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+}

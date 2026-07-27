@@ -1,15 +1,17 @@
+@import './brand-logo.css';
+@import './design-tokens.css';
+
 :root {
-    --page-bg: #dceaf7;
-    --primary: #1f4fa5;
-    --primary-dark: #16428e;
-    --header-bg: #204f9e;
-    --header-border: #0789ff;
-    --text: #11254a;
-    --muted: #7b8ca8;
-    --panel: #ffffff;
-    --danger: #b42318;
-    --success: #157347;
-    --shadow: 0 2px 8px rgba(17, 37, 74, 0.18);
+    --page-bg: var(--color-gray-50);
+    --primary: var(--color-primary);
+    --primary-dark: var(--color-primary-hover);
+    --header-bg: var(--color-primary);
+    --text: var(--color-gray-950);
+    --muted: var(--color-gray-600);
+    --panel: var(--color-brand-white);
+    --danger: var(--color-danger);
+    --success: var(--color-success);
+    --shadow: 0 2px 8px rgba(23, 76, 143, 0.14);
 }
 
 * {
@@ -20,8 +22,11 @@ body {
     margin: 0;
     min-width: 320px;
     color: var(--text);
-    font-family: Arial, Helvetica, sans-serif;
-    background: #f4f4f4;
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-md);
+    line-height: var(--line-height-body);
+    background: var(--color-gray-50);
+    letter-spacing: 0;
 }
 
 button,
@@ -45,7 +50,7 @@ button {
 .app-footer {
     width: 100%;
     background: var(--header-bg);
-    color: #ffffff;
+    color: var(--color-brand-white);
 }
 
 .app-header {
@@ -68,15 +73,62 @@ button {
 }
 
 .brand-logo {
-    display: block;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     width: 34px;
     height: 34px;
-    object-fit: contain;
+    flex-shrink: 0;
+    filter:
+        drop-shadow(2px 0 0 var(--color-brand-white))
+        drop-shadow(-2px 0 0 var(--color-brand-white))
+        drop-shadow(0 2px 0 var(--color-brand-white))
+        drop-shadow(0 -2px 0 var(--color-brand-white));
+}
+
+.logo-circle {
+    display: block;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+}
+
+.logo-top-left {
+    background: conic-gradient(
+        var(--color-brand-black) 0deg 90deg,
+        var(--color-brand-white) 90deg 180deg,
+        var(--color-brand-cyan) 180deg 270deg,
+        var(--color-brand-black) 270deg 360deg
+    );
+}
+
+.logo-top-right {
+    background: conic-gradient(
+        var(--color-brand-black) 0deg 180deg,
+        var(--color-brand-white) 180deg 270deg,
+        var(--color-brand-cyan) 270deg 360deg
+    );
+}
+
+.logo-bottom-left {
+    background: conic-gradient(
+        var(--color-brand-white) 0deg 90deg,
+        var(--color-brand-cyan) 90deg 180deg,
+        var(--color-brand-black) 180deg 360deg
+    );
+}
+
+.logo-bottom-right {
+    background: conic-gradient(
+        var(--color-brand-cyan) 0deg 90deg,
+        var(--color-brand-black) 90deg 270deg,
+        var(--color-brand-white) 270deg 360deg
+    );
 }
 
 .brand-name {
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: 15px;
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-heading);
     white-space: nowrap;
 }
 
@@ -88,9 +140,10 @@ button {
 .nav-link {
     min-width: 88px;
     border: 0;
-    color: #ffffff;
+    color: var(--color-brand-white);
     background: transparent;
-    font-size: 12px;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
 }
 
 .nav-link:hover,
@@ -128,17 +181,17 @@ button {
 .access-intro h1 {
     max-width: 390px;
     margin: 0 0 18px;
-    font-size: 32px;
-    line-height: 1.14;
-    font-weight: 700;
+    font-size: var(--font-size-3xl);
+    line-height: var(--line-height-tight);
+    font-weight: var(--font-weight-bold);
 }
 
 .access-intro p {
     margin: 0;
-    color: #000000;
-    font-size: 13px;
-    line-height: 1.2;
-    font-weight: 700;
+    color: var(--color-gray-600);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-body);
+    font-weight: var(--font-weight-regular);
 }
 
 .login-card {
@@ -157,14 +210,16 @@ button {
 .card-heading h2 {
     margin: 0 0 8px;
     color: var(--primary);
-    font-size: 16px;
-    font-weight: 700;
+    font-size: var(--font-size-xl);
+    line-height: var(--line-height-heading);
+    font-weight: var(--font-weight-semibold);
 }
 
 .card-heading p {
     margin: 0;
     color: var(--muted);
-    font-size: 15px;
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-body);
 }
 
 .login-form {
@@ -179,31 +234,31 @@ button {
 
 .field-group label {
     color: var(--primary);
-    font-size: 14px;
-    font-weight: 700;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
 }
 
 .field-group input[type='text'],
 .field-group input[type='email'],
 .field-group input[type='password'] {
     width: 100%;
-    min-height: 40px;
-    border: 2px solid #c3c3c3;
+    min-height: 44px;
+    border: 1px solid var(--color-gray-300);
     border-radius: 6px;
     padding: 0 42px 0 40px;
     color: var(--text);
-    background: #ffffff;
+    background: var(--color-brand-white);
     box-shadow: var(--shadow);
-    font-size: 12px;
+    font-size: var(--font-size-sm);
 }
 
 .field-group input::placeholder {
-    color: #9aa4b4;
+    color: var(--color-gray-500);
 }
 
 .field-group input:focus {
-    border-color: var(--primary);
-    outline: 3px solid rgba(31, 79, 165, 0.16);
+    border-color: var(--color-brand-cyan);
+    outline: 3px solid rgba(0, 174, 239, 0.18);
 }
 
 .field-group.has-error input {
@@ -221,13 +276,13 @@ button {
 .icon-button {
     position: absolute;
     top: 50%;
-    right: 16px;
+    right: 6px;
     display: inline-grid;
-    width: 28px;
-    height: 28px;
+    width: 40px;
+    height: 40px;
     place-items: center;
     border: 0;
-    color: #000000;
+    color: var(--color-gray-800);
     background: transparent;
     transform: translateY(-50%);
 }
@@ -242,7 +297,8 @@ button {
     min-height: 14px;
     margin: 0;
     color: var(--danger);
-    font-size: 11px;
+    font-size: var(--font-size-xs);
+    line-height: var(--line-height-body);
 }
 
 .form-options {
@@ -258,7 +314,7 @@ button {
     align-items: center;
     gap: 8px;
     color: var(--primary);
-    font-size: 10px;
+    font-size: var(--font-size-sm);
 }
 
 .remember-option input {
@@ -268,11 +324,13 @@ button {
 }
 
 .text-button {
+    min-height: 40px;
     border: 0;
+    padding: 0 4px;
     color: var(--primary);
     background: transparent;
-    font-size: 10px;
-    font-weight: 700;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
 }
 
 .text-button:hover,
@@ -284,16 +342,16 @@ button {
 }
 
 .signin-button {
-    justify-self: center;
-    width: 180px;
-    min-height: 42px;
+    width: 100%;
+    min-height: 44px;
     border: 0;
     border-radius: 6px;
-    color: #ffffff;
+    padding: 0 24px;
+    color: var(--color-brand-white);
     background: var(--primary);
-    font-size: 13px;
-    font-weight: 700;
-    box-shadow: 0 2px 6px rgba(31, 79, 165, 0.32);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    box-shadow: 0 2px 6px rgba(23, 76, 143, 0.24);
     transition: background 160ms ease, transform 160ms ease;
 }
 
@@ -310,29 +368,40 @@ button {
     transform: none;
 }
 
+.signin-button:focus-visible,
+.text-button:focus-visible,
+.icon-button:focus-visible {
+    outline: 3px solid rgba(0, 174, 239, 0.28);
+    outline-offset: 2px;
+}
+
 .form-status {
     min-height: 14px;
     margin: -4px 0 0;
     text-align: center;
-    font-size: 12px;
-    font-weight: 700;
+    font-size: var(--font-size-xs);
+    line-height: var(--line-height-body);
+    font-weight: var(--font-weight-semibold);
 }
 
 .form-status.is-success {
     color: var(--success);
 }
 
-.form-status.is-error,
 .form-status.is-info {
-    color: var(--primary);
+    color: var(--color-info);
+}
+
+.form-status.is-error {
+    color: var(--danger);
 }
 
 .access-note {
     max-width: 260px;
     margin: 0 auto;
-    color: #000000;
-    font-size: 9px;
-    line-height: 1.25;
+    color: var(--color-gray-600);
+    font-size: var(--font-size-xs);
+    line-height: var(--line-height-body);
 }
 
 .app-footer {
@@ -341,7 +410,8 @@ button {
     grid-template-columns: 1fr repeat(3, 210px);
     align-items: center;
     padding: 0 36px;
-    font-size: 12px;
+    font-size: var(--font-size-xs);
+    line-height: var(--line-height-body);
 }
 
 .app-footer span {

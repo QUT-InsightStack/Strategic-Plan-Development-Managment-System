@@ -1,3 +1,5 @@
+import { BrandLogo } from './brand-logo.js';
+
 const { useEffect, useState } = React;
 
 const messages = {
@@ -11,8 +13,6 @@ const messages = {
 
 const rootElement = document.getElementById('root');
 const dashboardUrl = '/dashboard';
-const logoUrl = new URL('../images/logo.png', import.meta.url).href;
-
 const apiConfig = {
     loginUrl: rootElement.dataset.loginUrl || '/api/login',
 };
@@ -36,16 +36,11 @@ async function loginRequest(credentials) {
 
     return data;
 }
-
 function Brand() {
     return React.createElement(
         'a',
         { className: 'brand', href: '#', 'aria-label': 'Strategic planning Management System home' },
-        React.createElement('img', {
-            className: 'brand-logo',
-            src: logoUrl,
-            alt: 'Strategic Planning Management System logo',
-        }),
+        React.createElement(BrandLogo),
         React.createElement('span', { className: 'brand-name' }, 'Strategic planning Management System')
     );
 }

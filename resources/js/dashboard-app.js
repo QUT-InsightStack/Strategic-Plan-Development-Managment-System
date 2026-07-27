@@ -1,3 +1,5 @@
+import { BrandLogo } from './brand-logo.js';
+
 const { useState, useEffect } = React;
 const rootElement = document.getElementById('root');
 const dashboardUrl = '/dashboard';
@@ -5,7 +7,6 @@ const profileUrl = '/profile';
 const resourceUrl = '/resource';
 const loginUrl = '/login';
 const strategicPlanUrl = '/strategic-plan';
-const logoUrl = new URL('../images/logo.png', import.meta.url).href;
 
 const modules = [
     { id: 'users', title: 'Users', description: 'Manage user accounts and active employees.' },
@@ -36,11 +37,7 @@ function Brand() {
     return React.createElement(
         'a',
         { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic planning Management System home' },
-        React.createElement('img', {
-            className: 'brand-logo',
-            src: logoUrl,
-            alt: 'Strategic Planning Management System logo',
-        }),
+        React.createElement(BrandLogo),
         React.createElement('span', { className: 'brand-name' }, 'Strategic planning Management System')
     );
 }
