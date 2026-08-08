@@ -8,6 +8,7 @@ Route::redirect('/', '/login');
 Route::view('/login', 'pages.login')->name('login');
 Route::view('/dashboard', 'pages.dashboard')->name('dashboard');
 Route::view('/profile', 'pages.profile')->name('profile');
+Route::view('/change-password', 'pages.change-password')->name('change-password');
 Route::view('/resource', 'pages.resource')->name('resource.index');
 Route::view('/resource-form', 'pages.resource-form')->name('resource.form');
 Route::view('/strategic-plan', 'pages.strategic-plan')->name('strategic-plan');

@@ -906,3 +906,9 @@ select.crud-input[multiple] {
         flex: 1 1 160px;
     }
 }
+/* Change Password navigation */
+
+.profile-password-button {
+    width: 100%;
+    margin-top: 18px;
+}
