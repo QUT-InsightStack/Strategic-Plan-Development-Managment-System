@@ -58,6 +58,9 @@ Route::put('/profile', [AuthController::class, 'updateProfile'])->middleware('jw
 // PUT/PATCH /users/{id} -> update() method, update a user
 // DELETE /users/{id} -> destroy() method, delete a user
 Route::middleware('jwt.auth')->group(function () {
+    // Declared before the resource route: otherwise "users/search" is matched
+    // by "users/{id}" and search never runs.
+    Route::get('users/search', [UserController::class, 'search']);
     Route::resource('users', UserController::class);
     Route::resource('roles', RoleController::class);
     Route::get('roles/{roleId}/permissions', [RolePremissionController::class, 'byRole']);
