@@ -1,4 +1,5 @@
 @import './brand-logo.css';
+@import './design-tokens.css';
 
 :root {
     --page-bg: #f3f6fb;
@@ -97,17 +98,38 @@ button {
 }
 
 .nav-link {
-    min-width: 88px;
+    min-width: var(--nav-button-min-width);
+    height: var(--nav-button-height);
     border: 0;
-    color: #ffffff;
+    border-radius: var(--nav-button-radius);
+    padding: 0 var(--nav-button-padding-x);
+    color: var(--color-brand-white);
     background: transparent;
-    font-size: 12px;
+    font-size: var(--nav-button-font-size);
+    font-weight: var(--nav-button-font-weight);
 }
 
 .nav-link:hover,
 .nav-link:focus-visible {
-    background: rgba(255, 255, 255, 0.13);
+    background: var(--nav-button-hover-bg);
     outline: none;
+}
+
+.nav-link.logout-link {
+    min-width: var(--logout-button-min-width);
+    color: var(--logout-button-color);
+    font-size: var(--logout-button-font-size);
+    font-weight: var(--logout-button-font-weight);
+}
+
+.nav-link.logout-link:hover,
+.nav-link.logout-link:focus-visible {
+    background: var(--logout-button-hover-bg);
+}
+
+.nav-link:disabled {
+    cursor: wait;
+    opacity: 0.7;
 }
 
 .profile-main {
