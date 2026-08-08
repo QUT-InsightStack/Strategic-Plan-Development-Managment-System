@@ -11,7 +11,9 @@ const userSearchUrl = '/user-search';
 
 const modules = [
     { id: 'users', title: 'Users', description: 'Manage user accounts and active employees.' },
-    { id: 'roles', title: 'Roles', description: 'Create and assign role definitions.' },
+    // Role definitions are managed here; assigning a role to a person starts
+    // from the Users card, since it needs a specific user.
+    { id: 'roles', title: 'Roles', description: 'Define roles. To assign one to a user, search for them under Users.' },
     { id: 'permissions', title: 'Permissions', description: 'Control module access and privileges.' },
     { id: 'strategic-foundations', title: 'Strategic Foundations', description: 'Manage your strategic goals and values.' },
     { id: 'strategic-records', title: 'Strategic Records', description: 'Review and maintain strategic plan records.' },

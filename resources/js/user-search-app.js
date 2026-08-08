@@ -9,6 +9,7 @@ const dashboardUrl = '/dashboard';
 const profileUrl = '/profile';
 const createUserUrl = '/create-user';
 const resourceFormUrl = '/resource-form';
+const userRolesUrl = '/user-roles';
 const loginUrl = '/login';
 const searchApiUrl = '/api/users/search';
 
@@ -102,9 +103,23 @@ function ResultsTable({ users }) {
                             'td',
                             { 'data-label': 'Actions' },
                             React.createElement(
-                                'a',
-                                { className: 'action-button secondary small', href: `${resourceFormUrl}?resource=users&id=${user.user_id}` },
-                                'Edit'
+                                'div',
+                                { className: 'row-actions' },
+                                React.createElement(
+                                    'a',
+                                    { className: 'action-button secondary small', href: `${resourceFormUrl}?resource=users&id=${user.user_id}` },
+                                    'Edit'
+                                ),
+                                React.createElement(
+                                    'a',
+                                    {
+                                        className: 'action-button secondary small',
+                                        // Carry the current search so returning
+                                        // from the role page restores it.
+                                        href: `${userRolesUrl}?id=${user.user_id}&return=${encodeURIComponent(window.location.search)}`,
+                                    },
+                                    'Assign Role'
+                                )
                             )
                         )
                     )

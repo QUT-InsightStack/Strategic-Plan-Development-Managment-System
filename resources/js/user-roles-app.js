@@ -13,6 +13,30 @@ const loginUrl = '/login';
 const params = new URLSearchParams(window.location.search);
 const userId = params.get('id') || '';
 
+/**
+ * Where Cancel and the breadcrumb return to.
+ *
+ * The search page passes its own query string as `return` so an administrator
+ * comes back to the results they were looking at rather than a blank search.
+ *
+ * Only the query string is taken, never a full URL: accepting an arbitrary
+ * destination here would make this an open redirect.
+ */
+const returnUrl = (() => {
+    const raw = params.get('return');
+
+    if (!raw) {
+        return userSearchUrl;
+    }
+
+    // A query string only. Reject anything that could change the host or path.
+    if (/^\?[^\s]*$/.test(raw) && !raw.includes('//')) {
+        return `${userSearchUrl}${raw}`;
+    }
+
+    return userSearchUrl;
+})();
+
 // Mirrors Role::PRIVILEGED_ROLES. Used only to warn before granting elevated
 // access; the authoritative check is server-side.
 const PRIVILEGED_ROLES = ['Administrator'];
@@ -240,7 +264,7 @@ function UserRolesApp() {
                     { className: 'breadcrumb', 'aria-label': 'Breadcrumb' },
                     React.createElement('a', { href: dashboardUrl }, 'Dashboard'),
                     React.createElement('span', { 'aria-hidden': 'true' }, '/'),
-                    React.createElement('a', { href: userSearchUrl }, 'Users'),
+                    React.createElement('a', { href: returnUrl }, 'Users'),
                     React.createElement('span', { 'aria-hidden': 'true' }, '/'),
                     React.createElement('span', null, 'Assign Role')
                 ),
@@ -260,7 +284,7 @@ function UserRolesApp() {
                                 'div',
                                 { className: 'state-message is-error' },
                                 React.createElement('p', null, status.message || 'User not found.'),
-                                React.createElement('a', { className: 'action-button secondary small', href: userSearchUrl }, 'Back to users')
+                                React.createElement('a', { className: 'action-button secondary small', href: returnUrl }, 'Back to users')
                             )
                         )
                       : React.createElement(
@@ -333,7 +357,7 @@ function UserRolesApp() {
                                 React.createElement(
                                     'div',
                                     { className: 'roles-actions' },
-                                    React.createElement('a', { className: 'action-button secondary', href: userSearchUrl }, 'Cancel'),
+                                    React.createElement('a', { className: 'action-button secondary', href: returnUrl }, 'Cancel'),
                                     React.createElement(
                                         'button',
                                         {

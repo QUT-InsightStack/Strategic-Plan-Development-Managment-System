@@ -330,6 +330,11 @@ button {
     background: var(--color-primary-soft);
 }
 
+.row-actions {
+    display: flex;
+    gap: 8px;
+}
+
 /* ─── Status badge ───────────────────────────────────────────────── */
 
 .status-badge {
@@ -484,6 +489,12 @@ button {
         color: var(--muted);
         font-size: var(--font-size-xs);
         font-weight: var(--font-weight-semibold);
+    }
+
+    /* Keep both actions reachable once rows stack into cards. */
+    .row-actions {
+        flex-wrap: wrap;
+        justify-content: flex-end;
     }
 
     .pagination {
