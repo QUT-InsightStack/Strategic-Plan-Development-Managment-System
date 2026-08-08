@@ -36,6 +36,16 @@ class UserService
         return $this->userRepository->search($filters);
     }
 
+    /**
+     * Distinct unit, office and department values for the search filters.
+     *
+     * @return array{units:string[],offices:string[],departments:string[]}
+     */
+    public function getSearchFilterOptions(): array
+    {
+        return $this->userRepository->filterOptions();
+    }
+
     public function createUser(array $data): Model
     {
         // Business logic: such as password hashing, validation, etc.

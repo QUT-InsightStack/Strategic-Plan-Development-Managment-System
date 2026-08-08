@@ -61,6 +61,7 @@ Route::middleware('jwt.auth')->group(function () {
     // Declared before the resource route: otherwise "users/search" is matched
     // by "users/{id}" and search never runs.
     Route::get('users/search', [UserController::class, 'search']);
+    Route::get('users/search-filters', [UserController::class, 'searchFilterOptions']);
     Route::resource('users', UserController::class);
     Route::resource('roles', RoleController::class);
     Route::get('roles/{roleId}/permissions', [RolePremissionController::class, 'byRole']);

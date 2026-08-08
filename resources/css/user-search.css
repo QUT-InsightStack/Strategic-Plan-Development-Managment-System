@@ -235,6 +235,132 @@ button {
     gap: 10px;
 }
 
+/* ─── Advanced filters ───────────────────────────────────────────── */
+
+.advanced-toggle-row {
+    grid-column: 1 / -1;
+}
+
+.advanced-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 0;
+    padding: 4px 0;
+    color: var(--primary);
+    background: transparent;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+}
+
+.advanced-toggle:hover,
+.advanced-toggle:focus-visible {
+    text-decoration: underline;
+    outline: none;
+}
+
+.advanced-caret {
+    display: inline-block;
+    transition: transform 150ms ease;
+}
+
+.advanced-caret.is-open {
+    transform: rotate(90deg);
+}
+
+.advanced-count {
+    display: inline-grid;
+    min-width: 20px;
+    height: 20px;
+    place-items: center;
+    border-radius: 999px;
+    padding: 0 6px;
+    color: var(--color-brand-white);
+    background: var(--color-brand-cyan);
+    font-size: var(--font-size-xs);
+}
+
+.advanced-filters {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 16px;
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+}
+
+.advanced-empty {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--font-size-sm);
+}
+
+/* ─── Active filter chips ────────────────────────────────────────── */
+
+.filter-chips {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+.filter-chips-label {
+    color: var(--muted);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--color-brand-cyan);
+    border-radius: 999px;
+    padding: 4px 10px;
+    color: var(--primary);
+    background: var(--color-primary-soft);
+    font-size: var(--font-size-xs);
+}
+
+.filter-chip:hover,
+.filter-chip:focus-visible {
+    background: #d7ecf8;
+    outline: none;
+}
+
+.filter-chip-label {
+    color: var(--muted);
+}
+
+.filter-chip-value {
+    font-weight: var(--font-weight-semibold);
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.filter-chip-remove {
+    font-size: var(--font-size-md);
+    line-height: 1;
+}
+
+.filter-chip-clear {
+    border: 0;
+    padding: 4px 6px;
+    color: var(--primary);
+    background: transparent;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: underline;
+}
+
+.filter-chip-clear:focus-visible {
+    outline: 2px solid var(--color-brand-cyan);
+}
+
 /* ─── Buttons ────────────────────────────────────────────────────── */
 
 .action-button {
