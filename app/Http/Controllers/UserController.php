@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\AssignUserRoleRequest;
+use App\Http\Requests\SearchUserRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Services\UserService;
@@ -21,6 +22,46 @@ class UserController extends BaseCrudController
     protected function getService()
     {
         return $this->userService;
+    }
+
+    /**
+     * Search users by name, email or role.
+     *
+     * Returns a paginated summary. Only the fields an administrator needs to
+     * identify an account are exposed; the password hash and remember token
+     * are hidden on the model and additionally never selected here.
+     *
+     * Inactive and suspended accounts are included, with status returned so
+     * the caller can label them.
+     */
+    public function search(SearchUserRequest $request): JsonResponse
+    {
+        $results = $this->getService()->searchUsers($request->filters());
+
+        return response()->json([
+            'success' => true,
+            'data'    => collect($results->items())->map(fn ($user) => [
+                'user_id'    => $user->user_id,
+                'first_name' => $user->first_name,
+                'last_name'  => $user->last_name,
+                'email'      => $user->email,
+                'department' => $user->department,
+                'unit'       => $user->unit,
+                'office'     => $user->office,
+                'position'   => $user->position,
+                'status'     => $user->status,
+                'role_id'    => $user->role_id,
+                'role_name'  => $user->role?->role_name,
+            ])->all(),
+            'meta'    => [
+                'current_page' => $results->currentPage(),
+                'last_page'    => $results->lastPage(),
+                'per_page'     => $results->perPage(),
+                'total'        => $results->total(),
+                'from'         => $results->firstItem(),
+                'to'           => $results->lastItem(),
+            ],
+        ], 200);
     }
 
     /**

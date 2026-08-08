@@ -58,8 +58,10 @@ Route::put('/profile', [AuthController::class, 'updateProfile'])->middleware('jw
 // PUT/PATCH /users/{id} -> update() method, update a user
 // DELETE /users/{id} -> destroy() method, delete a user
 Route::middleware('jwt.auth')->group(function () {
-    // Declared before the resource route so "users/{id}/role" is not captured
-    // by the resource's own {user} parameter handling.
+    // All declared before the resource route: otherwise "users/search" is
+    // matched by "users/{id}", and "users/{id}/role" is captured by the
+    // resource's own parameter handling.
+    Route::get('users/search', [UserController::class, 'search']);
     Route::put('users/{id}/role', [UserController::class, 'assignRole']);
     Route::resource('users', UserController::class);
     Route::resource('roles', RoleController::class);

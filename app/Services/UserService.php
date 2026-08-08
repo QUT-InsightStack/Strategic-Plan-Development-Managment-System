@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Log;
 use App\Repositories\UserRepository;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -24,6 +25,16 @@ class UserService
     public function getUserById(int $id): ?Model
     {
         return $this->userRepository->find($id);
+    }
+
+    /**
+     * Search users by name, email or role.
+     *
+     * @param array{term?:string,role_id?:int,status?:string,sort_by?:string,sort_dir?:string,per_page?:int} $filters
+     */
+    public function searchUsers(array $filters = []): LengthAwarePaginator
+    {
+        return $this->userRepository->search($filters);
     }
 
     /**
