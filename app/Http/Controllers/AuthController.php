@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
+use App\Models\Log;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -35,9 +36,34 @@ class AuthController extends Controller
 
     // ─── Logout ──────────────────────────────────────────────────────
 
+    /**
+     * Terminate the session.
+     *
+     * Deliberately idempotent: logging out twice, or with a missing or
+     * already-blacklisted token, still returns 200 and still clears the
+     * cookie. A caller asking to be logged out should never be told the
+     * request failed, and any error here would leave the cookie in place.
+     */
     public function logout(): JsonResponse
     {
-        Auth::guard('api')->logout();       // blacklists current token
+        try {
+            // Resolve the user before invalidating, so the audit row can
+            // attribute the event. Fails silently if the token is bad.
+            $user = Auth::guard('api')->user();
+
+            if ($user) {
+                Log::create([
+                    'user_id'   => $user->user_id,
+                    'operation' => 'logout',
+                    'states'    => 'success',
+                ]);
+            }
+
+            Auth::guard('api')->logout();   // blacklists current token
+        } catch (\Throwable $e) {
+            // Token was absent, malformed or already blacklisted. The
+            // desired end state — no valid session — already holds.
+        }
 
         return response()->json([
             'success' => true,

@@ -1,4 +1,5 @@
 import { BrandLogo } from './brand-logo.js';
+import { logout, guardAgainstBackNavigation } from './auth-session.js';
 
 const { useState, useEffect } = React;
 const rootElement = document.getElementById('root');
@@ -58,12 +59,17 @@ function Sidebar({ collapsed, onToggle }) {
 
 // ─── Top bar ──────────────────────────────────────────────────────────────────
 
-function TopBar({ onLogout }) {
+function TopBar({ onLogout, loggingOut }) {
     return React.createElement(
         'div',
         { className: 'office-topbar' },
         React.createElement('button', { className: 'office-topbar-btn', onClick: () => { window.location.href = profileUrl; } }, React.createElement('i', { className: 'bi bi-person me-1' }), 'Profile'),
-        React.createElement('button', { className: 'office-topbar-btn logout', onClick: onLogout }, React.createElement('i', { className: 'bi bi-box-arrow-right me-1' }), 'Logout')
+        React.createElement(
+            'button',
+            { className: 'office-topbar-btn logout', onClick: onLogout, disabled: loggingOut },
+            React.createElement('i', { className: 'bi bi-box-arrow-right me-1' }),
+            loggingOut ? 'Signing out...' : 'Logout'
+        )
     );
 }
 
@@ -453,11 +459,16 @@ function StrategicPlanApp() {
     const [vision, setVision] = useState(STATIC_DATA.vision);
     const [coreValues, setCoreValues] = useState(STATIC_DATA.coreValues);
     const [nextId, setNextId] = useState(STATIC_DATA.coreValues.length + 1);
+    const [loggingOut, setLoggingOut] = useState(false);
+
+    useEffect(() => {
+        guardAgainstBackNavigation();
+    }, []);
 
     function handleLogout() {
-        fetch('/api/logout', { method: 'POST', credentials: 'include', headers: { Accept: 'application/json' } })
-            .catch(() => null)
-            .finally(() => { window.location.href = loginUrl; });
+        logout({
+            onStart: () => setLoggingOut(true),
+        });
     }
 
     function handleSaveFoundation(field, value) {
@@ -487,7 +498,7 @@ function StrategicPlanApp() {
         React.createElement(
             'div',
             { className: `main-content${collapsed ? ' expanded' : ''}`, id: 'mainContent' },
-            React.createElement(TopBar, { onLogout: handleLogout }),
+            React.createElement(TopBar, { onLogout: handleLogout, loggingOut }),
             React.createElement(
                 'div',
                 { className: 'office-page-header' },

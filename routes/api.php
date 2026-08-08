@@ -26,9 +26,13 @@ Route::post('auth/login', [AuthController::class, 'login'])
 Route::post('auth/refresh', [AuthController::class, 'refresh']);
 
 
+// Logout is intentionally outside auth:api. It is idempotent and must stay
+// reachable with an expired or already-blacklisted token, so that repeated
+// logout attempts still clear the cookie instead of returning 401.
+Route::post('auth/logout', [AuthController::class, 'logout']);
+
 // Requires a valid, non-expired token
 Route::middleware('auth:api')->group(function () {
-    Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::get('auth/me',     [AuthController::class, 'me']);
     Route::put('auth/profile',       [AuthController::class, 'updateProfile']);
 });
@@ -45,7 +49,7 @@ Route::middleware('auth:api')->group(function () {
 
 // Auth routes
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout'])->middleware('jwt.auth');
+Route::post('/logout', [AuthController::class, 'logout']);
 Route::post('/refresh', [AuthController::class, 'refresh'])->middleware('jwt.refresh');
 Route::get('/me', [AuthController::class, 'me'])->middleware('jwt.auth');
 Route::put('/profile', [AuthController::class, 'updateProfile'])->middleware('jwt.auth');

@@ -1,4 +1,5 @@
 import { BrandLogo } from './brand-logo.js';
+import { logout, guardAgainstBackNavigation } from './auth-session.js';
 
 const { useState, useEffect } = React;
 const rootElement = document.getElementById('root');
@@ -42,7 +43,7 @@ function Brand() {
     );
 }
 
-function Header({ onMessage, onLogout }) {
+function Header({ onMessage, onLogout, loggingOut }) {
     return React.createElement(
         'header',
         { className: 'app-header', 'aria-label': 'Application header' },
@@ -54,7 +55,11 @@ function Header({ onMessage, onLogout }) {
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.help) }, 'Help'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.contact) }, 'Contact'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.support) }, 'Support'),
-            React.createElement('button', { className: 'nav-link logout-link', type: 'button', onClick: onLogout }, 'Logout')
+            React.createElement(
+                'button',
+                { className: 'nav-link logout-link', type: 'button', onClick: onLogout, disabled: loggingOut },
+                loggingOut ? 'Signing out...' : 'Logout'
+            )
         )
     );
 }
@@ -104,8 +109,10 @@ function StaticModuleCard({ module }) {
 function DashboardApp() {
     const [counts, setCounts] = useState({});
     const [status, setStatus] = useState({ message: '', type: 'info' });
+    const [loggingOut, setLoggingOut] = useState(false);
 
     useEffect(() => {
+        guardAgainstBackNavigation();
         refreshCounts();
     }, []);
 
@@ -148,23 +155,19 @@ function DashboardApp() {
     }
 
     function handleLogout() {
-        fetch('/api/logout', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { Accept: 'application/json' },
-        })
-            .then(() => {
-                window.location.href = loginUrl;
-            })
-            .catch(() => {
-                window.location.href = loginUrl;
-            });
+        logout({
+            onStart: () => {
+                setLoggingOut(true);
+                setStatusMessage('Signing you out...', 'info');
+            },
+            onError: (message) => setStatusMessage(message, 'error'),
+        });
     }
 
     return React.createElement(
         'div',
         { className: 'profile-shell' },
-        React.createElement(Header, { onMessage: setStatusMessage, onLogout: handleLogout }),
+        React.createElement(Header, { onMessage: setStatusMessage, onLogout: handleLogout, loggingOut }),
         React.createElement(
             'main',
             { className: 'profile-main' },
