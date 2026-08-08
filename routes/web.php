@@ -10,6 +10,7 @@ Route::view('/dashboard', 'pages.dashboard')->name('dashboard');
 Route::view('/profile', 'pages.profile')->name('profile');
 Route::view('/resource', 'pages.resource')->name('resource.index');
 Route::view('/resource-form', 'pages.resource-form')->name('resource.form');
+Route::view('/create-user', 'pages.create-user')->name('users.create');
 Route::view('/strategic-plan', 'pages.strategic-plan')->name('strategic-plan');
 Route::view('/office', 'pages.office')->name('office');
 

@@ -7,6 +7,7 @@ const profileUrl = '/profile';
 const resourceUrl = '/resource';
 const loginUrl = '/login';
 const strategicPlanUrl = '/strategic-plan';
+const createUserUrl = '/create-user';
 
 const modules = [
     { id: 'users', title: 'Users', description: 'Manage user accounts and active employees.' },
@@ -74,11 +75,17 @@ function ModuleCard({ module, count }) {
                 { className: 'action-button primary', href: `${resourceUrl}?resource=${module.id}` },
                 'Open'
             ),
-            React.createElement(
-                'a',
-                { className: 'action-button secondary', href: `${resourceUrl}?resource=${module.id}` },
-                'Explore'
-            )
+            module.id === 'users'
+                ? React.createElement(
+                      'a',
+                      { className: 'action-button secondary', href: createUserUrl },
+                      'Create User'
+                  )
+                : React.createElement(
+                      'a',
+                      { className: 'action-button secondary', href: `${resourceUrl}?resource=${module.id}` },
+                      'Explore'
+                  )
         )
     );
 }
