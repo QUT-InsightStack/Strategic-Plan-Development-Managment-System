@@ -8,7 +8,8 @@ class StoreUserRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $user = auth('api')->user();
+        return $user && in_array($user->role?->role_name, ['Technical Administrator', 'Admin']);
     }
 
     public function rules(): array
