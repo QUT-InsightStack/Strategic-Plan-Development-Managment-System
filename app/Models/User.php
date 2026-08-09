@@ -15,7 +15,6 @@ class User extends Authenticatable implements JWTSubject
     protected $primaryKey = 'user_id';
 
     protected $fillable = [
-        'name',
         'first_name',
         'last_name',
         'department',
@@ -25,7 +24,13 @@ class User extends Authenticatable implements JWTSubject
         'status',
         'mobile',
         'address',
+        'gender',
+        'date_of_birth',
         'profile_picture',
+        'unit',
+        'office',
+        'position',
+
     ];
 
     protected $hidden = [
@@ -37,6 +42,8 @@ class User extends Authenticatable implements JWTSubject
     {
         return [
             'email_verified_at' => 'datetime',
+            'date_of_birth'     => 'date',
+            'gender'            => 'boolean',
             'password'          => 'hashed',
         ];
     }

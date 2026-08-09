@@ -36,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'jwt.auth'    => \Tymon\JWTAuth\Middleware\GetUserFromToken::class,
             'jwt.refresh' => \Tymon\JWTAuth\Middleware\RefreshToken::class,
+            'permission'  => \App\Http\Middleware\PermissionMiddleware::class,
         ]);
 
     })

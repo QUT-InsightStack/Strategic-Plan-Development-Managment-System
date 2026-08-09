@@ -1,78 +1,208 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\RoleController;
+use App\Http\Controllers\FoundationsController;
+use App\Http\Controllers\LinkController;
+use App\Http\Controllers\LogController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RelationController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\RolePremissionController;
 use App\Http\Controllers\StrategicController;
 use App\Http\Controllers\StrategicObjectiveController;
-use App\Http\Controllers\FoundationsController;
-use App\Http\Controllers\LogController;
-use App\Http\Controllers\RolePremissionController;
-use App\Http\Controllers\LinkController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-// ╔═══════════════════════════════════════════════════════════════════╗
-// ║  AUTH ROUTES (public + protected)                                ║
-// ╚═══════════════════════════════════════════════════════════════════╝
+/*
+|--------------------------------------------------------------------------
+| Public authentication routes
+|--------------------------------------------------------------------------
+*/
 
-// Public — rate-limited to 5 attempts per minute per email+IP
+// Limited to five attempts per minute by the configured login rate limiter.
 Route::post('auth/login', [AuthController::class, 'login'])
     ->middleware('throttle:login');
 
-
-// Requires a valid (possibly expired) token — handled inside controller
+// Token refresh is handled inside AuthController, including expired tokens.
 Route::post('auth/refresh', [AuthController::class, 'refresh']);
 
+/*
+|--------------------------------------------------------------------------
+| Protected authentication routes
+|--------------------------------------------------------------------------
+*/
 
-// Requires a valid, non-expired token
-Route::middleware('auth:api')->group(function () {
-    Route::post('auth/logout', [AuthController::class, 'logout']);
-    Route::get('auth/me',     [AuthController::class, 'me']);
-    Route::put('auth/profile',       [AuthController::class, 'updateProfile']);
+Route::middleware('auth:api')->prefix('auth')->group(function () {
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::get('me', [AuthController::class, 'me']);
+    Route::put('profile', [AuthController::class, 'updateProfile']);
 });
 
+/*
+|--------------------------------------------------------------------------
+| User account management
+|--------------------------------------------------------------------------
+*/
 
+Route::middleware('auth:api')->prefix('users')->group(function () {
+    Route::get('', [UserController::class, 'index'])
+        ->middleware('permission:users.view');
 
+    Route::post('', [UserController::class, 'store'])
+        ->middleware('permission:users.create');
 
+    Route::get('{user}', [UserController::class, 'show'])
+        ->whereNumber('user')
+        ->middleware('permission:users.view');
 
-// ╔═══════════════════════════════════════════════════════════════════╗
-// ║  PROTECTED RESOURCE ROUTES                                       ║
-// ║  TODO: wrap these in auth:api once frontend auth flow is ready   ║
-// ╚═══════════════════════════════════════════════════════════════════╝
+    Route::match(['put', 'patch'], '{user}', [UserController::class, 'update'])
+        ->whereNumber('user')
+        ->middleware('permission:users.update');
 
+    Route::delete('{user}', [UserController::class, 'destroy'])
+        ->whereNumber('user')
+        ->middleware('permission:users.delete');
+});
 
-// Auth routes
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout'])->middleware('jwt.auth');
-Route::post('/refresh', [AuthController::class, 'refresh'])->middleware('jwt.refresh');
-Route::get('/me', [AuthController::class, 'me'])->middleware('jwt.auth');
-Route::put('/profile', [AuthController::class, 'updateProfile'])->middleware('jwt.auth');
+/*
+|--------------------------------------------------------------------------
+| Role and permission management
+|--------------------------------------------------------------------------
+*/
 
-// Use resource routes to define complete CRUD operations
-// Laravel's Route::resource automatically creates the following routes for UserController:
-// GET /users -> index() method, list all users
-// GET /users/{id} -> show() method, display a single user
-// POST /users -> store() method, create a new user
-// PUT/PATCH /users/{id} -> update() method, update a user
-// DELETE /users/{id} -> destroy() method, delete a user
-Route::middleware('jwt.auth')->group(function () {
-    Route::resource('users', UserController::class);
-    Route::resource('roles', RoleController::class);
-    Route::get('roles/{roleId}/permissions', [RolePremissionController::class, 'byRole']);
-    Route::put('roles/{roleId}/permissions', [RolePremissionController::class, 'syncPermissions']);
-    Route::get('strategic-records/{recordId}/relations', [RelationController::class, 'byRecord']);
-    Route::put('strategic-records/{recordId}/relations', [RelationController::class, 'syncParents']);
-    Route::get('strategic-records/{planId}/core-values', [LinkController::class, 'byPlan']);
-    Route::put('strategic-records/{planId}/core-values', [LinkController::class, 'syncCoreValues']);
-    Route::get('strategic-plans/{planId}/objectives', [StrategicObjectiveController::class, 'byPlan']);
-    Route::apiResource('permissions', PermissionController::class);
-    Route::apiResource('strategic-foundations', FoundationsController::class);
-    Route::apiResource('strategic-records', StrategicController::class);
-    Route::apiResource('strategic-objectives',StrategicObjectiveController::class);
-    Route::apiResource('relations', RelationController::class);
-    Route::apiResource('logs', LogController::class);
-    Route::apiResource('role-premissions', RolePremissionController::class);
-    Route::apiResource('plan-core-values', LinkController::class);
+Route::middleware('auth:api')->group(function () {
+    // Roles
+    Route::get('roles', [RoleController::class, 'index'])
+        ->middleware('permission:roles.view');
+
+    Route::post('roles', [RoleController::class, 'store'])
+        ->middleware('permission:roles.manage');
+
+    Route::get('roles/{role}', [RoleController::class, 'show'])
+        ->whereNumber('role')
+        ->middleware('permission:roles.view');
+
+    Route::match(['put', 'patch'], 'roles/{role}', [RoleController::class, 'update'])
+        ->whereNumber('role')
+        ->middleware('permission:roles.manage');
+
+    Route::delete('roles/{role}', [RoleController::class, 'destroy'])
+        ->whereNumber('role')
+        ->middleware('permission:roles.manage');
+
+    // Permissions assigned to a role
+    Route::get(
+        'roles/{roleId}/permissions',
+        [RolePremissionController::class, 'byRole']
+    )
+        ->whereNumber('roleId')
+        ->middleware('permission:roles.view');
+
+    Route::put(
+        'roles/{roleId}/permissions',
+        [RolePremissionController::class, 'syncPermissions']
+    )
+        ->whereNumber('roleId')
+        ->middleware('permission:roles.manage');
+
+    // Permission catalog
+    Route::get('permissions', [PermissionController::class, 'index'])
+        ->middleware('permission:permissions.view');
+
+    Route::post('permissions', [PermissionController::class, 'store'])
+        ->middleware('permission:permissions.manage');
+
+    Route::get(
+        'permissions/{permission}',
+        [PermissionController::class, 'show']
+    )
+        ->whereNumber('permission')
+        ->middleware('permission:permissions.view');
+
+    Route::match(
+        ['put', 'patch'],
+        'permissions/{permission}',
+        [PermissionController::class, 'update']
+    )
+        ->whereNumber('permission')
+        ->middleware('permission:permissions.manage');
+
+    Route::delete(
+        'permissions/{permission}',
+        [PermissionController::class, 'destroy']
+    )
+        ->whereNumber('permission')
+        ->middleware('permission:permissions.manage');
+
+    // Legacy direct role-permission pivot endpoints
+    Route::apiResource(
+        'role-premissions',
+        RolePremissionController::class
+    )->middleware('permission:roles.manage');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Protected strategic planning resources
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth:api')->group(function () {
+    // Strategic record parent relations
+    Route::get(
+        'strategic-records/{recordId}/relations',
+        [RelationController::class, 'byRecord']
+    )->whereNumber('recordId');
+
+    Route::put(
+        'strategic-records/{recordId}/relations',
+        [RelationController::class, 'syncParents']
+    )->whereNumber('recordId');
+
+    // Strategic plan core values
+    Route::get(
+        'strategic-records/{planId}/core-values',
+        [LinkController::class, 'byPlan']
+    )->whereNumber('planId');
+
+    Route::put(
+        'strategic-records/{planId}/core-values',
+        [LinkController::class, 'syncCoreValues']
+    )->whereNumber('planId');
+
+    // Strategic objectives, including plan-filtered listing
+    Route::get(
+        'strategic-plans/{planId}/objectives',
+        [StrategicObjectiveController::class, 'byPlan']
+    )->whereNumber('planId');
+
+    Route::apiResource(
+        'strategic-foundations',
+        FoundationsController::class
+    );
+
+    Route::apiResource(
+        'strategic-records',
+        StrategicController::class
+    );
+
+    Route::apiResource(
+        'strategic-objectives',
+        StrategicObjectiveController::class
+    );
+
+    Route::apiResource(
+        'relations',
+        RelationController::class
+    );
+
+    Route::apiResource(
+        'logs',
+        LogController::class
+    );
+
+    Route::apiResource(
+        'plan-core-values',
+        LinkController::class
+    );
 });
