@@ -22,19 +22,6 @@ class StoreStrategicObjectiveRequest extends ApiFormRequest
                 Rule::exists('tblstrategic_record', 'record_id'),
             ],
 
-            'created_by' => [
-                'required',
-                'integer',
-                Rule::exists('tblusers', 'user_id'),
-            ],
-
-            'updated_by' => [
-                'sometimes',
-                'nullable',
-                'integer',
-                Rule::exists('tblusers', 'user_id'),
-            ],
-
             'status' => [
                 'sometimes',
                 'string',

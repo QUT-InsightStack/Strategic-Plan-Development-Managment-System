@@ -18,6 +18,7 @@ class Strategic extends Model
         'level',
         'title',
         'description',
+        'status',
         'file_path',
         'mission_id',
         'vision_id',
@@ -87,5 +88,10 @@ class Strategic extends Model
             'plan_id',
             'core_value_id'
         )->withPivot(['created_by', 'updated_by'])->withTimestamps();
+    }
+
+    public function objectives()
+    {
+        return $this->hasMany(StrategicObjective::class, 'strategic_plan_id', 'record_id');
     }
 }

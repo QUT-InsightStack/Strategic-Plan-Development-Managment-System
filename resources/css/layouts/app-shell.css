@@ -1,0 +1,4 @@
+.app-shell-main { min-height: 100vh; margin-left: var(--sidebar-width); padding: var(--page-gutter); }
+.app-shell-container { width: 100%; max-width: var(--content-max-width); margin: 0; }
+.app-page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-5); }
+@media (max-width: 720px) { .app-shell-main { margin-left: 0; padding: var(--space-5) var(--space-3); } .app-page-header { flex-direction: column; } }

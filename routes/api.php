@@ -11,6 +11,7 @@ use App\Http\Controllers\FoundationsController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\RolePremissionController;
 use App\Http\Controllers\LinkController;
+use App\Http\Controllers\PlanCreationController;
 use Illuminate\Support\Facades\Route;
 
 // ╔═══════════════════════════════════════════════════════════════════╗
@@ -58,6 +59,13 @@ Route::put('/profile', [AuthController::class, 'updateProfile'])->middleware('jw
 // PUT/PATCH /users/{id} -> update() method, update a user
 // DELETE /users/{id} -> destroy() method, delete a user
 Route::middleware('jwt.auth')->group(function () {
+    Route::get('strategic-plans', [PlanCreationController::class, 'index']);
+    Route::post('strategic-plans', [PlanCreationController::class, 'store']);
+    Route::post('strategic-plans/{id}/copy', [PlanCreationController::class, 'copy'])->whereNumber('id');
+    Route::patch('strategic-plans/{id}/status', [PlanCreationController::class, 'updateStatus'])->whereNumber('id');
+    Route::get('strategic-plans/{id}', [PlanCreationController::class, 'show'])->whereNumber('id');
+    Route::put('strategic-plans/{id}', [PlanCreationController::class, 'update'])->whereNumber('id');
+    Route::delete('strategic-plans/{id}', [PlanCreationController::class, 'destroy'])->whereNumber('id');
     Route::resource('users', UserController::class);
     Route::resource('roles', RoleController::class);
     Route::get('roles/{roleId}/permissions', [RolePremissionController::class, 'byRole']);

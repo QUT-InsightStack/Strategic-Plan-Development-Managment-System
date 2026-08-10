@@ -1,4 +1,8 @@
 import { BrandLogo } from './brand-logo.js';
+import { enforcePageAccess } from './access/access-guard.js';
+import { clearAccessSession } from './access/access-session.js';
+
+enforcePageAccess();
 
 const { useState, useEffect } = React;
 const rootElement = document.getElementById('root');
@@ -36,9 +40,9 @@ const messages = {
 function Brand() {
     return React.createElement(
         'a',
-        { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic planning Management System home' },
+        { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic Planning Management System home' },
         React.createElement(BrandLogo),
-        React.createElement('span', { className: 'brand-name' }, 'Strategic planning Management System')
+        React.createElement('span', { className: 'brand-name' }, 'Strategic Planning Management System')
     );
 }
 
@@ -148,6 +152,7 @@ function DashboardApp() {
     }
 
     function handleLogout() {
+        clearAccessSession();
         fetch('/api/logout', {
             method: 'POST',
             credentials: 'include',
