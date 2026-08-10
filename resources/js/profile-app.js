@@ -119,7 +119,19 @@ function ProfileSideCard({ avatar, onAvatarSelect }) {
                 onChange: handleFileChange,
             })
         ),
-        React.createElement('p', { className: 'side-copy' }, 'Manage your contact details', React.createElement('br'), 'and account information')
+    React.createElement('p', { className: 'side-copy' }, 'Manage your contact details', React.createElement('br'), 'and account information'),
+
+React.createElement(
+    'button',
+    {
+        className: 'action-button secondary profile-password-button',
+        type: 'button',
+        onClick: () => {
+            window.location.href = '/change-password';
+        },
+    },
+    'Change Password'
+)    
     );
 }
 
