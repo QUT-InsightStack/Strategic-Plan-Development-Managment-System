@@ -12,7 +12,12 @@ export function saveAccessSession(session) {
 }
 
 export function getAccessSession() {
-    try { return JSON.parse(window.sessionStorage.getItem(ACCESS_SESSION_KEY)) || null; }
+    try {
+        const stored = JSON.parse(window.sessionStorage.getItem(ACCESS_SESSION_KEY)) || null;
+        if (!stored) return null;
+        const currentPolicy = policyForRole(stored.roleName);
+        return { ...stored, permissions: currentPolicy.permissions, home: currentPolicy.home };
+    }
     catch { return null; }
 }
 

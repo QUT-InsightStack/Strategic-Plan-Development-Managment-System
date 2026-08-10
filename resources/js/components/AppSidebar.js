@@ -5,7 +5,7 @@ import { can, clearAccessSession, getAccessSession } from '../access/access-sess
 const { useState } = React;
 
 const items = [
-    { label: 'Home', icon: 'bi-house-door-fill', href: '/strategic-plans', permission: PERMISSIONS.PLANS_VIEW },
+    { label: 'Home', icon: 'bi-house-door-fill', href: '/dashboard', permission: PERMISSIONS.DASHBOARD_VIEW },
     {
         label: 'Planning Module',
         icon: 'bi-clipboard2-check',
