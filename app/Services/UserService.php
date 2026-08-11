@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Repositories\UserRepository;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class UserService
 {
@@ -68,5 +69,15 @@ class UserService
     public function delete(int $id): bool
     {
         return $this->deleteUser($id);
+    }
+
+    public function search(array $filters): LengthAwarePaginator
+    {
+        $filters['search_by'] ??= 'all';
+        $filters['sort_by'] ??= 'name';
+        $filters['sort_direction'] ??= 'asc';
+        $filters['per_page'] ??= 15;
+
+        return $this->userRepository->search($filters);
     }
 }
