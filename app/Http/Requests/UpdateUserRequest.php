@@ -2,7 +2,8 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
+use App\Validation\ValidationAttributes;
+use App\Validation\UserValidationRules;
 
 class UpdateUserRequest extends ApiFormRequest
 {
@@ -16,43 +17,26 @@ class UpdateUserRequest extends ApiFormRequest
         $userId = $this->route('user');
 
         return [
-            'first_name'      => ['sometimes', 'string', 'max:255'],
-            'last_name'       => ['sometimes', 'nullable', 'string', 'max:255'],
-            'email'           => [
-                'sometimes',
-                'string',
-                'email',
-                'max:255',
-                Rule::unique('tblusers', 'email')->ignore($userId, 'user_id'),
-            ],
-            'password'        => ['sometimes', 'string', 'min:8', 'max:128'],
-            'mobile'          => ['sometimes', 'nullable', 'string', 'max:20'],
-            'address'         => ['sometimes', 'nullable', 'string', 'max:255'],
-            'gender'          => ['sometimes', 'nullable', 'boolean'],
-            'date_of_birth'   => ['sometimes', 'nullable', 'date', 'before:today'],
-            'profile_picture' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'department'      => ['sometimes', 'nullable', 'string', 'max:255'],
-            'unit'            => ['sometimes', 'nullable', 'string', 'max:255'],
-            'office'          => ['sometimes', 'nullable', 'string', 'max:255'],
-            'position'        => ['sometimes', 'nullable', 'string', 'max:255'],
-            'role_id'         => [
-                'sometimes',
-                'nullable',
-                'integer',
-                Rule::exists('tblroles', 'role_id'),
-            ],
-            'status'          => ['sometimes', 'string', Rule::in(['active', 'inactive', 'suspended'])],
+            'first_name'      => UserValidationRules::firstNameOptional(),
+            'last_name'       => UserValidationRules::lastNameOptional(),
+            'email'           => UserValidationRules::emailForUpdate($userId),
+            'password'        => UserValidationRules::passwordOptional(),
+            'mobile'          => UserValidationRules::mobileOptional(),
+            'address'         => UserValidationRules::addressOptional(),
+            'gender'          => UserValidationRules::genderOptional(),
+            'date_of_birth'   => UserValidationRules::dateOfBirthOptional(),
+            'profile_picture' => UserValidationRules::profilePictureOptional(),
+            'department'      => UserValidationRules::departmentOptional(),
+            'unit'            => UserValidationRules::unitOptional(),
+            'office'          => UserValidationRules::officeOptional(),
+            'position'        => UserValidationRules::positionOptional(),
+            'role_id'         => UserValidationRules::roleIdOptional(),
+            'status'          => UserValidationRules::statusOptional(),
         ];
     }
 
     public function attributes(): array
     {
-        return [
-            'first_name'    => 'first name',
-            'last_name'     => 'last name',
-            'date_of_birth' => 'date of birth',
-            'role_id'       => 'role',
-            'email'         => 'email address',
-        ];
+        return ValidationAttributes::all();
     }
 }

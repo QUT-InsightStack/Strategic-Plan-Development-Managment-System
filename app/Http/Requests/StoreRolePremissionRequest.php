@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
+use App\Validation\RolePermissionValidationRules;
 
 class StoreRolePremissionRequest extends ApiFormRequest
 {
@@ -16,18 +16,8 @@ class StoreRolePremissionRequest extends ApiFormRequest
         $roleId = $this->input('role_id');
 
         return [
-            'role_id' => [
-                'required',
-                'integer',
-                Rule::exists('tblroles', 'role_id'),
-            ],
-            'permission_id' => [
-                'required',
-                'integer',
-                Rule::exists('tblpermissions', 'permission_id'),
-                // Prevent duplicate role+permission pair
-                Rule::unique('tblrole_permissions')->where('role_id', $roleId),
-            ],
+            'role_id' => RolePermissionValidationRules::roleIdRequired(),
+            'permission_id' => RolePermissionValidationRules::permissionIdRequired($roleId),
         ];
     }
 }

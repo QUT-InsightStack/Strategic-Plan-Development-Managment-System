@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
+use App\Validation\RelationValidationRules;
 
 class StoreRelationRequest extends ApiFormRequest
 {
@@ -17,20 +17,9 @@ class StoreRelationRequest extends ApiFormRequest
         $parentId = $this->input('parent_id');
 
         return [
-            'record_id' => [
-                'required',
-                'integer',
-                Rule::exists('tblstrategic_record', 'record_id'),
-                Rule::notIn([$parentId]),   // record cannot equal parent
-            ],
-            'parent_id' => [
-                'required',
-                'integer',
-                Rule::exists('tblstrategic_record', 'record_id'),
-                Rule::notIn([$recordId]),   // parent cannot equal record
-                Rule::unique('tblrelation_map')->where('record_id', $recordId),
-            ],
-            'created_by' => ['required', 'integer', Rule::exists('tblusers', 'user_id')],
+            'record_id' => RelationValidationRules::recordIdRequired($parentId),
+            'parent_id' => RelationValidationRules::parentIdRequired($recordId),
+            'created_by' => RelationValidationRules::createdByRequired(),
         ];
     }
 }

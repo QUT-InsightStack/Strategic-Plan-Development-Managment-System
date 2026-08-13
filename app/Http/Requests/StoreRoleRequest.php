@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
+use App\Validation\RoleValidationRules;
 
 class StoreRoleRequest extends ApiFormRequest
 {
@@ -14,13 +14,8 @@ class StoreRoleRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'role_name'   => [
-                'required',
-                'string',
-                'max:100',                             
-                Rule::unique('tblroles', 'role_name'),
-            ],
-            'description' => ['sometimes', 'nullable', 'string'],  // text column — no max
+            'role_name' => RoleValidationRules::roleNameRequired(),
+            'description' => RoleValidationRules::descriptionOptional(),
         ];
     }
 }

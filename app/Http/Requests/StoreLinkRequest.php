@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
+use App\Validation\LinkValidationRules;
 
 class StoreLinkRequest extends ApiFormRequest
 {
@@ -16,16 +16,10 @@ class StoreLinkRequest extends ApiFormRequest
         $planId = $this->input('plan_id');
 
         return [
-            'core_value_id' => [
-                'required',
-                'integer',
-                Rule::exists('tblstrategic_foundations', 'foundation_id')
-                    ->where('type', 'CORE_VALUE'),
-                Rule::unique('tblplan_core_value')->where('plan_id', $planId),
-            ],
-            'plan_id'    => ['required', 'integer', Rule::exists('tblstrategic_record', 'record_id')],
-            'created_by' => ['required', 'integer', Rule::exists('tblusers', 'user_id')],
-            'updated_by' => ['required', 'integer', Rule::exists('tblusers', 'user_id')],
+            'core_value_id' => LinkValidationRules::coreValueIdRequired($planId),
+            'plan_id'    => LinkValidationRules::planIdRequired(),
+            'created_by' => LinkValidationRules::createdByRequired(),
+            'updated_by' => LinkValidationRules::updatedByRequired(),
         ];
     }
 }

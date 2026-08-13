@@ -2,7 +2,8 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
+use App\Validation\StrategicValidationRules;
+use App\Validation\ValidationAttributes;
 
 class UpdateStrategicRequest extends ApiFormRequest
 {
@@ -16,40 +17,21 @@ class UpdateStrategicRequest extends ApiFormRequest
         $recordId = $this->route('strategic_record');
 
         return [
-            'created_by'   => ['sometimes', 'integer', Rule::exists('tblusers', 'user_id')],
-            'updated_by'   => ['nullable', 'integer', Rule::exists('tblusers', 'user_id')],
-            'level' => ['sometimes','string',Rule::in(['strategic_plan', 'goal']),],
-            'title'        => ['sometimes', 'string', 'max:255'],
-            'description'  => ['sometimes', 'nullable', 'string'],
-            'file_path'    => ['sometimes', 'nullable', 'string', 'max:255'],
-            'mission_id'   => [
-                'sometimes',
-                'integer',
-                Rule::exists('tblstrategic_foundations', 'foundation_id')
-                    ->where('type', 'MISSION'),         // ← only accepts MISSION type
-            ],
-            'vision_id'    => [
-                'sometimes',
-                'integer',
-                Rule::exists('tblstrategic_foundations', 'foundation_id')
-                    ->where('type', 'VISION'),          // ← only accepts VISION type
-            ],
-            'parent_ids'   => ['sometimes', 'array'],
-            'parent_ids.*' => [
-                'integer',
-                'distinct',
-                Rule::exists('tblstrategic_record', 'record_id'),
-                Rule::notIn([$recordId]),
-            ],
+            'created_by' => StrategicValidationRules::createdByOptional(),
+            'updated_by' => StrategicValidationRules::updatedByOptional(),
+            'level' => StrategicValidationRules::levelOptional(),
+            'title' => StrategicValidationRules::titleOptional(),
+            'description' => StrategicValidationRules::descriptionOptional(),
+            'file_path' => StrategicValidationRules::filePathOptional(),
+            'mission_id' => StrategicValidationRules::missionIdOptional(),
+            'vision_id' => StrategicValidationRules::visionIdOptional(),
+            'parent_ids' => StrategicValidationRules::parentIdsOptional(),
+            'parent_ids.*' => StrategicValidationRules::parentIdItem($recordId),
         ];
     }
 
     public function attributes(): array
     {
-        return [
-            'mission_id' => 'mission',
-            'vision_id'  => 'vision',
-            'file_path'  => 'file',
-        ];
+        return ValidationAttributes::all();
     }
 }

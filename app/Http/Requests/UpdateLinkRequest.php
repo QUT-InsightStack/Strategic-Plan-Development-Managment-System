@@ -3,7 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Link;
-use Illuminate\Validation\Rule;
+use App\Validation\LinkValidationRules;
 
 class UpdateLinkRequest extends ApiFormRequest
 {
@@ -21,18 +21,10 @@ class UpdateLinkRequest extends ApiFormRequest
         $planId = $this->input('plan_id', $existing?->plan_id);
 
         return [
-            'core_value_id' => [
-                'sometimes',
-                'integer',
-                Rule::exists('tblstrategic_foundations', 'foundation_id')
-                    ->where('type', 'CORE_VALUE'),
-                Rule::unique('tblplan_core_value')
-                    ->where('plan_id', $planId)
-                    ->ignore($linkId, 'link_id'),
-            ],
-            'plan_id'    => ['sometimes', 'integer', Rule::exists('tblstrategic_record', 'record_id')],
-            'created_by' => ['sometimes', 'integer', Rule::exists('tblusers', 'user_id')],
-            'updated_by' => ['sometimes', 'integer', Rule::exists('tblusers', 'user_id')],
+            'core_value_id' => LinkValidationRules::coreValueIdOptional($planId, $linkId),
+            'plan_id'    => LinkValidationRules::planIdOptional(),
+            'created_by' => LinkValidationRules::createdByOptional(),
+            'updated_by' => LinkValidationRules::updatedByOptional(),
         ];
     }
 }
