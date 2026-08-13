@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
+use App\Validation\RoleValidationRules;
 
 class UpdateRoleRequest extends ApiFormRequest
 {
@@ -16,13 +16,8 @@ class UpdateRoleRequest extends ApiFormRequest
         $roleId = $this->route('role');
 
         return [
-            'role_name'   => [
-                'sometimes',
-                'string',
-                'max:100',                              
-                Rule::unique('tblroles', 'role_name')->ignore($roleId, 'role_id'),
-            ],
-            'description' => ['sometimes', 'nullable', 'string'],  // text column — no max
+            'role_name' => RoleValidationRules::roleNameOptional($roleId),
+            'description' => RoleValidationRules::descriptionOptional(),
         ];
     }
 }

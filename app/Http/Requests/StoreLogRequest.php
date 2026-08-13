@@ -2,7 +2,8 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
+use App\Validation\LogValidationRules;
+use App\Validation\ValidationAttributes;
 
 class StoreLogRequest extends ApiFormRequest
 {
@@ -14,16 +15,14 @@ class StoreLogRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'user_id'   => ['required', 'integer', Rule::exists('tblusers', 'user_id')],
-            'operation' => ['required', 'string'],
-            'states'    => ['nullable', 'string', 'max:255'],
+            'user_id'   => LogValidationRules::userIdRequired(),
+            'operation' => LogValidationRules::operationRequired(),
+            'states'    => LogValidationRules::statesOptional(),
         ];
     }
 
     public function attributes(): array
     {
-        return [
-            'user_id' => 'user',
-        ];
+        return ValidationAttributes::all();
     }
 }

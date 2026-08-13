@@ -3,7 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Relation;
-use Illuminate\Validation\Rule;
+use App\Validation\RelationValidationRules;
 
 class UpdateRelationRequest extends ApiFormRequest
 {
@@ -22,22 +22,9 @@ class UpdateRelationRequest extends ApiFormRequest
         $parentId = $this->input('parent_id', $existing?->parent_id);
 
         return [
-            'record_id' => [
-                'sometimes',
-                'integer',
-                Rule::exists('tblstrategic_record', 'record_id'),
-                Rule::notIn([$parentId]),
-            ],
-            'parent_id' => [
-                'sometimes',
-                'integer',
-                Rule::exists('tblstrategic_record', 'record_id'),
-                Rule::notIn([$recordId]),
-                Rule::unique('tblrelation_map')
-                    ->where('record_id', $recordId)
-                    ->ignore($relationId, 'relation_id'),
-            ],
-            'created_by' => ['sometimes', 'integer', Rule::exists('tblusers', 'user_id')],
+            'record_id' => RelationValidationRules::recordIdOptional($parentId),
+            'parent_id' => RelationValidationRules::parentIdOptional($recordId, $relationId),
+            'created_by' => RelationValidationRules::createdByOptional(),
         ];
     }
 }
