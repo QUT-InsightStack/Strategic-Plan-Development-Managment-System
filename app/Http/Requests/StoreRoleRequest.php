@@ -8,7 +8,7 @@ class StoreRoleRequest extends ApiFormRequest
 {
     protected function requiredPermissions(): array
     {
-        return ['roles.manage'];
+        return ['roles.create'];
     }
 
     public function rules(): array

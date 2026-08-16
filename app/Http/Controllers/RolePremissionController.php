@@ -4,22 +4,32 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreRolePremissionRequest;
 use App\Http\Requests\UpdateRolePremissionRequest;
+use App\Services\PermissionAuthorizationService;
 use App\Services\RolePremissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class RolePremissionController extends Controller
 {
     protected $rolePremissionService;
 
-    public function __construct(RolePremissionService $rolePremissionService)
+    public function __construct(
+        RolePremissionService $rolePremissionService,
+        private readonly PermissionAuthorizationService $permissionAuthorizationService
+    )
     {
         $this->rolePremissionService = $rolePremissionService;
     }
 
     public function index(Request $request): JsonResponse
     {
+        $this->permissionAuthorizationService->ensureHasPermission(
+            'role_permissions.view',
+            Auth::guard('api')->user(),
+            'You are not authorized to view role permissions.'
+        );
         $filters = $request->validate([
             'role_id'       => ['nullable', 'integer', Rule::exists('tblroles', 'role_id')],
             'permission_id' => ['nullable', 'integer', Rule::exists('tblpermissions', 'permission_id')],
@@ -32,6 +42,11 @@ class RolePremissionController extends Controller
 
     public function show(int $id): JsonResponse
     {
+        $this->permissionAuthorizationService->ensureHasPermission(
+            'role_permissions.view',
+            Auth::guard('api')->user(),
+            'You are not authorized to view role permissions.'
+        );
         $rolePremission = $this->rolePremissionService->getById($id);
 
         if (!$rolePremission) {
@@ -61,6 +76,11 @@ class RolePremissionController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
+        $this->permissionAuthorizationService->ensureHasPermission(
+            'role_permissions.delete',
+            Auth::guard('api')->user(),
+            'You are not authorized to delete role permissions.'
+        );
         $deleted = $this->rolePremissionService->delete($id);
 
         if (!$deleted) {
@@ -72,6 +92,11 @@ class RolePremissionController extends Controller
 
     public function byRole(int $roleId): JsonResponse
     {
+        $this->permissionAuthorizationService->ensureHasPermission(
+            'role_permissions.view',
+            Auth::guard('api')->user(),
+            'You are not authorized to view role permissions.'
+        );
         return response()->json([
             'data' => $this->rolePremissionService->getByRoleId($roleId),
         ], 200);
@@ -79,6 +104,11 @@ class RolePremissionController extends Controller
 
     public function syncPermissions(Request $request, int $roleId): JsonResponse
     {
+        $this->permissionAuthorizationService->ensureHasPermission(
+            'role_permissions.update',
+            Auth::guard('api')->user(),
+            'You are not authorized to update role permissions.'
+        );
         $data = $request->validate([
             'permission_ids'   => ['array'],
             'permission_ids.*' => [

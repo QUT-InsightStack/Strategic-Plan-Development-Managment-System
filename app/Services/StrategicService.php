@@ -6,6 +6,7 @@ use App\Contracts\StrategicLogWriter;
 use App\Models\Strategic;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -17,11 +18,16 @@ class StrategicService
     ) {
     }
 
-    public function getAll(): Collection
+    public function getAll(?SupportCollection $authorizedRecordIds = null): Collection
     {
-        return Strategic::with($this->relations())
-            ->where('status', '!=', 'deleted')
-            ->get();
+        $query = Strategic::with($this->relations())
+            ->whereIn('status', ['draft', 'finished']);
+
+        if ($authorizedRecordIds !== null) {
+            $query->whereIn('record_id', $authorizedRecordIds->all());
+        }
+
+        return $query->get();
     }
 
     public function getById(int $id): ?Model

@@ -9,7 +9,7 @@ class UpdateStrategicObjectiveRequest extends ApiFormRequest
 {
     protected function requiredPermissions(): array
     {
-        return ['strategic_records.update', 'strategic_records.manage'];
+        return ['strategic_objectives.update'];
     }
 
     public function rules(): array

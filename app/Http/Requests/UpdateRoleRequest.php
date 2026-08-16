@@ -8,7 +8,7 @@ class UpdateRoleRequest extends ApiFormRequest
 {
     protected function requiredPermissions(): array
     {
-        return ['roles.manage'];
+        return ['roles.update'];
     }
 
     public function rules(): array

@@ -9,7 +9,7 @@ class StoreLogRequest extends ApiFormRequest
 {
     protected function requiredPermissions(): array
     {
-        return ['logs.view'];
+        return ['logs.create'];
     }
 
     public function rules(): array

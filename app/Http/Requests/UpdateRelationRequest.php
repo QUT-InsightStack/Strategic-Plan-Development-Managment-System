@@ -9,7 +9,7 @@ class UpdateRelationRequest extends ApiFormRequest
 {
     protected function requiredPermissions(): array
     {
-        return ['relations.manage'];
+        return ['relations.update'];
     }
 
     public function rules(): array

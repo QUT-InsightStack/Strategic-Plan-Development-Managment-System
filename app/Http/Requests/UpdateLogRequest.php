@@ -9,7 +9,7 @@ class UpdateLogRequest extends ApiFormRequest
 {
     protected function requiredPermissions(): array
     {
-        return ['logs.view'];
+        return ['logs.update'];
     }
 
     public function rules(): array

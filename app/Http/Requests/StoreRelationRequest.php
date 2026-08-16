@@ -8,7 +8,7 @@ class StoreRelationRequest extends ApiFormRequest
 {
     protected function requiredPermissions(): array
     {
-        return ['relations.manage'];
+        return ['relations.create'];
     }
 
     public function rules(): array

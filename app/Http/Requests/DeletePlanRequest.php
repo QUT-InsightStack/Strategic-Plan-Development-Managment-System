@@ -6,7 +6,7 @@ class DeletePlanRequest extends ApiFormRequest
 {
     protected function requiredPermissions(): array
     {
-        return ['strategic_records.delete', 'strategic_records.manage'];
+        return ['strategic_records.delete'];
     }
 
     public function rules(): array

@@ -9,7 +9,7 @@ class UpdatePermissionRequest extends ApiFormRequest
 {
     protected function requiredPermissions(): array
     {
-        return ['permissions.manage'];
+        return ['permissions.update'];
     }
 
     public function rules(): array

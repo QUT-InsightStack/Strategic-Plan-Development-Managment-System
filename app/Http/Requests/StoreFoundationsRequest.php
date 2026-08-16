@@ -8,7 +8,7 @@ class StoreFoundationsRequest extends ApiFormRequest
 {
     protected function requiredPermissions(): array
     {
-        return ['strategic_foundations.manage'];
+        return ['strategic_foundations.create'];
     }
 
     public function rules(): array

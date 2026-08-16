@@ -7,6 +7,7 @@ use App\Models\Link;
 use App\Models\Strategic;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -16,10 +17,14 @@ class LinkService
     {
     }
 
-    public function getAll(array $filters = []): Collection
+    public function getAll(array $filters = [], ?SupportCollection $authorizedPlanIds = null): Collection
     {
         $query = Link::with(['coreValue', 'plan', 'creator', 'updater'])
             ->where('status', '!=', 'deleted');
+
+        if ($authorizedPlanIds !== null) {
+            $query->whereIn('plan_id', $authorizedPlanIds->all());
+        }
 
         if (! empty($filters['plan_id'])) {
             $query->where('plan_id', $filters['plan_id']);
@@ -177,13 +182,36 @@ class LinkService
 
             $existingLinks = Link::where('plan_id', $planId)
                 ->where('status', '!=', 'deleted')
+                ->orderBy('link_id')
                 ->get();
 
-            foreach ($existingLinks as $link) {
+            $requestedIds = collect($coreValueIds)->values();
+            $matchedLinkIds = [];
+            $newCoreValueIds = [];
+
+            foreach ($requestedIds as $coreValueId) {
+                $matchingLink = $existingLinks->first(function (Link $link) use ($coreValueId, $matchedLinkIds) {
+                    return ! in_array($link->link_id, $matchedLinkIds, true)
+                        && (int) $link->core_value_id === (int) $coreValueId;
+                });
+
+                if ($matchingLink) {
+                    $matchedLinkIds[] = $matchingLink->link_id;
+                    continue;
+                }
+
+                $newCoreValueIds[] = $coreValueId;
+            }
+
+            $linksToDelete = $existingLinks->reject(
+                fn (Link $link) => in_array($link->link_id, $matchedLinkIds, true)
+            );
+
+            foreach ($linksToDelete as $link) {
                 $this->softDelete($link, $updatedBy);
             }
 
-            foreach ($coreValueIds as $coreValueId) {
+            foreach ($newCoreValueIds as $coreValueId) {
                 $existing = Link::where('core_value_id', $coreValueId)
                     ->where('plan_id', $planId)
                     ->first();
