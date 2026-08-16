@@ -7,6 +7,7 @@ use App\Models\Relation;
 use App\Models\Strategic;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -16,11 +17,16 @@ class RelationService
     {
     }
 
-    public function getAll(): Collection
+    public function getAll(?SupportCollection $authorizedRecordIds = null): Collection
     {
-        return Relation::with(['record', 'parent', 'creator'])
-            ->where('status', '!=', 'deleted')
-            ->get();
+        $query = Relation::with(['record', 'parent', 'creator'])
+            ->where('status', '!=', 'deleted');
+
+        if ($authorizedRecordIds !== null) {
+            $query->whereIn('record_id', $authorizedRecordIds->all());
+        }
+
+        return $query->get();
     }
 
     public function getById(int $id): ?Model

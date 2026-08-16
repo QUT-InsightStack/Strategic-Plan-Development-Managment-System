@@ -8,7 +8,7 @@ class StoreLinkRequest extends ApiFormRequest
 {
     protected function requiredPermissions(): array
     {
-        return ['plan_core_values.manage'];
+        return ['plan_core_values.create'];
     }
 
     public function rules(): array

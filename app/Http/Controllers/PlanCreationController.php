@@ -9,6 +9,7 @@ use App\Http\Requests\UpdatePlanRequest;
 use App\Http\Requests\UpdatePlanStatusRequest;
 use App\Models\Strategic;
 use App\Services\PlanCreationService;
+use App\Services\StrategicPlanAuthorizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,14 +17,18 @@ use Illuminate\Validation\Rule;
 
 class PlanCreationController extends Controller
 {
-    public function __construct(private readonly PlanCreationService $planCreationService)
-    {
+    public function __construct(
+        private readonly PlanCreationService $planCreationService,
+        private readonly StrategicPlanAuthorizationService $authorizationService
+    ) {
     }
 
     public function store(CreatePlanRequest $request): JsonResponse
     {
+        $user = Auth::guard('api')->user();
+        $this->authorizationService->ensureCanCreatePlan($user);
         $data = $request->validated();
-        $plan = $this->planCreationService->create($data, Auth::guard('api')->user());
+        $plan = $this->planCreationService->create($data, $user);
 
         return response()->json([
             'success' => true,
@@ -40,6 +45,8 @@ class PlanCreationController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $user = Auth::guard('api')->user();
+        $this->authorizationService->ensureCanViewAny($user);
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
             'level' => ['nullable', 'string', Rule::in(['strategic_plan', 'goal'])],
@@ -47,7 +54,8 @@ class PlanCreationController extends Controller
             'status' => ['nullable', 'string', Rule::in(['draft', 'finished', 'archived', 'deleted'])],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
-        $plans = $this->planCreationService->paginate($filters);
+        $authorizedPlanIds = $this->authorizationService->authorizedPlanIdsForListing($user);
+        $plans = $this->planCreationService->paginate($filters, $authorizedPlanIds);
 
         return response()->json([
             'success' => true,
@@ -64,20 +72,24 @@ class PlanCreationController extends Controller
 
     public function show(int $id): JsonResponse
     {
+        $user = Auth::guard('api')->user();
         $plan = $this->planCreationService->find($id);
         abort_if(! $plan, 404, 'Strategic plan not found.');
+        $this->authorizationService->ensureCanViewPlan($plan, $user);
 
         return response()->json(['success' => true, 'data' => $plan]);
     }
 
     public function update(UpdatePlanRequest $request, int $id): JsonResponse
     {
-        $plan = Strategic::with(['missionFoundation', 'visionFoundation', 'coreValues'])
+        $user = Auth::guard('api')->user();
+        $plan = Strategic::with(['creator', 'missionFoundation', 'visionFoundation', 'coreValues'])
             ->where('status', '!=', 'deleted')
             ->find($id);
         abort_if(! $plan, 404, 'Strategic plan not found.');
+        $this->authorizationService->ensureCanUpdatePlan($plan, $user);
 
-        $updated = $this->planCreationService->update($plan, $request->validated(), Auth::guard('api')->user());
+        $updated = $this->planCreationService->update($plan, $request->validated(), $user);
 
         return response()->json([
             'success' => true,
@@ -89,8 +101,10 @@ class PlanCreationController extends Controller
 
     public function destroy(DeletePlanRequest $request, int $id): JsonResponse
     {
+        $user = Auth::guard('api')->user();
         $plan = $this->planCreationService->find($id);
         abort_if(! $plan, 404, 'Strategic plan not found.');
+        $this->authorizationService->ensureCanDeletePlan($plan, $user);
         $this->planCreationService->delete($plan);
 
         return response()->json(['success' => true, 'message' => 'Strategic plan deleted.']);
@@ -98,10 +112,13 @@ class PlanCreationController extends Controller
 
     public function copy(CopyPlanRequest $request, int $id): JsonResponse
     {
+        $user = Auth::guard('api')->user();
         $source = $this->planCreationService->find($id);
         abort_if(! $source, 404, 'Strategic plan not found.');
+        $this->authorizationService->ensureCanViewPlan($source, $user);
+        $this->authorizationService->ensureCanCreatePlan($user);
 
-        $copy = $this->planCreationService->copy($source, Auth::guard('api')->user());
+        $copy = $this->planCreationService->copy($source, $user);
 
         return response()->json([
             'success' => true,
@@ -113,13 +130,15 @@ class PlanCreationController extends Controller
 
     public function updateStatus(UpdatePlanStatusRequest $request, int $id): JsonResponse
     {
-        $plan = Strategic::where('status', '!=', 'deleted')->find($id);
+        $user = Auth::guard('api')->user();
+        $plan = Strategic::with('creator')->where('status', '!=', 'deleted')->find($id);
         abort_if(! $plan, 404, 'Strategic plan not found.');
+        $this->authorizationService->ensureCanArchivePlan($plan, $user);
 
         $updated = $this->planCreationService->updateStatus(
             $plan,
             $request->validated('status'),
-            Auth::guard('api')->user()
+            $user
         );
 
         return response()->json([

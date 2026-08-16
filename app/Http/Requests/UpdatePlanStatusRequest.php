@@ -8,7 +8,7 @@ class UpdatePlanStatusRequest extends ApiFormRequest
 {
     protected function requiredPermissions(): array
     {
-        return ['strategic_records.archive', 'strategic_records.manage'];
+        return ['strategic_records.archive'];
     }
 
     public function rules(): array

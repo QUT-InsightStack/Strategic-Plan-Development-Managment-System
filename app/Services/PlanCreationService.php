@@ -10,6 +10,7 @@ use App\Models\StrategicFoundations;
 use App\Models\StrategicObjective;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -20,18 +21,38 @@ class PlanCreationService
     {
     }
 
-    public function paginate(array $filters): LengthAwarePaginator
+    public function paginate(array $filters, ?Collection $authorizedPlanIds = null): LengthAwarePaginator
     {
         $query = Strategic::with(['creator', 'missionFoundation', 'visionFoundation', 'coreValues']);
 
+        if ($authorizedPlanIds !== null) {
+            $query->whereIn('record_id', $authorizedPlanIds->all());
+        }
+
         if (empty($filters['status'])) {
-            $query->where('status', '!=', 'deleted');
+            $query->whereIn('status', ['draft', 'finished']);
+        } elseif (in_array($filters['status'], ['archived', 'deleted'], true)) {
+            $query->whereRaw('1 = 0');
         } else {
             $query->where('status', $filters['status']);
         }
 
         if (! empty($filters['search'])) {
-            $query->where('title', 'like', '%' . $filters['search'] . '%');
+            $search = trim((string) $filters['search']);
+            $like = '%' . $search . '%';
+
+            $query->where(function ($builder) use ($like) {
+                $builder->where('title', 'like', $like)
+                    ->orWhere('description', 'like', $like)
+                    ->orWhereHas('missionFoundation', fn ($relation) => $relation->where('content', 'like', $like))
+                    ->orWhereHas('visionFoundation', fn ($relation) => $relation->where('content', 'like', $like))
+                    ->orWhereHas('coreValues', fn ($relation) => $relation->where('content', 'like', $like));
+            });
+
+            $query->orderByRaw(
+                'case when title like ? then 0 when description like ? then 1 else 2 end',
+                [$like, $like]
+            );
         }
         if (! empty($filters['level'])) {
             $query->where('level', $filters['level']);
@@ -40,7 +61,8 @@ class PlanCreationService
             $query->whereYear('updated_at', $filters['year']);
         }
 
-        return $query->orderByDesc('updated_at')->paginate($filters['per_page'] ?? 10);
+        return $query->orderByDesc('updated_at')
+            ->paginate($filters['per_page'] ?? 10);
     }
 
     public function find(int $id): ?Strategic
@@ -99,6 +121,7 @@ class PlanCreationService
                 'record_id' => $plan->record_id,
                 'status' => $requestedStatus,
                 'user_id' => $user->user_id,
+                'after' => $this->planSnapshot($this->find($plan->record_id)),
             ]);
 
             return $this->find($plan->record_id);
@@ -108,13 +131,14 @@ class PlanCreationService
     public function update(Strategic $plan, array $data, User $user): Strategic
     {
         $this->assertPlanCanBeEdited($plan);
+        $before = $this->planSnapshot($plan);
 
         $data = $this->normalizePlanData($data, $plan->status);
         $targetStatus = $data['status'];
         $this->assertEditableStatusTransitionAllowed($plan, $targetStatus);
         $this->assertPlanPayloadMatchesStatus($data, $targetStatus);
 
-        return DB::transaction(function () use ($plan, $data, $user, $targetStatus) {
+        return DB::transaction(function () use ($plan, $data, $user, $targetStatus, $before) {
             $plan->missionFoundation->update([
                 'content' => $data['mission'],
                 'updated_by' => $user->user_id,
@@ -127,36 +151,30 @@ class PlanCreationService
                 'version' => '1.0',
             ]);
 
-            $activeLinks = Link::with('coreValue')
-                ->where('plan_id', $plan->record_id)
-                ->where('status', '!=', 'deleted')
-                ->get();
-
-            foreach ($activeLinks as $link) {
-                $this->softDeleteLink($link, $user->user_id);
-                $this->syncFoundationLifecycleState($link->coreValue, $user->user_id);
-            }
-
-            $this->createCoreValueLinks($plan->record_id, $data['core_values'], $user->user_id);
+            $this->syncEditableCoreValues($plan->record_id, $data['core_values'], $user->user_id);
 
             $this->syncPlanFoundationsLifecycle($plan->record_id, $user->user_id);
             $this->finalizeEditablePlan($plan, $data, $user->user_id, $targetStatus);
+            $after = $this->find($plan->record_id);
 
             $this->logWriter->write('strategic_plan.updated', [
                 'record_id' => $plan->record_id,
                 'status' => $targetStatus,
                 'user_id' => $user->user_id,
+                'before' => $before,
+                'after' => $after ? $this->planSnapshot($after) : null,
             ]);
 
-            return $this->find($plan->record_id);
+            return $after;
         });
     }
 
     public function delete(Strategic $plan): void
     {
         $userId = auth('api')->user()?->user_id ?? $plan->updated_by ?? $plan->created_by;
+        $before = $this->planSnapshot($plan);
 
-        DB::transaction(function () use ($plan, $userId) {
+        DB::transaction(function () use ($plan, $userId, $before) {
             if ($plan->status === 'deleted') {
                 return;
             }
@@ -177,6 +195,7 @@ class PlanCreationService
             $this->logWriter->write('strategic_plan.deleted', [
                 'record_id' => $plan->record_id,
                 'user_id' => $userId,
+                'before' => $before,
             ]);
         });
     }
@@ -203,6 +222,7 @@ class PlanCreationService
         }
 
         $fromStatus = $plan->status;
+        $before = $this->planSnapshot($plan);
         $this->assertStatusTransitionAllowed($plan, $status);
 
         DB::transaction(function () use ($plan, $status, $user) {
@@ -219,6 +239,8 @@ class PlanCreationService
             'from' => $fromStatus,
             'to' => $status,
             'user_id' => $user->user_id,
+            'before' => $before,
+            'after' => $this->planSnapshot($this->find($plan->record_id) ?? $plan),
         ]);
 
         return $this->find($plan->record_id) ?? $plan;
@@ -388,28 +410,72 @@ class PlanCreationService
     private function createCoreValueLinks(int $planId, array $coreValues, int $userId): void
     {
         foreach ($coreValues as $content) {
-            $coreValue = StrategicFoundations::create([
-                'created_by' => $userId,
-                'type' => 'CORE_VALUE',
-                'content' => $content,
-                'version' => '1.0',
-                'status' => 'active',
-                'archived_at' => null,
-                'archived_by' => null,
-                'deleted_at' => null,
-            ]);
-
-            Link::create([
-                'core_value_id' => $coreValue->foundation_id,
-                'plan_id' => $planId,
-                'created_by' => $userId,
-                'updated_by' => $userId,
-                'status' => 'active',
-                'archived_at' => null,
-                'archived_by' => null,
-                'deleted_at' => null,
-            ]);
+            $this->createCoreValueLink($planId, $content, $userId);
         }
+    }
+
+    private function syncEditableCoreValues(int $planId, array $coreValues, int $userId): void
+    {
+        $existingLinks = Link::with('coreValue')
+            ->where('plan_id', $planId)
+            ->where('status', '!=', 'deleted')
+            ->orderBy('link_id')
+            ->get();
+
+        $matchedLinkIds = [];
+        $newContents = [];
+
+        foreach (collect($coreValues)->values() as $content) {
+            $matchingLink = $existingLinks->first(function (Link $link) use ($content, $matchedLinkIds) {
+                return ! in_array($link->link_id, $matchedLinkIds, true)
+                    && trim((string) $link->coreValue?->content) === $content;
+            });
+
+            if ($matchingLink) {
+                $matchedLinkIds[] = $matchingLink->link_id;
+                continue;
+            }
+
+            $newContents[] = $content;
+        }
+
+        $linksToDelete = $existingLinks->reject(
+            fn (Link $link) => in_array($link->link_id, $matchedLinkIds, true)
+        );
+
+        foreach ($linksToDelete as $link) {
+            $this->softDeleteLink($link, $userId);
+            $this->syncFoundationLifecycleState($link->coreValue, $userId);
+        }
+
+        foreach ($newContents as $content) {
+            $this->createCoreValueLink($planId, $content, $userId);
+        }
+    }
+
+    private function createCoreValueLink(int $planId, string $content, int $userId): void
+    {
+        $coreValue = StrategicFoundations::create([
+            'created_by' => $userId,
+            'type' => 'CORE_VALUE',
+            'content' => $content,
+            'version' => '1.0',
+            'status' => 'active',
+            'archived_at' => null,
+            'archived_by' => null,
+            'deleted_at' => null,
+        ]);
+
+        Link::create([
+            'core_value_id' => $coreValue->foundation_id,
+            'plan_id' => $planId,
+            'created_by' => $userId,
+            'updated_by' => $userId,
+            'status' => 'active',
+            'archived_at' => null,
+            'archived_by' => null,
+            'deleted_at' => null,
+        ]);
     }
 
     private function archiveObjectives(int $planId, int $userId): void
@@ -660,5 +726,25 @@ class PlanCreationService
             'archived_by' => null,
             'deleted_at' => now(),
         ]);
+    }
+
+    private function planSnapshot(?Strategic $plan): ?array
+    {
+        if (! $plan) {
+            return null;
+        }
+
+        $plan->loadMissing(['missionFoundation', 'visionFoundation', 'coreValues']);
+
+        return [
+            'record_id' => $plan->record_id,
+            'title' => $plan->title,
+            'level' => $plan->level,
+            'description' => $plan->description,
+            'status' => $plan->status,
+            'mission' => $plan->missionFoundation?->content,
+            'vision' => $plan->visionFoundation?->content,
+            'core_values' => $plan->coreValues->pluck('content')->values()->all(),
+        ];
     }
 }

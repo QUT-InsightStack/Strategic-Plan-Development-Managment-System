@@ -9,7 +9,7 @@ class StorePermissionRequest extends ApiFormRequest
 {
     protected function requiredPermissions(): array
     {
-        return ['permissions.manage'];
+        return ['permissions.create'];
     }
 
     public function rules(): array

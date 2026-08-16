@@ -8,7 +8,7 @@ class CreatePlanRequest extends ApiFormRequest
 {
     protected function requiredPermissions(): array
     {
-        return ['strategic_records.create', 'strategic_records.manage'];
+        return ['strategic_records.create'];
     }
 
     public function rules(): array

@@ -7,6 +7,8 @@ use App\Http\Requests\StoreStrategicObjectiveRequest;
 use App\Http\Requests\UpdateStrategicObjectiveRequest;
 use App\Models\Strategic;
 use App\Models\StrategicObjective;
+use App\Services\PermissionAuthorizationService;
+use App\Services\StrategicPlanAuthorizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,12 +17,21 @@ use Illuminate\Validation\ValidationException;
 
 class StrategicObjectiveController extends Controller
 {
-    public function __construct(private readonly StrategicLogWriter $logWriter)
-    {
+    public function __construct(
+        private readonly StrategicLogWriter $logWriter,
+        private readonly StrategicPlanAuthorizationService $authorizationService,
+        private readonly PermissionAuthorizationService $permissionAuthorizationService
+    ) {
     }
 
     public function index(Request $request): JsonResponse
     {
+        $user = Auth::guard('api')->user();
+        $this->permissionAuthorizationService->ensureHasPermission(
+            'strategic_objectives.view',
+            $user,
+            'You are not authorized to view strategic objectives.'
+        );
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
             'plan_id' => [
@@ -35,10 +46,27 @@ class StrategicObjectiveController extends Controller
             'year' => ['nullable', 'integer', 'min:2000', 'max:2100'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
+        $authorizedPlanIds = $this->authorizationService->authorizedPlanIdsForListing($user);
+
+        if (! empty($filters['plan_id'])) {
+            $plan = Strategic::with('creator')
+                ->whereKey($filters['plan_id'])
+                ->where('status', '!=', 'deleted')
+                ->first();
+
+            if ($plan) {
+                $this->authorizationService->ensurePlanIsWithinAuthorizedScope(
+                    $plan,
+                    $user,
+                    'You are not authorized to view strategic objectives for this strategic plan.'
+                );
+            }
+        }
 
         $query = StrategicObjective::with(['strategicPlan', 'creator', 'updater'])
             ->where('status', '!=', 'deleted')
-            ->whereHas('strategicPlan', fn ($builder) => $builder->where('status', '!=', 'deleted'));
+            ->whereIn('strategic_plan_id', $authorizedPlanIds->all())
+            ->whereHas('strategicPlan', fn ($builder) => $builder->whereIn('status', ['draft', 'finished']));
 
         if (! empty($filters['search'])) {
             $search = $filters['search'];
@@ -77,10 +105,21 @@ class StrategicObjectiveController extends Controller
 
     public function byPlan(int $planId): JsonResponse
     {
-        abort_unless(
-            Strategic::whereKey($planId)->where('status', '!=', 'deleted')->exists(),
-            404,
-            'Strategic plan not found.'
+        $user = Auth::guard('api')->user();
+        $this->permissionAuthorizationService->ensureHasPermission(
+            'strategic_objectives.view',
+            $user,
+            'You are not authorized to view strategic objectives.'
+        );
+        $plan = Strategic::with('creator')
+            ->whereKey($planId)
+            ->where('status', '!=', 'deleted')
+            ->first();
+        abort_if(! $plan, 404, 'Strategic plan not found.');
+        $this->authorizationService->ensurePlanIsWithinAuthorizedScope(
+            $plan,
+            $user,
+            'You are not authorized to view strategic objectives for this strategic plan.'
         );
 
         $objectives = StrategicObjective::where('strategic_plan_id', $planId)
@@ -93,6 +132,12 @@ class StrategicObjectiveController extends Controller
 
     public function show(int $id): JsonResponse
     {
+        $user = Auth::guard('api')->user();
+        $this->permissionAuthorizationService->ensureHasPermission(
+            'strategic_objectives.view',
+            $user,
+            'You are not authorized to view strategic objectives.'
+        );
         $objective = StrategicObjective::with(['strategicPlan', 'creator', 'updater'])
             ->where('status', '!=', 'deleted')
             ->find($id);
@@ -101,13 +146,27 @@ class StrategicObjectiveController extends Controller
             return response()->json(['message' => 'Not found'], 404);
         }
 
+        $objective->strategicPlan?->loadMissing('creator');
+        $this->authorizationService->ensurePlanIsWithinAuthorizedScope(
+            $objective->strategicPlan,
+            $user,
+            'You are not authorized to view this strategic objective.'
+        );
+
         return response()->json(['data' => $objective], 200);
     }
 
     public function store(StoreStrategicObjectiveRequest $request): JsonResponse
     {
         $data = $request->validated();
-        $plan = Strategic::where('status', '!=', 'deleted')->findOrFail($data['strategic_plan_id']);
+        $plan = Strategic::with('creator')
+            ->where('status', '!=', 'deleted')
+            ->findOrFail($data['strategic_plan_id']);
+        $this->authorizationService->ensurePlanIsWithinAuthorizedScope(
+            $plan,
+            Auth::guard('api')->user(),
+            'You are not authorized to create objectives for this strategic plan.'
+        );
         $this->ensurePlanCanBeChanged($plan);
 
         $data['created_by'] = Auth::guard('api')->id();
@@ -132,12 +191,23 @@ class StrategicObjectiveController extends Controller
 
     public function update(UpdateStrategicObjectiveRequest $request, int $id): JsonResponse
     {
+        $user = Auth::guard('api')->user();
         $objective = StrategicObjective::where('status', '!=', 'deleted')->find($id);
 
         if (! $objective) {
             return response()->json(['message' => 'Not found'], 404);
         }
 
+        if (! $objective->strategicPlan || $objective->strategicPlan->status === 'deleted') {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        $objective->strategicPlan?->loadMissing('creator');
+        $this->authorizationService->ensurePlanIsWithinAuthorizedScope(
+            $objective->strategicPlan,
+            $user,
+            'You are not authorized to update this strategic objective.'
+        );
         $this->ensurePlanCanBeChanged($objective->strategicPlan);
         $data = $request->validated();
         $data['updated_by'] = Auth::guard('api')->id();
@@ -156,12 +226,28 @@ class StrategicObjectiveController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
+        $user = Auth::guard('api')->user();
+        $this->permissionAuthorizationService->ensureHasPermission(
+            'strategic_objectives.delete',
+            $user,
+            'You are not authorized to delete strategic objectives.'
+        );
         $objective = StrategicObjective::where('status', '!=', 'deleted')->find($id);
 
         if (! $objective) {
             return response()->json(['message' => 'Not found'], 404);
         }
 
+        if (! $objective->strategicPlan || $objective->strategicPlan->status === 'deleted') {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        $objective->strategicPlan?->loadMissing('creator');
+        $this->authorizationService->ensurePlanIsWithinAuthorizedScope(
+            $objective->strategicPlan,
+            $user,
+            'You are not authorized to delete this strategic objective.'
+        );
         $this->ensurePlanCanBeChanged($objective->strategicPlan);
         $objective->update([
             'updated_by' => Auth::guard('api')->id(),

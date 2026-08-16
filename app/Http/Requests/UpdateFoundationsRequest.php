@@ -8,7 +8,7 @@ class UpdateFoundationsRequest extends ApiFormRequest
 {
     protected function requiredPermissions(): array
     {
-        return ['strategic_foundations.manage'];
+        return ['strategic_foundations.update'];
     }
 
     public function rules(): array

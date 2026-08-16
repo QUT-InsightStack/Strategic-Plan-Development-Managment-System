@@ -9,7 +9,7 @@ class UpdatePlanRequest extends CreatePlanRequest
 {
     protected function requiredPermissions(): array
     {
-        return ['strategic_records.update', 'strategic_records.manage'];
+        return ['strategic_records.update'];
     }
 
     public function rules(): array
