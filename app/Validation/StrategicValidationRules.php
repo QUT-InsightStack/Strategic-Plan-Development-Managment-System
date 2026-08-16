@@ -53,22 +53,46 @@ class StrategicValidationRules
 
     public static function missionIdRequired(): array
     {
-        return ['required', 'integer', Rule::exists('tblstrategic_foundations', 'foundation_id')->where('type', 'MISSION')];
+        return [
+            'required',
+            'integer',
+            Rule::exists('tblstrategic_foundations', 'foundation_id')->where(
+                fn ($query) => $query->where('type', 'MISSION')->where('status', '!=', 'deleted')
+            ),
+        ];
     }
 
     public static function missionIdOptional(): array
     {
-        return ['sometimes', 'integer', Rule::exists('tblstrategic_foundations', 'foundation_id')->where('type', 'MISSION')];
+        return [
+            'sometimes',
+            'integer',
+            Rule::exists('tblstrategic_foundations', 'foundation_id')->where(
+                fn ($query) => $query->where('type', 'MISSION')->where('status', '!=', 'deleted')
+            ),
+        ];
     }
 
     public static function visionIdRequired(): array
     {
-        return ['required', 'integer', Rule::exists('tblstrategic_foundations', 'foundation_id')->where('type', 'VISION')];
+        return [
+            'required',
+            'integer',
+            Rule::exists('tblstrategic_foundations', 'foundation_id')->where(
+                fn ($query) => $query->where('type', 'VISION')->where('status', '!=', 'deleted')
+            ),
+        ];
     }
 
     public static function visionIdOptional(): array
     {
-        return ['sometimes', 'integer', Rule::exists('tblstrategic_foundations', 'foundation_id')->where('type', 'VISION')];
+        return [
+            'sometimes',
+            'integer',
+            Rule::exists('tblstrategic_foundations', 'foundation_id')->where(
+                fn ($query) => $query->where('type', 'VISION')->where('status', '!=', 'deleted')
+            ),
+        ];
     }
 
     public static function parentIdsOptional(): array
@@ -78,7 +102,13 @@ class StrategicValidationRules
 
     public static function parentIdItem(mixed $recordId = null): array
     {
-        $rules = ['integer', 'distinct', Rule::exists('tblstrategic_record', 'record_id')];
+        $rules = [
+            'integer',
+            'distinct',
+            Rule::exists('tblstrategic_record', 'record_id')->where(
+                fn ($query) => $query->where('status', '!=', 'deleted')
+            ),
+        ];
 
         if ($recordId !== null) {
             $rules[] = Rule::notIn([$recordId]);

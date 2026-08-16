@@ -27,7 +27,7 @@ class RelationController extends Controller
     {
         $relation = $this->relationService->getById($id);
 
-        if (!$relation) {
+        if (! $relation) {
             return response()->json(['message' => 'Not found'], 404);
         }
 
@@ -45,18 +45,18 @@ class RelationController extends Controller
     {
         $updated = $this->relationService->update($id, $request->validated());
 
-        if (!$updated) {
+        if (! $updated) {
             return response()->json(['message' => 'Not found or update failed'], 404);
         }
 
-        return response()->json(['message' => 'Updated'], 200);
+        return response()->json(['message' => 'Updated', 'data' => $updated], 200);
     }
 
     public function destroy(int $id): JsonResponse
     {
         $deleted = $this->relationService->delete($id);
 
-        if (!$deleted) {
+        if (! $deleted) {
             return response()->json(['message' => 'Not found'], 404);
         }
 
@@ -70,8 +70,6 @@ class RelationController extends Controller
         ], 200);
     }
 
-    // syncParents kept with inline validation — it is a custom action, not a
-    // standard store/update, so dedicated FormRequest is not warranted here.
     public function syncParents(Request $request, int $recordId): JsonResponse
     {
         $data = $request->validate([
@@ -79,7 +77,9 @@ class RelationController extends Controller
             'parent_ids.*' => [
                 'integer',
                 'distinct',
-                Rule::exists('tblstrategic_record', 'record_id'),
+                Rule::exists('tblstrategic_record', 'record_id')->where(
+                    fn ($query) => $query->where('status', '!=', 'deleted')
+                ),
                 Rule::notIn([$recordId]),
             ],
             'created_by' => ['required', 'integer', Rule::exists('tblusers', 'user_id')],
