@@ -7,9 +7,9 @@ use App\Validation\ValidationAttributes;
 
 class UpdateStrategicRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['strategic_records.update', 'strategic_records.manage'];
     }
 
     public function rules(): array

@@ -6,9 +6,9 @@ use App\Validation\RelationValidationRules;
 
 class StoreRelationRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['relations.manage'];
     }
 
     public function rules(): array

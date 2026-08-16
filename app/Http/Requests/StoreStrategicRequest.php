@@ -7,9 +7,9 @@ use App\Validation\ValidationAttributes;
 
 class StoreStrategicRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['strategic_records.create', 'strategic_records.manage'];
     }
 
     public function rules(): array

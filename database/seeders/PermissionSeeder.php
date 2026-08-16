@@ -71,6 +71,30 @@ class PermissionSeeder extends Seeder
                 'module' => 'strategic_records',
             ],
             [
+                'permission_name' => 'Create Strategic Records',
+                'description' => 'Allows creating new strategic plans and related records.',
+                'code' => 'strategic_records.create',
+                'module' => 'strategic_records',
+            ],
+            [
+                'permission_name' => 'Update Strategic Records',
+                'description' => 'Allows editing existing strategic plans and related records.',
+                'code' => 'strategic_records.update',
+                'module' => 'strategic_records',
+            ],
+            [
+                'permission_name' => 'Archive Strategic Records',
+                'description' => 'Allows archiving and restoring strategic plans.',
+                'code' => 'strategic_records.archive',
+                'module' => 'strategic_records',
+            ],
+            [
+                'permission_name' => 'Delete Strategic Records',
+                'description' => 'Allows soft deleting strategic plans and related records.',
+                'code' => 'strategic_records.delete',
+                'module' => 'strategic_records',
+            ],
+            [
                 'permission_name' => 'View Strategic Foundations',
                 'description' => 'Allows viewing strategic foundations.',
                 'code' => 'strategic_foundations.view',
@@ -93,6 +117,24 @@ class PermissionSeeder extends Seeder
                 'description' => 'Allows maintaining plan core value mappings.',
                 'code' => 'plan_core_values.manage',
                 'module' => 'plan_core_values',
+            ],
+            [
+                'permission_name' => 'View Dashboard',
+                'description' => 'Allows viewing the dashboard overview page.',
+                'code' => 'dashboard.view',
+                'module' => 'dashboard',
+            ],
+            [
+                'permission_name' => 'View Reports',
+                'description' => 'Allows viewing business reports and analytics.',
+                'code' => 'reports.view',
+                'module' => 'reports',
+            ],
+            [
+                'permission_name' => 'Manage Settings',
+                'description' => 'Allows managing system settings and configuration.',
+                'code' => 'settings.manage',
+                'module' => 'settings',
             ],
             [
                 'permission_name' => 'View Logs',

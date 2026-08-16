@@ -11,8 +11,9 @@ class LinkValidationRules
         return [
             'required',
             'integer',
-            Rule::exists('tblstrategic_foundations', 'foundation_id')->where('type', 'CORE_VALUE'),
-            Rule::unique('tblplan_core_value')->where('plan_id', $planId),
+            Rule::exists('tblstrategic_foundations', 'foundation_id')->where(
+                fn ($query) => $query->where('type', 'CORE_VALUE')->where('status', '!=', 'deleted')
+            ),
         ];
     }
 
@@ -21,19 +22,32 @@ class LinkValidationRules
         return [
             'sometimes',
             'integer',
-            Rule::exists('tblstrategic_foundations', 'foundation_id')->where('type', 'CORE_VALUE'),
-            Rule::unique('tblplan_core_value')->where('plan_id', $planId)->ignore($linkId, 'link_id'),
+            Rule::exists('tblstrategic_foundations', 'foundation_id')->where(
+                fn ($query) => $query->where('type', 'CORE_VALUE')->where('status', '!=', 'deleted')
+            ),
         ];
     }
 
     public static function planIdRequired(): array
     {
-        return ['required', 'integer', Rule::exists('tblstrategic_record', 'record_id')];
+        return [
+            'required',
+            'integer',
+            Rule::exists('tblstrategic_record', 'record_id')->where(
+                fn ($query) => $query->where('status', '!=', 'deleted')
+            ),
+        ];
     }
 
     public static function planIdOptional(): array
     {
-        return ['sometimes', 'integer', Rule::exists('tblstrategic_record', 'record_id')];
+        return [
+            'sometimes',
+            'integer',
+            Rule::exists('tblstrategic_record', 'record_id')->where(
+                fn ($query) => $query->where('status', '!=', 'deleted')
+            ),
+        ];
     }
 
     public static function createdByRequired(): array

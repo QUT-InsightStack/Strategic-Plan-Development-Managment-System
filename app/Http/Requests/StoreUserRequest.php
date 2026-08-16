@@ -7,9 +7,9 @@ use App\Validation\UserValidationRules;
 
 class StoreUserRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['users.manage'];
     }
 
     public function rules(): array
