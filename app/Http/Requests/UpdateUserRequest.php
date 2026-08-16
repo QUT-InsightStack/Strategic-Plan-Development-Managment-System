@@ -7,9 +7,9 @@ use App\Validation\UserValidationRules;
 
 class UpdateUserRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['users.manage'];
     }
 
     public function rules(): array

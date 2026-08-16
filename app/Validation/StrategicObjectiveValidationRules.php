@@ -8,12 +8,24 @@ class StrategicObjectiveValidationRules
 {
     public static function strategicPlanIdRequired(): array
     {
-        return ['required', 'integer', Rule::exists('tblstrategic_record', 'record_id')];
+        return [
+            'required',
+            'integer',
+            Rule::exists('tblstrategic_record', 'record_id')->where(
+                fn ($query) => $query->where('status', '!=', 'deleted')
+            ),
+        ];
     }
 
     public static function strategicPlanIdOptional(): array
     {
-        return ['sometimes', 'integer', Rule::exists('tblstrategic_record', 'record_id')];
+        return [
+            'sometimes',
+            'integer',
+            Rule::exists('tblstrategic_record', 'record_id')->where(
+                fn ($query) => $query->where('status', '!=', 'deleted')
+            ),
+        ];
     }
 
     public static function createdByRequired(): array

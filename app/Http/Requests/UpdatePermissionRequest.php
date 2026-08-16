@@ -7,9 +7,9 @@ use App\Validation\ValidationAttributes;
 
 class UpdatePermissionRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['permissions.manage'];
     }
 
     public function rules(): array

@@ -6,9 +6,9 @@ use App\Validation\LinkValidationRules;
 
 class StoreLinkRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['plan_core_values.manage'];
     }
 
     public function rules(): array

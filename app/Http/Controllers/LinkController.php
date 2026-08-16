@@ -18,17 +18,22 @@ class LinkController extends Controller
         $this->linkService = $linkService;
     }
 
-    // GET filter validation is intentionally kept inline — it is not a
-    // write operation and doesn't need a dedicated FormRequest.
     public function index(Request $request): JsonResponse
     {
         $filters = $request->validate([
-            'plan_id' => ['nullable', 'integer', Rule::exists('tblstrategic_record', 'record_id')],
+            'plan_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('tblstrategic_record', 'record_id')->where(
+                    fn ($query) => $query->where('status', '!=', 'deleted')
+                ),
+            ],
             'core_value_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('tblstrategic_foundations', 'foundation_id')
-                    ->where('type', 'CORE_VALUE'),
+                Rule::exists('tblstrategic_foundations', 'foundation_id')->where(
+                    fn ($query) => $query->where('type', 'CORE_VALUE')->where('status', '!=', 'deleted')
+                ),
             ],
         ]);
 
@@ -41,7 +46,7 @@ class LinkController extends Controller
     {
         $link = $this->linkService->getById($id);
 
-        if (!$link) {
+        if (! $link) {
             return response()->json(['message' => 'Not found'], 404);
         }
 
@@ -59,18 +64,18 @@ class LinkController extends Controller
     {
         $updated = $this->linkService->update($id, $request->validated());
 
-        if (!$updated) {
+        if (! $updated) {
             return response()->json(['message' => 'Not found or update failed'], 404);
         }
 
-        return response()->json(['message' => 'Updated'], 200);
+        return response()->json(['message' => 'Updated', 'data' => $updated], 200);
     }
 
     public function destroy(int $id): JsonResponse
     {
         $deleted = $this->linkService->delete($id);
 
-        if (!$deleted) {
+        if (! $deleted) {
             return response()->json(['message' => 'Not found'], 404);
         }
 
@@ -91,8 +96,9 @@ class LinkController extends Controller
             'core_value_ids.*' => [
                 'integer',
                 'distinct',
-                Rule::exists('tblstrategic_foundations', 'foundation_id')
-                    ->where('type', 'CORE_VALUE'),
+                Rule::exists('tblstrategic_foundations', 'foundation_id')->where(
+                    fn ($query) => $query->where('type', 'CORE_VALUE')->where('status', '!=', 'deleted')
+                ),
             ],
             'created_by' => ['required', 'integer', Rule::exists('tblusers', 'user_id')],
             'updated_by' => ['required', 'integer', Rule::exists('tblusers', 'user_id')],

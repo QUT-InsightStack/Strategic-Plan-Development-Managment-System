@@ -27,6 +27,14 @@ const rolePolicies = {
     Viewer: { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.REPORTS_VIEW] },
 };
 
+export function normalizePermissionList(list) {
+    if (!Array.isArray(list)) return [];
+
+    return list
+        .map((permission) => typeof permission === 'string' ? permission : permission?.code)
+        .filter(Boolean);
+}
+
 export function policyForRole(roleName) {
     return rolePolicies[roleName] || { home: '/access-denied', permissions: [] };
 }

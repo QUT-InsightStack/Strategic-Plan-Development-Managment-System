@@ -1,9 +1,17 @@
-import { ACCESS_SESSION_KEY, policyForRole } from './access-policy.js';
+import { ACCESS_SESSION_KEY, normalizePermissionList, policyForRole } from './access-policy.js';
 
 export function createAccessSession(user) {
     const roleName = user?.role?.role_name || user?.role_name || '';
     const policy = policyForRole(roleName);
-    return { userId: user?.user_id, name: user?.name || `${user?.first_name || ''} ${user?.last_name || ''}`.trim(), roleName, permissions: policy.permissions, home: policy.home };
+    const permissions = normalizePermissionList(user?.permissions || user?.role?.permissions || policy.permissions);
+
+    return {
+        userId: user?.user_id,
+        name: user?.name || `${user?.first_name || ''} ${user?.last_name || ''}`.trim(),
+        roleName,
+        permissions,
+        home: policy.home,
+    };
 }
 
 export function saveAccessSession(session) {
