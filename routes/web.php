@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 Route::redirect('/', '/login');
 
 Route::view('/login', 'pages.login')->name('login');
+Route::view('/forgot-password', 'pages.forgot-password')->name('forgot-password');
 Route::view('/dashboard', 'pages.dashboard')->name('dashboard');
 Route::view('/profile', 'pages.profile')->name('profile');
 Route::view('/change-password', 'pages.change-password')->name('change-password');

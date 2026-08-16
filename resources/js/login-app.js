@@ -264,7 +264,9 @@ function LoginForm({ status, setStatus }) {
                     {
                         className: 'text-button',
                         type: 'button',
-                        onClick: () => setStatus('Please contact your system administrator to reset your password.', 'info'),
+                        //onClick: () => setStatus('Please contact your system administrator to reset your password.', 'info'),
+                        onClick: () => { window.location.href = '/forgot-password';
+},
                     },
                     'Forgot Password?'
                 )
