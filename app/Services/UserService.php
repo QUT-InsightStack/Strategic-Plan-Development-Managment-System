@@ -2,16 +2,21 @@
 
 namespace App\Services;
 
+use App\Models\Role;
 use App\Repositories\UserRepository;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class UserService
 {
     protected $userRepository;
 
-    public function __construct(UserRepository $userRepository)
-    {
+    public function __construct(
+        UserRepository $userRepository,
+        protected UserRoleService $userRoleService
+    ) {
         $this->userRepository = $userRepository;
     }
 
@@ -27,24 +32,38 @@ class UserService
 
     public function createUser(array $data): Model
     {
-        // Business logic: such as password hashing, validation, etc.
-        // $data['password'] = bcrypt($data['password']);
-        return $this->userRepository->create($data);
+        $role = Role::query()
+            ->find($data['role_id'] ?? null);
+
+        if (! $role) {
+            throw ValidationException::withMessages([
+                'role_id' => ['The selected role does not exist.'],
+            ]);
+        }
+
+        $this->userRoleService->authorizeAssignment($role);
+
+        $data['status'] ??= 'active';
+
+        return DB::transaction(function () use ($data): Model {
+            return $this->userRepository->create($data);
+        });
     }
 
     public function updateUser(int $id, array $data): bool
     {
-        // Business logic: such as checking permissions
+        // UpdateUserRequest rejects role_id. 
+        // this protects internal callers from future accidental bypasses.
+        unset($data['role_id']);
+
         return $this->userRepository->update($id, $data);
     }
 
     public function deleteUser(int $id): bool
     {
-        // Business logic: such as soft delete or association checks
         return $this->userRepository->delete($id);
     }
 
-    // Unified CRUD methods for BaseCrudController
     public function getAll(): Collection
     {
         return $this->getAllUsers();
@@ -68,5 +87,15 @@ class UserService
     public function delete(int $id): bool
     {
         return $this->deleteUser($id);
+    }
+
+    public function search(array $filters): LengthAwarePaginator
+    {
+        $filters['search_by'] ??= 'all';
+        $filters['sort_by'] ??= 'name';
+        $filters['sort_direction'] ??= 'asc';
+        $filters['per_page'] ??= 15;
+
+        return $this->userRepository->search($filters);
     }
 }

@@ -10,66 +10,108 @@ class PermissionSeeder extends Seeder
     public function run(): void
     {
         $permissions = [
-            ['permission_name' => 'View Users', 'description' => 'Allows viewing the list of users and individual user details.', 'code' => 'users.view', 'module' => 'users'],
-            ['permission_name' => 'Create Users', 'description' => 'Allows creating new user accounts.', 'code' => 'users.create', 'module' => 'users'],
-            ['permission_name' => 'Update Users', 'description' => 'Allows editing existing user accounts.', 'code' => 'users.update', 'module' => 'users'],
-            ['permission_name' => 'Delete Users', 'description' => 'Allows deleting user accounts.', 'code' => 'users.delete', 'module' => 'users'],
-
-            ['permission_name' => 'View Roles', 'description' => 'Allows viewing roles and their details.', 'code' => 'roles.view', 'module' => 'roles'],
-            ['permission_name' => 'Create Roles', 'description' => 'Allows creating roles.', 'code' => 'roles.create', 'module' => 'roles'],
-            ['permission_name' => 'Update Roles', 'description' => 'Allows editing roles.', 'code' => 'roles.update', 'module' => 'roles'],
-            ['permission_name' => 'Delete Roles', 'description' => 'Allows deleting roles.', 'code' => 'roles.delete', 'module' => 'roles'],
-            ['permission_name' => 'Manage Roles', 'description' => 'Legacy aggregate permission for role maintenance.', 'code' => 'roles.manage', 'module' => 'roles'],
-
-            ['permission_name' => 'View Permissions', 'description' => 'Allows viewing the permission catalog.', 'code' => 'permissions.view', 'module' => 'permissions'],
-            ['permission_name' => 'Create Permissions', 'description' => 'Allows creating permissions.', 'code' => 'permissions.create', 'module' => 'permissions'],
-            ['permission_name' => 'Update Permissions', 'description' => 'Allows editing permissions.', 'code' => 'permissions.update', 'module' => 'permissions'],
-            ['permission_name' => 'Delete Permissions', 'description' => 'Allows deleting permissions.', 'code' => 'permissions.delete', 'module' => 'permissions'],
-            ['permission_name' => 'Manage Permissions', 'description' => 'Legacy aggregate permission for permission maintenance.', 'code' => 'permissions.manage', 'module' => 'permissions'],
-
-            ['permission_name' => 'View Strategic Records', 'description' => 'Allows viewing strategic records and plan details.', 'code' => 'strategic_records.view', 'module' => 'strategic_records'],
-            ['permission_name' => 'Create Strategic Records', 'description' => 'Allows creating new strategic plans and related records.', 'code' => 'strategic_records.create', 'module' => 'strategic_records'],
-            ['permission_name' => 'Update Strategic Records', 'description' => 'Allows editing existing strategic plans and related records.', 'code' => 'strategic_records.update', 'module' => 'strategic_records'],
-            ['permission_name' => 'Delete Strategic Records', 'description' => 'Allows soft deleting strategic plans and related records.', 'code' => 'strategic_records.delete', 'module' => 'strategic_records'],
-            ['permission_name' => 'Archive Strategic Records', 'description' => 'Allows archiving and restoring strategic plans.', 'code' => 'strategic_records.archive', 'module' => 'strategic_records'],
-            ['permission_name' => 'Manage Strategic Records', 'description' => 'Legacy aggregate permission for strategic record maintenance.', 'code' => 'strategic_records.manage', 'module' => 'strategic_records'],
-
-            ['permission_name' => 'View Strategic Objectives', 'description' => 'Allows viewing strategic objectives.', 'code' => 'strategic_objectives.view', 'module' => 'strategic_objectives'],
-            ['permission_name' => 'Create Strategic Objectives', 'description' => 'Allows creating strategic objectives.', 'code' => 'strategic_objectives.create', 'module' => 'strategic_objectives'],
-            ['permission_name' => 'Update Strategic Objectives', 'description' => 'Allows editing strategic objectives.', 'code' => 'strategic_objectives.update', 'module' => 'strategic_objectives'],
-            ['permission_name' => 'Delete Strategic Objectives', 'description' => 'Allows deleting strategic objectives.', 'code' => 'strategic_objectives.delete', 'module' => 'strategic_objectives'],
-
-            ['permission_name' => 'View Strategic Foundations', 'description' => 'Allows viewing strategic foundations.', 'code' => 'strategic_foundations.view', 'module' => 'strategic_foundations'],
-            ['permission_name' => 'Create Strategic Foundations', 'description' => 'Allows creating strategic foundations.', 'code' => 'strategic_foundations.create', 'module' => 'strategic_foundations'],
-            ['permission_name' => 'Update Strategic Foundations', 'description' => 'Allows editing strategic foundations.', 'code' => 'strategic_foundations.update', 'module' => 'strategic_foundations'],
-            ['permission_name' => 'Delete Strategic Foundations', 'description' => 'Allows deleting strategic foundations.', 'code' => 'strategic_foundations.delete', 'module' => 'strategic_foundations'],
-            ['permission_name' => 'Manage Strategic Foundations', 'description' => 'Legacy aggregate permission for strategic foundation maintenance.', 'code' => 'strategic_foundations.manage', 'module' => 'strategic_foundations'],
-
-            ['permission_name' => 'View Relations', 'description' => 'Allows viewing relation mappings between strategic records.', 'code' => 'relations.view', 'module' => 'relations'],
-            ['permission_name' => 'Create Relations', 'description' => 'Allows creating relation mappings between strategic records.', 'code' => 'relations.create', 'module' => 'relations'],
-            ['permission_name' => 'Update Relations', 'description' => 'Allows editing relation mappings between strategic records.', 'code' => 'relations.update', 'module' => 'relations'],
-            ['permission_name' => 'Delete Relations', 'description' => 'Allows deleting relation mappings between strategic records.', 'code' => 'relations.delete', 'module' => 'relations'],
-            ['permission_name' => 'Manage Relations', 'description' => 'Legacy aggregate permission for relation maintenance.', 'code' => 'relations.manage', 'module' => 'relations'],
-
-            ['permission_name' => 'View Plan Core Values', 'description' => 'Allows viewing plan core value mappings.', 'code' => 'plan_core_values.view', 'module' => 'plan_core_values'],
-            ['permission_name' => 'Create Plan Core Values', 'description' => 'Allows creating plan core value mappings.', 'code' => 'plan_core_values.create', 'module' => 'plan_core_values'],
-            ['permission_name' => 'Update Plan Core Values', 'description' => 'Allows editing plan core value mappings.', 'code' => 'plan_core_values.update', 'module' => 'plan_core_values'],
-            ['permission_name' => 'Delete Plan Core Values', 'description' => 'Allows deleting plan core value mappings.', 'code' => 'plan_core_values.delete', 'module' => 'plan_core_values'],
-            ['permission_name' => 'Manage Core Values', 'description' => 'Legacy aggregate permission for plan core value maintenance.', 'code' => 'plan_core_values.manage', 'module' => 'plan_core_values'],
-
-            ['permission_name' => 'View Role Permissions', 'description' => 'Allows viewing role-permission assignments.', 'code' => 'role_permissions.view', 'module' => 'role_permissions'],
-            ['permission_name' => 'Create Role Permissions', 'description' => 'Allows creating role-permission assignments.', 'code' => 'role_permissions.create', 'module' => 'role_permissions'],
-            ['permission_name' => 'Update Role Permissions', 'description' => 'Allows editing role-permission assignments.', 'code' => 'role_permissions.update', 'module' => 'role_permissions'],
-            ['permission_name' => 'Delete Role Permissions', 'description' => 'Allows deleting role-permission assignments.', 'code' => 'role_permissions.delete', 'module' => 'role_permissions'],
-
-            ['permission_name' => 'View Logs', 'description' => 'Allows viewing system activity logs.', 'code' => 'logs.view', 'module' => 'logs'],
-            ['permission_name' => 'Create Logs', 'description' => 'Allows creating system activity logs.', 'code' => 'logs.create', 'module' => 'logs'],
-            ['permission_name' => 'Update Logs', 'description' => 'Allows editing system activity logs.', 'code' => 'logs.update', 'module' => 'logs'],
-            ['permission_name' => 'Delete Logs', 'description' => 'Allows deleting system activity logs.', 'code' => 'logs.delete', 'module' => 'logs'],
-
-            ['permission_name' => 'View Dashboard', 'description' => 'Allows viewing the dashboard overview page.', 'code' => 'dashboard.view', 'module' => 'dashboard'],
-            ['permission_name' => 'View Reports', 'description' => 'Allows viewing business reports and analytics.', 'code' => 'reports.view', 'module' => 'reports'],
-            ['permission_name' => 'Manage Settings', 'description' => 'Allows managing system settings and configuration.', 'code' => 'settings.manage', 'module' => 'settings'],
+            [
+                'permission_name' => 'View Users',
+                'description' => 'Allows viewing the list of users and individual user details.',
+                'code' => 'users.view',
+                'module' => 'users',
+            ],
+            [
+                'permission_name' => 'Create Users',
+                'description' => 'Allows creating new user accounts.',
+                'code' => 'users.create',
+                'module' => 'users',
+            ],
+            [
+                'permission_name' => 'Update Users',
+                'description' => 'Allows editing existing user accounts.',
+                'code' => 'users.update',
+                'module' => 'users',
+            ],
+            [
+                'permission_name' => 'Delete Users',
+                'description' => 'Allows deleting user accounts.',
+                'code' => 'users.delete',
+                'module' => 'users',
+            ],
+            [
+                'permission_name' => 'View Roles',
+                'description' => 'Allows viewing roles and their details.',
+                'code' => 'roles.view',
+                'module' => 'roles',
+            ],
+            [
+                'permission_name' => 'Manage Roles',
+                'description' => 'Allows creating, updating, and deleting roles.',
+                'code' => 'roles.manage',
+                'module' => 'roles',
+            ],
+            [
+                'permission_name' => 'Assign User Roles',
+                'description' => 'Allows assigning approved roles to user accounts.',
+                'code' => 'users.assign_roles',
+                'module' => 'users',
+            ],
+            [
+                'permission_name' => 'Assign Protected Roles',
+                'description' => 'Allows assigning protected roles to user accounts.',
+                'code' => 'roles.assign_protected',
+                'module' => 'roles',
+            ],
+            [
+                'permission_name' => 'View Permissions',
+                'description' => 'Allows viewing the permission catalog.',
+                'code' => 'permissions.view',
+                'module' => 'permissions',
+            ],
+            [
+                'permission_name' => 'Manage Permissions',
+                'description' => 'Allows creating, updating, and deleting permissions.',
+                'code' => 'permissions.manage',
+                'module' => 'permissions',
+            ],
+            [
+                'permission_name' => 'View Strategic Records',
+                'description' => 'Allows viewing strategic records and plan details.',
+                'code' => 'strategic_records.view',
+                'module' => 'strategic_records',
+            ],
+            [
+                'permission_name' => 'Manage Strategic Records',
+                'description' => 'Allows creating, updating, and deleting strategic records.',
+                'code' => 'strategic_records.manage',
+                'module' => 'strategic_records',
+            ],
+            [
+                'permission_name' => 'View Strategic Foundations',
+                'description' => 'Allows viewing strategic foundations.',
+                'code' => 'strategic_foundations.view',
+                'module' => 'strategic_foundations',
+            ],
+            [
+                'permission_name' => 'Manage Strategic Foundations',
+                'description' => 'Allows creating, updating, and deleting strategic foundations.',
+                'code' => 'strategic_foundations.manage',
+                'module' => 'strategic_foundations',
+            ],
+            [
+                'permission_name' => 'Manage Relations',
+                'description' => 'Allows maintaining relation mappings between strategic records.',
+                'code' => 'relations.manage',
+                'module' => 'relations',
+            ],
+            [
+                'permission_name' => 'Manage Core Values',
+                'description' => 'Allows maintaining plan core value mappings.',
+                'code' => 'plan_core_values.manage',
+                'module' => 'plan_core_values',
+            ],
+            [
+                'permission_name' => 'View Logs',
+                'description' => 'Allows viewing system activity logs.',
+                'code' => 'logs.view',
+                'module' => 'logs',
+            ],
         ];
 
         foreach ($permissions as $permission) {

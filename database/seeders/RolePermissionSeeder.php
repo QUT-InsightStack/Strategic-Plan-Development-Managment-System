@@ -5,74 +5,68 @@ namespace Database\Seeders;
 use App\Models\Permission;
 use App\Models\Role;
 use Illuminate\Database\Seeder;
+use RuntimeException;
 
 class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        $permissionsByCode = Permission::query()->get()->keyBy('code');
+        $administrator = Role::query()
+            ->where('role_name', 'Administrator')
+            ->first();
 
-        $assignments = [
-            'Administrator' => $permissionsByCode->keys()->all(),
-            'Planning Officer' => [
-                'strategic_records.view',
-                'strategic_records.create',
-                'strategic_records.update',
-                'strategic_records.delete',
-                'strategic_objectives.view',
-                'strategic_objectives.create',
-                'strategic_objectives.update',
-                'strategic_objectives.delete',
-                'strategic_foundations.view',
-                'strategic_foundations.create',
-                'strategic_foundations.update',
-                'strategic_foundations.delete',
-                'relations.view',
-                'relations.create',
-                'relations.update',
-                'relations.delete',
-                'plan_core_values.view',
-                'plan_core_values.create',
-                'plan_core_values.update',
-                'plan_core_values.delete',
-                'dashboard.view',
-                'reports.view',
-            ],
-            'Division Head' => [
-                'strategic_records.view',
-                'strategic_records.archive',
-                'strategic_objectives.view',
-                'strategic_foundations.view',
-                'relations.view',
-                'plan_core_values.view',
-                'dashboard.view',
-                'reports.view',
-            ],
-            'Viewer' => [
-                'strategic_records.view',
-                'strategic_objectives.view',
-                'strategic_foundations.view',
-                'relations.view',
-                'plan_core_values.view',
-                'dashboard.view',
-                'reports.view',
-            ],
+        if (! $administrator) {
+            throw new RuntimeException(
+                'The Administrator role must exist before role permissions are seeded.'
+            );
+        }
+
+        $permissionCodes = [
+            'users.view',
+            'users.create',
+            'users.update',
+            'users.delete',
+            'users.assign_roles',
+            'roles.view',
+            'roles.manage',
+            'roles.assign_protected',
+            'permissions.view',
+            'permissions.manage',
         ];
 
-        foreach ($assignments as $roleName => $codes) {
-            $role = Role::where('role_name', $roleName)->first();
+        $permissions = Permission::query()
+            ->whereIn('code', $permissionCodes)
+            ->get();
 
-            if (! $role) {
-                continue;
+        if ($permissions->count() !== count($permissionCodes)) {
+            $foundCodes = $permissions->pluck('code')->all();
+            $missingCodes = array_values(array_diff($permissionCodes, $foundCodes));
+
+            throw new RuntimeException(
+                'Missing permissions: ' . implode(', ', $missingCodes)
+            );
+        }
+
+        $administrator->permissions()->syncWithoutDetaching(
+            $permissions->pluck('permission_id')->all()
+        );
+
+        // Optional: permit other approved administrative roles to assign
+        // ordinary roles without permitting protected-role assignment.
+        $planningOfficer = Role::query()
+            ->where('role_name', 'Planning Officer')
+            ->first();
+
+        if ($planningOfficer) {
+            $ordinaryAssignmentPermission = Permission::query()
+                ->where('code', 'users.assign_roles')
+                ->first();
+
+            if ($ordinaryAssignmentPermission) {
+                $planningOfficer->permissions()->syncWithoutDetaching([
+                    $ordinaryAssignmentPermission->permission_id,
+                ]);
             }
-
-            $permissionIds = collect($codes)
-                ->map(fn (string $code) => $permissionsByCode->get($code)?->permission_id)
-                ->filter()
-                ->values()
-                ->all();
-
-            $role->permissions()->sync($permissionIds);
         }
     }
 }
