@@ -77,22 +77,31 @@ class RolePremissionController extends Controller
         ], 200);
     }
 
-    public function syncPermissions(Request $request, int $roleId): JsonResponse
-    {
+    public function syncPermissions(Request $request,int $roleId): JsonResponse {
         $data = $request->validate([
-            'permission_ids'   => ['array'],
+            'permission_ids' => [
+                'required',
+                'array',
+            ],
             'permission_ids.*' => [
                 'integer',
                 'distinct',
-                Rule::exists('tblpermissions', 'permission_id'),
+                Rule::exists(
+                    'tblpermissions',
+                    'permission_id'
+                ),
             ],
         ]);
-
-        $relations = $this->rolePremissionService->syncPermissions(
-            $roleId,
-            $data['permission_ids'] ?? []
-        );
-
-        return response()->json(['message' => 'Updated', 'data' => $relations], 200);
+    
+        $relations = $this->rolePremissionService
+            ->syncPermissions(
+                $roleId,
+                $data['permission_ids']
+            );
+    
+        return response()->json([
+            'message' => 'Updated',
+            'data' => $relations,
+        ], 200);
     }
 }

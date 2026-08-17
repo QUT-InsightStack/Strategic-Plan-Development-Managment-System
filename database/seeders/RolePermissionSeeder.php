@@ -17,7 +17,7 @@ class RolePermissionSeeder extends Seeder
 
         if (! $administrator) {
             throw new RuntimeException(
-                'The Administrator role must be seeded before role permissions.'
+                'The Administrator role must exist before role permissions are seeded.'
             );
         }
 
@@ -26,18 +26,47 @@ class RolePermissionSeeder extends Seeder
             'users.create',
             'users.update',
             'users.delete',
+            'users.assign_roles',
+            'roles.view',
+            'roles.manage',
+            'roles.assign_protected',
+            'permissions.view',
+            'permissions.manage',
         ];
 
-        $permissionIds = Permission::query()
+        $permissions = Permission::query()
             ->whereIn('code', $permissionCodes)
-            ->pluck('permission_id');
+            ->get();
 
-        if ($permissionIds->count() !== count($permissionCodes)) {
+        if ($permissions->count() !== count($permissionCodes)) {
+            $foundCodes = $permissions->pluck('code')->all();
+            $missingCodes = array_values(array_diff($permissionCodes, $foundCodes));
+
             throw new RuntimeException(
-                'One or more required user permissions have not been seeded.'
+                'Missing permissions: ' . implode(', ', $missingCodes)
             );
         }
 
-        $administrator->permissions()->syncWithoutDetaching($permissionIds);
+        $administrator->permissions()->syncWithoutDetaching(
+            $permissions->pluck('permission_id')->all()
+        );
+
+        // Optional: permit other approved administrative roles to assign
+        // ordinary roles without permitting protected-role assignment.
+        $planningOfficer = Role::query()
+            ->where('role_name', 'Planning Officer')
+            ->first();
+
+        if ($planningOfficer) {
+            $ordinaryAssignmentPermission = Permission::query()
+                ->where('code', 'users.assign_roles')
+                ->first();
+
+            if ($ordinaryAssignmentPermission) {
+                $planningOfficer->permissions()->syncWithoutDetaching([
+                    $ordinaryAssignmentPermission->permission_id,
+                ]);
+            }
+        }
     }
 }

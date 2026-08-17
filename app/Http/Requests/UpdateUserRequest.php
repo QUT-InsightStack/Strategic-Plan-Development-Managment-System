@@ -35,15 +35,19 @@ class UpdateUserRequest extends ApiFormRequest
             'unit'            => ['sometimes', 'nullable', 'string', 'max:255'],
             'office'          => ['sometimes', 'nullable', 'string', 'max:255'],
             'position'        => ['sometimes', 'nullable', 'string', 'max:255'],
-            'role_id'         => [
-                'sometimes',
-                'nullable',
-                'integer',
-                Rule::exists('tblroles', 'role_id'),
-            ],
+            'role_id'         => ['missing'],
             'status'          => ['sometimes', 'string', Rule::in(['active', 'inactive', 'suspended'])],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'role_id.missing' =>
+                'Roles must be changed through the role assignment endpoint.',
+        ];
+    }
+
 
     public function attributes(): array
     {

@@ -32,10 +32,13 @@ Route::post('auth/refresh', [AuthController::class, 'refresh']);
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:api')->prefix('auth')->group(function () {
-    Route::post('logout', [AuthController::class, 'logout']);
-    Route::get('me', [AuthController::class, 'me']);
-    Route::put('profile', [AuthController::class, 'updateProfile']);
+Route::middleware(['auth:api','auth.version',])->group(function () {
+    Route::post('auth/logout', [AuthController::class, 'logout']);
+    Route::get('auth/me', [AuthController::class, 'me']);
+    Route::put(
+        'auth/profile',
+        [AuthController::class, 'updateProfile']
+    );
 });
 
 /*
@@ -44,7 +47,7 @@ Route::middleware('auth:api')->prefix('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:api')->prefix('users')->group(function () {
+Route::middleware(['auth:api','auth.version',])->prefix('users')->group(function () {
     Route::get('/search', [UserController::class, 'search'])
     ->middleware('permission:users.view');
 
@@ -52,7 +55,11 @@ Route::middleware('auth:api')->prefix('users')->group(function () {
         ->middleware('permission:users.view');
 
     Route::post('', [UserController::class, 'store'])
-        ->middleware('permission:users.create');
+        ->middleware('permission:users.create,users.assign_roles');
+
+    Route::put('/{user}/role', [UserController::class, 'assignRole'])
+        ->whereNumber('user')
+        ->middleware('permission:users.assign_roles');
 
     Route::get('{user}', [UserController::class, 'show'])
         ->whereNumber('user')
@@ -73,7 +80,7 @@ Route::middleware('auth:api')->prefix('users')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:api')->group(function () {
+Route::middleware(['auth:api','auth.version',])->group(function () {
     // Roles
     Route::get('roles', [RoleController::class, 'index'])
         ->middleware('permission:roles.view');
@@ -141,7 +148,13 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource(
         'role-premissions',
         RolePremissionController::class
-    )->middleware('permission:roles.manage');
+    )
+        ->only([
+            'index',
+            'show',
+        ])
+        ->middleware('permission:roles.view');
+    
 });
 
 /*
@@ -150,7 +163,7 @@ Route::middleware('auth:api')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:api')->group(function () {
+Route::middleware(['auth:api','auth.version',])->group(function () {
     // Strategic record parent relations
     Route::get(
         'strategic-records/{recordId}/relations',

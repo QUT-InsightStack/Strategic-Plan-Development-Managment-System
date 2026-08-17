@@ -47,6 +47,18 @@ class PermissionSeeder extends Seeder
                 'module' => 'roles',
             ],
             [
+                'permission_name' => 'Assign User Roles',
+                'description' => 'Allows assigning approved roles to user accounts.',
+                'code' => 'users.assign_roles',
+                'module' => 'users',
+            ],
+            [
+                'permission_name' => 'Assign Protected Roles',
+                'description' => 'Allows assigning protected roles to user accounts.',
+                'code' => 'roles.assign_protected',
+                'module' => 'roles',
+            ],
+            [
                 'permission_name' => 'View Permissions',
                 'description' => 'Allows viewing the permission catalog.',
                 'code' => 'permissions.view',

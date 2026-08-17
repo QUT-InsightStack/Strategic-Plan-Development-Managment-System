@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AssignUserRoleRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Http\Requests\SearchUsersRequest;
 use App\Http\Resources\UserResource;
+use App\Models\User;
+use App\Services\UserRoleService;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 
@@ -13,10 +16,10 @@ class UserController extends BaseCrudController
 {
     protected $userService;
 
-    public function __construct(UserService $userService)
-    {
+    public function __construct(UserService $userService,protected UserRoleService $userRoleService) {
         $this->userService = $userService;
     }
+
 
     protected function getService()
     {
@@ -67,4 +70,22 @@ class UserController extends BaseCrudController
             ],
         ], 200);
     }
+
+    public function assignRole(
+        AssignUserRoleRequest $request,
+        User $user
+    ): JsonResponse {
+        $updatedUser = $this->userRoleService->assignRole(
+            (int) $user->user_id,
+            (int) $request->validated('role_id')
+        );
+
+
+        return response()->json([
+            'message' => 'Role assigned successfully.',
+            'data' => new UserResource($updatedUser),
+            'reauthentication_required' => true,
+        ], 200);
+    }
+
 }

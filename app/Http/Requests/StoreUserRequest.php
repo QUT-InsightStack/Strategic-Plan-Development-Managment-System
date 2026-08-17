@@ -34,8 +34,7 @@ class StoreUserRequest extends ApiFormRequest
             'office'          => ['sometimes', 'nullable', 'string', 'max:255'],
             'position'        => ['sometimes', 'nullable', 'string', 'max:255'],
             'role_id'         => [
-                'sometimes',
-                'nullable',
+                'required',
                 'integer',
                 Rule::exists('tblroles', 'role_id'),
             ],
