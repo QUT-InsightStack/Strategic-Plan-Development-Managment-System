@@ -1,0 +1,7 @@
+@import './strategic-plans-list.css';
+
+.objective-list-actions { width: 190px; }
+.objective-list-actions .ui-table__actions { flex-wrap: nowrap; }
+.objective-plan-link { color: #005ea8; font-weight: var(--font-weight-semibold); text-decoration: none; }
+.objective-plan-link:hover { text-decoration: underline; }
+.objective-title-cell { min-width: 190px; font-weight: var(--font-weight-semibold); }

@@ -26,6 +26,11 @@ class UserController extends BaseCrudController
         return $this->userService;
     }
 
+    protected function permissionPrefix(): string
+    {
+        return 'users';
+    }
+
     public function store(StoreUserRequest $request): JsonResponse
     {
         $record = $this->getService()->create($request->validated());

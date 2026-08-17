@@ -186,11 +186,14 @@ class AuthController extends Controller
     public function me(): JsonResponse
     {
         $user = Auth::guard('api')->user();
-        $user->load('role');
+        $user->load(['role.permissions']);
 
         return response()->json([
             'success' => true,
-            'data'    => $user,
+            'data'    => [
+                ...$user->toArray(),
+                'permissions' => $user->role?->permissions?->pluck('code')->values()->all() ?? [],
+            ],
         ]);
     }
 

@@ -7,9 +7,9 @@ use Illuminate\Validation\Rule;
 
 class UpdateRoleRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['roles.update'];
     }
 
     public function rules(): array

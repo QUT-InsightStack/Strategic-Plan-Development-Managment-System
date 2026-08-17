@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Contracts\StrategicLogWriter;
+use App\Services\NullStrategicLogWriter;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -12,7 +14,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->singleton(StrategicLogWriter::class, NullStrategicLogWriter::class);
     }
 
     public function boot(): void

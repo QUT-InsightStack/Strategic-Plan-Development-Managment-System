@@ -17,6 +17,9 @@ return new class extends Migration
             $table->unsignedBigInteger('plan_id');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
+            $table->enum('status', ['active', 'archived', 'deleted'])->default('active');
+            $table->timestamp('archived_at')->nullable();
+            $table->timestamp('deleted_at')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
 
@@ -37,6 +40,7 @@ return new class extends Migration
                   ->on('tblusers')
                   ->onDelete('cascade');
              $table->unique(['core_value_id', 'plan_id']); // prevent duplicate links
+             $table->index('status');
         });
     }
 
