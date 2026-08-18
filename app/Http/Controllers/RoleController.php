@@ -21,6 +21,11 @@ class RoleController extends BaseCrudController
         return $this->roleService;
     }
 
+    protected function permissionPrefix(): string
+    {
+        return 'roles';
+    }
+
     public function store(StoreRoleRequest $request): JsonResponse
     {
         $record = $this->getService()->create($request->validated());

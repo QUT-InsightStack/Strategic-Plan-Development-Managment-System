@@ -2,13 +2,14 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
+use App\Validation\ValidationAttributes;
+use App\Validation\UserValidationRules;
 
 class UpdateUserRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['users.update'];
     }
 
     public function rules(): array
@@ -35,24 +36,22 @@ class UpdateUserRequest extends ApiFormRequest
             'unit'            => ['sometimes', 'nullable', 'string', 'max:255'],
             'office'          => ['sometimes', 'nullable', 'string', 'max:255'],
             'position'        => ['sometimes', 'nullable', 'string', 'max:255'],
-            'role_id'         => [
-                'sometimes',
-                'nullable',
-                'integer',
-                Rule::exists('tblroles', 'role_id'),
-            ],
+            'role_id'         => ['missing'],
             'status'          => ['sometimes', 'string', Rule::in(['active', 'inactive', 'suspended'])],
         ];
     }
 
-    public function attributes(): array
+    public function messages(): array
     {
         return [
-            'first_name'    => 'first name',
-            'last_name'     => 'last name',
-            'date_of_birth' => 'date of birth',
-            'role_id'       => 'role',
-            'email'         => 'email address',
+            'role_id.missing' =>
+                'Roles must be changed through the role assignment endpoint.',
         ];
+    }
+
+
+    public function attributes(): array
+    {
+        return ValidationAttributes::all();
     }
 }

@@ -1,4 +1,5 @@
 import { BrandLogo } from './brand-logo.js';
+import { createAccessSession, saveAccessSession } from './access/access-session.js';
 
 const { useEffect, useState } = React;
 
@@ -39,12 +40,19 @@ async function loginRequest(credentials) {
 
     return data;
 }
+
+async function currentUserRequest() {
+    const response = await fetch('/api/me', { credentials: 'include', headers: { Accept: 'application/json' } });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.data) throw new Error('Your access profile could not be loaded.');
+    return payload.data;
+}
 function Brand() {
     return React.createElement(
         'a',
-        { className: 'brand', href: '#', 'aria-label': 'Strategic planning Management System home' },
+        { className: 'brand', href: '/login', 'aria-label': 'Strategic Planning Management System home' },
         React.createElement(BrandLogo),
-        React.createElement('span', { className: 'brand-name' }, 'Strategic planning Management System')
+        React.createElement('span', { className: 'brand-name' }, 'Strategic Planning Management System')
     );
 }
 
@@ -165,9 +173,15 @@ function LoginForm({ status, setStatus }) {
                 window.localStorage.removeItem('spms.rememberedEmail');
             }
 
-            setStatus('Signed in successfully. Redirecting...', 'success');
+            const user = await currentUserRequest();
+            const accessSession = saveAccessSession(createAccessSession(user));
+            if (accessSession.home === '/access-denied') {
+                setStatus('Your account does not have an assigned application role.', 'error');
+            } else {
+                setStatus('Signed in successfully. Redirecting...', 'success');
+            }
             setTimeout(() => {
-                window.location.href = dashboardUrl;
+                window.location.href = accessSession.home;
             }, 1000);
         } catch (error) {
             setStatus(error.message, 'error');
@@ -253,7 +267,9 @@ function LoginForm({ status, setStatus }) {
                     {
                         className: 'text-button',
                         type: 'button',
-                        onClick: () => setStatus('Please contact your system administrator to reset your password.', 'info'),
+                        //onClick: () => setStatus('Please contact your system administrator to reset your password.', 'info'),
+                        onClick: () => { window.location.href = '/forgot-password';
+},
                     },
                     'Forgot Password?'
                 )

@@ -16,6 +16,9 @@ return new class extends Migration
             $table->unsignedBigInteger('record_id');
             $table->unsignedBigInteger('parent_id');
             $table->unsignedBigInteger('created_by');
+            $table->enum('status', ['active', 'archived', 'deleted'])->default('active');
+            $table->timestamp('archived_at')->nullable();
+            $table->timestamp('deleted_at')->nullable();
             $table->timestamps();
 
                 $table->foreign('record_id')
@@ -34,6 +37,7 @@ return new class extends Migration
                     ->onDelete('cascade');
 
                 $table->unique(['record_id', 'parent_id']); // prevent duplicate relationships
+                $table->index('status');
         });
     }
 
