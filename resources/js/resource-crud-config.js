@@ -33,11 +33,12 @@
                 { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'name@example.com' },
                 {
                     name: 'password',
-                    label: 'Password',
+                    label: 'New Password',
                     type: 'password',
                     requiredOnCreate: true,
                     omitWhenBlankOnEdit: true,
                     placeholder: 'Leave blank to keep current password',
+                    passwordPolicy: true,
                 },
                 { name: 'department', label: 'Department', type: 'text', placeholder: 'Planning Division' },
                 {

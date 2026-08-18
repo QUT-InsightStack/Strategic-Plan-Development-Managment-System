@@ -143,7 +143,80 @@ function getErrorMap(error) {
     }, {});
 }
 
-function FieldControl({ field, value, error, options, onChange, recordId: currentRecordId }) {
+
+
+function passwordIsValid(password) {
+    return (
+        password.length >= 8 &&
+        /[A-Z]/.test(password) &&
+        /[a-z]/.test(password) &&
+        /\d/.test(password) &&
+        /[^A-Za-z0-9]/.test(password)
+    );
+}
+
+function PasswordRequirements({ password }) {
+    const requirements = [
+        {
+            label: 'At least 8 characters',
+            valid: password.length >= 8,
+        },
+        {
+            label: 'At least one uppercase letter',
+            valid: /[A-Z]/.test(password),
+        },
+        {
+            label: 'At least one lowercase letter',
+            valid: /[a-z]/.test(password),
+        },
+        {
+            label: 'At least one number',
+            valid: /\d/.test(password),
+        },
+        {
+            label: 'At least one special character',
+            valid: /[^A-Za-z0-9]/.test(password),
+        },
+    ];
+
+    return React.createElement(
+        'div',
+        { className: 'password-requirements' },
+        React.createElement(
+            'h3',
+            null,
+            'Password requirements'
+        ),
+        React.createElement(
+            'ul',
+            null,
+            requirements.map((requirement) =>
+                React.createElement(
+                    'li',
+                    {
+                        key: requirement.label,
+                        className: requirement.valid
+                            ? 'is-valid'
+                            : '',
+                    },
+                    requirement.label
+                )
+            )
+        )
+    );
+}
+
+
+function FieldControl({
+    field,
+    value,
+    error,
+    options,
+    onChange,
+    recordId: currentRecordId,
+    showPassword,
+    onTogglePassword,
+}) {
     const commonProps = {
         id: field.name,
         name: field.name,
@@ -158,7 +231,9 @@ function FieldControl({ field, value, error, options, onChange, recordId: curren
         'label',
         { htmlFor: field.name },
         field.label,
-        field.required || field.requiredOnCreate ? React.createElement('span', { className: 'required-mark' }, '*') : null
+        field.required || (field.requiredOnCreate && !currentRecordId)
+    ? React.createElement('span', { className: 'required-mark' }, '*')
+    : null
     );
 
     let control;
@@ -205,12 +280,32 @@ function FieldControl({ field, value, error, options, onChange, recordId: curren
                 );
             })
         );
-    } else {
-        control = React.createElement('input', {
+    } else if (field.type === 'password') {
+    control = React.createElement(
+        'div',
+        { className: 'password-input-wrapper' },
+        React.createElement('input', {
             ...commonProps,
-            type: field.type || 'text',
-        });
-    }
+            type: showPassword ? 'text' : 'password',
+        }),
+        React.createElement(
+            'button',
+            {
+                type: 'button',
+                className: 'password-toggle',
+                onClick: onTogglePassword,
+                'aria-label': showPassword ? 'Hide password' : 'Show password',
+            },
+            showPassword ? 'Hide' : 'Show'
+        )
+    );
+} else {
+    control = React.createElement('input', {
+        ...commonProps,
+        type: field.type || 'text',
+    });
+}
+
 
     return React.createElement(
         'div',
@@ -230,6 +325,9 @@ function ResourceFormApp() {
     const [status, setStatus] = useState({ message: '', type: 'info' });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     useEffect(() => {
         loadForm();
@@ -323,19 +421,50 @@ function ResourceFormApp() {
     }
 
     function validate() {
-        const nextErrors = {};
+    const nextErrors = {};
 
-        schema.fields.forEach((field) => {
-            const message = getValidationMessage(field, values[field.name], isEditMode);
+    schema.fields.forEach((field) => {
+        const message = getValidationMessage(
+            field,
+            values[field.name],
+            isEditMode
+        );
 
-            if (message) {
-                nextErrors[field.name] = message;
-            }
-        });
+        if (message) {
+            nextErrors[field.name] = message;
+        }
+    });
 
-        setErrors(nextErrors);
-        return Object.keys(nextErrors).length === 0;
+    if (resourceName === 'users') {
+        const password = values.password || '';
+        const passwordProvided = Boolean(password.trim());
+
+        if (passwordProvided && !passwordIsValid(password)) {
+            nextErrors.password =
+                'New password does not meet the password requirements.';
+        }
+
+        if (passwordProvided && !confirmPassword) {
+            nextErrors.confirm_password =
+                'Please confirm the new password.';
+        } else if (
+            passwordProvided &&
+            password !== confirmPassword
+        ) {
+            nextErrors.confirm_password =
+                'New password and confirmation do not match.';
+        }
+
+        if (!passwordProvided && confirmPassword) {
+            nextErrors.password =
+                'Please enter a new password.';
+        }
     }
+
+    setErrors(nextErrors);
+
+    return Object.keys(nextErrors).length === 0;
+}
 
     async function handleSubmit(event) {
         event.preventDefault();
@@ -408,17 +537,123 @@ function ResourceFormApp() {
                               React.createElement(
                                   'div',
                                   { className: 'crud-form-grid' },
-                                  schema.fields.map((field) =>
-                                      React.createElement(FieldControl, {
-                                          key: field.name,
-                                          field,
-                                          value: values[field.name],
-                                          error: errors[field.name],
-                                          options,
-                                          recordId,
-                                          onChange: (value) => updateValue(field.name, value),
-                                      })
-                                  )
+                                    schema.fields.map((field) => {
+    const isUserPassword =
+        resourceName === 'users' &&
+        field.name === 'password';
+
+    if (!isUserPassword) {
+        return React.createElement(FieldControl, {
+            key: field.name,
+            field,
+            value: values[field.name],
+            error: errors[field.name],
+            options,
+            recordId,
+            onChange: (value) =>
+                updateValue(field.name, value),
+        });
+    }
+
+    return React.createElement(
+        React.Fragment,
+        { key: field.name },
+
+        React.createElement(FieldControl, {
+    field: {
+        ...field,
+        label: isEditMode ? 'New Password' : 'Password',
+    },
+            value: values[field.name],
+            error: errors[field.name],
+            options,
+            recordId,
+            onChange: (value) =>
+                updateValue(field.name, value),
+            showPassword,
+            onTogglePassword: () =>
+                setShowPassword((current) => !current),
+        }),
+
+        React.createElement(
+            'div',
+            { className: 'crud-field is-wide' },
+            React.createElement(PasswordRequirements, {
+                password: values.password || '',
+            })
+        ),
+
+        React.createElement(
+            'div',
+            {
+                className: `crud-field ${
+                    errors.confirm_password ? 'has-error' : ''
+                }`,
+            },
+
+            React.createElement(
+                'label',
+                { htmlFor: 'confirm_password' },
+                isEditMode ? 'Confirm New Password' : 'Confirm Password'
+            ),
+
+            React.createElement(
+                'div',
+                { className: 'password-input-wrapper' },
+
+                React.createElement('input', {
+                    id: 'confirm_password',
+                    name: 'confirm_password',
+                    className: 'crud-input',
+                    type: showConfirmPassword
+                        ? 'text'
+                        : 'password',
+                    value: confirmPassword,
+                    placeholder: isEditMode
+                        ? 'Confirm new password'
+                        : 'Confirm password',
+                    'aria-invalid': Boolean(
+                        errors.confirm_password
+                    ),
+                    onChange: (event) => {
+                        setConfirmPassword(
+                            event.target.value
+                        );
+
+                        setErrors((current) => ({
+                            ...current,
+                            confirm_password: '',
+                        }));
+                    },
+                }),
+
+                React.createElement(
+                    'button',
+                    {
+                        type: 'button',
+                        className: 'password-toggle',
+                        onClick: () =>
+                            setShowConfirmPassword(
+                                (current) => !current
+                            ),
+                        'aria-label': showConfirmPassword
+                            ? 'Hide password'
+                            : 'Show password',
+                    },
+                    showConfirmPassword
+                        ? 'Hide'
+                        : 'Show'
+                )
+            ),
+
+            React.createElement(
+                'p',
+                { className: 'field-error' },
+                errors.confirm_password || ''
+            )
+        )
+    );
+})
                               ),
                               React.createElement(
                                   'div',
