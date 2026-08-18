@@ -9,7 +9,8 @@ class StoreUserRequest extends ApiFormRequest
 {
     protected function requiredPermissions(): array
     {
-        return ['users.create'];
+        $user = auth('api')->user();
+        return $user && in_array($user->role?->role_name, ['Technical Administrator', 'Admin']);
     }
 
     public function rules(): array
