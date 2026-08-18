@@ -18,7 +18,7 @@ const messages = {
 const rootElement = document.getElementById('root');
 const dashboardUrl = '/dashboard';
 const apiConfig = {
-    loginUrl: rootElement.dataset.loginUrl || '/api/login',
+    loginUrl: rootElement.dataset.loginUrl || '/api/auth/login',
 };
 
 async function loginRequest(credentials) {
