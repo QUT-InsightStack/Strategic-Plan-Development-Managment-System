@@ -5,6 +5,7 @@ use App\Http\Controllers\FoundationsController;
 use App\Http\Controllers\LinkController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\PlanCreationController;
 use App\Http\Controllers\RelationController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RolePremissionController;
@@ -164,6 +165,20 @@ Route::middleware(['auth:api','auth.version',])->group(function () {
 */
 
 Route::middleware(['auth:api','auth.version',])->group(function () {
+    // Strategic plan management
+    Route::get('strategic-plans', [PlanCreationController::class, 'index']);
+    Route::post('strategic-plans', [PlanCreationController::class, 'store']);
+    Route::post('strategic-plans/{id}/copy', [PlanCreationController::class, 'copy'])
+        ->whereNumber('id');
+    Route::patch('strategic-plans/{id}/status', [PlanCreationController::class, 'updateStatus'])
+        ->whereNumber('id');
+    Route::get('strategic-plans/{id}', [PlanCreationController::class, 'show'])
+        ->whereNumber('id');
+    Route::put('strategic-plans/{id}', [PlanCreationController::class, 'update'])
+        ->whereNumber('id');
+    Route::delete('strategic-plans/{id}', [PlanCreationController::class, 'destroy'])
+        ->whereNumber('id');
+
     // Strategic record parent relations
     Route::get(
         'strategic-records/{recordId}/relations',

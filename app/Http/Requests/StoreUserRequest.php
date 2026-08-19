@@ -4,13 +4,13 @@ namespace App\Http\Requests;
 
 use App\Validation\ValidationAttributes;
 use App\Validation\UserValidationRules;
+use Illuminate\Validation\Rule;
 
 class StoreUserRequest extends ApiFormRequest
 {
     protected function requiredPermissions(): array
     {
-        $user = auth('api')->user();
-        return $user && in_array($user->role?->role_name, ['Technical Administrator', 'Admin']);
+        return ['users.create'];
     }
 
     public function rules(): array

@@ -24,6 +24,7 @@ Route::redirect('/strategic-plan', '/strategic-plans/create')->name('strategic-p
 Route::view('/strategic-objectives', 'pages.strategic-objectives.index')->name('strategic-objectives.index');
 Route::view('/office', 'pages.office')->name('office');
 Route::view('/role-management', 'pages.role-management')->name('role-management.index');
+Route::view('/user-management', 'pages.user-management')->name('user-management.index');
 Route::view('/access-denied', 'pages.access-denied')->name('access-denied');
 
 Route::redirect('/login.html', '/login');

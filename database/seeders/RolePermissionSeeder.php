@@ -32,6 +32,31 @@ class RolePermissionSeeder extends Seeder
             'roles.assign_protected',
             'permissions.view',
             'permissions.manage',
+            'strategic_records.view',
+            'strategic_records.manage',
+            'strategic_records.create',
+            'strategic_records.update',
+            'strategic_records.delete',
+            'strategic_records.archive',
+            'strategic_foundations.view',
+            'strategic_foundations.manage',
+            'strategic_foundations.create',
+            'strategic_foundations.update',
+            'strategic_foundations.delete',
+            'strategic_objectives.view',
+            'strategic_objectives.create',
+            'strategic_objectives.update',
+            'strategic_objectives.delete',
+            'relations.view',
+            'relations.manage',
+            'relations.create',
+            'relations.update',
+            'relations.delete',
+            'plan_core_values.view',
+            'plan_core_values.manage',
+            'plan_core_values.create',
+            'plan_core_values.update',
+            'plan_core_values.delete',
         ];
 
         $permissions = Permission::query()
@@ -58,14 +83,85 @@ class RolePermissionSeeder extends Seeder
             ->first();
 
         if ($planningOfficer) {
-            $ordinaryAssignmentPermission = Permission::query()
-                ->where('code', 'users.assign_roles')
-                ->first();
+            $planningOfficerPermissionCodes = [
+                'users.assign_roles',
+                'strategic_records.view',
+                'strategic_records.manage',
+                'strategic_records.create',
+                'strategic_records.update',
+                'strategic_records.delete',
+                'strategic_records.archive',
+                'strategic_foundations.view',
+                'strategic_foundations.manage',
+                'strategic_foundations.create',
+                'strategic_foundations.update',
+                'strategic_foundations.delete',
+                'strategic_objectives.view',
+                'strategic_objectives.create',
+                'strategic_objectives.update',
+                'strategic_objectives.delete',
+                'relations.view',
+                'relations.manage',
+                'relations.create',
+                'relations.update',
+                'relations.delete',
+                'plan_core_values.view',
+                'plan_core_values.manage',
+                'plan_core_values.create',
+                'plan_core_values.update',
+                'plan_core_values.delete',
+            ];
 
-            if ($ordinaryAssignmentPermission) {
-                $planningOfficer->permissions()->syncWithoutDetaching([
-                    $ordinaryAssignmentPermission->permission_id,
-                ]);
+            $planningOfficerPermissions = Permission::query()
+                ->whereIn('code', $planningOfficerPermissionCodes)
+                ->get();
+
+            if ($planningOfficerPermissions->count() !== count($planningOfficerPermissionCodes)) {
+                $missingCodes = array_values(array_diff(
+                    $planningOfficerPermissionCodes,
+                    $planningOfficerPermissions->pluck('code')->all()
+                ));
+
+                throw new RuntimeException(
+                    'Missing Planning Officer permissions: ' . implode(', ', $missingCodes)
+                );
+            }
+
+            $planningOfficer->permissions()->syncWithoutDetaching(
+                $planningOfficerPermissions->pluck('permission_id')->all()
+            );
+        }
+
+        $viewOnlyPermissionCodes = [
+            'strategic_records.view',
+            'strategic_foundations.view',
+            'strategic_objectives.view',
+            'relations.view',
+            'plan_core_values.view',
+        ];
+
+        $viewOnlyPermissions = Permission::query()
+            ->whereIn('code', $viewOnlyPermissionCodes)
+            ->get();
+
+        if ($viewOnlyPermissions->count() !== count($viewOnlyPermissionCodes)) {
+            $missingCodes = array_values(array_diff(
+                $viewOnlyPermissionCodes,
+                $viewOnlyPermissions->pluck('code')->all()
+            ));
+
+            throw new RuntimeException(
+                'Missing view-only permissions: ' . implode(', ', $missingCodes)
+            );
+        }
+
+        foreach (['Division Head', 'Viewer'] as $roleName) {
+            $role = Role::query()->where('role_name', $roleName)->first();
+
+            if ($role) {
+                $role->permissions()->syncWithoutDetaching(
+                    $viewOnlyPermissions->pluck('permission_id')->all()
+                );
             }
         }
     }

@@ -42,7 +42,7 @@ async function loginRequest(credentials) {
 }
 
 async function currentUserRequest() {
-    const response = await fetch('/api/me', { credentials: 'include', headers: { Accept: 'application/json' } });
+    const response = await fetch('/api/auth/me', { credentials: 'include', headers: { Accept: 'application/json' } });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok || !payload.data) throw new Error('Your access profile could not be loaded.');
     return payload.data;
