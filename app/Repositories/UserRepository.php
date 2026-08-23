@@ -3,9 +3,12 @@
 namespace App\Repositories;
 
 use App\Models\User;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use App\Models\Role;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
+
 
 class UserRepository
 {
@@ -35,66 +38,6 @@ class UserRepository
         return $this->model->all();
     }
 
-    /**
-     * Search users by name, email or role.
-     *
-     * Matching is partial and case-insensitive. Bindings are parameterised by
-     * the query builder, and the LIKE wildcards `%` and `_` are escaped so a
-     * search for "a_b" is treated literally rather than as a pattern.
-     *
-     * Inactive and suspended users are included; callers surface the status
-     * so an administrator can tell accounts apart.
-     *
-     * @param array{term?:string,role_id?:int,status?:string,sort_by?:string,sort_dir?:string,per_page?:int} $filters
-     */
-    public function search(array $filters = []): LengthAwarePaginator
-    {
-        $query = $this->model->newQuery()->with('role:role_id,role_name');
-
-        $term = trim((string) ($filters['term'] ?? ''));
-
-        if ($term !== '') {
-            $like = '%' . $this->escapeLike($term) . '%';
-
-            $query->where(function ($builder) use ($like) {
-                $builder->whereRaw('LOWER(first_name) LIKE ?', [mb_strtolower($like)])
-                    ->orWhereRaw('LOWER(last_name) LIKE ?', [mb_strtolower($like)])
-                    ->orWhereRaw("LOWER(CONCAT(first_name, ' ', COALESCE(last_name, ''))) LIKE ?", [mb_strtolower($like)])
-                    ->orWhereRaw('LOWER(email) LIKE ?', [mb_strtolower($like)])
-                    ->orWhereHas('role', function ($roleQuery) use ($like) {
-                        $roleQuery->whereRaw('LOWER(role_name) LIKE ?', [mb_strtolower($like)]);
-                    });
-            });
-        }
-
-        if (! empty($filters['role_id'])) {
-            $query->where('role_id', $filters['role_id']);
-        }
-
-        if (! empty($filters['status'])) {
-            $query->where('status', $filters['status']);
-        }
-
-        $sortBy = in_array($filters['sort_by'] ?? '', self::SORTABLE_COLUMNS, true)
-            ? $filters['sort_by']
-            : 'user_id';
-
-        $sortDir = strtolower($filters['sort_dir'] ?? '') === 'desc' ? 'desc' : 'asc';
-
-        $perPage = (int) ($filters['per_page'] ?? 15);
-        $perPage = max(1, min($perPage, 100));
-
-        return $query->orderBy($sortBy, $sortDir)->paginate($perPage);
-    }
-
-    /**
-     * Escape LIKE wildcards so user input is matched literally.
-     */
-    protected function escapeLike(string $value): string
-    {
-        return str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $value);
-    }
-
     public function find(int $id): ?Model
     {
         return $this->model->find($id);
@@ -115,5 +58,157 @@ class UserRepository
     {
         $record = $this->find($id);
         return $record ? $record->delete() : false;
+    }
+
+    public function search(array $filters): LengthAwarePaginator
+    {
+        $search = $filters['search'] ?? null;
+        $searchBy = $filters['search_by'] ?? 'all';
+        $sortBy = $filters['sort_by'] ?? 'name';
+        $sortDirection = $filters['sort_direction'] ?? 'asc';
+        $perPage = $filters['per_page'] ?? 15;
+
+        $query = $this->model
+            ->newQuery()
+            ->select('tblusers.*')
+            ->with([
+                'role:role_id,role_name',
+            ]);
+
+        if (isset($filters['role_id'])) {
+            $query->where(
+                'tblusers.role_id',
+                $filters['role_id']
+            );
+        }
+
+        if (isset($filters['status'])) {
+            $query->where(
+                'tblusers.status',
+                $filters['status']
+            );
+        }
+
+        if ($search !== null && $search !== '') {
+            $pattern = '%' . $this->escapeLike($search) . '%';
+
+            $query->where(function (Builder $searchQuery) use (
+                $searchBy,
+                $pattern
+            ): void {
+                if ($searchBy === 'all' || $searchBy === 'name') {
+                    $searchQuery->where(function (Builder $nameQuery) use (
+                        $pattern
+                    ): void {
+                        $nameQuery
+                            ->where(
+                                'tblusers.first_name',
+                                'like',
+                                $pattern
+                            )
+                            ->orWhere(
+                                'tblusers.last_name',
+                                'like',
+                                $pattern
+                            )
+                            ->orWhereRaw(
+                                "CONCAT_WS(' ', tblusers.first_name, tblusers.last_name) LIKE ? ESCAPE '\\\\'",
+                                [$pattern]
+                            );
+                    });
+                }
+
+                if ($searchBy === 'all' || $searchBy === 'email') {
+                    $method = $searchBy === 'all'
+                        ? 'orWhere'
+                        : 'where';
+
+                    $searchQuery->{$method}(
+                        'tblusers.email',
+                        'like',
+                        $pattern
+                    );
+                }
+
+                if ($searchBy === 'all' || $searchBy === 'role') {
+                    $method = $searchBy === 'all'
+                        ? 'orWhereHas'
+                        : 'whereHas';
+
+                    $searchQuery->{$method}(
+                        'role',
+                        function (Builder $roleQuery) use ($pattern): void {
+                            $roleQuery->where(
+                                'tblroles.role_name',
+                                'like',
+                                $pattern
+                            );
+                        }
+                    );
+                }
+            });
+        }
+
+        $this->applySort(
+            $query,
+            $sortBy,
+            $sortDirection
+        );
+
+        return $query
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+
+    private function applySort(
+        Builder $query,
+        string $sortBy,
+        string $sortDirection
+    ): void {
+        switch ($sortBy) {
+            case 'email':
+                $query->orderBy('tblusers.email', $sortDirection);
+                break;
+
+            case 'role':
+                $query->orderBy(
+                    Role::query()
+                        ->select('role_name')
+                        ->whereColumn(
+                            'tblroles.role_id',
+                            'tblusers.role_id'
+                        )
+                        ->limit(1),
+                    $sortDirection
+                );
+                break;
+
+            case 'status':
+                $query->orderBy('tblusers.status', $sortDirection);
+                break;
+
+            case 'created_at':
+                $query->orderBy('tblusers.created_at', $sortDirection);
+                break;
+
+            case 'name':
+            default:
+                $query
+                    ->orderBy('tblusers.first_name', $sortDirection)
+                    ->orderBy('tblusers.last_name', $sortDirection);
+                break;
+        }
+
+        // Stable pagination when the selected values are identical.
+        $query->orderBy('tblusers.user_id', 'asc');
+    }
+
+    private function escapeLike(string $value): string
+    {
+        return str_replace(
+            ['\\', '%', '_'],
+            ['\\\\', '\\%', '\\_'],
+            $value
+        );
     }
 }

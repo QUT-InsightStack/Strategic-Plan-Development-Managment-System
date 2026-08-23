@@ -21,6 +21,11 @@ class PermissionController extends BaseCrudController
         return $this->permissionService;
     }
 
+    protected function permissionPrefix(): string
+    {
+        return 'permissions';
+    }
+
     public function store(StorePermissionRequest $request): JsonResponse
     {
         $record = $this->getService()->create($request->validated());

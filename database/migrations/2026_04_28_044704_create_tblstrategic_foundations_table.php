@@ -15,9 +15,12 @@ return new class extends Migration
             $table->id('foundation_id');
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by')->nullable();
-            $table->string('type');  #-- MISSION / VISION / CORE_VALUE
+            $table->enum('type', ['MISSION', 'VISION', 'CORE_VALUE']);
             $table->text('content');
             $table->string('version');
+            $table->enum('status', ['active', 'archived', 'deleted'])->default('active');
+            $table->timestamp('archived_at')->nullable();
+            $table->timestamp('deleted_at')->nullable();
             $table->timestamps();
 
              $table->foreign('created_by')
@@ -29,6 +32,9 @@ return new class extends Migration
                   ->references('user_id')
                   ->on('tblusers')
                   ->onDelete('cascade');
+
+            $table->index('type');
+            $table->index('status');
         });
     }
 
