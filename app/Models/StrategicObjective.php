@@ -23,7 +23,19 @@ class StrategicObjective extends Model
         'target',
         'responsible_office_agency',
         'status',
+        'status_before_archive',
+        'archived_at',
+        'archived_by',
+        'deleted_at',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'archived_at' => 'datetime',
+            'deleted_at' => 'datetime',
+        ];
+    }
 
     public function strategicPlan()
     {

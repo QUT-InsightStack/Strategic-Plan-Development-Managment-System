@@ -2,17 +2,22 @@
 
 namespace App\Services;
 
-use App\Models\Log;
+use App\Models\Role;
 use App\Repositories\UserRepository;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class UserService
 {
     protected $userRepository;
 
-    public function __construct(UserRepository $userRepository)
-    {
+    public function __construct(
+        UserRepository $userRepository,
+        protected UserRoleService $userRoleService
+    ) {
         $this->userRepository = $userRepository;
     }
 
@@ -26,69 +31,40 @@ class UserService
         return $this->userRepository->find($id);
     }
 
-    /**
-     * Assign or remove a user's role.
-     *
-     * Records the change in the audit log with both the previous and the new
-     * role, and who made it. Returns null when the user does not exist so the
-     * controller can respond 404.
-     *
-     * Note: the acting user's role is embedded in their JWT at sign in, so a
-     * change here does not affect the target's existing session until their
-     * token is refreshed or they sign in again.
-     */
-    public function assignRole(int $userId, ?int $roleId, int $actorId): ?Model
-    {
-        $user = $this->userRepository->find($userId);
-
-        if (! $user) {
-            return null;
-        }
-
-        $previousRole = $user->role?->role_name ?? 'None';
-
-        $this->userRepository->update($userId, ['role_id' => $roleId]);
-
-        $updated = $this->userRepository->find($userId);
-        $updated->load('role');
-
-        $newRole = $updated->role?->role_name ?? 'None';
-
-        Log::create([
-            'user_id'   => $actorId,
-            'operation' => sprintf(
-                'Role changed for user %d (%s): %s -> %s',
-                $userId,
-                $updated->email,
-                $previousRole,
-                $newRole
-            ),
-            'states'    => 'success',
-        ]);
-
-        return $updated;
-    }
-
     public function createUser(array $data): Model
     {
-        // Business logic: such as password hashing, validation, etc.
-        // $data['password'] = bcrypt($data['password']);
-        return $this->userRepository->create($data);
+        $role = Role::query()
+            ->find($data['role_id'] ?? null);
+
+        if (! $role) {
+            throw ValidationException::withMessages([
+                'role_id' => ['The selected role does not exist.'],
+            ]);
+        }
+
+        $this->userRoleService->authorizeAssignment($role);
+
+        $data['status'] ??= 'active';
+
+        return DB::transaction(function () use ($data): Model {
+            return $this->userRepository->create($data);
+        });
     }
 
     public function updateUser(int $id, array $data): bool
     {
-        // Business logic: such as checking permissions
+        // UpdateUserRequest rejects role_id. 
+        // this protects internal callers from future accidental bypasses.
+        unset($data['role_id']);
+
         return $this->userRepository->update($id, $data);
     }
 
     public function deleteUser(int $id): bool
     {
-        // Business logic: such as soft delete or association checks
         return $this->userRepository->delete($id);
     }
 
-    // Unified CRUD methods for BaseCrudController
     public function getAll(): Collection
     {
         return $this->getAllUsers();
@@ -112,5 +88,15 @@ class UserService
     public function delete(int $id): bool
     {
         return $this->deleteUser($id);
+    }
+
+    public function search(array $filters): LengthAwarePaginator
+    {
+        $filters['search_by'] ??= 'all';
+        $filters['sort_by'] ??= 'name';
+        $filters['sort_direction'] ??= 'asc';
+        $filters['per_page'] ??= 15;
+
+        return $this->userRepository->search($filters);
     }
 }

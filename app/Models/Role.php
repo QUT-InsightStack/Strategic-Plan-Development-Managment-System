@@ -29,6 +29,9 @@ class Role extends Model
     protected $fillable = [
         'role_name',
         'description',
+        'is_assignable',
+        'is_protected',
+
     ];
 
     /**
@@ -37,6 +40,14 @@ class Role extends Model
     public function isPrivileged(): bool
     {
         return in_array($this->role_name, self::PRIVILEGED_ROLES, true);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'is_assignable' => 'boolean',
+            'is_protected' => 'boolean',
+        ];
     }
 
     public function users(): \Illuminate\Database\Eloquent\Relations\HasMany

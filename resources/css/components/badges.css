@@ -1,0 +1,11 @@
+.ui-badge { display: inline-flex; align-items: center; border-radius: var(--radius-pill); padding: 3px 9px; font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
+.ui-badge--success { color: var(--color-success); background: var(--color-success-soft); }
+.ui-badge--warning { color: var(--color-warning); background: var(--color-warning-soft); }
+.ui-badge--info { color: var(--color-info); background: var(--color-info-soft); }
+.ui-badge--neutral { color: var(--color-text-secondary); background: var(--color-surface-muted); }
+
+/* Strategic plan workflow statuses */
+.ui-badge--draft { border: 1px solid #d6b656; color: #7a5200; background: #fff8df; }
+.ui-badge--finished { border: 1px solid #72b58e; color: #005a30; background: var(--color-success-soft); }
+.ui-badge--archived { border: 1px solid #aeb6c2; color: #424a55; background: #eef0f3; }
+.ui-badge--published { border: 1px solid #72b58e; color: #005a30; background: var(--color-success-soft); }

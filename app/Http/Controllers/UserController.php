@@ -5,55 +5,30 @@ namespace App\Http\Controllers;
 use App\Http\Requests\AssignUserRoleRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Http\Requests\SearchUsersRequest;
+use App\Http\Resources\UserResource;
+use App\Models\User;
+use App\Services\UserRoleService;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
 
 class UserController extends BaseCrudController
 {
     protected $userService;
 
-    public function __construct(UserService $userService)
-    {
+    public function __construct(UserService $userService,protected UserRoleService $userRoleService) {
         $this->userService = $userService;
     }
+
 
     protected function getService()
     {
         return $this->userService;
     }
 
-    /**
-     * Assign or remove a user's role.
-     *
-     * Authorisation and the escalation rules are enforced in
-     * AssignUserRoleRequest, so a crafted request cannot bypass them by
-     * skipping the UI.
-     */
-    public function assignRole(AssignUserRoleRequest $request, int $id): JsonResponse
+    protected function permissionPrefix(): string
     {
-        $actorId = Auth::guard('api')->user()->user_id;
-        $updated = $this->getService()->assignRole($id, $request->validated()['role_id'], $actorId);
-
-        if (! $updated) {
-            return response()->json([
-                'success' => false,
-                'message' => 'User not found.',
-            ], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => $updated->role
-                ? "Role updated to {$updated->role->role_name}."
-                : 'Role removed.',
-            'data'    => [
-                'user_id'   => $updated->user_id,
-                'email'     => $updated->email,
-                'role_id'   => $updated->role_id,
-                'role_name' => $updated->role?->role_name,
-            ],
-        ], 200);
+        return 'users';
     }
 
     public function store(StoreUserRequest $request): JsonResponse
@@ -72,4 +47,50 @@ class UserController extends BaseCrudController
 
         return response()->json(['message' => 'Updated'], 200);
     }
+
+    public function search(SearchUsersRequest $request): JsonResponse
+    {
+        $users = $this->userService->search(
+            $request->validated()
+        );
+
+        return response()->json([
+            'message' => 'Users retrieved successfully.',
+            'data' => UserResource::collection(
+                collect($users->items())
+            )->resolve($request),
+            'meta'    => [
+                'current_page' => $users->currentPage(),
+                'from'         => $users->firstItem(),
+                'last_page'    => $users->lastPage(),
+                'per_page'     => $users->perPage(),
+                'to'           => $users->lastItem(),
+                'total'        => $users->total(),
+            ],
+            'links' => [
+                'first' => $users->url(1),
+                'last'  => $users->url($users->lastPage()),
+                'prev'  => $users->previousPageUrl(),
+                'next'  => $users->nextPageUrl(),
+            ],
+        ], 200);
+    }
+
+    public function assignRole(
+        AssignUserRoleRequest $request,
+        User $user
+    ): JsonResponse {
+        $updatedUser = $this->userRoleService->assignRole(
+            (int) $user->user_id,
+            (int) $request->validated('role_id')
+        );
+
+
+        return response()->json([
+            'message' => 'Role assigned successfully.',
+            'data' => new UserResource($updatedUser),
+            'reauthentication_required' => true,
+        ], 200);
+    }
+
 }
