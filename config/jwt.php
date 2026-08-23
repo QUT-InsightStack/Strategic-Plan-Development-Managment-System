@@ -151,6 +151,7 @@ return [
         'nbf',
         'sub',
         'jti',
+        'auth_version',
     ],
 
     /*
@@ -167,6 +168,10 @@ return [
     */
 
     'persistent_claims' => [
+        'role_id',
+        'role_name',
+        'auth_version',
+
         // 'foo',
         // 'bar',
     ],
