@@ -12,6 +12,20 @@ use Illuminate\Database\Eloquent\Builder;
 
 class UserRepository
 {
+    /**
+     * Columns a caller is allowed to sort by. Anything outside this list is
+     * rejected rather than interpolated, so the sort parameter can never
+     * reach the query as raw input.
+     */
+    public const SORTABLE_COLUMNS = [
+        'user_id',
+        'first_name',
+        'last_name',
+        'email',
+        'status',
+        'created_at',
+    ];
+
     protected $model;
 
     public function __construct(User $user)
