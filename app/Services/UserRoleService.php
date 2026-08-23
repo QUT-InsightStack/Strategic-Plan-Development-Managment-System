@@ -74,6 +74,14 @@ class UserRoleService
                 ]);
             }
 
+            if ($this->wouldRemoveLastAdministrator($targetUser, $role)) {
+                throw ValidationException::withMessages([
+                    'role_id' => [
+                        'This is the only remaining administrator. Assign the Administrator role to another user first.',
+                    ],
+                ]);
+            }
+
             $oldRoleId = $targetUser->role_id;
 
             $targetUser->role_id = $role->role_id;
@@ -95,6 +103,27 @@ class UserRoleService
             return $targetUser
                 ->fresh(['role']);
         });
+    }
+
+    /**
+     * Whether reassigning $targetUser to $newRole strips the Administrator
+     * role from the last user holding it.
+     */
+    private function wouldRemoveLastAdministrator(User $targetUser, Role $newRole): bool
+    {
+        $currentRole = $targetUser->role;
+
+        if (! $currentRole || ! in_array($currentRole->role_name, Role::ADMIN_ROLES, true)) {
+            return false; // They are not an administrator, so none is lost.
+        }
+
+        if (in_array($newRole->role_name, Role::ADMIN_ROLES, true)) {
+            return false; // Still an administrator afterwards.
+        }
+
+        $adminRoleIds = Role::whereIn('role_name', Role::ADMIN_ROLES)->pluck('role_id');
+
+        return User::whereIn('role_id', $adminRoleIds)->count() <= 1;
     }
 
     private function assertCanAssignRole(

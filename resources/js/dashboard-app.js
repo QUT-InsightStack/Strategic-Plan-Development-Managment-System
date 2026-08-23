@@ -12,7 +12,7 @@ const profileUrl = '/profile';
 const resourceUrl = '/resource';
 const loginUrl = '/login';
 const strategicPlanUrl = '/strategic-plan';
-const userSearchUrl = '/user-search';
+const userManagementUrl = '/user-management';
 
 const modules = [
     { id: 'users', title: 'Users', description: 'Manage user accounts and active employees.', permission: PERMISSIONS.USERS_VIEW },
@@ -86,7 +86,7 @@ function ModuleCard({ module, count }) {
             module.id === 'users'
                 ? React.createElement(
                       'a',
-                      { className: 'action-button secondary', href: userSearchUrl },
+                      { className: 'action-button secondary', href: userManagementUrl },
                       'Search Users'
                   )
                 : React.createElement(
