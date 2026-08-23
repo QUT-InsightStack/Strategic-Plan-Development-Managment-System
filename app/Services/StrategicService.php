@@ -2,28 +2,39 @@
 
 namespace App\Services;
 
+use App\Contracts\StrategicLogWriter;
 use App\Models\Strategic;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class StrategicService
 {
-    protected $relationService;
-
-    public function __construct(RelationService $relationService)
-    {
-        $this->relationService = $relationService;
+    public function __construct(
+        protected RelationService $relationService,
+        private readonly StrategicLogWriter $logWriter
+    ) {
     }
 
-    public function getAll(): Collection
+    public function getAll(?SupportCollection $authorizedRecordIds = null): Collection
     {
-        return Strategic::with($this->relations())->get();
+        $query = Strategic::with($this->relations())
+            ->whereIn('status', ['draft', 'finished']);
+
+        if ($authorizedRecordIds !== null) {
+            $query->whereIn('record_id', $authorizedRecordIds->all());
+        }
+
+        return $query->get();
     }
 
     public function getById(int $id): ?Model
     {
-        return Strategic::with($this->relations())->find($id);
+        return Strategic::with($this->relations())
+            ->where('status', '!=', 'deleted')
+            ->find($id);
     }
 
     public function create(array $data): Model
@@ -32,7 +43,12 @@ class StrategicService
         unset($data['parent_ids']);
 
         return DB::transaction(function () use ($data, $parentIds) {
-            $strategic = Strategic::create($data);
+            $strategic = Strategic::create($data + [
+                'status' => $data['status'] ?? 'draft',
+                'archived_at' => null,
+                'archived_by' => null,
+                'deleted_at' => null,
+            ]);
 
             if ($parentIds !== null) {
                 $this->relationService->syncParents(
@@ -42,17 +58,23 @@ class StrategicService
                 );
             }
 
+            $this->logWriter->write('strategic_record.created', [
+                'record_id' => $strategic->record_id,
+            ]);
+
             return $this->getById($strategic->record_id);
         });
     }
 
     public function update(int $id, array $data): ?Model
     {
-        $strategic = Strategic::find($id);
+        $strategic = Strategic::where('status', '!=', 'deleted')->find($id);
 
-        if (!$strategic) {
+        if (! $strategic) {
             return null;
         }
+
+        $this->ensureStrategicCanBeChanged($strategic);
 
         $parentIds = $data['parent_ids'] ?? null;
         unset($data['parent_ids']);
@@ -68,15 +90,34 @@ class StrategicService
                 );
             }
 
+            $this->logWriter->write('strategic_record.updated', [
+                'record_id' => $strategic->record_id,
+            ]);
+
             return $this->getById($strategic->record_id);
         });
     }
 
     public function delete(int $id): bool
     {
-        $strategic = Strategic::find($id);
+        $strategic = Strategic::where('status', '!=', 'deleted')->find($id);
 
-        return $strategic ? (bool) $strategic->delete() : false;
+        if (! $strategic) {
+            return false;
+        }
+
+        $strategic->update([
+            'status' => 'deleted',
+            'archived_at' => null,
+            'archived_by' => null,
+            'deleted_at' => now(),
+        ]);
+
+        $this->logWriter->write('strategic_record.deleted', [
+            'record_id' => $strategic->record_id,
+        ]);
+
+        return true;
     }
 
     protected function relations(): array
@@ -89,5 +130,14 @@ class StrategicService
             'parents',
             'children',
         ];
+    }
+
+    private function ensureStrategicCanBeChanged(Strategic $strategic): void
+    {
+        if ($strategic->status === 'archived') {
+            throw ValidationException::withMessages([
+                'status' => ['Archived strategic records must be restored before they can be changed.'],
+            ]);
+        }
     }
 }

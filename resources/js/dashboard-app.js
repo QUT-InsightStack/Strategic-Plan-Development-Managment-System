@@ -1,4 +1,9 @@
 import { BrandLogo } from './brand-logo.js';
+import { enforcePageAccess } from './access/access-guard.js';
+import { can, clearAccessSession } from './access/access-session.js';
+import { PERMISSIONS } from './access/access-policy.js';
+
+enforcePageAccess();
 
 const { useState, useEffect } = React;
 const rootElement = document.getElementById('root');
@@ -7,25 +12,26 @@ const profileUrl = '/profile';
 const resourceUrl = '/resource';
 const loginUrl = '/login';
 const strategicPlanUrl = '/strategic-plan';
-const userSearchUrl = '/user-search';
+const userManagementUrl = '/user-management';
 
 const modules = [
-    { id: 'users', title: 'Users', description: 'Manage user accounts and active employees.' },
-    // Role definitions are managed here; assigning a role to a person starts
-    // from the Users card, since it needs a specific user.
-    { id: 'roles', title: 'Roles', description: 'Define roles. To assign one to a user, search for them under Users.' },
-    { id: 'permissions', title: 'Permissions', description: 'Control module access and privileges.' },
-    { id: 'strategic-foundations', title: 'Strategic Foundations', description: 'Manage your strategic goals and values.' },
-    { id: 'strategic-records', title: 'Strategic Records', description: 'Review and maintain strategic plan records.' },
-    { id: 'relations', title: 'Relations', description: 'Manage relationships between strategic items.' },
-    { id: 'logs', title: 'Activity Logs', description: 'Inspect audit and event history.' },
-    { id: 'role-premissions', title: 'Role Permissions', description: 'Sync permissions for each role.' },
-    { id: 'plan-core-values', title: 'Plan Core Values', description: 'Link plans with core values.' },
+    { id: 'users', title: 'Users', description: 'Manage user accounts and active employees.', permission: PERMISSIONS.USERS_VIEW },
+    { id: 'roles', title: 'Roles', description: 'Create and assign role definitions.', permission: PERMISSIONS.ROLES_VIEW },
+    { id: 'permissions', title: 'Permissions', description: 'Control module access and privileges.', permission: PERMISSIONS.PERMISSIONS_VIEW },
+    { id: 'strategic-foundations', title: 'Strategic Foundations', description: 'Manage your strategic goals and values.', permission: PERMISSIONS.FOUNDATIONS_VIEW },
+    { id: 'strategic-records', title: 'Strategic Records', description: 'Review and maintain strategic plan records.', permission: PERMISSIONS.PLANS_VIEW },
+    { id: 'relations', title: 'Relations', description: 'Manage relationships between strategic items.', permission: PERMISSIONS.MAPPINGS_MANAGE },
+    { id: 'logs', title: 'Activity Logs', description: 'Inspect audit and event history.', permission: PERMISSIONS.LOGS_VIEW },
+    { id: 'role-premissions', title: 'Role Permissions', description: 'Sync permissions for each role.', permission: PERMISSIONS.PERMISSIONS_VIEW },
+    { id: 'plan-core-values', title: 'Plan Core Values', description: 'Link plans with core values.', permission: PERMISSIONS.FOUNDATIONS_VIEW },
 ];
 
 const staticModules = [
-    { id: 'strategic-plan', title: 'Strategic Plan', description: 'Manage Mission, Vision, and Core Values for your organisation.', href: strategicPlanUrl },
+    { id: 'strategic-plan', title: 'Strategic Plan', description: 'Manage Mission, Vision, and Core Values for your organisation.', href: strategicPlanUrl, permission: PERMISSIONS.PLANS_VIEW },
 ];
+
+const visibleModules = modules.filter((module) => can(module.permission));
+const visibleStaticModules = staticModules.filter((module) => can(module.permission));
 
 const messages = {
     help: 'Help resources are not connected yet.',
@@ -39,9 +45,9 @@ const messages = {
 function Brand() {
     return React.createElement(
         'a',
-        { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic planning Management System home' },
+        { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic Planning Management System home' },
         React.createElement(BrandLogo),
-        React.createElement('span', { className: 'brand-name' }, 'Strategic planning Management System')
+        React.createElement('span', { className: 'brand-name' }, 'Strategic Planning Management System')
     );
 }
 
@@ -80,7 +86,7 @@ function ModuleCard({ module, count }) {
             module.id === 'users'
                 ? React.createElement(
                       'a',
-                      { className: 'action-button secondary', href: userSearchUrl },
+                      { className: 'action-button secondary', href: userManagementUrl },
                       'Search Users'
                   )
                 : React.createElement(
@@ -126,7 +132,7 @@ function DashboardApp() {
         setStatusMessage('Refreshing counts...', 'info');
 
         Promise.all(
-            modules.map((module) =>
+            visibleModules.map((module) =>
                 fetch(`/api/${module.id}`, {
                     credentials: 'include',
                     headers: { Accept: 'application/json' },
@@ -157,6 +163,7 @@ function DashboardApp() {
     }
 
     function handleLogout() {
+        clearAccessSession();
         fetch('/api/logout', {
             method: 'POST',
             credentials: 'include',
@@ -203,8 +210,8 @@ function DashboardApp() {
                 React.createElement(
                     'div',
                     { className: 'dashboard-grid' },
-                    staticModules.map((module) => React.createElement(StaticModuleCard, { key: module.id, module })),
-                    modules.map((module) => React.createElement(ModuleCard, { key: module.id, module, count: counts[module.id] ?? null }))
+                    visibleStaticModules.map((module) => React.createElement(StaticModuleCard, { key: module.id, module })),
+                    visibleModules.map((module) => React.createElement(ModuleCard, { key: module.id, module, count: counts[module.id] ?? null }))
                 ),
                 React.createElement(
                     'p',

@@ -23,7 +23,9 @@ return new class extends Migration
             $table->string('target', 255)->nullable();
             $table->string('responsible_office_agency', 255)->nullable();
 
-            $table->enum('status', ['draft', 'published'])->default('published');
+            $table->enum('status', ['draft', 'published', 'archived', 'deleted'])->default('draft');
+            $table->timestamp('archived_at')->nullable();
+            $table->timestamp('deleted_at')->nullable();
 
             $table->timestamps();
 

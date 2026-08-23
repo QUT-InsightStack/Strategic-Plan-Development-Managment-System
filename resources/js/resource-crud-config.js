@@ -29,7 +29,8 @@
             idField: 'user_id',
             displayColumns: ['user_id', 'first_name', 'last_name', 'email', 'department', 'role_id', 'status'],
             fields: [
-                { name: 'name', label: 'Full Name', type: 'text', required: true, placeholder: 'Jane Doe' },
+                { name: 'first_name', label: 'First Name', type: 'text', required: true, placeholder: 'Jane' },
+                { name: 'last_name', label: 'Last Name', type: 'text', placeholder: 'Doe' },
                 { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'name@example.com' },
                 {
                     name: 'password',
@@ -39,7 +40,34 @@
                     omitWhenBlankOnEdit: true,
                     placeholder: 'Leave blank to keep current password',
                 },
+                { name: 'mobile', label: 'Mobile', type: 'text', placeholder: '+61 400 000 000' },
                 { name: 'department', label: 'Department', type: 'text', placeholder: 'Planning Division' },
+                {
+                    name: 'unit',
+                    label: 'Unit',
+                    type: 'select',
+                    allowEmpty: true,
+                    options: [
+                        { value: 'Planning', label: 'Planning' },
+                        { value: 'Operations', label: 'Operations' },
+                        { value: 'Finance', label: 'Finance' },
+                        { value: 'HR', label: 'HR' },
+                        { value: 'IT', label: 'IT' },
+                        { value: 'Executive', label: 'Executive' },
+                    ],
+                },
+                {
+                    name: 'office',
+                    label: 'Office',
+                    type: 'select',
+                    allowEmpty: true,
+                    options: [
+                        { value: 'Head Office', label: 'Head Office' },
+                        { value: 'Regional Office', label: 'Regional Office' },
+                        { value: 'Branch Office', label: 'Branch Office' },
+                    ],
+                },
+                { name: 'position', label: 'Position', type: 'text', placeholder: 'Senior Analyst' },
                 {
                     name: 'role_id',
                     label: 'Role',

@@ -15,8 +15,56 @@ abstract class ApiFormRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        $user = auth('api')->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        $requiredPermissions = $this->requiredPermissions();
+
+        if (empty($requiredPermissions)) {
+            return true;
+        }
+
+        $effectivePermissions = $this->userPermissionCodes($user);
+
+        foreach ($requiredPermissions as $permission) {
+            if ($effectivePermissions->contains($permission)) {
+                return true;
+            }
+        }
+
+        return false;
     }
+
+    protected function requiredPermissions(): array
+    {
+        return [];
+    }
+
+    protected function hasPermission(string $permission): bool
+    {
+        $user = auth('api')->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return $this->userPermissionCodes($user)->contains($permission);
+    }
+
+    protected function userPermissionCodes($user): \Illuminate\Support\Collection
+    {
+        $role = $user->loadMissing('role.permissions')->role;
+
+        if (! $role) {
+            return collect();
+        }
+
+        return $role->permissions->pluck('code');
+    }
+
 
     /**
      * Return JSON validation errors instead of an HTML redirect.
