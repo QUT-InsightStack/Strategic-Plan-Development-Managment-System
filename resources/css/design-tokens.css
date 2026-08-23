@@ -18,13 +18,28 @@
     --color-gray-200: #e5e7eb;
     --color-gray-100: #f3f4f6;
     --color-gray-50: #f8fafc;
-    --color-success: #18794e;
+    --color-success: #005a30;
     --color-warning: #9a6700;
     --color-danger: #b42318;
     --color-info: #1769aa;
 
+    /* Semantic interface colors */
+    --color-background: var(--color-gray-50);
+    --color-surface: var(--color-brand-white);
+    --color-surface-muted: var(--color-gray-100);
+    --color-text: var(--color-gray-950);
+    --color-text-secondary: var(--color-gray-600);
+    --color-text-disabled: var(--color-gray-400);
+    --color-border: var(--color-gray-300);
+    --color-border-subtle: var(--color-gray-200);
+    --color-focus: var(--color-brand-cyan);
+    --color-success-soft: #e7f6ec;
+    --color-warning-soft: #fff8e6;
+    --color-danger-soft: #fdf0ef;
+    --color-info-soft: #eef7fd;
+
     /* Typography */
-    --font-family-sans: "Segoe UI", Arial, Helvetica, sans-serif;
+    --font-family-sans: Arial, Helvetica, sans-serif;
     --font-size-xs: 12px;
     --font-size-sm: 14px;
     --font-size-md: 16px;
@@ -60,4 +75,47 @@
     --logout-button-font-weight: var(--nav-button-font-weight);
     --logout-button-color: var(--color-brand-white);
     --logout-button-hover-bg: var(--nav-button-hover-bg);
+
+    /* Spacing — use these values for gaps, padding, and margins */
+    --space-0: 0;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+
+    /* Shape */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 10px;
+    --radius-pill: 999px;
+
+    /* Elevation */
+    --shadow-xs: 0 1px 3px rgba(23, 76, 143, 0.08);
+    --shadow-sm: 0 2px 8px rgba(23, 76, 143, 0.14);
+    --shadow-md: 0 8px 22px rgba(17, 37, 74, 0.12);
+
+    /* Shared control sizes */
+    --control-height-sm: 34px;
+    --control-height-md: 42px;
+    --control-height-lg: 46px;
+    --control-padding-x: 12px;
+    --control-border-width: 1px;
+    --focus-ring: 0 0 0 3px rgba(0, 174, 239, 0.18);
+
+    /* Layout */
+    --sidebar-width: 230px;
+    --content-max-width: 1200px;
+    --page-gutter: clamp(16px, 2.5vw, 32px);
+    --brand-logo-size: 36px;
+
+    /* Motion */
+    --duration-fast: 150ms;
+    --duration-normal: 200ms;
+    --ease-standard: ease;
 }

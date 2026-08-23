@@ -1,10 +1,13 @@
 @import './brand-logo.css';
+@import './design-tokens.css';
 
 /* ── office.css — Figma Design System (SPDMS-211) ──────────────────────────── */
 
 body {
     background-color: #f5f7fa;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-md);
+    line-height: var(--line-height-body);
 }
 
 /* ── Sidebar ──────────────────────────────────────────────────────────────── */
@@ -37,8 +40,8 @@ body {
 
 .sidebar-logo-image {
     display: block;
-    width: 32px;
-    height: 32px;
+    width: var(--brand-logo-size);
+    height: var(--brand-logo-size);
     object-fit: contain;
     flex-shrink: 0;
 }
@@ -277,7 +280,7 @@ body {
     border-radius: 6px;
     padding: 9px 12px;
     font-size: 14px;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: var(--font-family-sans);
     color: #1a1a2e;
     background: #fff;
     transition: border-color 150ms ease, box-shadow 150ms ease;
@@ -323,7 +326,7 @@ body {
     border-radius: 6px;
     font-size: 13px;
     font-weight: 600;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: var(--font-family-sans);
     cursor: pointer;
     border: 1px solid transparent;
     text-decoration: none;

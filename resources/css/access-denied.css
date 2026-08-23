@@ -1,0 +1,7 @@
+@import './base.css';
+@import './components/buttons.css';
+.access-denied-page { display: grid; min-height: 100vh; place-items: center; padding: var(--space-5); background: var(--color-primary-soft); }
+.access-denied-card { width: min(100%, 520px); border-top: 6px solid var(--color-danger); border-radius: var(--radius-lg); padding: var(--space-10); background: var(--color-surface); box-shadow: var(--shadow-md); text-align: center; }
+.access-denied-card i { color: var(--color-danger); font-size: 54px; }
+.access-denied-card h1 { margin: var(--space-4) 0 var(--space-2); color: var(--color-primary); }
+.access-denied-card p { color: var(--color-text-secondary); }

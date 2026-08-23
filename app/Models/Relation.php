@@ -16,7 +16,19 @@ class Relation extends Model
         'record_id',
         'parent_id',
         'created_by',
+        'status',
+        'archived_at',
+        'archived_by',
+        'deleted_at',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'archived_at' => 'datetime',
+            'deleted_at' => 'datetime',
+        ];
+    }
 
     public function record()
     {

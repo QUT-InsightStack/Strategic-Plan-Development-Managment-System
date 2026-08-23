@@ -2,13 +2,15 @@
 
 namespace App\Http\Requests;
 
+use App\Validation\ValidationAttributes;
+use App\Validation\UserValidationRules;
 use Illuminate\Validation\Rule;
 
 class StoreUserRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['users.create'];
     }
 
     public function rules(): array
@@ -34,8 +36,7 @@ class StoreUserRequest extends ApiFormRequest
             'office'          => ['sometimes', 'nullable', 'string', 'max:255'],
             'position'        => ['sometimes', 'nullable', 'string', 'max:255'],
             'role_id'         => [
-                'sometimes',
-                'nullable',
+                'required',
                 'integer',
                 Rule::exists('tblroles', 'role_id'),
             ],
@@ -45,12 +46,6 @@ class StoreUserRequest extends ApiFormRequest
 
     public function attributes(): array
     {
-        return [
-            'first_name'    => 'first name',
-            'last_name'     => 'last name',
-            'date_of_birth' => 'date of birth',
-            'role_id'       => 'role',
-            'email'         => 'email address',
-        ];
+        return ValidationAttributes::all();
     }
 }
