@@ -2,6 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Validation\AuthValidationRules;
+use App\Validation\ValidationAttributes;
+
 class LoginRequest extends ApiFormRequest
 {
     /**
@@ -15,8 +18,8 @@ class LoginRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'email'    => ['required', 'string', 'email', 'max:255'],
-            'password' => ['required', 'string'],
+            'email'    => AuthValidationRules::loginEmail(),
+            'password' => AuthValidationRules::loginPassword(),
         ];
     }
 
@@ -25,9 +28,6 @@ class LoginRequest extends ApiFormRequest
      */
     public function attributes(): array
     {
-        return [
-            'email'    => 'email address',
-            'password' => 'password',
-        ];
+        return ValidationAttributes::all();
     }
 }

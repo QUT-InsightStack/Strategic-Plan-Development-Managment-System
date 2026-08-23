@@ -1,0 +1,12 @@
+.ui-status {
+    margin-bottom: var(--space-4);
+    border: 1px solid;
+    border-left-width: 5px;
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    font-weight: var(--font-weight-semibold);
+}
+.ui-status--info { border-color: #9cc7e8; color: var(--color-info); background: var(--color-info-soft); }
+.ui-status--success { border-color: #00703c; color: #005a30; background: var(--color-success-soft); }
+.ui-status--error { border-color: #d4351c; color: #b42318; background: var(--color-danger-soft); }
+.ui-empty { padding: var(--space-10); color: var(--color-text-secondary); text-align: center; }

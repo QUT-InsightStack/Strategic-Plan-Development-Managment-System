@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\SearchUserRequest;
+use App\Http\Requests\AssignUserRoleRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Http\Requests\SearchUsersRequest;
+use App\Http\Resources\UserResource;
+use App\Models\User;
+use App\Services\UserRoleService;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 
@@ -12,54 +16,19 @@ class UserController extends BaseCrudController
 {
     protected $userService;
 
-    public function __construct(UserService $userService)
-    {
+    public function __construct(UserService $userService,protected UserRoleService $userRoleService) {
         $this->userService = $userService;
     }
+
 
     protected function getService()
     {
         return $this->userService;
     }
 
-    /**
-     * Search users by name, email or role.
-     *
-     * Returns a paginated summary. Only the fields an administrator needs to
-     * identify an account are exposed; the password hash and remember token
-     * are hidden on the model and additionally never selected here.
-     *
-     * Inactive and suspended accounts are included, with status returned so
-     * the caller can label them.
-     */
-    public function search(SearchUserRequest $request): JsonResponse
+    protected function permissionPrefix(): string
     {
-        $results = $this->getService()->searchUsers($request->filters());
-
-        return response()->json([
-            'success' => true,
-            'data'    => collect($results->items())->map(fn ($user) => [
-                'user_id'    => $user->user_id,
-                'first_name' => $user->first_name,
-                'last_name'  => $user->last_name,
-                'email'      => $user->email,
-                'department' => $user->department,
-                'unit'       => $user->unit,
-                'office'     => $user->office,
-                'position'   => $user->position,
-                'status'     => $user->status,
-                'role_id'    => $user->role_id,
-                'role_name'  => $user->role?->role_name,
-            ])->all(),
-            'meta'    => [
-                'current_page' => $results->currentPage(),
-                'last_page'    => $results->lastPage(),
-                'per_page'     => $results->perPage(),
-                'total'        => $results->total(),
-                'from'         => $results->firstItem(),
-                'to'           => $results->lastItem(),
-            ],
-        ], 200);
+        return 'users';
     }
 
     /**
@@ -68,7 +37,7 @@ class UserController extends BaseCrudController
      * Behind the same authorisation as search itself, since the values reveal
      * the organisation's internal structure.
      */
-    public function searchFilterOptions(SearchUserRequest $request): JsonResponse
+    public function searchFilterOptions(): JsonResponse
     {
         return response()->json([
             'success' => true,
@@ -92,4 +61,50 @@ class UserController extends BaseCrudController
 
         return response()->json(['message' => 'Updated'], 200);
     }
+
+    public function search(SearchUsersRequest $request): JsonResponse
+    {
+        $users = $this->userService->search(
+            $request->validated()
+        );
+
+        return response()->json([
+            'message' => 'Users retrieved successfully.',
+            'data' => UserResource::collection(
+                collect($users->items())
+            )->resolve($request),
+            'meta'    => [
+                'current_page' => $users->currentPage(),
+                'from'         => $users->firstItem(),
+                'last_page'    => $users->lastPage(),
+                'per_page'     => $users->perPage(),
+                'to'           => $users->lastItem(),
+                'total'        => $users->total(),
+            ],
+            'links' => [
+                'first' => $users->url(1),
+                'last'  => $users->url($users->lastPage()),
+                'prev'  => $users->previousPageUrl(),
+                'next'  => $users->nextPageUrl(),
+            ],
+        ], 200);
+    }
+
+    public function assignRole(
+        AssignUserRoleRequest $request,
+        User $user
+    ): JsonResponse {
+        $updatedUser = $this->userRoleService->assignRole(
+            (int) $user->user_id,
+            (int) $request->validated('role_id')
+        );
+
+
+        return response()->json([
+            'message' => 'Role assigned successfully.',
+            'data' => new UserResource($updatedUser),
+            'reauthentication_required' => true,
+        ], 200);
+    }
+
 }

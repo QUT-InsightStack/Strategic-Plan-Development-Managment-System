@@ -18,7 +18,19 @@ class StrategicFoundations extends Model
         'type',
         'content',
         'version',
+        'status',
+        'archived_at',
+        'archived_by',
+        'deleted_at',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'archived_at' => 'datetime',
+            'deleted_at' => 'datetime',
+        ];
+    }
 
     public function creator()
     {
@@ -52,6 +64,6 @@ class StrategicFoundations extends Model
             'tblplan_core_value',
             'core_value_id',
             'plan_id'
-        )->withPivot(['created_by', 'updated_by'])->withTimestamps();
+        )->withPivot(['created_by', 'updated_by', 'status', 'archived_at', 'archived_by', 'deleted_at'])->withTimestamps();
     }
 }
