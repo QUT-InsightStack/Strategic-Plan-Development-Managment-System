@@ -15,7 +15,6 @@ class User extends Authenticatable implements JWTSubject
     protected $primaryKey = 'user_id';
 
     protected $fillable = [
-        'name',
         'first_name',
         'last_name',
         'email',
@@ -28,7 +27,13 @@ class User extends Authenticatable implements JWTSubject
         'role_id',
         'status',
         'address',
+        'gender',
+        'date_of_birth',
         'profile_picture',
+        'unit',
+        'office',
+        'position',
+
     ];
 
     protected $hidden = [
@@ -40,7 +45,10 @@ class User extends Authenticatable implements JWTSubject
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
+            'date_of_birth' => 'date',
+            'gender' => 'boolean',
+            'auth_version' => 'integer',
+            'password' => 'hashed',
         ];
     }
 
@@ -78,6 +86,7 @@ class User extends Authenticatable implements JWTSubject
         return [
             'role_id'   => $this->role_id,
             'role_name' => $this->role?->role_name,
+            'auth_version' => (int) $this->auth_version,
         ];
     }
 

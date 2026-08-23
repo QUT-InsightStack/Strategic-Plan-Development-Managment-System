@@ -19,17 +19,22 @@
 
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
-        <h5 class="sidebar-title">Menu</h5>
+        <a href="/dashboard" class="sidebar-logo" aria-label="Strategic Planning Management System home">
+            <span class="sidebar-logo-image code-logo" role="img" aria-label="Strategic Planning Management System logo">
+                <span class="logo-circle logo-top-left" aria-hidden="true"></span>
+                <span class="logo-circle logo-top-right" aria-hidden="true"></span>
+                <span class="logo-circle logo-bottom-left" aria-hidden="true"></span>
+                <span class="logo-circle logo-bottom-right" aria-hidden="true"></span>
+            </span>
+            <span class="sidebar-title">SPDMS</span>
+        </a>
 
-        <a href="#" class="sidebar-item active">Planner/encoder</a>
+        <a href="/profile" class="sidebar-item active">Planner/Encoder</a>
         <a href="#" class="sidebar-item">Add reference</a>
         <a href="#" class="sidebar-item">Check records</a>
         <a href="#" class="sidebar-item">Pending draft</a>
         <a href="#" class="sidebar-item">View mapping</a>
 
-        <button class="collapse-btn" onclick="toggleSidebar()">
-            <i class="bi bi-chevron-left"></i>
-        </button>
     </div>
 
     <!-- Main Content -->
