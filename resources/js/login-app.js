@@ -1,4 +1,5 @@
 import { BrandLogo } from './brand-logo.js';
+import { clearLogoutFlag } from './auth-session.js';
 import { createAccessSession, saveAccessSession } from './access/access-session.js';
 
 const { useEffect, useState } = React;
@@ -172,6 +173,10 @@ function LoginForm({ status, setStatus }) {
             } else {
                 window.localStorage.removeItem('spms.rememberedEmail');
             }
+
+            // Clear the logged-out marker so the back-navigation guard on
+            // protected pages does not bounce this new session to login.
+            clearLogoutFlag();
 
             const user = await currentUserRequest();
             const accessSession = saveAccessSession(createAccessSession(user));
