@@ -12,6 +12,7 @@ Route::view('/profile', 'pages.profile')->name('profile');
 Route::view('/change-password', 'pages.change-password')->name('change-password');
 Route::view('/resource', 'pages.resource')->name('resource.index');
 Route::view('/resource-form', 'pages.resource-form')->name('resource.form');
+Route::view('/create-user', 'pages.create-user')->name('users.create');
 Route::view('/strategic-plans', 'pages.strategic-plans.index')->name('strategic-plans.index');
 Route::view('/strategic-plans/create', 'pages.strategic-plan')->name('strategic-plans.create');
 Route::get('/strategic-plans/{id}/edit', function (int $id) {

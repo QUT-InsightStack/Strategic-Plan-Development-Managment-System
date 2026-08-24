@@ -13,6 +13,7 @@ const profileUrl = '/profile';
 const resourceUrl = '/resource';
 const loginUrl = '/login';
 const strategicPlanUrl = '/strategic-plan';
+const createUserUrl = '/create-user';
 const userManagementUrl = '/user-management';
 
 const modules = [
@@ -90,9 +91,18 @@ function ModuleCard({ module, count }) {
             ),
             module.id === 'users'
                 ? React.createElement(
-                      'a',
-                      { className: 'action-button secondary', href: userManagementUrl },
-                      'Search Users'
+                      React.Fragment,
+                      null,
+                      React.createElement(
+                          'a',
+                          { className: 'action-button secondary', href: userManagementUrl },
+                          'Search Users'
+                      ),
+                      React.createElement(
+                          'a',
+                          { className: 'action-button secondary', href: createUserUrl },
+                          'Create User'
+                      )
                   )
                 : React.createElement(
                       'a',
