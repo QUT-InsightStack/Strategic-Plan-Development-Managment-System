@@ -28,6 +28,12 @@ class SearchUserRequest extends ApiFormRequest
             'role_id'  => ['sometimes', 'nullable', 'integer', Rule::exists('tblroles', 'role_id')],
             'status'   => ['sometimes', 'nullable', 'string', Rule::in(['active', 'inactive', 'suspended'])],
 
+            // Advanced filters. Values come from the filter-options endpoint,
+            // but are still length-capped rather than trusted.
+            'unit'       => ['sometimes', 'nullable', 'string', 'max:255'],
+            'office'     => ['sometimes', 'nullable', 'string', 'max:255'],
+            'department' => ['sometimes', 'nullable', 'string', 'max:255'],
+
             // Constrained to a known column list; anything else is rejected
             // rather than reaching the query builder.
             'sort_by'  => ['sometimes', 'nullable', 'string', Rule::in(UserRepository::SORTABLE_COLUMNS)],
@@ -54,12 +60,15 @@ class SearchUserRequest extends ApiFormRequest
     public function filters(): array
     {
         return [
-            'term'     => (string) $this->query('q', ''),
-            'role_id'  => $this->query('role_id'),
-            'status'   => $this->query('status'),
-            'sort_by'  => $this->query('sort_by'),
-            'sort_dir' => $this->query('sort_dir'),
-            'per_page' => $this->query('per_page'),
+            'term'       => (string) $this->query('q', ''),
+            'role_id'    => $this->query('role_id'),
+            'status'     => $this->query('status'),
+            'unit'       => $this->query('unit'),
+            'office'     => $this->query('office'),
+            'department' => $this->query('department'),
+            'sort_by'    => $this->query('sort_by'),
+            'sort_dir'   => $this->query('sort_dir'),
+            'per_page'   => $this->query('per_page'),
         ];
     }
 }

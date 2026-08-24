@@ -9,9 +9,9 @@ const dashboardUrl = '/dashboard';
 const profileUrl = '/profile';
 const createUserUrl = '/create-user';
 const resourceFormUrl = '/resource-form';
-const userRolesUrl = '/user-roles';
 const loginUrl = '/login';
 const searchApiUrl = '/api/users/search';
+const filterOptionsApiUrl = '/api/users/search-filters';
 
 // Delay before an in-progress query is sent, so typing does not fire a
 // request per keystroke.
@@ -55,6 +55,59 @@ function SearchIcon() {
         React.createElement('path', {
             d: 'M10 4a6 6 0 1 0 3.5 10.9l4.3 4.3 1.4-1.4-4.3-4.3A6 6 0 0 0 10 4Zm0 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z',
         })
+    );
+}
+
+/**
+ * Dropdown built from distinct values already present on user records.
+ * Renders nothing when there are no values, so an unused organisational
+ * field does not show an empty control.
+ */
+function FilterSelect({ id, label, value, options, onChange }) {
+    if (!options.length) {
+        return null;
+    }
+
+    return React.createElement(
+        'div',
+        { className: 'search-field' },
+        React.createElement('label', { htmlFor: id }, label),
+        React.createElement(
+            'select',
+            { id, value, onChange: (event) => onChange(event.target.value) },
+            React.createElement('option', { value: '' }, `All ${label.toLowerCase()}s`),
+            options.map((option) => React.createElement('option', { key: option, value: option }, option))
+        )
+    );
+}
+
+function FilterChips({ chips, onRemove, onClearAll }) {
+    if (!chips.length) {
+        return null;
+    }
+
+    return React.createElement(
+        'div',
+        { className: 'filter-chips', 'aria-label': 'Active filters' },
+        React.createElement('span', { className: 'filter-chips-label' }, 'Filters:'),
+        chips.map((chip) =>
+            React.createElement(
+                'button',
+                {
+                    key: chip.key,
+                    className: 'filter-chip',
+                    type: 'button',
+                    onClick: () => onRemove(chip.key),
+                    'aria-label': `Remove ${chip.label} filter: ${chip.value}`,
+                },
+                React.createElement('span', { className: 'filter-chip-label' }, `${chip.label}:`),
+                React.createElement('span', { className: 'filter-chip-value' }, chip.value),
+                React.createElement('span', { className: 'filter-chip-remove', 'aria-hidden': 'true' }, '×')
+            )
+        ),
+        chips.length > 1
+            ? React.createElement('button', { className: 'filter-chip-clear', type: 'button', onClick: onClearAll }, 'Clear all')
+            : null
     );
 }
 
@@ -103,23 +156,9 @@ function ResultsTable({ users }) {
                             'td',
                             { 'data-label': 'Actions' },
                             React.createElement(
-                                'div',
-                                { className: 'row-actions' },
-                                React.createElement(
-                                    'a',
-                                    { className: 'action-button secondary small', href: `${resourceFormUrl}?resource=users&id=${user.user_id}` },
-                                    'Edit'
-                                ),
-                                React.createElement(
-                                    'a',
-                                    {
-                                        className: 'action-button secondary small',
-                                        // Carry the current search so returning
-                                        // from the role page restores it.
-                                        href: `${userRolesUrl}?id=${user.user_id}&return=${encodeURIComponent(window.location.search)}`,
-                                    },
-                                    'Assign Role'
-                                )
+                                'a',
+                                { className: 'action-button secondary small', href: `${resourceFormUrl}?resource=users&id=${user.user_id}` },
+                                'Edit'
                             )
                         )
                     )
@@ -169,7 +208,12 @@ function UserSearchApp() {
     const [term, setTerm] = useState('');
     const [roleId, setRoleId] = useState('');
     const [status, setStatus] = useState('');
+    const [unit, setUnit] = useState('');
+    const [office, setOffice] = useState('');
+    const [department, setDepartment] = useState('');
     const [roles, setRoles] = useState([]);
+    const [filterOptions, setFilterOptions] = useState({ units: [], offices: [], departments: [] });
+    const [advancedOpen, setAdvancedOpen] = useState(false);
     const [users, setUsers] = useState([]);
     const [meta, setMeta] = useState(null);
     const [page, setPage] = useState(1);
@@ -185,6 +229,7 @@ function UserSearchApp() {
 
     useEffect(() => {
         loadRoles();
+        loadFilterOptions();
     }, []);
 
     // Changing the criteria resets to page 1; changing the page does not
@@ -202,7 +247,7 @@ function UserSearchApp() {
         }, SEARCH_DEBOUNCE_MS);
 
         return () => window.clearTimeout(timer);
-    }, [term, roleId, status]);
+    }, [term, roleId, status, unit, office, department]);
 
     async function loadRoles() {
         try {
@@ -215,12 +260,31 @@ function UserSearchApp() {
         }
     }
 
+    async function loadFilterOptions() {
+        try {
+            const response = await crud.requestJson(filterOptionsApiUrl);
+            const data = crud.extractData(response) || {};
+
+            setFilterOptions({
+                units: Array.isArray(data.units) ? data.units : [],
+                offices: Array.isArray(data.offices) ? data.offices : [],
+                departments: Array.isArray(data.departments) ? data.departments : [],
+            });
+        } catch (loadError) {
+            // Non-fatal: the basic search still works without advanced filters.
+            setFilterOptions({ units: [], offices: [], departments: [] });
+        }
+    }
+
     function buildQuery(targetPage) {
         const params = new URLSearchParams();
 
         if (term.trim()) params.set('q', term.trim());
         if (roleId) params.set('role_id', roleId);
         if (status) params.set('status', status);
+        if (unit) params.set('unit', unit);
+        if (office) params.set('office', office);
+        if (department) params.set('department', department);
         params.set('per_page', String(PER_PAGE));
         params.set('page', String(targetPage));
 
@@ -269,8 +333,56 @@ function UserSearchApp() {
         setTerm('');
         setRoleId('');
         setStatus('');
+        setUnit('');
+        setOffice('');
+        setDepartment('');
         setPage(1);
         // The criteria effect will fire and reload the full list.
+    }
+
+    // Setter per filter key, so a chip can clear just its own filter.
+    const filterSetters = {
+        term: setTerm,
+        role_id: setRoleId,
+        status: setStatus,
+        unit: setUnit,
+        office: setOffice,
+        department: setDepartment,
+    };
+
+    function handleRemoveFilter(key) {
+        const setter = filterSetters[key];
+
+        if (setter) {
+            setter('');
+        }
+    }
+
+    /**
+     * Active filters described for display. Role is looked up by id so the
+     * chip shows the role name rather than a meaningless number.
+     */
+    function activeFilterChips() {
+        const chips = [];
+
+        if (term.trim()) {
+            chips.push({ key: 'term', label: 'Search', value: term.trim() });
+        }
+
+        if (roleId) {
+            const role = roles.find((item) => String(item.role_id) === String(roleId));
+            chips.push({ key: 'role_id', label: 'Role', value: role?.role_name || roleId });
+        }
+
+        if (status) {
+            chips.push({ key: 'status', label: 'Status', value: status.charAt(0).toUpperCase() + status.slice(1) });
+        }
+
+        if (unit) chips.push({ key: 'unit', label: 'Unit', value: unit });
+        if (office) chips.push({ key: 'office', label: 'Office', value: office });
+        if (department) chips.push({ key: 'department', label: 'Department', value: department });
+
+        return chips;
     }
 
     function handlePage(nextPage) {
@@ -286,7 +398,9 @@ function UserSearchApp() {
             });
     }
 
-    const hasFilters = Boolean(term.trim() || roleId || status);
+    const chips = activeFilterChips();
+    const hasFilters = chips.length > 0;
+    const advancedCount = [unit, office, department].filter(Boolean).length;
 
     return React.createElement(
         'div',
@@ -389,8 +503,62 @@ function UserSearchApp() {
                             },
                             'Clear'
                         )
-                    )
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'advanced-toggle-row' },
+                        React.createElement(
+                            'button',
+                            {
+                                className: 'advanced-toggle',
+                                type: 'button',
+                                'aria-expanded': advancedOpen,
+                                'aria-controls': 'advanced-filters',
+                                onClick: () => setAdvancedOpen((open) => !open),
+                            },
+                            React.createElement('span', { className: `advanced-caret${advancedOpen ? ' is-open' : ''}`, 'aria-hidden': 'true' }, '▸'),
+                            'Advanced filters',
+                            advancedCount
+                                ? React.createElement('span', { className: 'advanced-count' }, advancedCount)
+                                : null
+                        )
+                    ),
+                    advancedOpen
+                        ? React.createElement(
+                              'div',
+                              { className: 'advanced-filters', id: 'advanced-filters' },
+                              React.createElement(FilterSelect, {
+                                  id: 'unit-filter',
+                                  label: 'Unit',
+                                  value: unit,
+                                  options: filterOptions.units,
+                                  onChange: setUnit,
+                              }),
+                              React.createElement(FilterSelect, {
+                                  id: 'office-filter',
+                                  label: 'Office',
+                                  value: office,
+                                  options: filterOptions.offices,
+                                  onChange: setOffice,
+                              }),
+                              React.createElement(FilterSelect, {
+                                  id: 'department-filter',
+                                  label: 'Department',
+                                  value: department,
+                                  options: filterOptions.departments,
+                                  onChange: setDepartment,
+                              }),
+                              !filterOptions.units.length && !filterOptions.offices.length && !filterOptions.departments.length
+                                  ? React.createElement(
+                                        'p',
+                                        { className: 'advanced-empty' },
+                                        'No unit, office or department values have been recorded against user accounts yet.'
+                                    )
+                                  : null
+                          )
+                        : null
                 ),
+                React.createElement(FilterChips, { chips, onRemove: handleRemoveFilter, onClearAll: handleClear }),
                 React.createElement(
                     'section',
                     { className: 'results-card', 'aria-live': 'polite', 'aria-busy': loading },
