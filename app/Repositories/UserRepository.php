@@ -38,6 +38,47 @@ class UserRepository
         return $this->model->all();
     }
 
+    /**
+     * Distinct non-empty values for the advanced filter dropdowns.
+     *
+     * Sourced from the data rather than a fixed list, so the options always
+     * reflect what actually exists on user records.
+     *
+     * @return array{units:string[],offices:string[],departments:string[]}
+     */
+    public function filterOptions(): array
+    {
+        return [
+            'units'       => $this->distinctValues('unit'),
+            'offices'     => $this->distinctValues('office'),
+            'departments' => $this->distinctValues('department'),
+        ];
+    }
+
+    /**
+     * Distinct, sorted, non-empty values for a single column.
+     *
+     * The column is checked against a fixed list before use: it reaches the
+     * query builder as an identifier rather than a binding, so it must never
+     * come straight from request input.
+     *
+     * @return string[]
+     */
+    protected function distinctValues(string $column): array
+    {
+        if (! in_array($column, ['unit', 'office', 'department'], true)) {
+            return [];
+        }
+
+        return $this->model->newQuery()
+            ->whereNotNull($column)
+            ->where($column, '!=', '')
+            ->distinct()
+            ->orderBy($column)
+            ->pluck($column)
+            ->all();
+    }
+
     public function find(int $id): ?Model
     {
         return $this->model->find($id);
@@ -87,6 +128,15 @@ class UserRepository
                 'tblusers.status',
                 $filters['status']
             );
+        }
+
+        // Advanced filters. Matched exactly rather than partially: these are
+        // chosen from dropdowns of existing values, so an exact match is what
+        // the caller intends.
+        foreach (['unit', 'office', 'department'] as $field) {
+            if (! empty($filters[$field])) {
+                $query->where("tblusers.{$field}", $filters[$field]);
+            }
         }
 
         if ($search !== null && $search !== '') {

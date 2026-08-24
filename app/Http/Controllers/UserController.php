@@ -31,6 +31,20 @@ class UserController extends BaseCrudController
         return 'users';
     }
 
+    /**
+     * Distinct unit, office and department values for the search filters.
+     *
+     * Behind the same authorisation as search itself, since the values reveal
+     * the organisation's internal structure.
+     */
+    public function searchFilterOptions(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data'    => $this->getService()->getSearchFilterOptions(),
+        ], 200);
+    }
+
     public function store(StoreUserRequest $request): JsonResponse
     {
         $record = $this->getService()->create($request->validated());
