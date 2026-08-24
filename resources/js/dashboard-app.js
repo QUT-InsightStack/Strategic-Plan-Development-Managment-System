@@ -13,6 +13,8 @@ const profileUrl = '/profile';
 const resourceUrl = '/resource';
 const loginUrl = '/login';
 const strategicPlanUrl = '/strategic-plan';
+const createUserUrl = '/create-user';
+const userManagementUrl = '/user-management';
 
 const modules = [
     { id: 'users', title: 'Users', description: 'Manage user accounts and active employees.', permission: PERMISSIONS.USERS_VIEW },
@@ -87,11 +89,26 @@ function ModuleCard({ module, count }) {
                 { className: 'action-button primary', href: `${resourceUrl}?resource=${module.id}` },
                 'Open'
             ),
-            React.createElement(
-                'a',
-                { className: 'action-button secondary', href: `${resourceUrl}?resource=${module.id}` },
-                'Explore'
-            )
+            module.id === 'users'
+                ? React.createElement(
+                      React.Fragment,
+                      null,
+                      React.createElement(
+                          'a',
+                          { className: 'action-button secondary', href: userManagementUrl },
+                          'Search Users'
+                      ),
+                      React.createElement(
+                          'a',
+                          { className: 'action-button secondary', href: createUserUrl },
+                          'Create User'
+                      )
+                  )
+                : React.createElement(
+                      'a',
+                      { className: 'action-button secondary', href: `${resourceUrl}?resource=${module.id}` },
+                      'Explore'
+                  )
         )
     );
 }

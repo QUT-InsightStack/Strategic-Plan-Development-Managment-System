@@ -54,6 +54,9 @@ Route::middleware(['auth:api','auth.version',])->prefix('users')->group(function
     Route::get('/search', [UserController::class, 'search'])
     ->middleware('permission:users.view');
 
+    Route::get('/search-filters', [UserController::class, 'searchFilterOptions'])
+        ->middleware('permission:users.view');
+
     Route::get('', [UserController::class, 'index'])
         ->middleware('permission:users.view');
 
