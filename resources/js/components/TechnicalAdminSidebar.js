@@ -4,7 +4,7 @@ import { can, clearAccessSession, getAccessSession } from '../access/access-sess
 
 const menuItems = [
     { label: 'Permission Control', icon: 'bi-shield-lock-fill', href: '/role-management', permission: PERMISSIONS.ROLES_MANAGE },
-    { label: 'User Management', icon: 'bi-people-fill', permission: PERMISSIONS.USERS_VIEW },
+    { label: 'User Management', icon: 'bi-people-fill', href: '/user-management', permission: PERMISSIONS.USERS_VIEW },
     { label: 'Security Logs', icon: 'bi-list-check', permission: PERMISSIONS.LOGS_VIEW },
     { label: 'System Settings', icon: 'bi-gear-fill', permission: PERMISSIONS.SETTINGS_MANAGE },
     { label: 'FAQ', icon: 'bi-info-square-fill' },
