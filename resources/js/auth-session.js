@@ -7,7 +7,7 @@
  */
 
 const loginUrl = '/login';
-const logoutApiUrl = '/api/logout';
+const logoutApiUrl = '/api/auth/logout';
 
 /**
  * Keys written by the sign in flow. Removed on logout so no authentication
@@ -118,7 +118,9 @@ export async function logout({ onStart, onError } = {}) {
     }
 
     clearAuthStorage();
+    clearAccessSession();
     markLoggedOut();
 
     window.location.replace(loginUrl);
 }
+import { clearAccessSession } from './access/access-session.js';
