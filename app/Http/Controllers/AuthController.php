@@ -23,7 +23,10 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): JsonResponse
     {
-        $credentials = $request->only('email', 'password');
+        $credentials = [
+            ...$request->only('email', 'password'),
+            'status' => 'active',
+        ];
 
         $token = Auth::guard('api')->attempt($credentials);
 
@@ -60,7 +63,7 @@ class AuthController extends Controller
             $user = Auth::guard('api')->user();
 
             if ($user) {
-                LogModel::create([
+                Log::create([
                     'user_id'   => $user->user_id,
                     'operation' => 'logout',
                     'states'    => 'success',

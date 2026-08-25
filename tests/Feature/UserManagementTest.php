@@ -20,5 +20,7 @@ class UserManagementTest extends TestCase
         $this->postJson('/api/users', [])->assertUnauthorized();
         $this->putJson('/api/users/1', ['status' => 'inactive'])
             ->assertUnauthorized();
+        $this->patchJson('/api/users/1/status', ['status' => 'inactive'])
+            ->assertUnauthorized();
     }
 }

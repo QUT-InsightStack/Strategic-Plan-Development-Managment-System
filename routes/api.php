@@ -67,6 +67,10 @@ Route::middleware(['auth:api','auth.version',])->prefix('users')->group(function
         ->whereNumber('user')
         ->middleware('permission:users.assign_roles');
 
+    Route::patch('/{user}/status', [UserController::class, 'updateStatus'])
+        ->whereNumber('user')
+        ->middleware('permission:users.update');
+
     Route::get('{user}', [UserController::class, 'show'])
         ->whereNumber('user')
         ->middleware('permission:users.view');

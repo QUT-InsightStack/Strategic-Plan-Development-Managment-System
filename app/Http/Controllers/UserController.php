@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\AssignUserRoleRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Http\Requests\UpdateUserStatusRequest;
 use App\Http\Requests\SearchUsersRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\UserRoleService;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends BaseCrudController
 {
@@ -105,6 +107,25 @@ class UserController extends BaseCrudController
             'data' => new UserResource($updatedUser),
             'reauthentication_required' => true,
         ], 200);
+    }
+
+    public function updateStatus(
+        UpdateUserStatusRequest $request,
+        User $user
+    ): JsonResponse {
+        $updatedUser = $this->userService->updateStatus(
+            (int) $user->user_id,
+            $request->validated('status'),
+            $request->validated('reason'),
+            Auth::guard('api')->user()
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Account status updated successfully.',
+            'data' => new UserResource($updatedUser),
+            'reauthentication_required' => true,
+        ]);
     }
 
 }

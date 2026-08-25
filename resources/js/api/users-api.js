@@ -13,8 +13,8 @@ export function listRoles() {
 }
 
 export function updateUserStatus(userId, status) {
-    return apiRequest(`/api/users/${userId}`, {
-        method: 'PUT',
+    return apiRequest(`/api/users/${userId}/status`, {
+        method: 'PATCH',
         body: JSON.stringify({ status }),
     });
 }
