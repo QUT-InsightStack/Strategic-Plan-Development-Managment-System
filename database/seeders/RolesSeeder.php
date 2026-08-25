@@ -17,7 +17,15 @@ class RolesSeeder extends Seeder
                 'is_protected' => true,
             ],
             [
+<<<<<<< Updated upstream
                 'role_name' => 'Planning Officer',
+=======
+                'role_name'   => 'test',
+                'description' => 'Test account with full backend access.',
+            ],
+            [
+                'role_name'   => 'Planning Officer',
+>>>>>>> Stashed changes
                 'description' => 'Creates and manages strategic plans and performance indicators.',
                 'is_assignable' => true,
                 'is_protected' => false,

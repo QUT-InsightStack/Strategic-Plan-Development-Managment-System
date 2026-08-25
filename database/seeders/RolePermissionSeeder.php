@@ -15,6 +15,7 @@ class RolePermissionSeeder extends Seeder
             ->where('role_name', 'Administrator')
             ->first();
 
+<<<<<<< Updated upstream
         if (! $administrator) {
             throw new RuntimeException(
                 'The Administrator role must exist before role permissions are seeded.'
@@ -85,6 +86,12 @@ class RolePermissionSeeder extends Seeder
         if ($planningOfficer) {
             $planningOfficerPermissionCodes = [
                 'users.assign_roles',
+=======
+        $assignments = [
+            'Administrator' => $permissionsByCode->keys()->all(),
+            'test' => $permissionsByCode->keys()->all(),
+            'Planning Officer' => [
+>>>>>>> Stashed changes
                 'strategic_records.view',
                 'strategic_records.manage',
                 'strategic_records.create',
