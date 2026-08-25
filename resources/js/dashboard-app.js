@@ -3,6 +3,7 @@ import { logout, guardAgainstBackNavigation } from './auth-session.js';
 import { enforcePageAccess } from './access/access-guard.js';
 import { can, clearAccessSession } from './access/access-session.js';
 import { PERMISSIONS } from './access/access-policy.js';
+import { LogoutButton } from './components/LogoutButton.js';
 
 enforcePageAccess();
 
@@ -65,16 +66,16 @@ function Header({ onMessage, onLogout, loggingOut }) {
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.help) }, 'Help'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.contact) }, 'Contact'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.support) }, 'Support'),
-            React.createElement(
-                'button',
-                { className: 'nav-link logout-link', type: 'button', onClick: onLogout, disabled: loggingOut },
-                loggingOut ? 'Signing out...' : 'Logout'
-            )
+            React.createElement(LogoutButton)
         )
     );
 }
 
 function ModuleCard({ module, count }) {
+    const primaryUrl = module.id === 'users'
+        ? userManagementUrl
+        : `${resourceUrl}?resource=${module.id}`;
+
     return React.createElement(
         'article',
         { className: 'dashboard-card' },
@@ -86,7 +87,7 @@ function ModuleCard({ module, count }) {
             { className: 'dashboard-actions' },
             React.createElement(
                 'a',
-                { className: 'action-button primary', href: `${resourceUrl}?resource=${module.id}` },
+                { className: 'action-button primary', href: primaryUrl },
                 'Open'
             ),
             module.id === 'users'

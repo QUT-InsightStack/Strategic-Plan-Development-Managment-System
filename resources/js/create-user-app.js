@@ -1,5 +1,6 @@
 import './resource-crud-config.js';
 import { BrandLogo } from './brand-logo.js';
+import { LogoutButton } from './components/LogoutButton.js';
 
 const { useEffect, useState } = React;
 
@@ -7,7 +8,7 @@ const rootElement = document.getElementById('root');
 const crud = window.ResourceCrud;
 const dashboardUrl = '/dashboard';
 const profileUrl = '/profile';
-const usersListUrl = '/resource?resource=users';
+const usersListUrl = '/user-management';
 const loginUrl = '/login';
 const usersApiUrl = '/api/users';
 
@@ -53,7 +54,7 @@ function Header({ onMessage, onLogout }) {
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => window.location.href = dashboardUrl }, 'Dashboard'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => window.location.href = profileUrl }, 'Profile'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(crud.messages.help) }, 'Help'),
-            React.createElement('button', { className: 'nav-link', type: 'button', onClick: onLogout }, 'Logout')
+            React.createElement(LogoutButton, { className: 'nav-link logout-link' })
         )
     );
 }
@@ -242,7 +243,7 @@ function CreateUserApp() {
     }
 
     function handleLogout() {
-        crud.requestJson('/api/logout', { method: 'POST' })
+        crud.requestJson('/api/auth/logout', { method: 'POST' })
             .catch(() => null)
             .finally(() => {
                 window.location.href = loginUrl;

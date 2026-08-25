@@ -1,6 +1,7 @@
 import defaultAvatar from '../images/profile-avatar.svg';
 import { BrandLogo } from './brand-logo.js';
 import { logout, guardAgainstBackNavigation } from './auth-session.js';
+import { LogoutButton } from './components/LogoutButton.js';
 
 const { useRef, useState, useEffect } = React;
 
@@ -53,11 +54,7 @@ function Header({ onMessage, onLogout, loggingOut }) {
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.help) }, 'Help'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.contact) }, 'Contact'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.support) }, 'Support'),
-            React.createElement(
-                'button',
-                { className: 'nav-link logout-link', type: 'button', onClick: onLogout, disabled: loggingOut },
-                loggingOut ? 'Signing out...' : 'Logout'
-            )
+            React.createElement(LogoutButton)
         )
     );
 }

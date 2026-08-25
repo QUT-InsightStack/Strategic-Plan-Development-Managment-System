@@ -1,6 +1,7 @@
 import { BrandLogo } from '../brand-logo.js';
 import { PERMISSIONS } from '../access/access-policy.js';
 import { can, clearAccessSession, getAccessSession } from '../access/access-session.js';
+import { LogoutButton } from './LogoutButton.js';
 
 const { useState } = React;
 
@@ -43,13 +44,6 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
 
     function toggleMenu(label) {
         setOpenMenus((current) => ({ ...current, [label]: !current[label] }));
-    }
-
-    function logout() {
-        clearAccessSession();
-        fetch('/api/logout', { method: 'POST', credentials: 'include', headers: { Accept: 'application/json' } })
-            .catch(() => null)
-            .finally(() => { window.location.href = '/login'; });
     }
 
     function renderChild(parent, child) {
@@ -96,6 +90,6 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
         ),
         React.createElement('a', { className: 'app-sidebar__profile', href: '/profile', 'aria-label': 'Open planner profile' }, React.createElement('i', { className: 'bi bi-person-vcard-fill' }), React.createElement('span', null, 'Planner/Encoder')),
         React.createElement('nav', { className: 'app-sidebar__nav' }, items.map(renderItem)),
-        React.createElement('button', { className: 'app-sidebar__item app-sidebar__logout', type: 'button', onClick: logout }, React.createElement('i', { className: 'bi bi-box-arrow-left' }), React.createElement('span', null, 'Log Out'))
+        React.createElement(LogoutButton, { className: 'app-sidebar__item app-sidebar__logout', label: 'Log Out', iconClass: 'bi bi-box-arrow-left' })
     );
 }

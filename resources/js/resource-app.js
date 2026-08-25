@@ -1,6 +1,7 @@
 import './resource-crud-config.js';
 import { BrandLogo } from './brand-logo.js';
 import { logout, guardAgainstBackNavigation } from './auth-session.js';
+import { LogoutButton } from './components/LogoutButton.js';
 
 const { useState, useEffect } = React;
 const rootElement = document.getElementById('root');
@@ -35,11 +36,7 @@ function Header({ onMessage, onLogout, loggingOut }) {
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => window.location.href = profileUrl }, 'Profile'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(crud.messages.help) }, 'Help'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(crud.messages.contact) }, 'Contact'),
-            React.createElement(
-                'button',
-                { className: 'nav-link logout-link', type: 'button', onClick: onLogout, disabled: loggingOut },
-                loggingOut ? 'Signing out...' : 'Logout'
-            )
+            React.createElement(LogoutButton)
         )
     );
 }

@@ -1,4 +1,5 @@
 import { BrandLogo } from './brand-logo.js';
+import { LogoutButton } from './components/LogoutButton.js';
 
 const { useEffect, useState } = React;
 
@@ -93,15 +94,7 @@ function Header({ onMessage, onLogout }) {
                 },
                 'Contact'
             ),
-            React.createElement(
-                'button',
-                {
-                    className: 'nav-link logout-link',
-                    type: 'button',
-                    onClick: onLogout,
-                },
-                'Logout'
-            )
+            React.createElement(LogoutButton)
         )
     );
 }
@@ -631,7 +624,7 @@ function ChangePasswordApp() {
     }, []);
 
     function handleLogout() {
-        fetch('/api/logout', {
+        fetch('/api/auth/logout', {
             method: 'POST',
             credentials: 'include',
             headers: {

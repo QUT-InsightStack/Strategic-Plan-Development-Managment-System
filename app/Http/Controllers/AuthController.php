@@ -11,7 +11,7 @@ use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
-use App\Models\Log;
+use App\Models\Log as LogModel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -60,7 +60,7 @@ class AuthController extends Controller
             $user = Auth::guard('api')->user();
 
             if ($user) {
-                Log::create([
+                LogModel::create([
                     'user_id'   => $user->user_id,
                     'operation' => 'logout',
                     'states'    => 'success',

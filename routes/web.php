@@ -10,7 +10,13 @@ Route::view('/forgot-password', 'pages.forgot-password')->name('forgot-password'
 Route::view('/dashboard', 'pages.dashboard')->name('dashboard');
 Route::view('/profile', 'pages.profile')->name('profile');
 Route::view('/change-password', 'pages.change-password')->name('change-password');
-Route::view('/resource', 'pages.resource')->name('resource.index');
+Route::get('/resource', function (Request $request) {
+    if ($request->query('resource') === 'users') {
+        return redirect('/user-management');
+    }
+
+    return view('pages.resource');
+})->name('resource.index');
 Route::view('/resource-form', 'pages.resource-form')->name('resource.form');
 Route::view('/create-user', 'pages.create-user')->name('users.create');
 Route::view('/strategic-plans', 'pages.strategic-plans.index')->name('strategic-plans.index');
