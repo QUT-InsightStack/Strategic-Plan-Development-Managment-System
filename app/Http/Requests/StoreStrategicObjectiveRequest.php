@@ -7,14 +7,14 @@ use App\Validation\ValidationAttributes;
 
 class StoreStrategicObjectiveRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['strategic_objectives.create'];
     }
 
     public function rules(): array
     {
-        $isDraft = $this->input('status') === 'draft';
+        $isDraft = $this->input('status', 'draft') === 'draft';
 
         return [
             'strategic_plan_id' => StrategicObjectiveValidationRules::strategicPlanIdRequired(),

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -16,6 +17,7 @@ class UsersSeeder extends Seeder
         }
 
         $defaultPassword = env('SEEDER_DEFAULT_PASSWORD', '123456');
+        $testRoleId = Role::where('role_name', 'test')->value('role_id');
 
         $users = [
             [
@@ -55,6 +57,17 @@ class UsersSeeder extends Seeder
                 'password' => Hash::make($defaultPassword),
                 'role_id' => 4,
                 'status' => 'inactive',
+            ],
+            [
+                'first_name' => 'Test',
+                'last_name' => 'User',
+                'email' => 'test@example.com',
+                'email_verified_at' => now(),
+                'department' => 'Testing',
+                'position' => 'Test User',
+                'password' => Hash::make($defaultPassword),
+                'role_id' => $testRoleId,
+                'status' => 'active',
             ],
         ];
 

@@ -1,4 +1,5 @@
 @import './brand-logo.css';
+@import './design-tokens.css';
 
 :root {
     --page-bg: #f3f6fb;
@@ -30,6 +31,8 @@ body {
     min-width: 320px;
     color: var(--text);
     font-family: Arial, Helvetica, sans-serif;
+    font-size: var(--font-size-md);
+    line-height: var(--line-height-body);
     background: var(--page-bg);
 }
 
@@ -62,8 +65,8 @@ button {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    min-height: 54px;
-    padding: 0 92px;
+    min-height: 64px;
+    padding: 0 var(--page-gutter);
     box-shadow: 0 4px 10px rgba(35, 43, 60, 0.25);
     position: relative;
     z-index: 2;
@@ -79,15 +82,16 @@ button {
 
 .brand-logo {
     display: block;
-    width: 34px;
-    height: 34px;
+    width: var(--brand-logo-size);
+    height: var(--brand-logo-size);
     object-fit: contain;
     flex-shrink: 0;
 }
 
 .brand-name {
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: 15px;
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
     white-space: nowrap;
 }
 
@@ -97,25 +101,46 @@ button {
 }
 
 .nav-link {
-    min-width: 88px;
+    min-width: var(--nav-button-min-width);
+    height: var(--nav-button-height);
     border: 0;
-    color: #ffffff;
+    border-radius: var(--nav-button-radius);
+    padding: 0 var(--nav-button-padding-x);
+    color: var(--color-brand-white);
     background: transparent;
-    font-size: 12px;
+    font-size: var(--nav-button-font-size);
+    font-weight: var(--nav-button-font-weight);
 }
 
 .nav-link:hover,
 .nav-link:focus-visible {
-    background: rgba(255, 255, 255, 0.13);
+    background: var(--nav-button-hover-bg);
     outline: none;
 }
 
+.nav-link.logout-link {
+    min-width: var(--logout-button-min-width);
+    color: var(--logout-button-color);
+    font-size: var(--logout-button-font-size);
+    font-weight: var(--logout-button-font-weight);
+}
+
+.nav-link.logout-link:hover,
+.nav-link.logout-link:focus-visible {
+    background: var(--logout-button-hover-bg);
+}
+
+.nav-link:disabled {
+    cursor: wait;
+    opacity: 0.7;
+}
+
 .profile-main {
-    padding: 32px 18px 44px;
+    padding: var(--space-8) var(--page-gutter) var(--space-12);
 }
 
 .page-inner {
-    width: min(100%, 1120px);
+    width: min(100%, var(--content-max-width));
     margin: 0 auto;
 }
 
@@ -126,7 +151,7 @@ button {
 .page-title h1 {
     margin: 0 0 10px;
     color: var(--primary);
-    font-size: 30px;
+    font-size: var(--font-size-3xl);
     line-height: 1.15;
     font-weight: 700;
     text-shadow: none;
@@ -905,4 +930,10 @@ select.crud-input[multiple] {
     .crud-form-actions .action-button {
         flex: 1 1 160px;
     }
+}
+/* Change Password navigation */
+
+.profile-password-button {
+    width: 100%;
+    margin-top: 18px;
 }

@@ -8,22 +8,50 @@ class RelationValidationRules
 {
     public static function recordIdRequired(mixed $parentId): array
     {
-        return ['required', 'integer', Rule::exists('tblstrategic_record', 'record_id'), Rule::notIn([$parentId])];
+        return [
+            'required',
+            'integer',
+            Rule::exists('tblstrategic_record', 'record_id')->where(
+                fn ($query) => $query->where('status', '!=', 'deleted')
+            ),
+            Rule::notIn([$parentId]),
+        ];
     }
 
     public static function recordIdOptional(mixed $parentId): array
     {
-        return ['sometimes', 'integer', Rule::exists('tblstrategic_record', 'record_id'), Rule::notIn([$parentId])];
+        return [
+            'sometimes',
+            'integer',
+            Rule::exists('tblstrategic_record', 'record_id')->where(
+                fn ($query) => $query->where('status', '!=', 'deleted')
+            ),
+            Rule::notIn([$parentId]),
+        ];
     }
 
     public static function parentIdRequired(mixed $recordId): array
     {
-        return ['required', 'integer', Rule::exists('tblstrategic_record', 'record_id'), Rule::notIn([$recordId]), Rule::unique('tblrelation_map')->where('record_id', $recordId)];
+        return [
+            'required',
+            'integer',
+            Rule::exists('tblstrategic_record', 'record_id')->where(
+                fn ($query) => $query->where('status', '!=', 'deleted')
+            ),
+            Rule::notIn([$recordId]),
+        ];
     }
 
     public static function parentIdOptional(mixed $recordId, mixed $relationId): array
     {
-        return ['sometimes', 'integer', Rule::exists('tblstrategic_record', 'record_id'), Rule::notIn([$recordId]), Rule::unique('tblrelation_map')->where('record_id', $recordId)->ignore($relationId, 'relation_id')];
+        return [
+            'sometimes',
+            'integer',
+            Rule::exists('tblstrategic_record', 'record_id')->where(
+                fn ($query) => $query->where('status', '!=', 'deleted')
+            ),
+            Rule::notIn([$recordId]),
+        ];
     }
 
     public static function createdByRequired(): array

@@ -7,9 +7,9 @@ use App\Validation\LinkValidationRules;
 
 class UpdateLinkRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['plan_core_values.update'];
     }
 
     public function rules(): array

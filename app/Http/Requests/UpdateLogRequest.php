@@ -7,9 +7,9 @@ use App\Validation\ValidationAttributes;
 
 class UpdateLogRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['logs.update'];
     }
 
     public function rules(): array

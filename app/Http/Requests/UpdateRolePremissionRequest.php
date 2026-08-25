@@ -7,9 +7,9 @@ use App\Validation\RolePermissionValidationRules;
 
 class UpdateRolePremissionRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['role_permissions.update'];
     }
 
     public function rules(): array

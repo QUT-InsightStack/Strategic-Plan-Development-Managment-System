@@ -1,5 +1,6 @@
 import defaultAvatar from '../images/profile-avatar.svg';
 import { BrandLogo } from './brand-logo.js';
+import { logout, guardAgainstBackNavigation } from './auth-session.js';
 
 const { useRef, useState, useEffect } = React;
 
@@ -34,13 +35,13 @@ const messages = {
 function Brand() {
     return React.createElement(
         'a',
-        { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic planning Management System home' },
+        { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic Planning Management System home' },
         React.createElement(BrandLogo),
-        React.createElement('span', { className: 'brand-name' }, 'Strategic planning Management System')
+        React.createElement('span', { className: 'brand-name' }, 'Strategic Planning Management System')
     );
 }
 
-function Header({ onMessage, onLogout }) {
+function Header({ onMessage, onLogout, loggingOut }) {
     return React.createElement(
         'header',
         { className: 'app-header', 'aria-label': 'Application header' },
@@ -52,7 +53,11 @@ function Header({ onMessage, onLogout }) {
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.help) }, 'Help'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.contact) }, 'Contact'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.support) }, 'Support'),
-            React.createElement('button', { className: 'nav-link logout-link', type: 'button', onClick: onLogout }, 'Logout')
+            React.createElement(
+                'button',
+                { className: 'nav-link logout-link', type: 'button', onClick: onLogout, disabled: loggingOut },
+                loggingOut ? 'Signing out...' : 'Logout'
+            )
         )
     );
 }
@@ -119,7 +124,19 @@ function ProfileSideCard({ avatar, onAvatarSelect }) {
                 onChange: handleFileChange,
             })
         ),
-        React.createElement('p', { className: 'side-copy' }, 'Manage your contact details', React.createElement('br'), 'and account information')
+    React.createElement('p', { className: 'side-copy' }, 'Manage your contact details', React.createElement('br'), 'and account information'),
+
+React.createElement(
+    'button',
+    {
+        className: 'action-button secondary profile-password-button',
+        type: 'button',
+        onClick: () => {
+            window.location.href = '/change-password';
+        },
+    },
+    'Change Password'
+)    
     );
 }
 
@@ -467,27 +484,19 @@ function Footer({ onMessage }) {
 function ProfileApp() {
     const [avatar, setAvatar] = useState(defaultAvatar);
     const [status, setStatusState] = useState({ message: '', type: 'info' });
+    const [loggingOut, setLoggingOut] = useState(false);
+
+    useEffect(() => {
+        guardAgainstBackNavigation();
+    }, []);
 
     function setStatus(message, type = 'info') {
         setStatusState({ message, type });
     }
 
     function handleLogout() {
-        fetch('/api/logout', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Accept': 'application/json',
-            },
-        })
-        .then(() => {
-            localStorage.removeItem('auth_token');
-            window.location.href = loginUrl;
-        })
-        .catch(() => {
-            // Even if logout fails, clear token and redirect
-            localStorage.removeItem('auth_token');
-            window.location.href = loginUrl;
+        logout({
+            onStart: () => setLoggingOut(true),
         });
     }
 
@@ -498,7 +507,7 @@ function ProfileApp() {
     return React.createElement(
         'div',
         { className: 'profile-shell' },
-        React.createElement(Header, { onMessage: (message) => setStatus(message, 'info'), onLogout: handleLogout }),
+        React.createElement(Header, { onMessage: (message) => setStatus(message, 'info'), onLogout: handleLogout, loggingOut }),
         React.createElement(
             'main',
             { className: 'profile-main' },

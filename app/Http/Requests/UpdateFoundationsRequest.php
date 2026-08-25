@@ -6,9 +6,9 @@ use App\Validation\FoundationValidationRules;
 
 class UpdateFoundationsRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['strategic_foundations.update'];
     }
 
     public function rules(): array

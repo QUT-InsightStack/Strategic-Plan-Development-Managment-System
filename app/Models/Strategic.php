@@ -18,11 +18,23 @@ class Strategic extends Model
         'level',
         'title',
         'description',
+        'status',
+        'archived_at',
+        'archived_by',
+        'deleted_at',
         'file_path',
         'mission_id',
         'vision_id',
 
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'archived_at' => 'datetime',
+            'deleted_at' => 'datetime',
+        ];
+    }
 
     public function creator()
     {
@@ -36,12 +48,14 @@ class Strategic extends Model
 
     public function missionFoundation()
     {
-        return $this->belongsTo(StrategicFoundations::class, 'mission_id', 'foundation_id');
+        return $this->belongsTo(StrategicFoundations::class, 'mission_id', 'foundation_id')
+            ->where('status', '!=', 'deleted');
     }
 
     public function visionFoundation()
     {
-        return $this->belongsTo(StrategicFoundations::class, 'vision_id', 'foundation_id');
+        return $this->belongsTo(StrategicFoundations::class, 'vision_id', 'foundation_id')
+            ->where('status', '!=', 'deleted');
     }
 
     public function parents()
@@ -51,7 +65,8 @@ class Strategic extends Model
             'tblrelation_map',
             'record_id',
             'parent_id'
-        )->withPivot('created_by')->withTimestamps();
+        )->withPivot(['created_by', 'status', 'archived_at', 'archived_by', 'deleted_at'])->withTimestamps()
+            ->wherePivot('status', '!=', 'deleted');
     }
 
     public function children()
@@ -61,7 +76,8 @@ class Strategic extends Model
             'tblrelation_map',
             'parent_id',
             'record_id'
-        )->withPivot('created_by')->withTimestamps();
+        )->withPivot(['created_by', 'status', 'archived_at', 'archived_by', 'deleted_at'])->withTimestamps()
+            ->wherePivot('status', '!=', 'deleted');
     }
 
     public function parentRelations()
@@ -86,6 +102,14 @@ class Strategic extends Model
             'tblplan_core_value',
             'plan_id',
             'core_value_id'
-        )->withPivot(['created_by', 'updated_by'])->withTimestamps();
+        )->withPivot(['created_by', 'updated_by', 'status', 'archived_at', 'archived_by', 'deleted_at'])->withTimestamps()
+            ->where('tblstrategic_foundations.status', '!=', 'deleted')
+            ->wherePivot('status', '!=', 'deleted');
+    }
+
+    public function objectives()
+    {
+        return $this->hasMany(StrategicObjective::class, 'strategic_plan_id', 'record_id')
+            ->where('status', '!=', 'deleted');
     }
 }

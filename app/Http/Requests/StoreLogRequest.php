@@ -7,9 +7,9 @@ use App\Validation\ValidationAttributes;
 
 class StoreLogRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['logs.create'];
     }
 
     public function rules(): array

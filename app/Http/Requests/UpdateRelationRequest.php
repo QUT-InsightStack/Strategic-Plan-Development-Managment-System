@@ -7,9 +7,9 @@ use App\Validation\RelationValidationRules;
 
 class UpdateRelationRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['relations.update'];
     }
 
     public function rules(): array

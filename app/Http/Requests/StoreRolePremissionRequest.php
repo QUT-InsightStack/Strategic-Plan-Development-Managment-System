@@ -6,9 +6,9 @@ use App\Validation\RolePermissionValidationRules;
 
 class StoreRolePremissionRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['role_permissions.create'];
     }
 
     public function rules(): array

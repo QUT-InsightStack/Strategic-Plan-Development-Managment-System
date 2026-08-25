@@ -7,9 +7,9 @@ use App\Validation\ValidationAttributes;
 
 class StorePermissionRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['permissions.create'];
     }
 
     public function rules(): array
