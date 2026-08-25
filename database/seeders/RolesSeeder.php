@@ -13,6 +13,17 @@ class RolesSeeder extends Seeder
             [
                 'role_name'   => 'Administrator',
                 'description' => 'Full system access. Manages users, roles, and system configuration.',
+<<<<<<< Updated upstream
+=======
+                'is_assignable' => true,
+                'is_protected' => true,
+            ],
+            [
+                'role_name'   => 'test',
+                'description' => 'Test account with full backend access.',
+                'is_assignable' => true,
+                'is_protected' => false,
+>>>>>>> Stashed changes
             ],
             [
                 'role_name'   => 'Planning Officer',
