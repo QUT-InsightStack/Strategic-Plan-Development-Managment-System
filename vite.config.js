@@ -7,6 +7,7 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
+                'resources/css/create-user.css',
                 'resources/css/login.css',
                 'resources/css/office.css',
                 'resources/css/profile.css',
@@ -15,8 +16,10 @@ export default defineConfig({
                 'resources/css/strategic-objectives.css',
                 'resources/css/strategic-objectives-list.css',
                 'resources/css/role-management.css',
+                'resources/css/user-management.css',
                 'resources/css/access-denied.css',
                 'resources/js/app.js',
+                'resources/js/create-user-app.js',
                 'resources/js/dashboard-app.js',
                 'resources/js/login-app.js',
                 'resources/js/office.js',
@@ -29,6 +32,7 @@ export default defineConfig({
                 'resources/js/pages/strategic-objectives-app.js',
                 'resources/js/pages/strategic-objectives-list-app.js',
                 'resources/js/pages/role-management-app.js',
+                'resources/js/pages/user-management-app.js',
                 'resources/js/pages/access-denied-app.js',
             ],
             refresh: true,

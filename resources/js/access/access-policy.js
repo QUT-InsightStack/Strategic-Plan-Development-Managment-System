@@ -3,8 +3,12 @@ export const ACCESS_SESSION_KEY = 'spdms.frontend-access';
 export const PERMISSIONS = Object.freeze({
     USERS_VIEW: 'users.view',
     USERS_MANAGE: 'users.manage',
+    USERS_CREATE: 'users.create',
+    USERS_UPDATE: 'users.update',
+    USERS_ASSIGN_ROLES: 'users.assign_roles',
     ROLES_VIEW: 'roles.view',
     ROLES_MANAGE: 'roles.manage',
+    ROLES_ASSIGN_PROTECTED: 'roles.assign_protected',
     PERMISSIONS_VIEW: 'permissions.view',
     PERMISSIONS_MANAGE: 'permissions.manage',
     PLANS_VIEW: 'strategic_records.view',
@@ -42,6 +46,7 @@ export function policyForRole(roleName) {
 export const routeRules = [
     { test: /^\/dashboard(?:\/|$)/, permission: PERMISSIONS.DASHBOARD_VIEW },
     { test: /^\/role-management(?:\/|$)/, permission: PERMISSIONS.ROLES_MANAGE },
+    { test: /^\/user-management(?:\/|$)/, permission: PERMISSIONS.USERS_VIEW },
     { test: /^\/strategic-plans\/create(?:\/|$)/, permission: PERMISSIONS.PLANS_MANAGE },
     { test: /^\/strategic-plans\/\d+\/edit(?:\/|$)/, permission: PERMISSIONS.PLANS_MANAGE },
     { test: /^\/strategic-(?:plans|objectives)(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },

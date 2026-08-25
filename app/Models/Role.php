@@ -12,10 +12,43 @@ class Role extends Model
     protected $table      = 'tblroles';
     protected $primaryKey = 'role_id';
 
+    /**
+     * Roles permitted to administer users and role assignments.
+     *
+     * Defined here as the single source of truth so authorisation checks and
+     * the seeder cannot drift apart. Must match RolesSeeder.
+     */
+    public const ADMIN_ROLES = ['Administrator'];
+
+    /**
+     * Roles that grant administrative privilege. Assigning one is treated as
+     * privilege escalation and is restricted accordingly.
+     */
+    public const PRIVILEGED_ROLES = ['Administrator'];
+
     protected $fillable = [
         'role_name',
         'description',
+        'is_assignable',
+        'is_protected',
+
     ];
+
+    /**
+     * Whether this role grants administrative privilege.
+     */
+    public function isPrivileged(): bool
+    {
+        return in_array($this->role_name, self::PRIVILEGED_ROLES, true);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'is_assignable' => 'boolean',
+            'is_protected' => 'boolean',
+        ];
+    }
 
     public function users(): \Illuminate\Database\Eloquent\Relations\HasMany
     {

@@ -11,38 +11,47 @@ class RolesSeeder extends Seeder
     {
         $roles = [
             [
-                'role_name'   => 'Administrator',
+                'role_name' => 'Administrator',
                 'description' => 'Full system access. Manages users, roles, and system configuration.',
-<<<<<<< Updated upstream
-=======
                 'is_assignable' => true,
                 'is_protected' => true,
             ],
             [
+<<<<<<< Updated upstream
+                'role_name' => 'Planning Officer',
+=======
                 'role_name'   => 'test',
                 'description' => 'Test account with full backend access.',
-                'is_assignable' => true,
-                'is_protected' => false,
->>>>>>> Stashed changes
             ],
             [
                 'role_name'   => 'Planning Officer',
+>>>>>>> Stashed changes
                 'description' => 'Creates and manages strategic plans and performance indicators.',
+                'is_assignable' => true,
+                'is_protected' => false,
             ],
             [
-                'role_name'   => 'Division Head',
+                'role_name' => 'Division Head',
                 'description' => 'Reviews and approves plans within their division.',
+                'is_assignable' => true,
+                'is_protected' => false,
             ],
             [
-                'role_name'   => 'Viewer',
+                'role_name' => 'Viewer',
                 'description' => 'Read-only access to published plans and reports.',
+                'is_assignable' => true,
+                'is_protected' => false,
             ],
         ];
 
         foreach ($roles as $role) {
             Role::updateOrCreate(
                 ['role_name' => $role['role_name']],
-                ['description' => $role['description']]
+                [
+                    'description' => $role['description'],
+                    'is_assignable' => $role['is_assignable'],
+                    'is_protected' => $role['is_protected'],
+                ]
             );
         }
     }

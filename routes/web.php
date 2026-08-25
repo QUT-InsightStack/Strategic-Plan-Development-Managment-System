@@ -6,11 +6,13 @@ use Illuminate\Support\Facades\Route;
 Route::redirect('/', '/login');
 
 Route::view('/login', 'pages.login')->name('login');
+Route::view('/forgot-password', 'pages.forgot-password')->name('forgot-password');
 Route::view('/dashboard', 'pages.dashboard')->name('dashboard');
 Route::view('/profile', 'pages.profile')->name('profile');
 Route::view('/change-password', 'pages.change-password')->name('change-password');
 Route::view('/resource', 'pages.resource')->name('resource.index');
 Route::view('/resource-form', 'pages.resource-form')->name('resource.form');
+Route::view('/create-user', 'pages.create-user')->name('users.create');
 Route::view('/strategic-plans', 'pages.strategic-plans.index')->name('strategic-plans.index');
 Route::view('/strategic-plans/create', 'pages.strategic-plan')->name('strategic-plans.create');
 Route::get('/strategic-plans/{id}/edit', function (int $id) {
@@ -23,6 +25,7 @@ Route::redirect('/strategic-plan', '/strategic-plans/create')->name('strategic-p
 Route::view('/strategic-objectives', 'pages.strategic-objectives.index')->name('strategic-objectives.index');
 Route::view('/office', 'pages.office')->name('office');
 Route::view('/role-management', 'pages.role-management')->name('role-management.index');
+Route::view('/user-management', 'pages.user-management')->name('user-management.index');
 Route::view('/access-denied', 'pages.access-denied')->name('access-denied');
 
 Route::redirect('/login.html', '/login');
