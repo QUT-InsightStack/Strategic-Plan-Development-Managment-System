@@ -937,3 +937,52 @@ select.crud-input[multiple] {
     width: 100%;
     margin-top: 18px;
 }
+
+/* Password fields */
+
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-wrapper .crud-input {
+    width: 100%;
+    padding-right: 70px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.password-toggle:hover {
+    text-decoration: underline;
+}
+
+.password-requirements {
+    margin-top: -4px;
+}
+
+.password-requirements h3 {
+    margin: 0 0 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.password-requirements ul {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+
+.password-requirements li.is-valid {
+    font-weight: 600;
+}
