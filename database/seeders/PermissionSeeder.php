@@ -226,6 +226,12 @@ class PermissionSeeder extends Seeder
                 'code' => 'logs.view',
                 'module' => 'logs',
             ],
+            [
+                'permission_name' => 'Manage PDP Chapters',
+                'description' => 'Allows creating and editing PDP Chapters and their linked strategic objectives.',
+                'code' => 'pdp_chapters.manage',
+                'module' => 'pdp_chapters',
+            ],
         ];
 
         foreach ($permissions as $permission) {

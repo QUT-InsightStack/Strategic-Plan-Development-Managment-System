@@ -16,6 +16,7 @@ const items = [
             { label: 'Create Plans', href: '/strategic-plans/create', permission: PERMISSIONS.PLANS_MANAGE },
             { label: 'Manage Plans', href: '/strategic-plans', permission: PERMISSIONS.PLANS_VIEW },
             { label: 'Strategic Objectives', href: '/strategic-objectives', permission: PERMISSIONS.PLANS_VIEW },
+            { label: 'PDP Chapters', href: '/pdp-chapters' },
             { label: 'Monitor Plans' },
             { label: 'Finalize Plans' },
         ],
@@ -38,7 +39,7 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
     const currentPath = window.location.pathname;
     const accessSession = getAccessSession();
     const [openMenus, setOpenMenus] = useState({
-        'Planning Module': currentPath.startsWith('/strategic-plan') || currentPath.startsWith('/strategic-objectives'),
+        'Planning Module': currentPath.startsWith('/strategic-plan') || currentPath.startsWith('/strategic-objectives') || currentPath.startsWith('/pdp-chapters'),
         'Mapping Module': false,
     });
 
@@ -48,6 +49,24 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
 
     function renderChild(parent, child) {
         if (child.permission && !can(child.permission, accessSession)) return null;
+        if (child.children) {
+            const visibleChildren = child.children.filter((nested) => !nested.permission || can(nested.permission, accessSession));
+            const expanded = Boolean(openMenus[child.label]);
+            const menuId = `sidebar-${child.label.toLowerCase().replaceAll(' ', '-')}`;
+
+            return React.createElement('div', { className: 'app-sidebar__nested-group', key: child.label },
+                React.createElement('button', {
+                    className: 'app-sidebar__subitem app-sidebar__nested-toggle',
+                    type: 'button',
+                    onClick: () => toggleMenu(child.label),
+                    'aria-expanded': expanded,
+                    'aria-controls': menuId,
+                },
+                React.createElement('span', null, child.label),
+                React.createElement('i', { className: `bi bi-chevron-${expanded ? 'up' : 'down'}`, 'aria-hidden': 'true' })),
+                expanded ? React.createElement('div', { className: 'app-sidebar__nested-menu', id: menuId }, visibleChildren.map((nested) => renderChild(child, nested))) : null
+            );
+        }
         const isCurrent = child.href === currentPath;
         const className = `app-sidebar__subitem${isCurrent ? ' active' : ''}`;
 

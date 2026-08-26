@@ -19,5 +19,10 @@
 .app-sidebar__subitem { display: flex; min-height: 34px; align-items: center; border: 0; border-left: 2px solid rgba(255,255,255,.25); padding: 7px 10px; color: rgba(255,255,255,.88); background: transparent; font-size: var(--font-size-xs); text-align: left; text-decoration: none; }
 .app-sidebar__subitem:hover, .app-sidebar__subitem:focus-visible { border-left-color: var(--color-brand-cyan); color: #fff; background: rgba(255,255,255,.1); outline: none; }
 .app-sidebar__subitem.active { border-left-color: var(--color-brand-cyan); color: #fff; background: rgba(255,255,255,.16); font-weight: var(--font-weight-semibold); }
+.app-sidebar__nested-group { display: grid; }
+.app-sidebar__nested-toggle { justify-content: space-between; cursor: pointer; }
+.app-sidebar__nested-toggle i { margin-left: auto; font-size: 10px; }
+.app-sidebar__nested-menu { display: grid; padding-left: 12px; }
+.app-sidebar__nested-menu .app-sidebar__subitem { min-height: 30px; font-size: 11px; }
 .app-sidebar__logout { margin-top: auto; border-radius: 0; padding-left: 22px; border-top: 1px solid rgba(255,255,255,.2); }
 @media (max-width: 720px) { .app-sidebar { position: static; width: 100%; } .app-sidebar__profile { min-height: 82px; } .app-sidebar__nav { grid-template-columns: 1fr; } .app-sidebar__logout { margin: 0; border-top: 0; } }

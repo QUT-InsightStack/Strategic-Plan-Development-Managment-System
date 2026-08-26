@@ -5,6 +5,7 @@ use App\Http\Controllers\FoundationsController;
 use App\Http\Controllers\LinkController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\PdpChapterController;
 use App\Http\Controllers\PlanCreationController;
 use App\Http\Controllers\RelationController;
 use App\Http\Controllers\RoleController;
@@ -91,6 +92,15 @@ Route::middleware(['auth:api','auth.version',])->prefix('users')->group(function
 */
 
 Route::middleware(['auth:api','auth.version',])->group(function () {
+    Route::get('pdp-chapters', [PdpChapterController::class, 'index']);
+    Route::get('pdp-chapters/{chapter}', [PdpChapterController::class, 'show'])
+        ->whereNumber('chapter');
+    Route::post('pdp-chapters', [PdpChapterController::class, 'store'])
+        ->middleware('permission:pdp_chapters.manage');
+    Route::put('pdp-chapters/{chapter}', [PdpChapterController::class, 'update'])
+        ->whereNumber('chapter')
+        ->middleware('permission:pdp_chapters.manage');
+
     // Roles
     Route::get('roles', [RoleController::class, 'index'])
         ->middleware('permission:roles.view');
