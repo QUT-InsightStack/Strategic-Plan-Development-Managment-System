@@ -29,6 +29,11 @@ Route::get('/strategic-plans/{id}/objectives', function (int $id) {
 })->name('strategic-plans.objectives');
 Route::redirect('/strategic-plan', '/strategic-plans/create')->name('strategic-plan');
 Route::view('/strategic-objectives', 'pages.strategic-objectives.index')->name('strategic-objectives.index');
+Route::view('/pdp-chapters', 'pages.pdp-chapters', ['mode' => 'view'])->name('pdp-chapters.index');
+Route::view('/pdp-chapters/manage', 'pages.pdp-chapters', ['mode' => 'manage'])->name('pdp-chapters.manage');
+Route::view('/pdp-chapters/{chapter}', 'pages.pdp-chapters', ['mode' => 'detail'])
+    ->whereNumber('chapter')
+    ->name('pdp-chapters.show');
 Route::view('/office', 'pages.office')->name('office');
 Route::view('/role-management', 'pages.role-management')->name('role-management.index');
 Route::view('/user-management', 'pages.user-management')->name('user-management.index');
