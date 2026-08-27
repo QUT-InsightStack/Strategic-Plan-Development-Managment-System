@@ -23,6 +23,12 @@ class RolesSeeder extends Seeder
                 'is_protected' => false,
             ],
             [
+                'role_name'   => 'test',
+                'description' => 'Test account with full backend access.',
+                'is_assignable' => true,
+                'is_protected' => false,
+            ],
+            [
                 'role_name' => 'Division Head',
                 'description' => 'Reviews and approves plans within their division.',
                 'is_assignable' => true,
