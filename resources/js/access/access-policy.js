@@ -21,11 +21,14 @@ export const PERMISSIONS = Object.freeze({
     SETTINGS_MANAGE: 'settings.manage',
     DASHBOARD_VIEW: 'dashboard.view',
     PDP_CHAPTERS_MANAGE: 'pdp_chapters.manage',
+    BACKUPS_VIEW: 'backups.view',
+    BACKUPS_CREATE: 'backups.create',
+    BACKUPS_DOWNLOAD: 'backups.download',
 });
 
 const rolePolicies = {
     Administrator: { home: '/role-management', permissions: ['*'] },
-    'Technical Administrator': { home: '/role-management', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.USERS_VIEW, PERMISSIONS.USERS_MANAGE, PERMISSIONS.ROLES_VIEW, PERMISSIONS.ROLES_MANAGE, PERMISSIONS.PERMISSIONS_VIEW, PERMISSIONS.PERMISSIONS_MANAGE, PERMISSIONS.LOGS_VIEW, PERMISSIONS.SETTINGS_MANAGE, PERMISSIONS.PDP_CHAPTERS_MANAGE] },
+    'Technical Administrator': { home: '/role-management', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.USERS_VIEW, PERMISSIONS.USERS_MANAGE, PERMISSIONS.ROLES_VIEW, PERMISSIONS.ROLES_MANAGE, PERMISSIONS.PERMISSIONS_VIEW, PERMISSIONS.PERMISSIONS_MANAGE, PERMISSIONS.LOGS_VIEW, PERMISSIONS.SETTINGS_MANAGE, PERMISSIONS.PDP_CHAPTERS_MANAGE, PERMISSIONS.BACKUPS_VIEW, PERMISSIONS.BACKUPS_CREATE, PERMISSIONS.BACKUPS_DOWNLOAD] },
     'Planning Officer': { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.PLANS_MANAGE, PERMISSIONS.FOUNDATIONS_VIEW, PERMISSIONS.FOUNDATIONS_MANAGE, PERMISSIONS.MAPPINGS_MANAGE, PERMISSIONS.REPORTS_VIEW] },
     'Planner/Encoder': { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.PLANS_MANAGE, PERMISSIONS.FOUNDATIONS_VIEW, PERMISSIONS.FOUNDATIONS_MANAGE, PERMISSIONS.REPORTS_VIEW] },
     'Division Head': { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.REPORTS_VIEW] },
@@ -50,6 +53,7 @@ export const routeRules = [
     { test: /^\/user-management(?:\/|$)/, permission: PERMISSIONS.USERS_VIEW },
     { test: /^\/pdp-chapters\/manage(?:\/|$)/, permission: PERMISSIONS.PDP_CHAPTERS_MANAGE },
     { test: /^\/login-history(?:\/|$)/, permission: PERMISSIONS.LOGS_VIEW },
+    { test: /^\/manual-backup(?:\/|$)/, permission: PERMISSIONS.BACKUPS_VIEW },
     { test: /^\/strategic-plans\/create(?:\/|$)/, permission: PERMISSIONS.PLANS_MANAGE },
     { test: /^\/strategic-plans\/\d+\/edit(?:\/|$)/, permission: PERMISSIONS.PLANS_MANAGE },
     { test: /^\/strategic-(?:plans|objectives)(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },

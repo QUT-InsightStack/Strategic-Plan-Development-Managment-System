@@ -21,11 +21,6 @@
 .login-history-ip { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; white-space: nowrap; }
 .login-history-reason { display: block; margin-top: var(--space-1); color: var(--color-text-secondary); font-size: 11px; }
 
-/* Page-local rather than a ui-badge--danger variant, to avoid colliding with
-   the badge added on the manual backup branch. Worth promoting into
-   components/badges.css once both have landed. */
-.login-history-badge--failed { color: var(--color-danger); background: var(--color-danger-soft); }
-
 /* The raw agent string is long and only occasionally needed, so it is clamped
    to one line with the full value in the title attribute. */
 .login-history-agent { display: block; max-width: 26ch; margin-top: 2px; overflow: hidden; color: var(--color-text-secondary); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }

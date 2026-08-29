@@ -3,6 +3,7 @@
 .ui-badge--warning { color: var(--color-warning); background: var(--color-warning-soft); }
 .ui-badge--info { color: var(--color-info); background: var(--color-info-soft); }
 .ui-badge--neutral { color: var(--color-text-secondary); background: var(--color-surface-muted); }
+.ui-badge--danger { color: var(--color-danger); background: var(--color-danger-soft); }
 
 /* Strategic plan workflow statuses */
 .ui-badge--draft { border: 1px solid #d6b656; color: #7a5200; background: #fff8df; }

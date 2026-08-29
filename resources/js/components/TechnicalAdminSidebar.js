@@ -9,6 +9,7 @@ const menuItems = [
     { label: 'PDP Chapter Management', icon: 'bi-journal-text', href: '/pdp-chapters/manage', permission: PERMISSIONS.PDP_CHAPTERS_MANAGE },
     { label: 'Security Logs', icon: 'bi-list-check', permission: PERMISSIONS.LOGS_VIEW },
     { label: 'Login History', icon: 'bi-clock-history', href: '/login-history', permission: PERMISSIONS.LOGS_VIEW },
+    { label: 'Manual Backup', icon: 'bi-database-down', href: '/manual-backup', permission: PERMISSIONS.BACKUPS_VIEW },
     { label: 'System Settings', icon: 'bi-gear-fill', permission: PERMISSIONS.SETTINGS_MANAGE },
     { label: 'FAQ', icon: 'bi-info-square-fill' },
 ];

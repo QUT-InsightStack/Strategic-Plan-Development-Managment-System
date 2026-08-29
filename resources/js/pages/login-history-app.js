@@ -197,7 +197,7 @@ function LoginHistoryApp() {
                                                     entry.user_agent ? React.createElement('span', { className: 'login-history-agent', title: entry.user_agent }, entry.user_agent) : null
                                                 ),
                                                 React.createElement('td', null,
-                                                    React.createElement('span', { className: `ui-badge ${entry.outcome === 'success' ? 'ui-badge--success' : 'login-history-badge--failed'}` }, entry.outcome === 'success' ? 'Successful' : 'Failed'),
+                                                    React.createElement('span', { className: `ui-badge ui-badge--${entry.outcome === 'success' ? 'success' : 'danger'}` }, entry.outcome === 'success' ? 'Successful' : 'Failed'),
                                                     entry.outcome !== 'success' && entry.reason
                                                         ? React.createElement('span', { className: 'login-history-reason' }, REASON_LABELS[entry.reason] || entry.reason)
                                                         : null

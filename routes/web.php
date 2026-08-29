@@ -38,6 +38,7 @@ Route::view('/office', 'pages.office')->name('office');
 Route::view('/role-management', 'pages.role-management')->name('role-management.index');
 Route::view('/user-management', 'pages.user-management')->name('user-management.index');
 Route::view('/login-history', 'pages.login-history')->name('login-history.index');
+Route::view('/manual-backup', 'pages.manual-backup')->name('manual-backup.index');
 Route::view('/access-denied', 'pages.access-denied')->name('access-denied');
 
 Route::redirect('/login.html', '/login');
