@@ -14,6 +14,7 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
 use App\Models\Log as LogModel;
+use App\Services\LoginHistoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +23,10 @@ use Symfony\Component\HttpFoundation\Cookie;
 class AuthController extends Controller
 {
     // ─── Login ───────────────────────────────────────────────────────
+
+    public function __construct(private LoginHistoryService $loginHistory)
+    {
+    }
 
     public function login(LoginRequest $request): JsonResponse
     {
@@ -33,12 +38,18 @@ class AuthController extends Controller
         $token = Auth::guard('api')->attempt($credentials);
 
         if (! $token) {
-            // generic message — never reveal whether the email exists
+            // Recorded before responding, so an attempt on an account that
+            // does not exist is still visible to an administrator. The reply
+            // itself stays generic — never reveal whether the email exists.
+            $this->loginHistory->recordFailure((string) $request->input('email'), $request);
+
             return response()->json([
                 'success' => false,
                 'message' => 'The provided credentials are incorrect.',
             ], 401);
         }
+
+        $this->loginHistory->recordSuccess(Auth::guard('api')->user(), $request);
 
         return response()->json([
             'success' => true,

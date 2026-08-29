@@ -2,6 +2,7 @@ import defaultAvatar from '../images/profile-avatar.svg';
 import { BrandLogo } from './brand-logo.js';
 import { logout, guardAgainstBackNavigation } from './auth-session.js';
 import { LogoutButton } from './components/LogoutButton.js';
+import { myLoginHistory } from './api/login-history-api.js';
 
 const { useRef, useState, useEffect } = React;
 
@@ -491,6 +492,82 @@ return React.createElement(
 );
 }
 
+/**
+ * The person's own recent sign-ins, so they can spot access they do not
+ * recognise. Read-only, and never shows anyone else's activity — the server
+ * takes the account from the session token.
+ */
+function RecentSignIns() {
+    const [entries, setEntries] = useState([]);
+    const [failures, setFailures] = useState(0);
+    const [state, setState] = useState('loading');
+
+    useEffect(() => {
+        let cancelled = false;
+
+        myLoginHistory(5)
+            .then((payload) => {
+                if (cancelled) return;
+                setEntries(payload.data || []);
+                setFailures(payload.meta?.recent_failures || 0);
+                setState('ready');
+            })
+            .catch(() => {
+                if (!cancelled) setState('error');
+            });
+
+        return () => { cancelled = true; };
+    }, []);
+
+    function formatWhen(value) {
+        if (!value) return 'Unknown';
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return 'Unknown';
+
+        return date.toLocaleString(undefined, {
+            day: '2-digit', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit',
+        });
+    }
+
+    return React.createElement(
+        'section',
+        { className: 'profile-card sign-ins', 'aria-labelledby': 'sign-ins-title' },
+        React.createElement('h2', { id: 'sign-ins-title', className: 'sign-ins__title' },
+            React.createElement('i', { className: 'bi bi-clock-history', 'aria-hidden': 'true' }),
+            ' Recent sign-ins'
+        ),
+        React.createElement('p', { className: 'sign-ins__intro' }, 'If you do not recognise one of these, change your password and tell an administrator.'),
+
+        failures > 0
+            ? React.createElement('p', { className: 'sign-ins__alert', role: 'status' },
+                React.createElement('i', { className: 'bi bi-exclamation-triangle-fill', 'aria-hidden': 'true' }),
+                ` ${failures} failed sign-in ${failures === 1 ? 'attempt' : 'attempts'} on your account in the last 30 days.`
+            )
+            : null,
+
+        state === 'loading'
+            ? React.createElement('p', { className: 'sign-ins__empty' }, 'Loading your sign-in history…')
+            : state === 'error'
+                ? React.createElement('p', { className: 'sign-ins__empty' }, 'Your sign-in history could not be loaded.')
+                : entries.length === 0
+                    ? React.createElement('p', { className: 'sign-ins__empty' }, 'No sign-ins recorded yet.')
+                    : React.createElement('ul', { className: 'sign-ins__list' },
+                        entries.map((entry) => React.createElement('li', { key: entry.login_history_id, className: 'sign-ins__item' },
+                            React.createElement('span', { className: 'sign-ins__when' }, formatWhen(entry.created_at)),
+                            React.createElement('span', { className: 'sign-ins__meta' },
+                                entry.ip_address || 'Unknown address',
+                                entry.device_label ? ` · ${entry.device_label}` : ''
+                            ),
+                            entry.outcome !== 'success'
+                                ? React.createElement('span', { className: 'sign-ins__failed' }, 'Failed attempt')
+                                : null
+                        ))
+                    )
+    );
+}
+
 function Footer({ onMessage }) {
     return React.createElement(
         'footer',
@@ -545,7 +622,12 @@ function ProfileApp() {
                     'div',
                     { className: 'profile-layout' },
                     React.createElement(ProfileSideCard, { avatar, onAvatarSelect: handleAvatarSelect }),
-                    React.createElement(ProfileForm, { status, setStatus, avatar, onAvatarChange: setAvatar })
+                    React.createElement(
+                        'div',
+                        { className: 'profile-column' },
+                        React.createElement(ProfileForm, { status, setStatus, avatar, onAvatarChange: setAvatar }),
+                        React.createElement(RecentSignIns, null)
+                    )
                 )
             )
         ),

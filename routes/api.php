@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FoundationsController;
 use App\Http\Controllers\LinkController;
 use App\Http\Controllers\LogController;
+use App\Http\Controllers\LoginHistoryController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PdpChapterController;
 use App\Http\Controllers\PlanCreationController;
@@ -83,6 +84,23 @@ Route::middleware(['auth:api','auth.version',])->prefix('users')->group(function
     Route::delete('{user}', [UserController::class, 'destroy'])
         ->whereNumber('user')
         ->middleware('permission:users.delete');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Login history
+|--------------------------------------------------------------------------
+|
+| Two views of the same table. `me` is any authenticated user's own history
+| and takes the account from the token, so it cannot be aimed at anyone else.
+| The list across all accounts is a security log and is gated accordingly.
+|
+*/
+Route::middleware(['auth:api', 'auth.version'])->prefix('login-history')->group(function () {
+    Route::get('me', [LoginHistoryController::class, 'mine']);
+
+    Route::get('', [LoginHistoryController::class, 'index'])
+        ->middleware('permission:logs.view');
 });
 
 /*
