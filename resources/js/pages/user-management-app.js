@@ -25,22 +25,46 @@ const initialEdit = {
     department: '',
     unit: '',
     position: '',
+    date_of_birth: '',
+    gender: '',
 };
+
+// Fields the server treats as nullable but which reject an empty string:
+// a blank date is no date, not a date of "".
+const NULLABLE_EDIT_FIELDS = ['date_of_birth', 'gender'];
+
+// Codes are stored; these labels belong to the interface, so the wording can
+// change without a migration. Must stay in step with
+// App\Validation\UserValidationRules::GENDERS.
+const GENDER_OPTIONS = [
+    ['', 'Not specified'],
+    ['female', 'Female'],
+    ['male', 'Male'],
+    ['non_binary', 'Non-binary'],
+    ['prefer_not_to_say', 'Prefer not to say'],
+];
 
 // [name, label, input type, required, maxLength] — the lengths match the
 // server's rules in UpdateUserRequest, so the field stops accepting input at
-// the same point the API would reject it.
+// the same point the API would reject it. maxLength is ignored for types
+// that do not take free text.
 const EDIT_FIELDS = [
     ['first_name', 'First name', 'text', true, 255],
     ['last_name', 'Last name', 'text', false, 255],
     ['email', 'Email', 'email', true, 255],
     ['mobile', 'Mobile', 'tel', false, 20],
+    ['date_of_birth', 'Date of birth', 'date', false, undefined],
     ['address', 'Address', 'text', false, 255],
     ['office', 'Office / Agency', 'text', false, 255],
     ['department', 'Department', 'text', false, 255],
     ['unit', 'Unit', 'text', false, 255],
     ['position', 'Position', 'text', false, 255],
 ];
+
+// The server rejects a date in the future, so the picker will not offer one.
+function today() {
+    return new Date().toISOString().slice(0, 10);
+}
 
 function editValuesFrom(user) {
     return {
@@ -53,6 +77,10 @@ function editValuesFrom(user) {
         department: user.department || '',
         unit: user.unit || '',
         position: user.position || '',
+        // Already YYYY-MM-DD from UserResource, which is what a date input
+        // expects; anything else would silently render as blank.
+        date_of_birth: user.date_of_birth || '',
+        gender: user.gender || '',
     };
 }
 
@@ -231,9 +259,18 @@ function UserManagementApp() {
         // server's `sometimes` rules.
         const payload = {};
         Object.keys(editForm).forEach((field) => {
-            if (editForm[field] !== editOriginal[field]) {
-                payload[field] = editForm[field];
+            if (editForm[field] === editOriginal[field]) {
+                return;
             }
+
+            const value = editForm[field];
+
+            // Clearing one of these means "no value", so it has to go as
+            // null. An empty string would fail the date rule rather than
+            // emptying the field.
+            payload[field] = NULLABLE_EDIT_FIELDS.includes(field) && value === ''
+                ? null
+                : value;
         });
 
         if (Object.keys(payload).length === 0) {
@@ -452,12 +489,28 @@ function UserManagementApp() {
                                 value: editForm[name],
                                 required,
                                 maxLength,
+                                max: type === 'date' ? today() : undefined,
                                 'aria-invalid': editErrors[name] ? 'true' : undefined,
                                 'aria-describedby': editErrors[name] ? `edit-${name}-error` : undefined,
                                 onChange: (event) => setEditForm((current) => ({ ...current, [name]: event.target.value })),
                             }),
                             editErrors[name] ? React.createElement('p', { id: `edit-${name}-error`, className: 'ui-error' }, editErrors[name][0]) : null
-                        ))
+                        )),
+
+                        React.createElement('div', { className: `ui-field${editErrors.gender ? ' is-invalid' : ''}` },
+                            React.createElement('label', { className: 'ui-label', htmlFor: 'edit-gender' }, 'Gender'),
+                            React.createElement('select', {
+                                id: 'edit-gender',
+                                className: 'ui-select',
+                                value: editForm.gender,
+                                'aria-invalid': editErrors.gender ? 'true' : undefined,
+                                'aria-describedby': editErrors.gender ? 'edit-gender-error' : undefined,
+                                onChange: (event) => setEditForm((current) => ({ ...current, gender: event.target.value })),
+                            },
+                                GENDER_OPTIONS.map(([value, label]) => React.createElement('option', { key: value || 'unset', value }, label))
+                            ),
+                            editErrors.gender ? React.createElement('p', { id: 'edit-gender-error', className: 'ui-error' }, editErrors.gender[0]) : null
+                        )
                     ),
 
                     // Restricted fields, shown so the administrator can see the

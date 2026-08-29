@@ -6,6 +6,7 @@ use App\Http\Middleware\ValidateAuthVersion;
 use App\Models\Log;
 use App\Models\Role;
 use App\Models\User;
+use App\Validation\UserValidationRules;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -163,6 +164,72 @@ class ProfileTest extends TestCase
             ->putJson('/api/auth/profile', ['designation' => str_repeat('a', 256)])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('designation');
+    }
+
+    // ─── Gender ──────────────────────────────────────────────────────
+
+    /**
+     * Gender is a code rather than a boolean, and the profile endpoint shares
+     * the accepted set with the administrator endpoints.
+     *
+     * Driven from the constant rather than a hard-coded list, so adding a code
+     * without covering it here is not possible.
+     */
+    public function test_a_user_can_set_their_own_gender(): void
+    {
+        foreach (UserValidationRules::GENDERS as $code) {
+            $user = $this->createUser();
+
+            $this->actingAs($user, 'api');
+            $this->withoutMiddleware(ValidateAuthVersion::class)
+                ->putJson('/api/auth/profile', ['gender' => $code])
+                ->assertOk();
+
+            $this->assertSame($code, $user->fresh()->gender, "Failed for gender code: {$code}");
+        }
+    }
+
+    public function test_gender_can_be_cleared(): void
+    {
+        $user = $this->createUser(['gender' => 'female']);
+
+        $this->actingAs($user, 'api');
+        $this->withoutMiddleware(ValidateAuthVersion::class)
+            ->putJson('/api/auth/profile', ['gender' => null])
+            ->assertOk();
+
+        $this->assertNull($user->fresh()->gender);
+    }
+
+    /**
+     * The column used to be a boolean. Nothing had ever defined which value
+     * meant what, so true and false are no longer accepted at all.
+     */
+    public function test_a_boolean_gender_is_no_longer_accepted(): void
+    {
+        $user = $this->createUser();
+
+        $this->actingAs($user, 'api');
+        $this->withoutMiddleware(ValidateAuthVersion::class)
+            ->putJson('/api/auth/profile', ['gender' => true])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('gender');
+
+        $this->assertNull($user->fresh()->gender);
+    }
+
+    public function test_an_unrecognised_gender_code_is_rejected(): void
+    {
+        $user = $this->createUser();
+
+        $this->actingAs($user, 'api');
+        $this->withoutMiddleware(ValidateAuthVersion::class)
+            // Labels are an interface concern; only the codes are stored.
+            ->putJson('/api/auth/profile', ['gender' => 'Female'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('gender');
+
+        $this->assertNull($user->fresh()->gender);
     }
 
     // ─── Restricted fields ───────────────────────────────────────────

@@ -303,6 +303,103 @@ class UserUpdateTest extends TestCase
             ->assertJsonFragment(['first_name' => 'After']);
     }
 
+    // ─── Date of birth and gender ────────────────────────────────────
+
+    public function test_date_of_birth_and_gender_can_be_set(): void
+    {
+        $admin  = $this->createUserWithPermissions(['users.update']);
+        $target = $this->createUser();
+
+        $this->actingAs($admin, 'api');
+        $this->withoutMiddleware(ValidateAuthVersion::class)
+            ->putJson("/api/users/{$target->user_id}", [
+                'date_of_birth' => '1990-04-17',
+                'gender' => 'non_binary',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.date_of_birth', '1990-04-17')
+            ->assertJsonPath('data.gender', 'non_binary');
+
+        $target->refresh();
+        $this->assertSame('1990-04-17', $target->date_of_birth->format('Y-m-d'));
+        $this->assertSame('non_binary', $target->gender);
+    }
+
+    public function test_a_date_of_birth_in_the_future_is_rejected(): void
+    {
+        $admin  = $this->createUserWithPermissions(['users.update']);
+        $target = $this->createUser();
+
+        $this->actingAs($admin, 'api');
+        $this->withoutMiddleware(ValidateAuthVersion::class)
+            ->putJson("/api/users/{$target->user_id}", [
+                'date_of_birth' => now()->addDay()->format('Y-m-d'),
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('date_of_birth');
+    }
+
+    /**
+     * Only the agreed codes are accepted. The column was a boolean until it
+     * became clear nothing had ever defined which value meant what.
+     */
+    public function test_an_unrecognised_gender_code_is_rejected(): void
+    {
+        $admin  = $this->createUserWithPermissions(['users.update']);
+        $target = $this->createUser();
+
+        $this->actingAs($admin, 'api');
+        $this->withoutMiddleware(ValidateAuthVersion::class)
+            ->putJson("/api/users/{$target->user_id}", ['gender' => 'Female'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('gender');
+
+        $this->assertNull($target->fresh()->gender);
+    }
+
+    public function test_both_fields_can_be_cleared(): void
+    {
+        $admin  = $this->createUserWithPermissions(['users.update']);
+        $target = $this->createUser([
+            'date_of_birth' => '1990-04-17',
+            'gender' => 'female',
+        ]);
+
+        $this->actingAs($admin, 'api');
+        $this->withoutMiddleware(ValidateAuthVersion::class)
+            ->putJson("/api/users/{$target->user_id}", [
+                'date_of_birth' => null,
+                'gender' => null,
+            ])
+            ->assertOk();
+
+        $target->refresh();
+        $this->assertNull($target->date_of_birth);
+        $this->assertNull($target->gender);
+    }
+
+    /**
+     * The dialog sends only changed fields, so an edit that leaves these
+     * alone must not disturb them.
+     */
+    public function test_omitting_them_leaves_existing_values_untouched(): void
+    {
+        $admin  = $this->createUserWithPermissions(['users.update']);
+        $target = $this->createUser([
+            'date_of_birth' => '1990-04-17',
+            'gender' => 'male',
+        ]);
+
+        $this->actingAs($admin, 'api');
+        $this->withoutMiddleware(ValidateAuthVersion::class)
+            ->putJson("/api/users/{$target->user_id}", ['first_name' => 'Renamed'])
+            ->assertOk();
+
+        $target->refresh();
+        $this->assertSame('1990-04-17', $target->date_of_birth->format('Y-m-d'));
+        $this->assertSame('male', $target->gender);
+    }
+
     // ─── Helpers ─────────────────────────────────────────────────────
 
     private function createUser(array $attributes = []): User
