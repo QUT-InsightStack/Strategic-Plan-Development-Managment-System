@@ -25,3 +25,16 @@ export function createUser(data) {
         body: JSON.stringify(data),
     });
 }
+
+/**
+ * Update another user's account details.
+ *
+ * Role and account status are deliberately not accepted here: each has its
+ * own endpoint that applies safeguards this one does not.
+ */
+export function updateUser(userId, data) {
+    return apiRequest(`/api/users/${userId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
+}

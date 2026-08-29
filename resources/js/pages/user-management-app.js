@@ -1,7 +1,7 @@
 import { enforcePageAccess } from '../access/access-guard.js';
 import { PERMISSIONS } from '../access/access-policy.js';
 import { can, getAccessSession } from '../access/access-session.js';
-import { createUser, listRoles, searchUsers, updateUserStatus } from '../api/users-api.js';
+import { createUser, listRoles, searchUsers, updateUser, updateUserStatus } from '../api/users-api.js';
 import { AppDialog } from '../components/AppDialog.js';
 import { TechnicalAdminSidebar } from '../components/TechnicalAdminSidebar.js';
 
@@ -10,6 +10,41 @@ enforcePageAccess();
 const { useEffect, useState } = React;
 const initialFilters = { search: '', role_id: '', status: '' };
 const initialAccount = { first_name: '', last_name: '', email: '', password: '', office: '', role_id: '', status: 'active' };
+
+// Fields an administrator may change here. Role and account status are
+// deliberately absent: each has its own endpoint that applies safeguards this
+// form does not, so they are shown read-only below.
+const initialEdit = {
+    first_name: '',
+    last_name: '',
+    email: '',
+    office: '',
+    department: '',
+    unit: '',
+    position: '',
+};
+
+const EDIT_FIELDS = [
+    ['first_name', 'First name', 'text', true],
+    ['last_name', 'Last name', 'text', false],
+    ['email', 'Email', 'email', true],
+    ['office', 'Office / Agency', 'text', false],
+    ['department', 'Department', 'text', false],
+    ['unit', 'Unit', 'text', false],
+    ['position', 'Position', 'text', false],
+];
+
+function editValuesFrom(user) {
+    return {
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        email: user.email || '',
+        office: user.office || '',
+        department: user.department || '',
+        unit: user.unit || '',
+        position: user.position || '',
+    };
+}
 
 function statusDetails(status) {
     if (status === 'active') return { label: 'Active', badge: 'success' };
@@ -33,6 +68,30 @@ function UserManagementApp() {
     const [createOpen, setCreateOpen] = useState(false);
     const [account, setAccount] = useState(initialAccount);
     const [accountErrors, setAccountErrors] = useState({});
+    const [editOpen, setEditOpen] = useState(false);
+    const [editUser, setEditUser] = useState(null);
+    const [editForm, setEditForm] = useState(initialEdit);
+    const [editOriginal, setEditOriginal] = useState(initialEdit);
+    const [editErrors, setEditErrors] = useState({});
+
+    const editDirty = Object.keys(editForm).some(
+        (field) => editForm[field] !== editOriginal[field]
+    );
+
+    // Warn before a browser-level navigation loses unsaved edits. The dialog's
+    // own Cancel and close buttons confirm separately, since those do not
+    // trigger beforeunload.
+    useEffect(() => {
+        if (!editOpen || !editDirty) return undefined;
+
+        function warn(event) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
+
+        window.addEventListener('beforeunload', warn);
+        return () => window.removeEventListener('beforeunload', warn);
+    }, [editOpen, editDirty]);
 
     async function loadUsers(page = 1, nextFilters = appliedFilters) {
         setLoading(true);
@@ -119,6 +178,69 @@ function UserManagementApp() {
         setCreateOpen(false);
         setAccount(initialAccount);
         setAccountErrors({});
+    }
+
+    function openEditDialog(user) {
+        const values = editValuesFrom(user);
+        setNotice({ type: '', message: '' });
+        setEditErrors({});
+        setEditUser(user);
+        setEditForm(values);
+        setEditOriginal(values);
+        setEditOpen(true);
+    }
+
+    function closeEditDialog() {
+        if (loading) return;
+
+        if (editDirty && !window.confirm('Discard your unsaved changes to this account?')) {
+            return;
+        }
+
+        setEditOpen(false);
+        setEditUser(null);
+        setEditForm(initialEdit);
+        setEditOriginal(initialEdit);
+        setEditErrors({});
+    }
+
+    async function submitEdit(event) {
+        event.preventDefault();
+
+        // Send only what changed, so untouched fields are left alone by the
+        // server's `sometimes` rules.
+        const payload = {};
+        Object.keys(editForm).forEach((field) => {
+            if (editForm[field] !== editOriginal[field]) {
+                payload[field] = editForm[field];
+            }
+        });
+
+        if (Object.keys(payload).length === 0) {
+            setNotice({ type: 'info', message: 'No changes were made.' });
+            setEditOpen(false);
+            return;
+        }
+
+        setLoading(true);
+        setEditErrors({});
+        try {
+            await updateUser(editUser.user_id, payload);
+            setEditOpen(false);
+            setEditUser(null);
+            setEditForm(initialEdit);
+            setEditOriginal(initialEdit);
+            await loadUsers(meta.current_page);
+            setNotice({
+                type: 'success',
+                message: `${`${payload.first_name ?? editOriginal.first_name} ${payload.last_name ?? editOriginal.last_name}`.trim()} was updated successfully.`,
+            });
+        } catch (error) {
+            setEditErrors(error.errors || {});
+            setNotice({ type: 'error', message: error.message });
+        } finally {
+            setLoading(false);
+        }
     }
 
     async function submitAccount(event) {
@@ -218,6 +340,7 @@ function UserManagementApp() {
                                         React.createElement('td', null, user.updated_at ? new Date(user.updated_at).toLocaleDateString() : '—'),
                                         React.createElement('td', null,
                                             canUpdateUsers ? React.createElement('div', { className: 'user-action' },
+                                                React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', disabled: loading, title: `Edit ${user.name}'s details`, onClick: () => openEditDialog(user) }, React.createElement('i', { className: 'bi bi-pencil-fill' }), 'Edit'),
                                                 React.createElement('button', { className: `ui-button ui-button--sm ${user.status === 'active' ? 'ui-button--danger' : 'ui-button--secondary'}`, type: 'button', disabled: actionDisabled, title: reason || `${actionLabel} ${user.name}`, onClick: () => requestStatusChange(user) }, actionLabel),
                                                 reason ? React.createElement('span', { className: 'user-action__reason' }, React.createElement('i', { className: 'bi bi-lock-fill' }), reason) : null
                                             ) : React.createElement('span', { className: 'ui-help' }, 'View only')
@@ -272,6 +395,56 @@ function UserManagementApp() {
                     React.createElement('div', { className: 'account-dialog__actions' },
                         React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', onClick: closeCreateDialog, disabled: loading }, 'Cancel'),
                         React.createElement('button', { className: 'ui-button ui-button--primary', type: 'submit', disabled: loading }, React.createElement('i', { className: 'bi bi-person-check-fill' }), loading ? 'Creating…' : 'Create Account')
+                    )
+                )
+            )
+        ) : null,
+        editOpen && editUser ? React.createElement('div', { className: 'ui-dialog-backdrop', role: 'presentation' },
+            React.createElement('section', { className: 'ui-dialog account-dialog', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'edit-account-title' },
+                React.createElement('div', { className: 'account-dialog__header' },
+                    React.createElement('div', null,
+                        React.createElement('h2', { id: 'edit-account-title' }, 'Edit Account'),
+                        React.createElement('p', null, `Update the details for ${editUser.name || editUser.email}.`)
+                    ),
+                    React.createElement('button', { className: 'account-dialog__close', type: 'button', 'aria-label': 'Close edit account dialog', onClick: closeEditDialog, disabled: loading }, React.createElement('i', { className: 'bi bi-x-lg' }))
+                ),
+                React.createElement('form', { className: 'account-form', onSubmit: submitEdit },
+                    React.createElement('div', { className: 'ui-form-grid ui-form-grid--2' },
+                        EDIT_FIELDS.map(([name, label, type, required]) => React.createElement('div', { key: name, className: `ui-field${editErrors[name] ? ' is-invalid' : ''}` },
+                            React.createElement('label', { className: 'ui-label', htmlFor: `edit-${name}` }, label, required ? React.createElement('span', { className: 'ui-required' }, ' *') : null),
+                            React.createElement('input', {
+                                id: `edit-${name}`,
+                                className: 'ui-input',
+                                type,
+                                value: editForm[name],
+                                required,
+                                maxLength: 255,
+                                onChange: (event) => setEditForm((current) => ({ ...current, [name]: event.target.value })),
+                            }),
+                            editErrors[name] ? React.createElement('p', { className: 'ui-error' }, editErrors[name][0]) : null
+                        ))
+                    ),
+
+                    // Restricted fields, shown so the administrator can see the
+                    // current values and where to change them.
+                    React.createElement('div', { className: 'ui-form-grid ui-form-grid--2 user-edit__restricted' },
+                        React.createElement('div', { className: 'ui-field' },
+                            React.createElement('label', { className: 'ui-label' }, 'Role', React.createElement('i', { className: 'bi bi-lock-fill', 'aria-hidden': 'true' })),
+                            React.createElement('input', { className: 'ui-input', type: 'text', value: editUser.role?.role_name || 'Unassigned', disabled: true, readOnly: true }),
+                            React.createElement('p', { className: 'ui-help' }, 'Change roles using the role assignment action.')
+                        ),
+                        React.createElement('div', { className: 'ui-field' },
+                            React.createElement('label', { className: 'ui-label' }, 'Account status', React.createElement('i', { className: 'bi bi-lock-fill', 'aria-hidden': 'true' })),
+                            React.createElement('input', { className: 'ui-input', type: 'text', value: statusDetails(editUser.status).label, disabled: true, readOnly: true }),
+                            React.createElement('p', { className: 'ui-help' }, 'Change status using the Enable or Disable action.')
+                        )
+                    ),
+
+                    editDirty ? React.createElement('p', { className: 'ui-help' }, React.createElement('i', { className: 'bi bi-exclamation-circle' }), ' You have unsaved changes.') : null,
+
+                    React.createElement('div', { className: 'account-dialog__actions' },
+                        React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', onClick: closeEditDialog, disabled: loading }, 'Cancel'),
+                        React.createElement('button', { className: 'ui-button ui-button--primary', type: 'submit', disabled: loading || !editDirty }, React.createElement('i', { className: 'bi bi-check2' }), loading ? 'Saving…' : 'Save changes')
                     )
                 )
             )
