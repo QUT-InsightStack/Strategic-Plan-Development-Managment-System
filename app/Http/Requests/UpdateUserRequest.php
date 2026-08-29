@@ -30,7 +30,7 @@ class UpdateUserRequest extends ApiFormRequest
             'password'        => ['sometimes', 'string', 'min:8', 'max:128'],
             'mobile'          => ['sometimes', 'nullable', 'string', 'max:20'],
             'address'         => ['sometimes', 'nullable', 'string', 'max:255'],
-            'gender'          => ['sometimes', 'nullable', 'boolean'],
+            'gender'          => UserValidationRules::genderOptional(),
             'date_of_birth'   => ['sometimes', 'nullable', 'date', 'before:today'],
             'profile_picture' => ['sometimes', 'nullable', 'string', 'max:255'],
             'department'      => ['sometimes', 'nullable', 'string', 'max:255'],

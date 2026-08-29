@@ -27,13 +27,39 @@ admin UI sends only the fields the administrator actually changed.
 | `password` | string, min 8, max 128 — hashed by the model on save |
 | `mobile` | nullable, string, max 20 |
 | `address` | nullable, string, max 255 |
-| `gender` | nullable, boolean |
+| `gender` | nullable, one of `female`, `male`, `non_binary`, `prefer_not_to_say` |
 | `date_of_birth` | nullable, date, before today |
 | `profile_picture` | nullable, string, max 255 |
 | `department` | nullable, string, max 255 |
 | `unit` | nullable, string, max 255 |
 | `office` | nullable, string, max 255 |
 | `position` | nullable, string, max 255 |
+
+### Gender
+
+Stored as a code, not a label, so the wording on screen can change without a
+migration. The accepted set lives in
+`App\Validation\UserValidationRules::GENDERS` and must stay in step with
+`GENDER_OPTIONS` in `resources/js/pages/user-management-app.js`.
+
+| Code | Shown as |
+|---|---|
+| `female` | Female |
+| `male` | Male |
+| `non_binary` | Non-binary |
+| `prefer_not_to_say` | Prefer not to say |
+| `null` | Not specified |
+
+This column was a `boolean` until it became clear that nothing in the
+application had ever defined which value meant what — no mapping, no seeder,
+no screen that read or wrote it. Rather than guess, the migration to a string
+clears any pre-existing value. See
+`2026_08_29_000004_change_gender_to_string_on_tblusers_table.php`.
+
+### Date of birth
+
+Sent and returned as `YYYY-MM-DD`. Must be before today. Clearing it sends
+`null` — an empty string is not a valid date and is rejected.
 
 ## Restricted fields
 
@@ -122,8 +148,8 @@ A request that resolves to no change returns 200 and writes no audit row.
 User Management → **Edit** on any row.
 
 - The form is pre-filled with the user's current details.
-- Editable fields: first name, last name, email, mobile, address, office,
-  department, unit, position. Each input's maximum length matches the server
+- Editable fields: first name, last name, email, mobile, date of birth,
+  gender, address, office, department, unit and position. Each input's maximum length matches the server
   rule, so it stops accepting input where the API would reject it.
 - Role and account status are shown read-only with a lock icon and a note
   pointing to the action that changes them.

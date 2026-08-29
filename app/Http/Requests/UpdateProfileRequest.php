@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Validation\UserValidationRules;
 use App\Validation\ValidationAttributes;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -56,7 +57,7 @@ class UpdateProfileRequest extends ApiFormRequest
             ],
             'mobile'          => ['sometimes', 'nullable', 'string', 'max:20'],
             'address'         => ['sometimes', 'nullable', 'string', 'max:255'],
-            'gender'          => ['sometimes', 'nullable', 'boolean'],
+            'gender'          => UserValidationRules::genderOptional(),
             'date_of_birth'   => ['sometimes', 'nullable', 'date', 'before:today'],
             'profile_picture' => ['sometimes', 'nullable', 'string'],
             'designation'     => ['sometimes', 'nullable', 'string', 'max:255'],
