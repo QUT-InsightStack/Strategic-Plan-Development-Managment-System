@@ -10,8 +10,8 @@ const dashboardUrl = '/dashboard';
 const loginUrl = '/login';
 
 const apiConfig = {
-    profileUrl: rootElement?.dataset?.profileUrl || '/api/me',
-    updateUrl: rootElement?.dataset?.updateUrl || '/api/profile',
+    profileUrl: rootElement?.dataset?.profileUrl || '/api/auth/me',
+    updateUrl: rootElement?.dataset?.updateUrl || '/api/auth/profile',
 };
 
 const initialProfile = {
@@ -21,6 +21,7 @@ const initialProfile = {
     email: '',
     mobile: '',
     address: '',
+    designation: '',
     profile_picture: '',
 };
 
@@ -210,6 +211,7 @@ function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
                 email: payload.email || '',
                 mobile: payload.mobile || payload.phone || '',
                 address: payload.address || '',
+                designation: payload.designation || '',
                 profile_picture: payload.profile_picture || '',
             };
 
@@ -257,6 +259,10 @@ function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
             nextErrors.mobile = 'Enter a valid phone number.';
         }
 
+        if (profile.designation && profile.designation.trim().length > 255) {
+            nextErrors.designation = 'Designation must be 255 characters or fewer.';
+        }
+
         setErrors(nextErrors);
         return Object.keys(nextErrors).length === 0;
     }
@@ -284,6 +290,7 @@ function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
                 email: profile.email.trim(),
                 mobile: profile.mobile.trim(),
                 address: profile.address.trim(),
+                designation: profile.designation.trim(),
                 profile_picture: profile.profile_picture,
             }),
         })
@@ -291,14 +298,22 @@ function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
             if (!response.ok) {
                 return response.json().then(data => {
                     if (data.errors && typeof data.errors === 'object') {
-                        setErrors(data.errors);
+                        // Laravel returns each field's errors as an array;
+                        // the form fields expect a single string.
+                        setErrors(Object.fromEntries(
+                            Object.entries(data.errors).map(([field, messages]) => [
+                                field,
+                                Array.isArray(messages) ? messages[0] : messages,
+                            ])
+                        ));
                     }
                     throw new Error(data.message || 'Failed to update profile');
                 });
             }
             return response.json();
         })
-        .then(data => {
+        .then(() => {
+            setErrors({});
             setOriginalProfile(profile);
             setStatus('Profile updated successfully!', 'success');
         })
@@ -375,6 +390,15 @@ return React.createElement(
                         value: profile.email,
                         error: errors.email,
                         onChange: (value) => updateField('email', value),
+                    }),
+
+                    React.createElement(TextField, {
+                        id: 'designation',
+                        label: 'Designation',
+                        icon: 'employee',
+                        value: profile.designation,
+                        error: errors.designation,
+                        onChange: (value) => updateField('designation', value),
                     })
                 )
             ),

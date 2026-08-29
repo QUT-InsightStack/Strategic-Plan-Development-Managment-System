@@ -11,6 +11,8 @@ use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\UpdateProfileRequest;
+use App\Http\Resources\UserResource;
 use App\Models\Log as LogModel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -299,28 +301,42 @@ class AuthController extends Controller
         );
     }
 
-    public function updateProfile(Request $request): JsonResponse
-{
-    $user = Auth::guard('api')->user();
+    /**
+     * Update the authenticated user's own profile.
+     *
+     * The user is resolved from the token, never from request input, so this
+     * endpoint cannot be used to modify another account. Restricted fields
+     * are rejected during validation, and only validated values reach the
+     * model, so role, status and organisational placement are unaffected.
+     */
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
+    {
+        $user = Auth::guard('api')->user();
 
-    $request->validate([
-        'first_name'      => 'required|string|max:255',
-        'last_name'       => 'nullable|string|max:255',
-        'email'           => 'required|email|unique:tblusers,email,' . $user->user_id . ',user_id',
-        'mobile'          => 'nullable|string|max:20',
-        'address'         => 'nullable|string|max:255',
-        'profile_picture' => 'nullable|string',
-    ]);
+        $user->fill($request->validated());
 
-    $user->update($request->only([
-        'first_name', 'last_name', 'email',
-        'mobile', 'address', 'profile_picture',
-    ]));
+        $changed = array_keys($user->getDirty());
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Profile updated successfully.',
-        'data'    => $user->fresh(),
-    ]);
-}
+        if ($changed === []) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No changes were made.',
+                'data'    => new UserResource($user->load('role')),
+            ]);
+        }
+
+        $user->save();
+
+        LogModel::create([
+            'user_id'   => $user->user_id,
+            'operation' => 'Profile updated: ' . implode(', ', $changed),
+            'states'    => 'success',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile updated successfully.',
+            'data'    => new UserResource($user->load('role')),
+        ]);
+    }
 }
