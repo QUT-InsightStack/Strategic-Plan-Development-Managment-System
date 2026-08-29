@@ -122,12 +122,40 @@ A request that resolves to no change returns 200 and writes no audit row.
 User Management → **Edit** on any row.
 
 - The form is pre-filled with the user's current details.
-- Editable fields: first name, last name, email, office, department, unit, position.
+- Editable fields: first name, last name, email, mobile, address, office,
+  department, unit, position. Each input's maximum length matches the server
+  rule, so it stops accepting input where the API would reject it.
 - Role and account status are shown read-only with a lock icon and a note
   pointing to the action that changes them.
 - Save is disabled until something changes, and only changed fields are sent.
 - Closing or cancelling with unsaved changes asks for confirmation; navigating
   away from the page triggers the browser's own warning.
+
+`designation` is not editable here. It is the user's own self-managed field
+(see `docs/profile-fields.md`); `position` is the administrator-controlled
+equivalent. Sending `designation` to this endpoint is ignored rather than
+rejected, since it carries no validation rule.
+
+### Errors
+
+Validation errors appear under the field they belong to, with `aria-invalid`
+and `aria-describedby` linking the input to its message.
+
+Failures that belong to the request rather than a field — 403 on a protected
+account, 404 for a deleted user — appear as a banner at the top of the form,
+marked `role="alert"`. The dialog stays open so entered values are not lost.
+
+### Keyboard and assistive technology
+
+- Focus moves to the first editable field when the dialog opens.
+- Tab and Shift+Tab cycle within the dialog rather than reaching the table
+  behind the overlay.
+- Escape closes the dialog, applying the same unsaved-changes confirmation as
+  Cancel.
+- Focus returns to the row's Edit button on close.
+
+This behaviour lives in `resources/js/components/use-dialog-behaviour.js` and
+is shared with the Create Account dialog on the same page.
 
 ## Tests
 
