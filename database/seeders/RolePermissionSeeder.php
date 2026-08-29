@@ -33,6 +33,7 @@ class RolePermissionSeeder extends Seeder
             'permissions.view',
             'permissions.manage',
             'logs.view',
+            'login_history.view',
         ];
 
         $permissions = Permission::query()

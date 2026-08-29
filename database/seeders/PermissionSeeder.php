@@ -71,6 +71,12 @@ class PermissionSeeder extends Seeder
                 'module' => 'permissions',
             ],
             [
+                'permission_name' => 'View Login History',
+                'description' => 'Allows viewing user login-history records.',
+                'code' => 'login_history.view',
+                'module' => 'login_history',
+            ],
+            [
                 'permission_name' => 'View Strategic Records',
                 'description' => 'Allows viewing strategic records and plan details.',
                 'code' => 'strategic_records.view',

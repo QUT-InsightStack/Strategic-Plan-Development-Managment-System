@@ -11,6 +11,7 @@ use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
+use App\Services\LoginHistoryRecorder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,6 +21,11 @@ class AuthController extends Controller
 {
     // ─── Login ───────────────────────────────────────────────────────
 
+    public function __construct(
+        private readonly LoginHistoryRecorder $loginHistoryRecorder
+    ) {
+    }
+
     public function login(LoginRequest $request): JsonResponse
     {
         $credentials = $request->only('email', 'password');
@@ -27,17 +33,46 @@ class AuthController extends Controller
         $token = Auth::guard('api')->attempt($credentials);
 
         if (! $token) {
-            // generic message — never reveal whether the email exists
+            $this->loginHistoryRecorder->recordFailedLogin(
+                (string) $request->validated('email'),
+                $request
+            );
+
+            /*
+            * Keep the response generic. Never reveal whether the submitted
+            * email belongs to an existing account.
+            */
             return response()->json([
                 'success' => false,
                 'message' => 'The provided credentials are incorrect.',
             ], 401);
         }
 
+        $user = Auth::guard('api')->user();
+
+        if (! $user instanceof User) {
+            /*
+            * this should not ordinarily happen after a successful attempt.
+            * Invalidate the newly generated token if authentication state
+            * cannot be resolved.
+            */
+            Auth::guard('api')->logout();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to complete authentication.',
+            ], 401)->withCookie($this->forgetAccessCookie());
+        }
+
+        $this->loginHistoryRecorder->recordSuccessfulLogin(
+            $user,
+            $request
+        );
+
         return response()->json([
             'success' => true,
             'message' => 'Logged in successfully.',
-            'token'   => $token,
+            'token' => $token,
         ])->withCookie($this->makeAccessCookie($token));
     }
 
