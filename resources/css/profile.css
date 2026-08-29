@@ -1075,3 +1075,50 @@ select.crud-input[multiple] {
     color: var(--muted);
     font-size: 13px;
 }
+
+/* ── Photo upload ────────────────────────────────────────────────── */
+
+.photo-hint,
+.photo-error {
+    margin: 10px 0 0;
+    font-size: 12px;
+    text-align: center;
+}
+
+.photo-hint {
+    color: var(--muted-light);
+}
+
+.photo-error {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.photo-remove {
+    display: block;
+    margin: 12px auto 0;
+    border: 0;
+    padding: 4px 10px;
+    color: var(--danger);
+    background: none;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.photo-remove:disabled,
+.upload-action:disabled,
+.upload-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* Sits directly under the actions, so the state of the form is visible
+   without having to compare fields against what was loaded. */
+.form-dirty-note {
+    margin: 10px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: right;
+}

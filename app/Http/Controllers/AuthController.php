@@ -12,9 +12,11 @@ use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\UpdateProfileRequest;
+use App\Http\Requests\UploadProfilePhotoRequest;
 use App\Http\Resources\UserResource;
 use App\Models\Log as LogModel;
 use App\Services\LoginHistoryService;
+use App\Services\ProfilePhotoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,8 +26,10 @@ class AuthController extends Controller
 {
     // ─── Login ───────────────────────────────────────────────────────
 
-    public function __construct(private LoginHistoryService $loginHistory)
-    {
+    public function __construct(
+        private LoginHistoryService $loginHistory,
+        private ProfilePhotoService $profilePhotos
+    ) {
     }
 
     public function login(LoginRequest $request): JsonResponse
@@ -347,6 +351,45 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Profile updated successfully.',
+            'data'    => new UserResource($user->load('role')),
+        ]);
+    }
+
+    // ─── Profile photo ───────────────────────────────────────────────
+
+    /**
+     * Replace the signed-in user's photo.
+     *
+     * Separate from updateProfile because this takes a file rather than JSON.
+     * The photo is stored on disk and only its path is written to the user
+     * record, which is why `profile_picture` is rejected by the profile
+     * endpoint: sending the image itself never worked, as the column is far
+     * too small to hold one.
+     */
+    public function uploadPhoto(UploadProfilePhotoRequest $request): JsonResponse
+    {
+        $user = $this->profilePhotos->store(
+            Auth::guard('api')->user(),
+            $request->file('photo')
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Photo updated successfully.',
+            'data'    => new UserResource($user->load('role')),
+        ]);
+    }
+
+    /**
+     * Remove the signed-in user's photo, reverting to the default avatar.
+     */
+    public function removePhoto(): JsonResponse
+    {
+        $user = $this->profilePhotos->remove(Auth::guard('api')->user());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Photo removed successfully.',
             'data'    => new UserResource($user->load('role')),
         ]);
     }

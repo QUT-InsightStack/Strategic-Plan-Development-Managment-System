@@ -3,6 +3,7 @@ import { BrandLogo } from './brand-logo.js';
 import { logout, guardAgainstBackNavigation } from './auth-session.js';
 import { LogoutButton } from './components/LogoutButton.js';
 import { myLoginHistory } from './api/login-history-api.js';
+import { PHOTO_ACCEPT, checkPhoto, removeProfilePhoto, uploadProfilePhoto } from './api/profile-photo-api.js';
 
 const { useRef, useState, useEffect } = React;
 
@@ -14,6 +15,10 @@ const apiConfig = {
     profileUrl: rootElement?.dataset?.profileUrl || '/api/auth/me',
     updateUrl: rootElement?.dataset?.updateUrl || '/api/auth/profile',
 };
+
+// The fields this form owns. profile_picture is deliberately absent: it is a
+// file, handled by the photo endpoint, and the profile endpoint now rejects it.
+const EDITABLE_FIELDS = ['first_name', 'last_name', 'email', 'mobile', 'address', 'designation'];
 
 const initialProfile = {
     user_id: '',
@@ -79,27 +84,65 @@ function Icon({ type }) {
     );
 }
 
-function ProfileSideCard({ avatar, onAvatarSelect }) {
+function ProfileSideCard({ avatar, onAvatarSelect, onMessage }) {
     const fileInputRef = useRef(null);
+    const [busy, setBusy] = useState(false);
+    const [photoError, setPhotoError] = useState('');
+
+    const hasPhoto = Boolean(avatar) && avatar !== defaultAvatar;
 
     function openFilePicker() {
         fileInputRef.current.click();
     }
 
-    function handleFileChange(event) {
+    async function handleFileChange(event) {
         const file = event.target.files[0];
+
+        // Cleared straight away so choosing the same file twice — after a
+        // failure, say — still fires a change event.
+        event.target.value = '';
 
         if (!file) {
             return;
         }
 
-        // For now, just create a data URL. In production, you'd upload to server
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const dataUrl = e.target.result;
-            onAvatarSelect(dataUrl);
-        };
-        reader.readAsDataURL(file);
+        const problem = checkPhoto(file);
+        if (problem) {
+            setPhotoError(problem);
+            return;
+        }
+
+        setPhotoError('');
+        setBusy(true);
+
+        try {
+            const payload = await uploadProfilePhoto(file);
+            onAvatarSelect(payload.data?.profile_picture || defaultAvatar);
+            onMessage('Photo updated successfully.', 'success');
+        } catch (error) {
+            setPhotoError(error.message);
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    async function handleRemove() {
+        if (!window.confirm('Remove your profile photo?')) {
+            return;
+        }
+
+        setPhotoError('');
+        setBusy(true);
+
+        try {
+            await removeProfilePhoto();
+            onAvatarSelect(defaultAvatar);
+            onMessage('Photo removed successfully.', 'success');
+        } catch (error) {
+            setPhotoError(error.message);
+        } finally {
+            setBusy(false);
+        }
     }
 
     return React.createElement(
@@ -113,16 +156,22 @@ function ProfileSideCard({ avatar, onAvatarSelect }) {
         React.createElement(
             'div',
             { className: 'upload-row' },
-            React.createElement('button', { className: 'upload-button', type: 'button', onClick: openFilePicker, 'aria-label': 'Upload profile photo' }, '+'),
-            React.createElement('button', { className: 'upload-action', type: 'button', onClick: openFilePicker }, 'Update your photo'),
+            React.createElement('button', { className: 'upload-button', type: 'button', onClick: openFilePicker, disabled: busy, 'aria-label': 'Upload profile photo' }, '+'),
+            React.createElement('button', { className: 'upload-action', type: 'button', onClick: openFilePicker, disabled: busy }, busy ? 'Uploading…' : 'Update your photo'),
             React.createElement('input', {
                 ref: fileInputRef,
                 type: 'file',
-                accept: 'image/*',
+                accept: PHOTO_ACCEPT,
                 hidden: true,
                 onChange: handleFileChange,
             })
         ),
+        hasPhoto
+            ? React.createElement('button', { className: 'photo-remove', type: 'button', onClick: handleRemove, disabled: busy }, 'Remove photo')
+            : null,
+        photoError
+            ? React.createElement('p', { className: 'photo-error', role: 'alert' }, photoError)
+            : React.createElement('p', { className: 'photo-hint' }, 'JPG, PNG or WebP, up to 2 MB.'),
     React.createElement('p', { className: 'side-copy' }, 'Manage your contact details', React.createElement('br'), 'and account information'),
 
 React.createElement(
@@ -159,28 +208,46 @@ function TextField({ id, label, value, error, type = 'text', icon, helperText, o
             type,
             value,
             disabled,
+            // Ties the message below to the input, so a screen reader reads
+            // the reason rather than just announcing the field as invalid.
+            'aria-invalid': error ? 'true' : undefined,
+            'aria-describedby': error ? `${id}-error` : undefined,
             onChange: (event) => onChange(event.target.value),
         }),
-        React.createElement('p', { className: 'field-error' }, error || '')
+        error
+            ? React.createElement('p', { id: `${id}-error`, className: 'field-error', role: 'alert' }, error)
+            : null
     );
 }
 
-function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
+function ProfileForm({ status, setStatus, onAvatarChange }) {
     const [profile, setProfile] = useState(initialProfile);
     const [originalProfile, setOriginalProfile] = useState(initialProfile);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+
+    // The photo is no longer part of this form. It is uploaded as a file by
+    // the side card and saved by its own endpoint, so nothing here has to
+    // keep `profile_picture` in step with the avatar.
+    const dirty = EDITABLE_FIELDS.some((field) => profile[field] !== originalProfile[field]);
 
     useEffect(() => {
         loadProfile();
     }, []);
 
+    // Unsaved edits are easy to lose on a page with a sidebar full of links.
     useEffect(() => {
-        // Sync profile_picture with avatar when avatar changes (e.g., from image upload)
-        if (avatar && avatar !== defaultAvatar && avatar !== profile.profile_picture) {
-            updateField('profile_picture', avatar);
+        if (!dirty) return undefined;
+
+        function warn(event) {
+            event.preventDefault();
+            event.returnValue = '';
         }
-    }, [avatar]);
+
+        window.addEventListener('beforeunload', warn);
+        return () => window.removeEventListener('beforeunload', warn);
+    }, [dirty]);
 
     function loadProfile() {
         fetch(apiConfig.profileUrl, {
@@ -271,11 +338,16 @@ function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
     function handleSave(event) {
         event.preventDefault();
 
+        if (saving) {
+            return;
+        }
+
         if (!validate()) {
             setStatus('Please check the highlighted fields and try again.', 'error');
             return;
         }
 
+        setSaving(true);
         setStatus('Saving...', 'info');
 
         fetch(apiConfig.updateUrl, {
@@ -285,6 +357,8 @@ function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
             },
+            // profile_picture is not sent: the endpoint rejects it, and the
+            // photo has already been saved by its own upload.
             body: JSON.stringify({
                 first_name: profile.first_name.trim(),
                 last_name: profile.last_name.trim(),
@@ -292,7 +366,6 @@ function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
                 mobile: profile.mobile.trim(),
                 address: profile.address.trim(),
                 designation: profile.designation.trim(),
-                profile_picture: profile.profile_picture,
             }),
         })
         .then(response => {
@@ -321,10 +394,23 @@ function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
         .catch(error => {
             console.error('Error updating profile:', error);
             setStatus(error.message || 'Failed to update profile.', 'error');
+        })
+        .finally(() => {
+            setSaving(false);
         });
     }
 
     function handleCancel() {
+        if (!dirty) {
+            setErrors({});
+            setStatus('There were no changes to discard.', 'info');
+            return;
+        }
+
+        if (!window.confirm('Discard your unsaved changes?')) {
+            return;
+        }
+
         setProfile(originalProfile);
         setErrors({});
         setStatus('Changes were cancelled.', 'info');
@@ -464,6 +550,7 @@ return React.createElement(
                 {
                     className: 'action-button secondary',
                     type: 'button',
+                    disabled: saving,
                     onClick: handleCancel,
                 },
                 'Reset'
@@ -474,10 +561,17 @@ return React.createElement(
                 {
                     className: 'action-button primary',
                     type: 'submit',
+                    // Nothing to save until something actually changes, which
+                    // also stops a second submit while the first is in flight.
+                    disabled: saving || !dirty,
                 },
-                'Save Changes'
+                saving ? 'Saving…' : 'Save Changes'
             )
         ),
+
+        dirty
+            ? React.createElement('p', { className: 'form-dirty-note' }, 'You have unsaved changes.')
+            : null,
 
         // STATUS MESSAGE
         React.createElement(
@@ -485,6 +579,7 @@ return React.createElement(
             {
                 className: `form-status modern-status is-${status.type}`,
                 role: 'status',
+                'aria-live': 'polite',
             },
             status.message
         )
@@ -621,11 +716,11 @@ function ProfileApp() {
                 React.createElement(
                     'div',
                     { className: 'profile-layout' },
-                    React.createElement(ProfileSideCard, { avatar, onAvatarSelect: handleAvatarSelect }),
+                    React.createElement(ProfileSideCard, { avatar, onAvatarSelect: handleAvatarSelect, onMessage: setStatus }),
                     React.createElement(
                         'div',
                         { className: 'profile-column' },
-                        React.createElement(ProfileForm, { status, setStatus, avatar, onAvatarChange: setAvatar }),
+                        React.createElement(ProfileForm, { status, setStatus, onAvatarChange: setAvatar }),
                         React.createElement(RecentSignIns, null)
                     )
                 )

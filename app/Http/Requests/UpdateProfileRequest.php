@@ -16,7 +16,7 @@ use Illuminate\Validation\Rule;
  *
  * Fields fall into two groups:
  *
- *  - Self-service: name, contact details, designation and profile picture.
+ *  - Self-service: name, contact details and designation.
  *  - Restricted: role, status, password and organisational placement
  *    (department, unit, office, position). These are administrator-controlled
  *    and are rejected outright rather than silently ignored, so a caller
@@ -38,6 +38,10 @@ class UpdateProfileRequest extends ApiFormRequest
         'office',
         'position',
         'email_verified_at',
+        // The photo is a file, not a string. It has its own endpoint that
+        // stores it on disk and writes back a path; sending an image here
+        // never worked, because the column is far too small to hold one.
+        'profile_picture',
     ];
 
     public function rules(): array
@@ -58,7 +62,6 @@ class UpdateProfileRequest extends ApiFormRequest
             'address'         => ['sometimes', 'nullable', 'string', 'max:255'],
             'gender'          => ['sometimes', 'nullable', 'boolean'],
             'date_of_birth'   => ['sometimes', 'nullable', 'date', 'before:today'],
-            'profile_picture' => ['sometimes', 'nullable', 'string'],
             'designation'     => ['sometimes', 'nullable', 'string', 'max:255'],
         ];
 
@@ -81,6 +84,7 @@ class UpdateProfileRequest extends ApiFormRequest
             'unit.missing'       => 'Unit is maintained by an administrator.',
             'office.missing'     => 'Office is maintained by an administrator.',
             'position.missing'   => 'Position is maintained by an administrator.',
+            'profile_picture.missing' => 'Use the photo upload to change your picture.',
             'user_id.missing'    => 'You can only update your own profile.',
         ];
     }
