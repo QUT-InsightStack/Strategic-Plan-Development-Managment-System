@@ -986,3 +986,92 @@ select.crud-input[multiple] {
 .password-requirements li.is-valid {
     font-weight: 600;
 }
+
+/* ── Recent sign-ins ─────────────────────────────────────────────────
+   Sits under the profile form in the right-hand column, so someone can
+   check where their account has been used without leaving the page. */
+
+.profile-column {
+    display: grid;
+    gap: 24px;
+    min-width: 0;
+}
+
+.sign-ins {
+    padding: 22px 28px 24px;
+}
+
+.sign-ins__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 6px;
+    color: var(--primary);
+    font-size: 18px;
+}
+
+.sign-ins__intro {
+    margin: 0 0 16px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.sign-ins__alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0 0 16px;
+    border: 1px solid var(--danger);
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: var(--danger);
+    background: var(--danger-soft);
+    font-size: 13px;
+}
+
+.sign-ins__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sign-ins__item {
+    display: grid;
+    gap: 2px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.sign-ins__item:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+
+.sign-ins__when {
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.sign-ins__meta {
+    color: var(--muted);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.sign-ins__failed {
+    justify-self: start;
+    margin-top: 4px;
+    border-radius: 999px;
+    padding: 2px 8px;
+    color: var(--danger);
+    background: var(--danger-soft);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.sign-ins__empty {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+}
