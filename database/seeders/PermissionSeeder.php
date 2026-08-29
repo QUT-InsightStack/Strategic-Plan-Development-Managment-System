@@ -232,6 +232,28 @@ class PermissionSeeder extends Seeder
                 'code' => 'pdp_chapters.manage',
                 'module' => 'pdp_chapters',
             ],
+            // Kept separate from one another on purpose: a backup file holds
+            // every user record and password hash, so being able to trigger
+            // one is not the same as being allowed to take a copy off the
+            // server.
+            [
+                'permission_name' => 'View Backups',
+                'description' => 'Allows viewing the list of manual database backups.',
+                'code' => 'backups.view',
+                'module' => 'backups',
+            ],
+            [
+                'permission_name' => 'Create Backups',
+                'description' => 'Allows running a manual database backup.',
+                'code' => 'backups.create',
+                'module' => 'backups',
+            ],
+            [
+                'permission_name' => 'Download Backups',
+                'description' => 'Allows downloading a database backup file, which contains all system data.',
+                'code' => 'backups.download',
+                'module' => 'backups',
+            ],
         ];
 
         foreach ($permissions as $permission) {
