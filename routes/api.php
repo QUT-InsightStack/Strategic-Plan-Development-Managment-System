@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\FoundationsController;
 use App\Http\Controllers\LinkController;
 use App\Http\Controllers\LogController;
@@ -83,6 +84,28 @@ Route::middleware(['auth:api','auth.version',])->prefix('users')->group(function
     Route::delete('{user}', [UserController::class, 'destroy'])
         ->whereNumber('user')
         ->middleware('permission:users.delete');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Manual database backups
+|--------------------------------------------------------------------------
+|
+| A backup contains every user record and password hash in the system, so
+| creating one, listing them and downloading one are three separate
+| permissions. Downloads are audited by BackupService.
+|
+*/
+Route::middleware(['auth:api', 'auth.version'])->prefix('backups')->group(function () {
+    Route::get('', [BackupController::class, 'index'])
+        ->middleware('permission:backups.view');
+
+    Route::post('', [BackupController::class, 'store'])
+        ->middleware('permission:backups.create');
+
+    Route::get('{backup}/download', [BackupController::class, 'download'])
+        ->whereNumber('backup')
+        ->middleware('permission:backups.download');
 });
 
 /*
