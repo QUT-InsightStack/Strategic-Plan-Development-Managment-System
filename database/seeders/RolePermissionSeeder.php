@@ -32,6 +32,7 @@ class RolePermissionSeeder extends Seeder
             'roles.assign_protected',
             'permissions.view',
             'permissions.manage',
+            'logs.view',
         ];
 
         $permissions = Permission::query()

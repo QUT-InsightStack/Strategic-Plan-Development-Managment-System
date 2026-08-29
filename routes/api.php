@@ -212,13 +212,32 @@ Route::middleware(['auth:api','auth.version',])->group(function () {
         RelationController::class
     );
 
-    Route::apiResource(
+    Route::get(
         'logs',
-        LogController::class
-    );
-
+        [LogController::class, 'index']
+    )->middleware('permission:logs.view');
+    
+    Route::get(
+        'logs/{log}',
+        [LogController::class, 'show']
+    )
+        ->whereNumber('log')
+        ->middleware('permission:logs.view');
+    
     Route::apiResource(
         'plan-core-values',
         LinkController::class
     );
 });
+
+
+
+
+
+
+
+
+
+
+
+
