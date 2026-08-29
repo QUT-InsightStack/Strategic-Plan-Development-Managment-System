@@ -45,6 +45,10 @@ Route::post('auth/logout', [AuthController::class, 'logout']);
 Route::middleware(['auth:api', 'auth.version'])->group(function () {
     Route::get('auth/me',     [AuthController::class, 'me']);
     Route::put('auth/profile',       [AuthController::class, 'updateProfile']);
+
+    // Takes a file rather than JSON, so it cannot go through updateProfile.
+    Route::post('auth/profile/photo', [AuthController::class, 'uploadPhoto']);
+    Route::delete('auth/profile/photo', [AuthController::class, 'removePhoto']);
 });
 
 /*
