@@ -20,11 +20,22 @@ function EditStrategicPlanApp() {
         getStrategicPlan(planId).then((payload) => setPlan(payload.data)).catch((error) => setStatus({ type: 'error', message: error.message })).finally(() => setLoading(false));
     }, []);
 
-    async function submit(data) {
+  async function submit(data, goNext = false) {
         setSubmitting(true); setErrors({}); setStatus({ type: 'info', message: 'Saving changes…' });
         try {
             await updateStrategicPlan(planId, data);
-            window.sessionStorage.setItem('planSuccessMessage', 'Strategic plan updated successfully.');
+
+            if (goNext) {
+                window.location.href =
+                    `/strategic-plans/${planId}/objectives`;
+                return;
+            }
+
+            window.sessionStorage.setItem(
+                'planSuccessMessage',
+                'Strategic plan updated successfully.'
+            );
+
             window.location.href = '/strategic-plans';
         } catch (error) { setErrors(error.errors || {}); setStatus({ type: 'error', message: error.message }); }
         finally { setSubmitting(false); }

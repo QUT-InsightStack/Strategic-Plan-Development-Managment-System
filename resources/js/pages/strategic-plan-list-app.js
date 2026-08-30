@@ -170,7 +170,30 @@ function StrategicPlanListApp() {
                         React.createElement('td', null, creatorName(plan)), React.createElement('td', null, plan.creator?.department || 'Pending DB field'),
                         React.createElement('td', null, plan.updated_at ? new Date(plan.updated_at).toLocaleDateString() : '—'),
                         React.createElement('td', { className: 'plans-actions-cell' }, canManagePlans ? React.createElement('div', { className: 'ui-table__actions' },
-                            plan.status !== 'archived' ? React.createElement('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: `/strategic-plans/${plan.record_id}/edit`, 'aria-label': `Update ${plan.title}` }, React.createElement('i', { className: 'bi bi-pencil' }), 'Update') : null,
+                            plan.status !== 'archived'
+    ? React.createElement(
+        'a',
+        {
+            className:
+                'ui-button ui-button--secondary ui-button--sm',
+            href:
+                `/strategic-plans/${plan.record_id}/edit`,
+            'aria-label':
+                plan.status === 'draft'
+                    ? `Continue ${plan.title}`
+                    : `Update ${plan.title}`,
+        },
+        React.createElement('i', {
+            className:
+                plan.status === 'draft'
+                    ? 'bi bi-arrow-right-circle'
+                    : 'bi bi-pencil',
+        }),
+        plan.status === 'draft'
+            ? 'Continue Plan'
+            : 'Update'
+    )
+    : null,
                             ['finished', 'archived'].includes(plan.status) ? React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => requestStatusChange(plan), 'aria-label': `${plan.status === 'archived' ? 'Restore' : 'Archive'} ${plan.title}` }, React.createElement('i', { className: `bi ${plan.status === 'archived' ? 'bi-arrow-counterclockwise' : 'bi-archive'}` }), plan.status === 'archived' ? 'Restore' : 'Archive') : null,
                             React.createElement('button', { className: 'ui-button ui-button--danger ui-button--sm', type: 'button', onClick: () => requestDelete(plan), 'aria-label': `Delete ${plan.title}` }, React.createElement('i', { className: 'bi bi-trash3' }), 'Delete')
                         ) : React.createElement('span', { className: 'ui-help' }, 'View only'))

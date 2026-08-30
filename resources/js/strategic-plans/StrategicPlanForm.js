@@ -40,9 +40,20 @@ export function StrategicPlanForm({ initialData = null, mode = 'create', onSubmi
         if (!initialData) return;
         setForm({
             ...emptyForm,
-            title: initialData.title || '', level: initialData.level || 'strategic_plan', description: initialData.description || '',
-            mission: initialData.missionFoundation?.content || initialData.mission_foundation?.content || '',
-            vision: initialData.visionFoundation?.content || initialData.vision_foundation?.content || '',
+            title: initialData.title || '',
+            level: initialData.level || 'strategic_plan',
+            planning_start_date: initialData.planning_start_date || '',
+            planning_end_date: initialData.planning_end_date || '',
+            department_agency: initialData.department_agency || '',
+            description: initialData.description || '',
+            mission:
+                initialData.missionFoundation?.content ||
+                initialData.mission_foundation?.content ||
+                '',
+            vision:
+                initialData.visionFoundation?.content ||
+                initialData.vision_foundation?.content ||
+                '',
         });
         setCoreValues((initialData.coreValues || initialData.core_values || []).map((value) => value.content || value));
     }, [initialData]);
@@ -71,6 +82,10 @@ export function StrategicPlanForm({ initialData = null, mode = 'create', onSubmi
         if (!validate(status)) return;
         onSubmit({ ...form, title: form.title.trim(), mission: form.mission.trim(), vision: form.vision.trim(), description: form.description.trim() || null, department_agency: form.department_agency.trim() || null, core_values: coreValues, status }, goNext);
     }
+const saveStatus =
+    mode === 'edit'
+        ? initialData?.status || 'draft'
+        : 'draft';
 
     return React.createElement('div', { className: 'create-plan-layout' },
         React.createElement('form', { className: 'plan-form-card', onSubmit: (event) => event.preventDefault(), noValidate: true },
@@ -91,7 +106,54 @@ export function StrategicPlanForm({ initialData = null, mode = 'create', onSubmi
                     errors.core_values ? React.createElement('p', { className: 'ui-error', role: 'alert' }, Array.isArray(errors.core_values) ? errors.core_values[0] : errors.core_values) : null)
                 ),
             React.createElement('section', { className: 'plan-section' }, React.createElement('h2', null, React.createElement('span', null, '3.'), ' Description/Notes'), React.createElement(TextArea, { label: 'Description or notes', name: 'description', value: form.description, onChange: updateField, error: errors.description, placeholder: 'Input description or notes for this plan' })),
-            React.createElement('div', { className: 'plan-form-actions' }, React.createElement('a', { className: 'ui-button ui-button--secondary', href: '/strategic-plans' }, 'Cancel'), mode === 'create' ? React.createElement('button', { type: 'button', className: 'ui-button ui-button--secondary', onClick: () => submit('draft'), disabled: submitting }, 'Save as Draft') : null, React.createElement('button', { type: 'button', className: 'ui-button ui-button--primary', onClick: () => submit('draft', mode === 'create'), disabled: submitting }, mode === 'create' ? 'Next: Add Objectives' : 'Save Changes'))
+            React.createElement(
+    'div',
+    { className: 'plan-form-actions' },
+
+    React.createElement(
+        'a',
+        {
+            className: 'ui-button ui-button--secondary',
+            href: '/strategic-plans',
+        },
+        'Cancel'
+    ),
+
+    mode === 'create'
+        ? React.createElement(
+            'button',
+            {
+                type: 'button',
+                className: 'ui-button ui-button--secondary',
+                onClick: () => submit('draft', false),
+                disabled: submitting,
+            },
+            'Save as Draft'
+        )
+        : React.createElement(
+            'button',
+            {
+                type: 'button',
+                className: 'ui-button ui-button--secondary',
+                onClick: () => submit(saveStatus, false),
+                disabled: submitting,
+            },
+            'Save Changes'
+        ),
+
+    React.createElement(
+        'button',
+        {
+            type: 'button',
+            className: 'ui-button ui-button--primary',
+            onClick: () => submit(saveStatus, true),
+            disabled: submitting,
+        },
+        mode === 'create'
+            ? 'Next: Add Objectives'
+            : 'Save & Continue: Objectives'
+    )
+)
         ), React.createElement(PlanStructurePanel)
     );
 }
