@@ -29,6 +29,10 @@ Route::post('auth/login', [AuthController::class, 'login'])
 
 // Token refresh is handled inside AuthController, including expired tokens.
 Route::post('auth/refresh', [AuthController::class, 'refresh']);
+Route::post('forgot-password', [AuthController::class, 'forgotPassword'])
+    ->middleware('throttle:5,1');
+Route::post('reset-password', [AuthController::class, 'resetPassword'])
+    ->middleware('throttle:5,1');
 
 /*
 |--------------------------------------------------------------------------
@@ -45,6 +49,7 @@ Route::post('auth/logout', [AuthController::class, 'logout']);
 Route::middleware(['auth:api', 'auth.version'])->group(function () {
     Route::get('auth/me',     [AuthController::class, 'me']);
     Route::put('auth/profile',       [AuthController::class, 'updateProfile']);
+    Route::put('change-password', [AuthController::class, 'changePassword']);
 
     // Takes a file rather than JSON, so it cannot go through updateProfile.
     Route::post('auth/profile/photo', [AuthController::class, 'uploadPhoto']);
@@ -128,6 +133,10 @@ Route::middleware(['auth:api', 'auth.version'])->prefix('backups')->group(functi
     Route::get('{backup}/download', [BackupController::class, 'download'])
         ->whereNumber('backup')
         ->middleware('permission:backups.download');
+
+    Route::post('{backup}/restore', [BackupController::class, 'restore'])
+        ->whereNumber('backup')
+        ->middleware('permission:backups.restore');
 });
 
 /*

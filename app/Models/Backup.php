@@ -38,4 +38,9 @@ class Backup extends Model
     {
         return $this->status === 'completed';
     }
+
+    public function isRestorable(): bool
+    {
+        return $this->status === 'completed';
+    }
 }

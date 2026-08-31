@@ -18,6 +18,7 @@ class BackupResource extends JsonResource
             'status' => $this->status,
             'error_message' => $this->error_message,
             'downloadable' => $this->isDownloadable(),
+            'restorable' => $this->isRestorable(),
 
             'created_by' => $this->whenLoaded('creator', function (): ?array {
                 if (! $this->creator) {

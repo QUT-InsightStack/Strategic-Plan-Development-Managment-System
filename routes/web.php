@@ -7,6 +7,12 @@ Route::redirect('/', '/login');
 
 Route::view('/login', 'pages.login')->name('login');
 Route::view('/forgot-password', 'pages.forgot-password')->name('forgot-password');
+Route::get('/reset-password/{token}', function (string $token, Request $request) {
+    return view('pages.reset-password', [
+        'token' => $token,
+        'email' => (string) $request->query('email', ''),
+    ]);
+})->name('password.reset');
 Route::view('/dashboard', 'pages.dashboard')->name('dashboard');
 Route::view('/profile', 'pages.profile')->name('profile');
 Route::view('/change-password', 'pages.change-password')->name('change-password');

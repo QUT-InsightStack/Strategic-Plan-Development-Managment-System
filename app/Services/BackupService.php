@@ -6,6 +6,8 @@ use App\Models\Backup;
 use App\Models\Log;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log as SystemLog;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -125,6 +127,58 @@ class BackupService
         $this->audit($actor, 'backup.downloaded', $backup, 'success');
     }
 
+    /**
+     * Restore the database from a completed backup file.
+     *
+     * This is intentionally restricted to a deliberate manual action: it
+     * replaces the current database contents with the selected backup and then
+     * invalidates every active JWT session, because any token issued before
+     * the restore was based on a different database state.
+     */
+    public function restore(User $actor, Backup $backup): void
+    {
+        if (! $backup->isRestorable()) {
+            throw new RuntimeException('Only completed backups can be restored.');
+        }
+
+        $path = $this->pathFor($backup);
+        if ($path === null) {
+            throw new RuntimeException('This backup file is no longer available.');
+        }
+
+        $connection = config('database.default');
+        $driver = config("database.connections.{$connection}.driver");
+
+        if ($backup->driver !== (string) $driver) {
+            throw new RuntimeException('This backup was created for a different database driver and cannot be restored here.');
+        }
+
+        match ($driver) {
+            'mysql', 'mariadb' => $this->restoreMysql($connection, $path),
+            'sqlite' => $this->restoreSqlite($connection, $path),
+            default => throw new RuntimeException(
+                "Restore is not supported for the {$driver} database driver."
+            ),
+        };
+
+        $this->reconnectDefaultConnection($connection);
+
+        User::query()->increment('auth_version');
+
+        $restoredActor = User::query()->find($actor->user_id);
+
+        if ($restoredActor) {
+            $this->audit($restoredActor, 'backup.restored', $backup, 'success');
+            return;
+        }
+
+        SystemLog::warning('Backup restored but the acting user does not exist in the restored database.', [
+            'restored_backup_id' => $backup->backup_id,
+            'restored_filename' => $backup->filename,
+            'actor_user_id' => $actor->user_id,
+        ]);
+    }
+
     private function dumpMysql(string $connection, string $path): void
     {
         $config = config("database.connections.{$connection}");
@@ -201,6 +255,84 @@ class BackupService
         }
     }
 
+    private function restoreMysql(string $connection, string $path): void
+    {
+        $config = config("database.connections.{$connection}");
+        $defaultsFile = tempnam(sys_get_temp_dir(), 'spdms-restore-');
+
+        if ($defaultsFile === false) {
+            throw new RuntimeException('A temporary file for the restore could not be created.');
+        }
+
+        try {
+            chmod($defaultsFile, 0600);
+            file_put_contents($defaultsFile, $this->mysqlDefaults($config));
+
+            $result = Process::path(dirname($path))
+                ->timeout(self::TIMEOUT)
+                ->run([
+                    'mysql',
+                    '--defaults-extra-file=' . $defaultsFile,
+                    '--database=' . $config['database'],
+                    '--execute=source ' . basename($path),
+                ]);
+
+            if (! $result->successful()) {
+                throw new RuntimeException(
+                    'mysql restore failed: ' . trim($result->errorOutput() ?: $result->output())
+                );
+            }
+        } finally {
+            @unlink($defaultsFile);
+        }
+    }
+
+    private function restoreSqlite(string $connection, string $path): void
+    {
+        $database = config("database.connections.{$connection}.database");
+
+        if (! is_string($database) || $database === '' || $database === ':memory:') {
+            throw new RuntimeException('The SQLite database file could not be found.');
+        }
+
+        $directory = dirname($database);
+
+        if (! is_dir($directory)) {
+            throw new RuntimeException('The SQLite database directory could not be found.');
+        }
+
+        $staged = $database . '.restore-' . Str::lower(Str::random(8));
+        $original = $database . '.pre-restore-' . Str::lower(Str::random(8));
+
+        if (! copy($path, $staged)) {
+            throw new RuntimeException('The selected backup file could not be staged for restore.');
+        }
+
+        $this->disconnectDefaultConnection($connection);
+
+        try {
+            if (is_file($database) && ! @rename($database, $original)) {
+                throw new RuntimeException('The current SQLite database file could not be prepared for restore.');
+            }
+
+            if (! @rename($staged, $database)) {
+                if (is_file($original)) {
+                    @rename($original, $database);
+                }
+
+                throw new RuntimeException('The SQLite backup file could not be restored.');
+            }
+
+            if (is_file($original)) {
+                @unlink($original);
+            }
+        } finally {
+            if (is_file($staged)) {
+                @unlink($staged);
+            }
+        }
+    }
+
     private function generateFilename(?string $driver): string
     {
         $extension = in_array($driver, ['sqlite'], true) ? 'sqlite' : 'sql';
@@ -252,5 +384,17 @@ class BackupService
             ], JSON_UNESCAPED_SLASHES),
             'states' => $state,
         ]);
+    }
+
+    private function disconnectDefaultConnection(string $connection): void
+    {
+        DB::disconnect($connection);
+        DB::purge($connection);
+    }
+
+    private function reconnectDefaultConnection(string $connection): void
+    {
+        DB::purge($connection);
+        DB::reconnect($connection);
     }
 }

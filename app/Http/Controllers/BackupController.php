@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\IndexBackupsRequest;
+use App\Http\Requests\RestoreBackupRequest;
 use App\Http\Requests\StoreBackupRequest;
 use App\Http\Resources\BackupResource;
 use App\Models\Backup;
@@ -87,5 +88,43 @@ class BackupController extends Controller
         $this->backupService->recordDownload(Auth::guard('api')->user(), $backup);
 
         return response()->download($path, $backup->filename);
+    }
+
+    public function restore(RestoreBackupRequest $request, Backup $backup): JsonResponse
+    {
+        try {
+            $this->backupService->restore(Auth::guard('api')->user(), $backup);
+        } catch (RuntimeException $exception) {
+            return response()->json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Backup restored successfully. Please sign in again.',
+            'reauthentication_required' => true,
+        ])->withCookie($this->forgetAccessCookie());
+    }
+
+    private function forgetAccessCookie(): \Symfony\Component\HttpFoundation\Cookie
+    {
+        $secure = filter_var(
+            env('JWT_COOKIE_SECURE', false),
+            FILTER_VALIDATE_BOOLEAN
+        );
+
+        return cookie(
+            'access_token',
+            '',
+            -1,
+            '/',
+            null,
+            $secure,
+            true,
+            false,
+            'Lax'
+        );
     }
 }

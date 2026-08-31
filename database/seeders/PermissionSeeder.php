@@ -254,6 +254,12 @@ class PermissionSeeder extends Seeder
                 'code' => 'backups.download',
                 'module' => 'backups',
             ],
+            [
+                'permission_name' => 'Restore Backups',
+                'description' => 'Allows restoring the system database from a previously created backup.',
+                'code' => 'backups.restore',
+                'module' => 'backups',
+            ],
         ];
 
         foreach ($permissions as $permission) {
