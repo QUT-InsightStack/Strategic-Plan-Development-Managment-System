@@ -18,8 +18,6 @@ class StoreStrategicObjectiveRequest extends ApiFormRequest
 
         return [
             'strategic_plan_id' => StrategicObjectiveValidationRules::strategicPlanIdRequired(),
-            'created_by' => StrategicObjectiveValidationRules::createdByRequired(),
-            'updated_by' => StrategicObjectiveValidationRules::updatedByOptional(),
             'status' => StrategicObjectiveValidationRules::statusOptional(),
             'objective_title' => StrategicObjectiveValidationRules::objectiveTitle(! $isDraft),
             'objective_description' => StrategicObjectiveValidationRules::objectiveDescription(! $isDraft),

@@ -7,7 +7,7 @@
     @vite(['resources/css/login.css', 'resources/js/login-app.js'])
 </head>
 <body>
-    <div id="root" data-login-url="/api/login"></div>
+    <div id="root" data-login-url="/api/auth/login"></div>
 
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>

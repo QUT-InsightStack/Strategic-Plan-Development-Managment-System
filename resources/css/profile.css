@@ -101,17 +101,38 @@ button {
 }
 
 .nav-link {
-    min-width: 88px;
+    min-width: var(--nav-button-min-width);
+    height: var(--nav-button-height);
     border: 0;
-    color: #ffffff;
+    border-radius: var(--nav-button-radius);
+    padding: 0 var(--nav-button-padding-x);
+    color: var(--color-brand-white);
     background: transparent;
-    font-size: 12px;
+    font-size: var(--nav-button-font-size);
+    font-weight: var(--nav-button-font-weight);
 }
 
 .nav-link:hover,
 .nav-link:focus-visible {
-    background: rgba(255, 255, 255, 0.13);
+    background: var(--nav-button-hover-bg);
     outline: none;
+}
+
+.nav-link.logout-link {
+    min-width: var(--logout-button-min-width);
+    color: var(--logout-button-color);
+    font-size: var(--logout-button-font-size);
+    font-weight: var(--logout-button-font-weight);
+}
+
+.nav-link.logout-link:hover,
+.nav-link.logout-link:focus-visible {
+    background: var(--logout-button-hover-bg);
+}
+
+.nav-link:disabled {
+    cursor: wait;
+    opacity: 0.7;
 }
 
 .profile-main {
@@ -915,4 +936,189 @@ select.crud-input[multiple] {
 .profile-password-button {
     width: 100%;
     margin-top: 18px;
+}
+
+/* Password fields */
+
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-wrapper .crud-input {
+    width: 100%;
+    padding-right: 70px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.password-toggle:hover {
+    text-decoration: underline;
+}
+
+.password-requirements {
+    margin-top: -4px;
+}
+
+.password-requirements h3 {
+    margin: 0 0 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.password-requirements ul {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+
+.password-requirements li.is-valid {
+    font-weight: 600;
+}
+
+/* ── Recent sign-ins ─────────────────────────────────────────────────
+   Sits under the profile form in the right-hand column, so someone can
+   check where their account has been used without leaving the page. */
+
+.profile-column {
+    display: grid;
+    gap: 24px;
+    min-width: 0;
+}
+
+.sign-ins {
+    padding: 22px 28px 24px;
+}
+
+.sign-ins__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 6px;
+    color: var(--primary);
+    font-size: 18px;
+}
+
+.sign-ins__intro {
+    margin: 0 0 16px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.sign-ins__alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0 0 16px;
+    border: 1px solid var(--danger);
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: var(--danger);
+    background: var(--danger-soft);
+    font-size: 13px;
+}
+
+.sign-ins__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sign-ins__item {
+    display: grid;
+    gap: 2px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.sign-ins__item:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+
+.sign-ins__when {
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.sign-ins__meta {
+    color: var(--muted);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.sign-ins__failed {
+    justify-self: start;
+    margin-top: 4px;
+    border-radius: 999px;
+    padding: 2px 8px;
+    color: var(--danger);
+    background: var(--danger-soft);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.sign-ins__empty {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* ── Photo upload ────────────────────────────────────────────────── */
+
+.photo-hint,
+.photo-error {
+    margin: 10px 0 0;
+    font-size: 12px;
+    text-align: center;
+}
+
+.photo-hint {
+    color: var(--muted-light);
+}
+
+.photo-error {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.photo-remove {
+    display: block;
+    margin: 12px auto 0;
+    border: 0;
+    padding: 4px 10px;
+    color: var(--danger);
+    background: none;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.photo-remove:disabled,
+.upload-action:disabled,
+.upload-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* Sits directly under the actions, so the state of the form is visible
+   without having to compare fields against what was loaded. */
+.form-dirty-note {
+    margin: 10px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: right;
 }

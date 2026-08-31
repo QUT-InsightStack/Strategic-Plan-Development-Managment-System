@@ -1,0 +1,523 @@
+@import './brand-logo.css';
+@import './design-tokens.css';
+
+:root {
+    --page-bg: var(--color-gray-50);
+    --primary: var(--color-primary);
+    --header-bg: var(--color-primary);
+    --text: var(--color-gray-950);
+    --muted: var(--color-gray-600);
+    --panel: var(--color-brand-white);
+    --line: var(--color-gray-200);
+    --danger: var(--color-danger);
+    --success: var(--color-success);
+    --warning: var(--color-warning);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-width: 320px;
+    color: var(--text);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-md);
+    line-height: var(--line-height-body);
+    background: var(--page-bg);
+}
+
+button,
+input,
+select {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+.user-roles-shell {
+    display: grid;
+    width: 100%;
+    min-height: 100vh;
+    grid-template-rows: auto 1fr;
+}
+
+/* ─── Header ─────────────────────────────────────────────────────── */
+
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 54px;
+    padding: 0 48px;
+    background: var(--header-bg);
+    color: var(--color-brand-white);
+    box-shadow: 0 4px 10px rgba(35, 43, 60, 0.25);
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    color: inherit;
+    text-decoration: none;
+}
+
+.brand-logo {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+}
+
+.brand-name {
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+}
+
+.top-nav {
+    display: flex;
+    align-self: stretch;
+}
+
+.nav-link {
+    min-width: var(--nav-button-min-width);
+    height: var(--nav-button-height);
+    border: 0;
+    border-radius: var(--nav-button-radius);
+    padding: 0 var(--nav-button-padding-x);
+    color: var(--color-brand-white);
+    background: transparent;
+    font-size: var(--nav-button-font-size);
+    font-weight: var(--nav-button-font-weight);
+}
+
+.nav-link:hover,
+.nav-link:focus-visible {
+    background: var(--nav-button-hover-bg);
+    outline: none;
+}
+
+.nav-link.logout-link {
+    min-width: var(--logout-button-min-width);
+    color: var(--logout-button-color);
+    font-size: var(--logout-button-font-size);
+}
+
+.nav-link.logout-link:hover,
+.nav-link.logout-link:focus-visible {
+    background: var(--logout-button-hover-bg);
+}
+
+/* ─── Layout ─────────────────────────────────────────────────────── */
+
+.user-roles-main {
+    padding: 32px 48px 56px;
+}
+
+.page-inner {
+    width: 100%;
+    margin: 0 auto;
+}
+
+.page-inner.narrow {
+    max-width: 760px;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    color: var(--muted);
+    font-size: var(--font-size-xs);
+}
+
+.breadcrumb a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover,
+.breadcrumb a:focus-visible {
+    text-decoration: underline;
+}
+
+.page-title h1 {
+    margin: 0 0 6px;
+    color: var(--primary);
+    font-size: var(--font-size-2xl);
+    line-height: var(--line-height-heading);
+    font-weight: var(--font-weight-bold);
+}
+
+.page-title p {
+    margin: 0 0 22px;
+    color: var(--muted);
+    font-size: var(--font-size-sm);
+}
+
+/* ─── User summary ───────────────────────────────────────────────── */
+
+.user-summary-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 18px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px 22px;
+    background: var(--panel);
+}
+
+.user-summary-card h2 {
+    margin: 0 0 2px;
+    color: var(--primary);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+}
+
+.user-summary-email {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--font-size-sm);
+}
+
+.user-summary-role {
+    display: grid;
+    gap: 2px;
+    text-align: right;
+}
+
+.user-summary-label {
+    color: var(--muted);
+    font-size: var(--font-size-xs);
+}
+
+.user-summary-value {
+    color: var(--primary);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* ─── Role options ───────────────────────────────────────────────── */
+
+.roles-card {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 22px;
+    background: var(--panel);
+}
+
+.roles-card h2 {
+    margin: 0 0 4px;
+    color: var(--primary);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+}
+
+.roles-note {
+    margin: 0 0 18px;
+    color: var(--muted);
+    font-size: var(--font-size-xs);
+}
+
+.role-options {
+    display: grid;
+    gap: 10px;
+}
+
+.role-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: border-color 150ms ease, background 150ms ease;
+}
+
+.role-option:hover {
+    border-color: var(--color-brand-cyan);
+}
+
+.role-option.is-selected {
+    border-color: var(--color-brand-cyan);
+    background: var(--color-primary-soft);
+}
+
+.role-option.is-disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.role-option.is-remove {
+    border-style: dashed;
+}
+
+.role-option input {
+    margin-top: 3px;
+    accent-color: var(--color-brand-cyan);
+}
+
+.role-option-body {
+    display: grid;
+    gap: 3px;
+}
+
+.role-option-name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--primary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+}
+
+.role-badge-privileged {
+    border-radius: 999px;
+    padding: 2px 8px;
+    color: #842029;
+    background: #f8d7da;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+}
+
+.role-option-description {
+    color: var(--muted);
+    font-size: var(--font-size-xs);
+}
+
+.roles-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 22px;
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+}
+
+/* ─── Buttons ────────────────────────────────────────────────────── */
+
+.action-button {
+    min-height: 40px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 0 20px;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: none;
+    display: inline-grid;
+    place-items: center;
+    white-space: nowrap;
+    transition: background 160ms ease;
+}
+
+.action-button.small {
+    min-height: 32px;
+    padding: 0 14px;
+    font-size: var(--font-size-xs);
+}
+
+.action-button.primary {
+    color: var(--color-brand-white);
+    background: var(--color-brand-cyan);
+}
+
+.action-button.primary:hover:not(:disabled),
+.action-button.primary:focus-visible {
+    background: #0098d1;
+    outline: none;
+}
+
+.action-button.secondary {
+    color: var(--primary);
+    border-color: var(--color-gray-300);
+    background: var(--color-brand-white);
+}
+
+.action-button.secondary:hover:not(:disabled),
+.action-button.secondary:focus-visible {
+    background: var(--color-gray-100);
+    outline: none;
+}
+
+.action-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* ─── Status + states ────────────────────────────────────────────── */
+
+.form-status {
+    margin: 16px 0 0;
+    text-align: right;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+}
+
+.form-status.is-success { color: var(--success); }
+.form-status.is-error   { color: var(--danger); }
+.form-status.is-info    { color: var(--color-info); }
+
+.results-card {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+}
+
+.state-message {
+    margin: 0;
+    padding: 40px 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: var(--font-size-sm);
+}
+
+.state-message.is-error { color: var(--danger); }
+
+.state-message p { margin: 0 0 14px; }
+
+/* ─── Confirmation dialog ────────────────────────────────────────── */
+
+.dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(13, 29, 56, 0.45);
+    z-index: 20;
+}
+
+.dialog {
+    width: 100%;
+    max-width: 460px;
+    border-radius: 8px;
+    padding: 24px 26px;
+    background: var(--panel);
+    box-shadow: 0 18px 48px rgba(17, 37, 74, 0.28);
+}
+
+.dialog h2 {
+    margin: 0 0 10px;
+    color: var(--primary);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+}
+
+.dialog-body {
+    margin: 0 0 16px;
+    color: var(--text);
+    font-size: var(--font-size-sm);
+}
+
+.dialog-change {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+    border-radius: 6px;
+    padding: 14px;
+    background: var(--color-gray-100);
+}
+
+.dialog-role {
+    border-radius: 4px;
+    padding: 5px 12px;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+}
+
+.dialog-role.from {
+    color: var(--muted);
+    background: var(--color-gray-200);
+}
+
+.dialog-role.to {
+    color: var(--color-brand-white);
+    background: var(--color-brand-cyan);
+}
+
+.dialog-arrow {
+    color: var(--muted);
+    font-size: var(--font-size-lg);
+}
+
+.dialog-warning {
+    margin: 0 0 12px;
+    border-left: 3px solid var(--warning);
+    padding: 10px 12px;
+    color: #7a4f00;
+    background: #fff8e6;
+    font-size: var(--font-size-xs);
+}
+
+.dialog-note {
+    margin: 0 0 20px;
+    color: var(--muted);
+    font-size: var(--font-size-xs);
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────── */
+
+@media (max-width: 720px) {
+    .app-header {
+        padding: 0 24px;
+    }
+
+    .user-roles-main {
+        padding: 24px 20px 40px;
+    }
+
+    .user-summary-role {
+        text-align: left;
+    }
+
+    .roles-actions,
+    .dialog-actions {
+        flex-direction: column-reverse;
+    }
+
+    .roles-actions .action-button,
+    .dialog-actions .action-button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .app-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 14px;
+        padding: 16px 20px;
+    }
+
+    .top-nav {
+        width: 100%;
+    }
+
+    .nav-link {
+        flex: 1;
+        min-width: 0;
+        min-height: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+}

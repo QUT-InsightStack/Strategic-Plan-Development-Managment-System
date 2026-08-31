@@ -82,11 +82,11 @@ function StrategicPlanListApp() {
             variant: 'danger',
             title: restoring ? 'Restore strategic plan' : 'Archive strategic plan',
             message: restoring
-                ? `Restore “${plan.title}” to Draft so it can be updated again?`
+                ? `Restore “${plan.title}” to Finished?`
                 : `Archive “${plan.title}”? The plan will be retained and can be restored later.`,
             ids: [plan.record_id],
             action: 'status',
-            targetStatus: restoring ? 'draft' : 'archived',
+            targetStatus: restoring ? 'finished' : 'archived',
         });
     }
 
@@ -170,8 +170,31 @@ function StrategicPlanListApp() {
                         React.createElement('td', null, creatorName(plan)), React.createElement('td', null, plan.creator?.department || 'Pending DB field'),
                         React.createElement('td', null, plan.updated_at ? new Date(plan.updated_at).toLocaleDateString() : '—'),
                         React.createElement('td', { className: 'plans-actions-cell' }, canManagePlans ? React.createElement('div', { className: 'ui-table__actions' },
-                            plan.status !== 'archived' ? React.createElement('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: `/strategic-plans/${plan.record_id}/edit`, 'aria-label': `Update ${plan.title}` }, React.createElement('i', { className: 'bi bi-pencil' }), 'Update') : null,
-                            React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => requestStatusChange(plan), 'aria-label': `${plan.status === 'archived' ? 'Restore' : 'Archive'} ${plan.title}` }, React.createElement('i', { className: `bi ${plan.status === 'archived' ? 'bi-arrow-counterclockwise' : 'bi-archive'}` }), plan.status === 'archived' ? 'Restore' : 'Archive'),
+                            plan.status !== 'archived'
+    ? React.createElement(
+        'a',
+        {
+            className:
+                'ui-button ui-button--secondary ui-button--sm',
+            href:
+                `/strategic-plans/${plan.record_id}/edit`,
+            'aria-label':
+                plan.status === 'draft'
+                    ? `Continue ${plan.title}`
+                    : `Update ${plan.title}`,
+        },
+        React.createElement('i', {
+            className:
+                plan.status === 'draft'
+                    ? 'bi bi-arrow-right-circle'
+                    : 'bi bi-pencil',
+        }),
+        plan.status === 'draft'
+            ? 'Continue Plan'
+            : 'Update'
+    )
+    : null,
+                            ['finished', 'archived'].includes(plan.status) ? React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => requestStatusChange(plan), 'aria-label': `${plan.status === 'archived' ? 'Restore' : 'Archive'} ${plan.title}` }, React.createElement('i', { className: `bi ${plan.status === 'archived' ? 'bi-arrow-counterclockwise' : 'bi-archive'}` }), plan.status === 'archived' ? 'Restore' : 'Archive') : null,
                             React.createElement('button', { className: 'ui-button ui-button--danger ui-button--sm', type: 'button', onClick: () => requestDelete(plan), 'aria-label': `Delete ${plan.title}` }, React.createElement('i', { className: 'bi bi-trash3' }), 'Delete')
                         ) : React.createElement('span', { className: 'ui-help' }, 'View only'))
                     )))
