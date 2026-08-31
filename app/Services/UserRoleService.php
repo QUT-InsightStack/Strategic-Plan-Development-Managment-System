@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\StrategicLogWriter;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -11,11 +12,16 @@ use Illuminate\Validation\ValidationException;
 
 class UserRoleService
 {
+    public function __construct(
+        private readonly StrategicLogWriter $logWriter
+    ) {
+    }
+
     public function authorizeAssignment(Role $role): void
     {
         $actor = Auth::guard('api')->user();
 
-        if (! $actor) {
+        if (! $actor instanceof User) {
             throw new AuthorizationException('Unauthenticated.');
         }
 
@@ -28,7 +34,7 @@ class UserRoleService
     ): User {
         $actor = Auth::guard('api')->user();
 
-        if (! $actor) {
+        if (! $actor instanceof User) {
             throw new AuthorizationException('Unauthenticated.');
         }
 
@@ -75,25 +81,23 @@ class UserRoleService
             }
 
             $oldRoleId = $targetUser->role_id;
+            $oldRoleName = $targetUser->role?->role_name;
 
             $targetUser->role_id = $role->role_id;
             $targetUser->increment('auth_version');
             $targetUser->save();
 
-            // Add audit-log write here if the project's log service
-            // and schema are already available.
-            //
-            // Example audit data:
-            // [
-            //     'actor_user_id' => $actor->user_id,
-            //     'target_user_id' => $targetUser->user_id,
-            //     'old_role_id' => $oldRoleId,
-            //     'new_role_id' => $role->role_id,
-            //     'action' => 'user.role_assigned',
-            // ]
+            $this->logWriter->write('user.role_assigned', [
+                'actor_user_id' => $actor->user_id,
+                'resource_type' => 'user',
+                'resource_id' => $targetUser->user_id,
+                'old_role_id' => $oldRoleId,
+                'old_role_name' => $oldRoleName,
+                'new_role_id' => $role->role_id,
+                'new_role_name' => $role->role_name,
+            ]);
 
-            return $targetUser
-                ->fresh(['role']);
+            return $targetUser->fresh(['role']);
         });
     }
 

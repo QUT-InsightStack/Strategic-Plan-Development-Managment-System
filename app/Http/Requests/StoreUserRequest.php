@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Validation\ValidationAttributes;
 use App\Validation\UserValidationRules;
+use Illuminate\Validation\Rule;
 
 class StoreUserRequest extends ApiFormRequest
 {

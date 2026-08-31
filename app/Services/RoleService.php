@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\StrategicLogWriter;
 use App\Models\Role;
 use App\Models\User;
 use App\Repositories\RoleRepository;
@@ -9,12 +10,14 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class RoleService
 {
     public function __construct(
-        protected RoleRepository $roleRepository
+        protected RoleRepository $roleRepository,
+        private readonly StrategicLogWriter $logWriter
     ) {
     }
 
@@ -30,13 +33,30 @@ class RoleService
 
     public function createRole(array $data): Model
     {
-        // Apply secure defaults before authorization.
         $data['is_assignable'] ??= false;
         $data['is_protected'] ??= true;
 
         $this->authorizeRoleCreation($data);
 
-        return $this->roleRepository->create($data);
+        $actor = $this->authenticatedActor();
+
+        return DB::transaction(function () use (
+            $data,
+            $actor
+        ): Model {
+            $role = $this->roleRepository->create($data);
+
+            $this->logWriter->write('role.created', [
+                'actor_user_id' => $actor->user_id,
+                'resource_type' => 'role',
+                'resource_id' => $role->role_id,
+                'role_name' => $role->role_name,
+                'is_assignable' => (bool) $role->is_assignable,
+                'is_protected' => (bool) $role->is_protected,
+            ]);
+
+            return $role;
+        });
     }
 
     public function updateRole(int $id, array $data): bool
@@ -49,7 +69,32 @@ class RoleService
 
         $this->authorizeRoleUpdate($role, $data);
 
-        return $this->roleRepository->update($id, $data);
+        $actor = $this->authenticatedActor();
+
+        return DB::transaction(function () use (
+            $id,
+            $role,
+            $data,
+            $actor
+        ): bool {
+            $changedFields = array_keys($data);
+
+            $updated = $this->roleRepository->update($id, $data);
+
+            if (! $updated) {
+                return false;
+            }
+
+            $this->logWriter->write('role.updated', [
+                'actor_user_id' => $actor->user_id,
+                'resource_type' => 'role',
+                'resource_id' => $role->role_id,
+                'role_name' => $role->role_name,
+                'changed_fields' => $changedFields,
+            ]);
+
+            return true;
+        });
     }
 
     public function deleteRole(int $id): bool
@@ -70,7 +115,22 @@ class RoleService
             ]);
         }
 
-        return $this->roleRepository->delete($id);
+        $actor = $this->authenticatedActor();
+
+        return DB::transaction(function () use (
+            $id,
+            $role,
+            $actor
+        ): bool {
+            $this->logWriter->write('role.deleted', [
+                'actor_user_id' => $actor->user_id,
+                'resource_type' => 'role',
+                'resource_id' => $role->role_id,
+                'role_name' => $role->role_name,
+            ]);
+
+            return $this->roleRepository->delete($id);
+        });
     }
 
     public function getAll(): Collection
@@ -129,7 +189,7 @@ class RoleService
                 !== (bool) $role->is_assignable;
 
         $requiresProtectedAccess =
-            $role->is_protected
+            (bool) $role->is_protected
             || $changesProtectedFlag
             || $changesAssignableFlag;
 

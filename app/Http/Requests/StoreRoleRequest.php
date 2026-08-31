@@ -2,13 +2,13 @@
 
 namespace App\Http\Requests;
 
-use App\Validation\RoleValidationRules;
+use Illuminate\Validation\Rule;
 
 class StoreRoleRequest extends ApiFormRequest
 {
     protected function requiredPermissions(): array
     {
-        return ['roles.create'];
+        return ['roles.manage'];
     }
 
     public function rules(): array
