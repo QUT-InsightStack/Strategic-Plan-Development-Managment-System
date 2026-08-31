@@ -11,7 +11,12 @@ use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
-use App\Models\Log;
+use App\Http\Requests\UpdateProfileRequest;
+use App\Http\Requests\UploadProfilePhotoRequest;
+use App\Http\Resources\UserResource;
+use App\Models\Log as LogModel;
+use App\Services\LoginHistoryService;
+use App\Services\ProfilePhotoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,19 +26,34 @@ class AuthController extends Controller
 {
     // ─── Login ───────────────────────────────────────────────────────
 
+    public function __construct(
+        private LoginHistoryService $loginHistory,
+        private ProfilePhotoService $profilePhotos
+    ) {
+    }
+
     public function login(LoginRequest $request): JsonResponse
     {
-        $credentials = $request->only('email', 'password');
+        $credentials = [
+            ...$request->only('email', 'password'),
+            'status' => 'active',
+        ];
 
         $token = Auth::guard('api')->attempt($credentials);
 
         if (! $token) {
-            // generic message — never reveal whether the email exists
+            // Recorded before responding, so an attempt on an account that
+            // does not exist is still visible to an administrator. The reply
+            // itself stays generic — never reveal whether the email exists.
+            $this->loginHistory->recordFailure((string) $request->input('email'), $request);
+
             return response()->json([
                 'success' => false,
                 'message' => 'The provided credentials are incorrect.',
             ], 401);
         }
+
+        $this->loginHistory->recordSuccess(Auth::guard('api')->user(), $request);
 
         return response()->json([
             'success' => true,
@@ -296,28 +316,81 @@ class AuthController extends Controller
         );
     }
 
-    public function updateProfile(Request $request): JsonResponse
-{
-    $user = Auth::guard('api')->user();
+    /**
+     * Update the authenticated user's own profile.
+     *
+     * The user is resolved from the token, never from request input, so this
+     * endpoint cannot be used to modify another account. Restricted fields
+     * are rejected during validation, and only validated values reach the
+     * model, so role, status and organisational placement are unaffected.
+     */
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
+    {
+        $user = Auth::guard('api')->user();
 
-    $request->validate([
-        'first_name'      => 'required|string|max:255',
-        'last_name'       => 'nullable|string|max:255',
-        'email'           => 'required|email|unique:tblusers,email,' . $user->user_id . ',user_id',
-        'mobile'          => 'nullable|string|max:20',
-        'address'         => 'nullable|string|max:255',
-        'profile_picture' => 'nullable|string',
-    ]);
+        $user->fill($request->validated());
 
-    $user->update($request->only([
-        'first_name', 'last_name', 'email',
-        'mobile', 'address', 'profile_picture',
-    ]));
+        $changed = array_keys($user->getDirty());
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Profile updated successfully.',
-        'data'    => $user->fresh(),
-    ]);
-}
+        if ($changed === []) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No changes were made.',
+                'data'    => new UserResource($user->load('role')),
+            ]);
+        }
+
+        $user->save();
+
+        LogModel::create([
+            'user_id'   => $user->user_id,
+            'operation' => 'Profile updated: ' . implode(', ', $changed),
+            'states'    => 'success',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile updated successfully.',
+            'data'    => new UserResource($user->load('role')),
+        ]);
+    }
+
+    // ─── Profile photo ───────────────────────────────────────────────
+
+    /**
+     * Replace the signed-in user's photo.
+     *
+     * Separate from updateProfile because this takes a file rather than JSON.
+     * The photo is stored on disk and only its path is written to the user
+     * record, which is why `profile_picture` is rejected by the profile
+     * endpoint: sending the image itself never worked, as the column is far
+     * too small to hold one.
+     */
+    public function uploadPhoto(UploadProfilePhotoRequest $request): JsonResponse
+    {
+        $user = $this->profilePhotos->store(
+            Auth::guard('api')->user(),
+            $request->file('photo')
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Photo updated successfully.',
+            'data'    => new UserResource($user->load('role')),
+        ]);
+    }
+
+    /**
+     * Remove the signed-in user's photo, reverting to the default avatar.
+     */
+    public function removePhoto(): JsonResponse
+    {
+        $user = $this->profilePhotos->remove(Auth::guard('api')->user());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Photo removed successfully.',
+            'data'    => new UserResource($user->load('role')),
+        ]);
+    }
 }

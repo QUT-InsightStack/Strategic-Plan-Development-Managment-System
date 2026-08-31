@@ -1,10 +1,13 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\FoundationsController;
 use App\Http\Controllers\LinkController;
 use App\Http\Controllers\LogController;
+use App\Http\Controllers\LoginHistoryController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\PdpChapterController;
 use App\Http\Controllers\PlanCreationController;
 use App\Http\Controllers\RelationController;
 use App\Http\Controllers\RoleController;
@@ -42,6 +45,10 @@ Route::post('auth/logout', [AuthController::class, 'logout']);
 Route::middleware(['auth:api', 'auth.version'])->group(function () {
     Route::get('auth/me',     [AuthController::class, 'me']);
     Route::put('auth/profile',       [AuthController::class, 'updateProfile']);
+
+    // Takes a file rather than JSON, so it cannot go through updateProfile.
+    Route::post('auth/profile/photo', [AuthController::class, 'uploadPhoto']);
+    Route::delete('auth/profile/photo', [AuthController::class, 'removePhoto']);
 });
 
 /*
@@ -67,6 +74,10 @@ Route::middleware(['auth:api','auth.version',])->prefix('users')->group(function
         ->whereNumber('user')
         ->middleware('permission:users.assign_roles');
 
+    Route::patch('/{user}/status', [UserController::class, 'updateStatus'])
+        ->whereNumber('user')
+        ->middleware('permission:users.update');
+
     Route::get('{user}', [UserController::class, 'show'])
         ->whereNumber('user')
         ->middleware('permission:users.view');
@@ -82,11 +93,59 @@ Route::middleware(['auth:api','auth.version',])->prefix('users')->group(function
 
 /*
 |--------------------------------------------------------------------------
+| Login history
+|--------------------------------------------------------------------------
+|
+| Two views of the same table. `me` is any authenticated user's own history
+| and takes the account from the token, so it cannot be aimed at anyone else.
+| The list across all accounts is a security log and is gated accordingly.
+|
+*/
+Route::middleware(['auth:api', 'auth.version'])->prefix('login-history')->group(function () {
+    Route::get('me', [LoginHistoryController::class, 'mine']);
+
+    Route::get('', [LoginHistoryController::class, 'index'])
+        ->middleware('permission:logs.view');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Manual database backups
+|--------------------------------------------------------------------------
+|
+| A backup contains every user record and password hash in the system, so
+| creating one, listing them and downloading one are three separate
+| permissions. Downloads are audited by BackupService.
+|
+*/
+Route::middleware(['auth:api', 'auth.version'])->prefix('backups')->group(function () {
+    Route::get('', [BackupController::class, 'index'])
+        ->middleware('permission:backups.view');
+
+    Route::post('', [BackupController::class, 'store'])
+        ->middleware('permission:backups.create');
+
+    Route::get('{backup}/download', [BackupController::class, 'download'])
+        ->whereNumber('backup')
+        ->middleware('permission:backups.download');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Role and permission management
 |--------------------------------------------------------------------------
 */
 
 Route::middleware(['auth:api','auth.version',])->group(function () {
+    Route::get('pdp-chapters', [PdpChapterController::class, 'index']);
+    Route::get('pdp-chapters/{chapter}', [PdpChapterController::class, 'show'])
+        ->whereNumber('chapter');
+    Route::post('pdp-chapters', [PdpChapterController::class, 'store'])
+        ->middleware('permission:pdp_chapters.manage');
+    Route::put('pdp-chapters/{chapter}', [PdpChapterController::class, 'update'])
+        ->whereNumber('chapter')
+        ->middleware('permission:pdp_chapters.manage');
+
     // Roles
     Route::get('roles', [RoleController::class, 'index'])
         ->middleware('permission:roles.view');

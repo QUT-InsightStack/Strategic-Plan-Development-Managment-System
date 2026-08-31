@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\AssignUserRoleRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Http\Requests\UpdateUserStatusRequest;
 use App\Http\Requests\SearchUsersRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\UserRoleService;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends BaseCrudController
 {
@@ -51,15 +53,33 @@ class UserController extends BaseCrudController
         return response()->json(['message' => 'Created', 'data' => $record], 201);
     }
 
+    /**
+     * Update another user's account.
+     *
+     * Role and status are rejected by UpdateUserRequest, so this cannot alter
+     * either; both have dedicated endpoints. The response is shaped by
+     * UserResource so no password hash or token is returned.
+     */
     public function update(UpdateUserRequest $request, int $id): JsonResponse
     {
-        $updated = $this->getService()->update($id, $request->validated());
+        $user = $this->userService->updateByAdministrator(
+            $id,
+            $request->validated(),
+            Auth::guard('api')->user()
+        );
 
-        if (! $updated) {
-            return response()->json(['message' => 'Not found or update failed'], 404);
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found.',
+            ], 404);
         }
 
-        return response()->json(['message' => 'Updated'], 200);
+        return response()->json([
+            'success' => true,
+            'message' => 'User updated successfully.',
+            'data'    => new UserResource($user),
+        ], 200);
     }
 
     public function search(SearchUsersRequest $request): JsonResponse
@@ -105,6 +125,25 @@ class UserController extends BaseCrudController
             'data' => new UserResource($updatedUser),
             'reauthentication_required' => true,
         ], 200);
+    }
+
+    public function updateStatus(
+        UpdateUserStatusRequest $request,
+        User $user
+    ): JsonResponse {
+        $updatedUser = $this->userService->updateStatus(
+            (int) $user->user_id,
+            $request->validated('status'),
+            $request->validated('reason'),
+            Auth::guard('api')->user()
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Account status updated successfully.',
+            'data' => new UserResource($updatedUser),
+            'reauthentication_required' => true,
+        ]);
     }
 
 }

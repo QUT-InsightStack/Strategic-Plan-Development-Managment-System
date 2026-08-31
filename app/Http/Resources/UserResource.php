@@ -19,6 +19,15 @@ class UserResource extends JsonResource
             'unit' => $this->unit,
             'office' => $this->office,
             'position' => $this->position,
+            'designation' => $this->designation,
+            'mobile' => $this->mobile,
+            'address' => $this->address,
+            // Date only, not the full timestamp the `date` cast produces, so
+            // it drops straight into an <input type="date">.
+            'date_of_birth' => $this->date_of_birth?->format('Y-m-d'),
+            // A code, not a label. The wording shown on screen belongs to the
+            // interface, so it can change without touching stored data.
+            'gender' => $this->gender,
             'status' => $this->status,
             'profile_picture' => $this->profile_picture,
 

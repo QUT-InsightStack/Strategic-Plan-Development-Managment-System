@@ -34,11 +34,12 @@
                 { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'name@example.com' },
                 {
                     name: 'password',
-                    label: 'Password',
+                    label: 'New Password',
                     type: 'password',
                     requiredOnCreate: true,
                     omitWhenBlankOnEdit: true,
                     placeholder: 'Leave blank to keep current password',
+                    passwordPolicy: true,
                 },
                 { name: 'mobile', label: 'Mobile', type: 'text', placeholder: '+61 400 000 000' },
                 { name: 'department', label: 'Department', type: 'text', placeholder: 'Planning Division' },

@@ -25,6 +25,13 @@ class ValidateAuthVersion
             ], 401);
         }
 
+        if ($user->status !== 'active') {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Authentication session expired.',
+            ], 401);
+        }
+
         try {
             $payload = JWTAuth::parseToken()->getPayload();
         } catch (JWTException) {

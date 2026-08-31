@@ -7,6 +7,17 @@ use Illuminate\Validation\Rule;
 
 class UserValidationRules
 {
+    /**
+     * Accepted gender codes.
+     *
+     * Stored as codes so the wording shown on screen can change without
+     * a migration. The column was a boolean until it became clear that
+     * nothing had ever defined which value meant what.
+     *
+     * @var list<string>
+     */
+    public const GENDERS = ['female', 'male', 'non_binary', 'prefer_not_to_say'];
+
     public static function firstNameRequired(): array
     {
         return ['required', 'string', 'max:255'];
@@ -91,7 +102,7 @@ class UserValidationRules
 
     public static function genderOptional(): array
     {
-        return ['sometimes', 'nullable', 'boolean'];
+        return ['sometimes', 'nullable', 'string', Rule::in(self::GENDERS)];
     }
 
     public static function dateOfBirthOptional(): array

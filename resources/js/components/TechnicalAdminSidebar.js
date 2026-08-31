@@ -1,11 +1,15 @@
 import { BrandLogo } from '../brand-logo.js';
 import { PERMISSIONS } from '../access/access-policy.js';
 import { can, clearAccessSession, getAccessSession } from '../access/access-session.js';
+import { LogoutButton } from './LogoutButton.js';
 
 const menuItems = [
     { label: 'Permission Control', icon: 'bi-shield-lock-fill', href: '/role-management', permission: PERMISSIONS.ROLES_MANAGE },
     { label: 'User Management', icon: 'bi-people-fill', href: '/user-management', permission: PERMISSIONS.USERS_VIEW },
+    { label: 'PDP Chapter Management', icon: 'bi-journal-text', href: '/pdp-chapters/manage', permission: PERMISSIONS.PDP_CHAPTERS_MANAGE },
     { label: 'Security Logs', icon: 'bi-list-check', permission: PERMISSIONS.LOGS_VIEW },
+    { label: 'Login History', icon: 'bi-clock-history', href: '/login-history', permission: PERMISSIONS.LOGS_VIEW },
+    { label: 'Manual Backup', icon: 'bi-database-down', href: '/manual-backup', permission: PERMISSIONS.BACKUPS_VIEW },
     { label: 'System Settings', icon: 'bi-gear-fill', permission: PERMISSIONS.SETTINGS_MANAGE },
     { label: 'FAQ', icon: 'bi-info-square-fill' },
 ];
@@ -13,13 +17,6 @@ const menuItems = [
 export function TechnicalAdminSidebar({ onNotice = () => {} }) {
     const currentPath = window.location.pathname;
     const accessSession = getAccessSession();
-
-    function logout() {
-        clearAccessSession();
-        fetch('/api/logout', { method: 'POST', credentials: 'include', headers: { Accept: 'application/json' } })
-            .catch(() => null)
-            .finally(() => { window.location.href = '/login'; });
-    }
 
     return React.createElement('aside', { className: 'app-sidebar', 'aria-label': 'Technical administration navigation' },
         React.createElement('a', { className: 'app-sidebar__brand', href: accessSession?.home || '/login' },
@@ -31,6 +28,6 @@ export function TechnicalAdminSidebar({ onNotice = () => {} }) {
             ? React.createElement('a', { key: item.label, href: item.href, className: `app-sidebar__item${currentPath === item.href ? ' active' : ''}` }, React.createElement('i', { className: `bi ${item.icon}` }), React.createElement('span', null, item.label))
             : React.createElement('button', { key: item.label, type: 'button', className: 'app-sidebar__item', onClick: () => onNotice(`${item.label} is reserved for a later module.`) }, React.createElement('i', { className: `bi ${item.icon}` }), React.createElement('span', null, item.label))
         )),
-        React.createElement('button', { className: 'app-sidebar__item app-sidebar__logout', type: 'button', onClick: logout }, React.createElement('i', { className: 'bi bi-box-arrow-left' }), React.createElement('span', null, 'Log Out'))
+        React.createElement(LogoutButton, { className: 'app-sidebar__item app-sidebar__logout', label: 'Log Out', iconClass: 'bi bi-box-arrow-left' })
     );
 }

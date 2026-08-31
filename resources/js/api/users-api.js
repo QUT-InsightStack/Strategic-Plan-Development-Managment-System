@@ -13,8 +13,8 @@ export function listRoles() {
 }
 
 export function updateUserStatus(userId, status) {
-    return apiRequest(`/api/users/${userId}`, {
-        method: 'PUT',
+    return apiRequest(`/api/users/${userId}/status`, {
+        method: 'PATCH',
         body: JSON.stringify({ status }),
     });
 }
@@ -22,6 +22,19 @@ export function updateUserStatus(userId, status) {
 export function createUser(data) {
     return apiRequest('/api/users', {
         method: 'POST',
+        body: JSON.stringify(data),
+    });
+}
+
+/**
+ * Update another user's account details.
+ *
+ * Role and account status are deliberately not accepted here: each has its
+ * own endpoint that applies safeguards this one does not.
+ */
+export function updateUser(userId, data) {
+    return apiRequest(`/api/users/${userId}`, {
+        method: 'PUT',
         body: JSON.stringify(data),
     });
 }
