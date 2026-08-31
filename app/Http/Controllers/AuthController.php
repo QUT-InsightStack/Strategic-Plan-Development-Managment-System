@@ -2,24 +2,32 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\ForgotPasswordRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log as SystemLog;
+use Illuminate\Support\Facades\Password;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Exceptions\TokenBlacklistedException;
 use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\UploadProfilePhotoRequest;
 use App\Http\Resources\UserResource;
 use App\Models\Log as LogModel;
 use App\Services\LoginHistoryService;
 use App\Services\ProfilePhotoService;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Cookie;
 
 class AuthController extends Controller
@@ -80,7 +88,7 @@ class AuthController extends Controller
             $user = Auth::guard('api')->user();
 
             if ($user) {
-                Log::create([
+                LogModel::create([
                     'user_id'   => $user->user_id,
                     'operation' => 'logout',
                     'states'    => 'success',
@@ -175,7 +183,7 @@ class AuthController extends Controller
                 'message' => 'Token refreshed successfully.',
             ])->withCookie($this->makeAccessCookie($newToken));
         } catch (TokenBlacklistedException $e) {
-            Log::notice('Rejected refresh using a blacklisted JWT.', [
+            SystemLog::notice('Rejected refresh using a blacklisted JWT.', [
                 'exception' => $e,
             ]);
 
@@ -185,7 +193,7 @@ class AuthController extends Controller
                 'message' => 'Authentication session expired.',
             ], 401)->withCookie($this->forgetAccessCookie());
         } catch (TokenExpiredException $e) {
-            Log::notice('Rejected JWT outside the refresh window.', [
+            SystemLog::notice('Rejected JWT outside the refresh window.', [
                 'exception' => $e,
             ]);
 
@@ -195,7 +203,7 @@ class AuthController extends Controller
                 'message' => 'Token has expired and cannot be refreshed.',
             ], 401)->withCookie($this->forgetAccessCookie());
         } catch (TokenInvalidException $e) {
-            Log::notice('Rejected invalid JWT refresh request.', [
+            SystemLog::notice('Rejected invalid JWT refresh request.', [
                 'exception' => $e,
             ]);
 
@@ -205,7 +213,7 @@ class AuthController extends Controller
                 'message' => 'Token is invalid.',
             ], 401)->withCookie($this->forgetAccessCookie());
         } catch (JWTException $e) {
-            Log::warning('Unable to refresh JWT.', [
+            SystemLog::warning('Unable to refresh JWT.', [
                 'exception' => $e,
             ]);
 
@@ -215,7 +223,7 @@ class AuthController extends Controller
                 'message' => 'Unable to refresh token.',
             ], 401)->withCookie($this->forgetAccessCookie());
         } catch (\Throwable $e) {
-            Log::error('Unexpected JWT refresh failure.', [
+            SystemLog::error('Unexpected JWT refresh failure.', [
                 'exception' => $e,
             ]);
 
@@ -352,6 +360,123 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'Profile updated successfully.',
             'data'    => new UserResource($user->load('role')),
+        ]);
+    }
+
+    public function changePassword(ChangePasswordRequest $request): JsonResponse
+    {
+        $user = Auth::guard('api')->user();
+
+        if (! Hash::check((string) $request->input('current_password'), (string) $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['The current password is incorrect.'],
+            ]);
+        }
+
+        DB::transaction(function () use ($user, $request): void {
+            $lockedUser = User::query()
+                ->lockForUpdate()
+                ->findOrFail($user->user_id);
+
+            if (! Hash::check((string) $request->input('current_password'), (string) $lockedUser->password)) {
+                throw ValidationException::withMessages([
+                    'current_password' => ['The current password is incorrect.'],
+                ]);
+            }
+
+            $lockedUser->password = (string) $request->input('new_password');
+            $lockedUser->auth_version++;
+            $lockedUser->setRememberToken(Str::random(60));
+            $lockedUser->save();
+
+            LogModel::create([
+                'user_id' => $lockedUser->user_id,
+                'operation' => json_encode([
+                    'event' => 'auth.password_changed',
+                ], JSON_UNESCAPED_SLASHES),
+                'states' => 'success',
+            ]);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password updated successfully. Please sign in again.',
+            'reauthentication_required' => true,
+        ])->withCookie($this->forgetAccessCookie());
+    }
+
+    public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
+    {
+        $email = (string) $request->input('email');
+        $user = User::query()
+            ->where('email', $email)
+            ->where('status', 'active')
+            ->first();
+
+        if ($user) {
+            try {
+                Password::broker()->sendResetLink(['email' => $email]);
+            } catch (\Throwable $e) {
+                SystemLog::error('Unable to send password reset link.', [
+                    'email' => $email,
+                    'exception' => $e,
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unable to process the request. Please try again later.',
+                ], 500);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'If an account exists for this email address, password reset instructions will be sent.',
+        ]);
+    }
+
+    public function resetPassword(ResetPasswordRequest $request): JsonResponse
+    {
+        $status = Password::broker()->reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password): void {
+                DB::transaction(function () use ($user, $password): void {
+                    $lockedUser = User::query()
+                        ->lockForUpdate()
+                        ->findOrFail($user->user_id);
+
+                    $lockedUser->password = $password;
+                    $lockedUser->auth_version++;
+                    $lockedUser->setRememberToken(Str::random(60));
+                    $lockedUser->save();
+
+                    LogModel::create([
+                        'user_id' => $lockedUser->user_id,
+                        'operation' => json_encode([
+                            'event' => 'auth.password_reset',
+                        ], JSON_UNESCAPED_SLASHES),
+                        'states' => 'success',
+                    ]);
+
+                    event(new PasswordReset($lockedUser));
+                });
+            }
+        );
+
+        if ($status !== Password::PASSWORD_RESET) {
+            return response()->json([
+                'success' => false,
+                'message' => __($status),
+                'errors' => [
+                    'token' => [__($status)],
+                ],
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password has been reset successfully. Please sign in.',
+            'reauthentication_required' => true,
         ]);
     }
 

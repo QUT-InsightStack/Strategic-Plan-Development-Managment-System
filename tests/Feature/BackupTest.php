@@ -82,6 +82,26 @@ class BackupTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_restoring_a_backup_requires_authentication(): void
+    {
+        $actor = $this->createUserWithPermissions(['backups.restore']);
+        $backup = $this->completedBackup($actor);
+
+        $this->postJson("/api/backups/{$backup->backup_id}/restore")
+            ->assertUnauthorized();
+    }
+
+    public function test_restoring_requires_the_restore_permission(): void
+    {
+        $actor = $this->createUserWithPermissions(['backups.view', 'backups.download']);
+        $backup = $this->completedBackup($actor);
+
+        $this->actingAs($actor, 'api');
+        $this->withoutMiddleware(ValidateAuthVersion::class)
+            ->postJson("/api/backups/{$backup->backup_id}/restore")
+            ->assertForbidden();
+    }
+
     // ─── Creating ────────────────────────────────────────────────────
 
     public function test_authorised_administrator_can_create_a_backup(): void
@@ -166,6 +186,56 @@ class BackupTest extends TestCase
         $this->withoutMiddleware(ValidateAuthVersion::class)
             ->get("/api/backups/{$backup->backup_id}/download")
             ->assertNotFound();
+    }
+
+    public function test_a_failed_backup_cannot_be_restored(): void
+    {
+        $actor = $this->createUserWithPermissions(['backups.restore']);
+
+        $backup = Backup::create([
+            'filename' => 'spdms-backup-failed.sql',
+            'size_bytes' => null,
+            'driver' => 'sqlite',
+            'status' => 'failed',
+            'error_message' => 'Something went wrong.',
+            'created_by' => $actor->user_id,
+        ]);
+
+        $this->actingAs($actor, 'api');
+        $this->withoutMiddleware(ValidateAuthVersion::class)
+            ->postJson("/api/backups/{$backup->backup_id}/restore")
+            ->assertStatus(422)
+            ->assertJsonPath('success', false);
+    }
+
+    public function test_restoring_a_missing_backup_file_returns_a_validation_error(): void
+    {
+        $actor = $this->createUserWithPermissions(['backups.restore']);
+        $backup = $this->completedBackup($actor);
+
+        @unlink(storage_path('app/backups/' . $backup->filename));
+
+        $this->actingAs($actor, 'api');
+        $this->withoutMiddleware(ValidateAuthVersion::class)
+            ->postJson("/api/backups/{$backup->backup_id}/restore")
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'This backup file is no longer available.');
+    }
+
+    public function test_restoring_a_backup_for_a_different_driver_is_rejected(): void
+    {
+        $actor = $this->createUserWithPermissions(['backups.restore']);
+        $backup = $this->completedBackup($actor);
+        $backup->forceFill(['driver' => 'mysql'])->save();
+
+        $this->actingAs($actor, 'api');
+        $this->withoutMiddleware(ValidateAuthVersion::class)
+            ->postJson("/api/backups/{$backup->backup_id}/restore")
+            ->assertStatus(422)
+            ->assertJsonPath(
+                'message',
+                'This backup was created for a different database driver and cannot be restored here.'
+            );
     }
 
     // ─── mysqldump handling ──────────────────────────────────────────

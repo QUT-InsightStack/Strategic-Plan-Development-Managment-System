@@ -15,7 +15,7 @@
 <body>
     <div
         id="root"
-        data-me-url="/api/me"
+        data-me-url="/api/auth/me"
         data-change-password-url="/api/change-password">
     </div>
 
