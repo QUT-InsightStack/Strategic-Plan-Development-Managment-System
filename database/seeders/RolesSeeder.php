@@ -17,14 +17,14 @@ class RolesSeeder extends Seeder
                 'is_protected' => true,
             ],
             [
-                'role_name' => 'Planning Officer',
-                'description' => 'Creates and manages strategic plans and performance indicators.',
-                'is_assignable' => true,
-                'is_protected' => false,
-            ],
-            [
                 'role_name'   => 'test',
                 'description' => 'Test account with full backend access.',
+                'is_assignable' => true,
+                'is_protected' => true,
+            ],
+            [
+                'role_name'   => 'Planning Officer',
+                'description' => 'Creates and manages strategic plans and performance indicators.',
                 'is_assignable' => true,
                 'is_protected' => false,
             ],
