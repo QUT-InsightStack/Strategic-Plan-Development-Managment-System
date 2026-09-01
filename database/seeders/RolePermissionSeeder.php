@@ -13,8 +13,9 @@ class RolePermissionSeeder extends Seeder
     {
         $permissionsByCode = Permission::query()->get()->keyBy('code');
 
-        $planningPermissions = [
-            'users.assign_roles',
+       $planningPermissions = [
+    'dashboard.view',
+    'users.assign_roles',
             'strategic_records.view', 'strategic_records.manage', 'strategic_records.create',
             'strategic_records.update', 'strategic_records.archive',
             'strategic_foundations.view', 'strategic_foundations.manage', 'strategic_foundations.create',
@@ -27,7 +28,8 @@ class RolePermissionSeeder extends Seeder
         ];
 
         $viewOnlyPermissions = [
-            'strategic_records.view', 'strategic_foundations.view', 'strategic_objectives.view',
+    'dashboard.view',
+    'strategic_records.view', 'strategic_foundations.view', 'strategic_objectives.view',
             'relations.view', 'plan_core_values.view',
         ];
 
