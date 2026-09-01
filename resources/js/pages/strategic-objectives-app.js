@@ -1,5 +1,11 @@
 import { getStrategicPlan } from '../api/strategic-plans-api.js';
-import { createStrategicObjective, deleteStrategicObjective, listStrategicObjectives, updateStrategicObjective } from '../api/strategic-objectives-api.js';
+import {
+    createStrategicObjective,
+    deleteStrategicObjective,
+    listStrategicObjectives,
+    updateStrategicObjective,
+    updateStrategicObjectiveStatus,
+} from '../api/strategic-objectives-api.js';
 import { AppSidebar } from '../components/AppSidebar.js';
 import { AppDialog } from '../components/AppDialog.js';
 import { PageHeader } from '../components/PageHeader.js';
@@ -9,10 +15,18 @@ import { PERMISSIONS } from '../access/access-policy.js';
 import { can } from '../access/access-session.js';
 
 enforcePageAccess();
-const canCreateObjectives = can(PERMISSIONS.PLANS_CREATE);
-const canUpdateObjectives = can(PERMISSIONS.PLANS_UPDATE);
-const canDeleteObjectives = can(PERMISSIONS.PLANS_DELETE);
-const hasObjectiveActions = canUpdateObjectives || canDeleteObjectives;
+const canCreateObjectives = can(PERMISSIONS.OBJECTIVES_CREATE);
+
+const canUpdateObjectives = can(PERMISSIONS.OBJECTIVES_UPDATE);
+
+const canArchiveObjectives = can(PERMISSIONS.OBJECTIVES_ARCHIVE);
+
+const canDeleteObjectives = can(PERMISSIONS.OBJECTIVES_DELETE);
+
+const hasObjectiveActions =
+    canUpdateObjectives ||
+    canArchiveObjectives ||
+    canDeleteObjectives;
 
 const { useEffect, useState } = React;
 const root = document.getElementById('root');
@@ -30,6 +44,13 @@ function formatDate(value) {
         month: 'short',
         year: 'numeric',
     });
+}
+function formatStatus(value) {
+    if (!value) return 'Unknown';
+
+    return value
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function displayName(user) {
@@ -71,7 +92,14 @@ function StrategicObjectivesApp() {
     const [formErrors, setFormErrors] = useState({});
     const [page, setPage] = useState(1);
     const [status, setStatus] = useState({ type: '', message: '' });
-    const [dialog, setDialog] = useState({ open: false, variant: 'success', title: '', message: '', objective: null });
+    const [dialog, setDialog] = useState({
+    open: false,
+    variant: 'success',
+    title: '',
+    message: '',
+    objective: null,
+    action: null,
+});
 
     async function load() {
         setLoading(true);
@@ -104,19 +132,108 @@ function StrategicObjectivesApp() {
         finally { setSubmitting(false); }
     }
 
-    function requestDelete(objective) {
-        if (!canDeleteObjectives) return;
-        setDialog({ open: true, variant: 'danger', title: 'Delete Strategic Objective?', message: `Delete “${objective.objective_title || 'Untitled objective'}”? This action cannot be undone.`, objective });
-    }
+   function requestDelete(objective) {
+    if (!canDeleteObjectives) return;
 
-    async function confirmDelete() {
-        const objective = dialog.objective;
-        setDialog((current) => ({ ...current, open: false })); setSubmitting(true);
-        try { await deleteStrategicObjective(objective.objective_id); await load(); setDialog({ open: true, variant: 'success', title: 'Operation successful', message: 'Strategic Objective deleted successfully.', objective: null }); }
-        catch (error) { setDialog({ open: true, variant: 'error', title: 'Delete failed', message: error.message, objective: null }); }
-        finally { setSubmitting(false); }
-    }
+    setDialog({
+        open: true,
+        variant: 'danger',
+        title: 'Delete Strategic Objective?',
+        message: `Delete “${objective.objective_title || 'Untitled objective'}”? This action cannot be undone.`,
+        objective,
+        action: 'delete',
+    });
+}
 
+function requestArchiveChange(objective) {
+    if (!canArchiveObjectives || archived) return;
+
+    const restoring = objective.status === 'archived';
+
+    setDialog({
+        open: true,
+        variant: restoring ? 'success' : 'danger',
+        title: restoring
+            ? 'Restore Strategic Objective?'
+            : 'Archive Strategic Objective?',
+        message: restoring
+            ? `Restore “${objective.objective_title || 'Untitled objective'}”?`
+            : `Archive “${objective.objective_title || 'Untitled objective'}”? The objective will remain stored and can be restored later.`,
+        objective,
+        action: restoring ? 'restore' : 'archive',
+    });
+}
+
+async function confirmDelete() {
+    const objective = dialog.objective;
+
+    setDialog((current) => ({ ...current, open: false }));
+    setSubmitting(true);
+
+    try {
+        await deleteStrategicObjective(objective.objective_id);
+        await load();
+
+        setDialog({
+            open: true,
+            variant: 'success',
+            title: 'Operation successful',
+            message: 'Strategic Objective deleted successfully.',
+            objective: null,
+            action: null,
+        });
+    } catch (error) {
+        setDialog({
+            open: true,
+            variant: 'error',
+            title: 'Delete failed',
+            message: error.message,
+            objective: null,
+            action: null,
+        });
+    } finally {
+        setSubmitting(false);
+    }
+}
+
+async function confirmArchiveChange() {
+    const objective = dialog.objective;
+    const restoring = dialog.action === 'restore';
+
+    setDialog((current) => ({ ...current, open: false }));
+    setSubmitting(true);
+
+    try {
+        await updateStrategicObjectiveStatus(
+            objective.objective_id,
+            restoring ? 'restored' : 'archived'
+        );
+
+        await load();
+
+        setDialog({
+            open: true,
+            variant: 'success',
+            title: 'Operation successful',
+            message: restoring
+                ? 'Strategic Objective restored successfully.'
+                : 'Strategic Objective archived successfully.',
+            objective: null,
+            action: null,
+        });
+    } catch (error) {
+        setDialog({
+            open: true,
+            variant: 'error',
+            title: restoring ? 'Restore failed' : 'Archive failed',
+            message: error.message,
+            objective: null,
+            action: null,
+        });
+    } finally {
+        setSubmitting(false);
+    }
+}
     const archived = plan?.status === 'archived';
     const officeSuggestions = [
     ...new Set([
@@ -232,12 +349,105 @@ React.createElement(
             React.createElement('section', { className: 'ui-card objectives-card', 'aria-labelledby': 'objectives-title' },
                 React.createElement('div', { className: 'objectives-heading' }, React.createElement('h2', { id: 'objectives-title' }, 'Strategic Objectives'), canCreateObjectives ? React.createElement('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', disabled: archived || loading, onClick: () => { setEditing(null); setFormOpen(true); } }, React.createElement('i', { className: 'bi bi-plus-lg' }), 'Add Objective') : null),
                 React.createElement('div', { className: 'ui-card__body' }, loading ? React.createElement('div', { className: 'ui-empty' }, 'Loading Strategic Objectives…') : objectives.length === 0 ? React.createElement('div', { className: 'ui-empty' }, 'No Strategic Objectives have been added yet.') : React.createElement('div', { className: 'ui-table-wrap' }, React.createElement('table', { className: 'ui-table objectives-table' },
-                    React.createElement('thead', null, React.createElement('tr', null, ['No.', 'Strategic Objective', 'Expected Outcome', 'Indicator', 'Target', 'Responsible Office/Agency', 'Actions'].map((heading) => React.createElement('th', { key: heading }, heading)))),
+                    React.createElement('thead', null, React.createElement('tr', null, ['No.', 'Strategic Objective', 'Expected Outcome', 'Indicator', 'Target', 'Responsible Office/Agency', 'Status', 'Actions']
+                        .map((heading) => React.createElement('th', { key: heading }, heading)))),
                     React.createElement('tbody', null, visibleObjectives.map((objective, index) => React.createElement('tr', { key: objective.objective_id }, React.createElement(
     'td',
     null,
     ((currentPage - 1) * pageSize) + index + 1
-), React.createElement('td', null, objective.objective_title || 'Untitled objective'), React.createElement('td', null, objective.expected_outcome || '—'), React.createElement('td', null, objective.indicator || '—'), React.createElement('td', null, objective.target || '—'), React.createElement('td', null, objective.responsible_office_agency || '—'), React.createElement('td', null, hasObjectiveActions ? React.createElement('div', { className: 'objectives-table__actions' }, canUpdateObjectives ? React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', disabled: archived, onClick: () => { setEditing(objective); setFormOpen(true); }, 'aria-label': `Update ${objective.objective_title}` }, React.createElement('i', { className: 'bi bi-pencil' })) : null, canDeleteObjectives ? React.createElement('button', { className: 'ui-button ui-button--danger ui-button--sm', type: 'button', disabled: archived, onClick: () => requestDelete(objective), 'aria-label': `Delete ${objective.objective_title}` }, React.createElement('i', { className: 'bi bi-trash3' })) : null) : React.createElement('span', { className: 'ui-help' }, 'Review only')))))
+), React.createElement('td', null, objective.objective_title || 'Untitled objective'), React.createElement('td', null, objective.expected_outcome || '—'), React.createElement('td', null, objective.indicator || '—'), React.createElement('td', null, objective.target || '—'), React.createElement('td', null, objective.responsible_office_agency || '—'), React.createElement(
+    'td',
+    null,
+    React.createElement(
+        'span',
+        {
+            className:
+                `ui-badge ui-badge--${objective.status || 'draft'}`,
+        },
+        formatStatus(objective.status || 'draft')
+    )
+),
+
+
+React.createElement(
+    'td',
+    null,
+    hasObjectiveActions
+        ? React.createElement(
+            'div',
+            { className: 'objectives-table__actions' },
+
+            canUpdateObjectives &&
+            objective.status !== 'archived'
+                ? React.createElement(
+                    'button',
+                    {
+                        className:
+                            'ui-button ui-button--secondary ui-button--sm',
+                        type: 'button',
+                        disabled: archived,
+                        onClick: () => {
+                            setEditing(objective);
+                            setFormOpen(true);
+                        },
+                        'aria-label':
+                            `Update ${objective.objective_title || 'strategic objective'}`,
+                    },
+                    React.createElement('i', {
+                        className: 'bi bi-pencil',
+                    })
+                )
+                : null,
+
+            canArchiveObjectives
+                ? React.createElement(
+                    'button',
+                    {
+                        className:
+                            'ui-button ui-button--secondary ui-button--sm',
+                        type: 'button',
+                        disabled: archived,
+                        onClick: () =>
+                            requestArchiveChange(objective),
+                        'aria-label':
+                            `${objective.status === 'archived' ? 'Restore' : 'Archive'} ${objective.objective_title || 'strategic objective'}`,
+                    },
+                    React.createElement('i', {
+                        className:
+                            objective.status === 'archived'
+                                ? 'bi bi-arrow-counterclockwise'
+                                : 'bi bi-archive',
+                    })
+                )
+                : null,
+
+            canDeleteObjectives
+                ? React.createElement(
+                    'button',
+                    {
+                        className:
+                            'ui-button ui-button--danger ui-button--sm',
+                        type: 'button',
+                        disabled: archived,
+                        onClick: () =>
+                            requestDelete(objective),
+                        'aria-label':
+                            `Delete ${objective.objective_title || 'strategic objective'}`,
+                    },
+                    React.createElement('i', {
+                        className: 'bi bi-trash3',
+                    })
+                )
+                : null
+        )
+        : React.createElement(
+            'span',
+            { className: 'ui-help' },
+            'Review only'
+        )
+)
+
+)))
                 ))), React.createElement(
     'div',
     { className: 'objectives-footer' },
@@ -309,8 +519,36 @@ React.createElement(
         setEditing(null);
     },
 }),
-        React.createElement(AppDialog, { open: dialog.open, variant: dialog.variant, title: dialog.title, message: dialog.message, confirmLabel: dialog.variant === 'danger' ? 'Confirm Delete' : 'Continue', onConfirm: dialog.variant === 'danger' ? confirmDelete : () => setDialog((current) => ({ ...current, open: false })), onCancel: () => setDialog((current) => ({ ...current, open: false })) })
-    );
+       React.createElement(AppDialog, {
+    open: dialog.open,
+    variant: dialog.variant,
+    title: dialog.title,
+    message: dialog.message,
+    confirmLabel:
+        dialog.action === 'delete'
+            ? 'Confirm Delete'
+            : dialog.action === 'archive'
+                ? 'Confirm Archive'
+                : dialog.action === 'restore'
+                    ? 'Confirm Restore'
+                    : 'Continue',
+    onConfirm:
+        dialog.action === 'delete'
+            ? confirmDelete
+            : dialog.action === 'archive' ||
+                dialog.action === 'restore'
+                ? confirmArchiveChange
+                : () =>
+                    setDialog((current) => ({
+                        ...current,
+                        open: false,
+                    })),
+    onCancel: () =>
+        setDialog((current) => ({
+            ...current,
+            open: false,
+        })),
+}) );
 }
 
 ReactDOM.createRoot(root).render(React.createElement(StrategicObjectivesApp));
