@@ -167,11 +167,13 @@ function DashboardApp() {
                 })
                     .then((response) => {
                         if (!response.ok) {
-                            if (response.status === 401 || response.status === 403) {
-                                window.location.href = loginUrl;
-                            }
-                            throw new Error('Failed to load');
-                        }
+    if (response.status === 401) {
+        clearAccessSession();
+        window.location.replace(loginUrl);
+    }
+
+    throw new Error('Failed to load');
+}
                         return response.json();
                     })
                     .then((data) => {

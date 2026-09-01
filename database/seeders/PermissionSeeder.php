@@ -10,6 +10,16 @@ class PermissionSeeder extends Seeder
     public function run(): void
     {
         $permissions = [
+
+
+            [
+    'permission_name' => 'View Dashboard',
+    'description' => 'Allows viewing the dashboard.',
+    'code' => 'dashboard.view',
+    'module' => 'dashboard',
+],
+
+
             [
                 'permission_name' => 'View Users',
                 'description' => 'Allows viewing the list of users and individual user details.',

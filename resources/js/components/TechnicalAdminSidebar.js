@@ -11,6 +11,20 @@ const accessItems = [
     { label: 'Role Management', icon: 'bi-person-gear', href: '/role-management', permission: PERMISSIONS.ROLES_MANAGE },
     { label: 'Access Permission Management', icon: 'bi-shield-lock-fill', href: '/role-management?section=permissions', permission: PERMISSIONS.PERMISSIONS_MANAGE },
 ];
+const planningItems = [
+    {
+        label: 'Manage Plans',
+        icon: 'bi-clipboard-data',
+        href: '/strategic-plans',
+        permission: PERMISSIONS.PLANS_VIEW,
+    },
+    {
+        label: 'Strategic Objectives',
+        icon: 'bi-bullseye',
+        href: '/strategic-objectives',
+        permission: PERMISSIONS.PLANS_VIEW,
+    },
+];
 
 const securityItems = [
     { label: 'Login History', icon: 'bi-clock-history', href: '/login-history', permission: PERMISSIONS.LOGS_VIEW },
@@ -22,12 +36,28 @@ const securityItems = [
 
 export function TechnicalAdminSidebar({ onNotice = () => {} }) {
     const currentPath = window.location.pathname;
-    const currentSection = new URLSearchParams(window.location.search).get('section');
+    const currentSection = new URLSearchParams(
+        window.location.search
+    ).get('section');
     const accessSession = getAccessSession();
-    const [openMenus, setOpenMenus] = useState({ access: true, security: true });
+
+    const [openMenus, setOpenMenus] = useState({
+        planning: true,
+        access: true,
+        security: true,
+    });
+
+    const hasPlanningAccess = planningItems.some(
+        (item) =>
+            !item.permission ||
+            can(item.permission, accessSession)
+    );
 
     function toggle(menu) {
-        setOpenMenus((current) => ({ ...current, [menu]: !current[menu] }));
+        setOpenMenus((current) => ({
+            ...current,
+            [menu]: !current[menu],
+        }));
     }
 
     function renderSubitem(item) {
@@ -55,6 +85,14 @@ export function TechnicalAdminSidebar({ onNotice = () => {} }) {
         React.createElement('a', { className: 'app-sidebar__profile', href: '/profile' }, React.createElement('i', { className: 'bi bi-person-vcard-fill' }), React.createElement('span', null, displayRoleName(accessSession?.roleName, 'Technical Admin'))),
         React.createElement('nav', { className: 'app-sidebar__nav' },
             React.createElement('a', { className: `app-sidebar__item${currentPath === '/dashboard' ? ' active' : ''}`, href: '/dashboard' }, React.createElement('i', { className: 'bi bi-speedometer2' }), React.createElement('span', null, 'Technical Dashboard')),
+            hasPlanningAccess
+    ? renderGroup(
+        'planning',
+        'Planning Module',
+        'bi-clipboard2-check',
+        planningItems
+    )
+    : null,
             renderGroup('access', 'Access Administration', 'bi-person-lock', accessItems),
             renderGroup('security', 'Security Management', 'bi-shield-check', securityItems)
         ),
