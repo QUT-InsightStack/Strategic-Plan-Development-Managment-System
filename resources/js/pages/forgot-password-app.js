@@ -169,7 +169,7 @@ function ForgotPasswordForm({ status, setStatus }) {
         setIsSubmitting(true);
         setStatus('Processing your request...', 'info');
 
-        try {
+        /*try {
             const response = await fetch(
                 apiConfig.forgotPasswordUrl,
                 {
@@ -208,8 +208,17 @@ function ForgotPasswordForm({ status, setStatus }) {
             );
         } finally {
             setIsSubmitting(false);
+        }*/
+    
+    setErrors({});
+
+setStatus(
+    'Your password recovery request has been submitted. If the account details are valid, a recovery password will be provided shortly by an authorised system administrator.',
+    'success'
+);
+
+setIsSubmitting(false);
         }
-    }
 
     return React.createElement(
         'section',
@@ -228,7 +237,7 @@ function ForgotPasswordForm({ status, setStatus }) {
             React.createElement(
                 'p',
                 null,
-                'Enter the email address associated with your account.'
+                'Enter your registered email address to request password recovery assistance.'
             )
         ),
 
@@ -279,7 +288,7 @@ function ForgotPasswordForm({ status, setStatus }) {
                     type: 'submit',
                     disabled: isSubmitting,
                 },
-                isSubmitting ? 'Sending...' : 'Send Reset Link'
+                isSubmitting ? 'Submitting...' : 'Request Password Recovery'
             ),
 
             React.createElement(

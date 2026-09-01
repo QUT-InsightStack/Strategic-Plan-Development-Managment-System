@@ -2,10 +2,13 @@
 
 use App\Http\Controllers\LoginHistoryController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\FoundationsController;
 use App\Http\Controllers\LinkController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\PdpChapterController;
+use App\Http\Controllers\PlanCreationController;
 use App\Http\Controllers\RelationController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RolePremissionController;
@@ -26,6 +29,10 @@ Route::post('auth/login', [AuthController::class, 'login'])
 
 // Token refresh is handled inside AuthController, including expired tokens.
 Route::post('auth/refresh', [AuthController::class, 'refresh']);
+Route::post('forgot-password', [AuthController::class, 'forgotPassword'])
+    ->middleware('throttle:5,1');
+Route::post('reset-password', [AuthController::class, 'resetPassword'])
+    ->middleware('throttle:5,1');
 
 /*
 |--------------------------------------------------------------------------
@@ -33,13 +40,20 @@ Route::post('auth/refresh', [AuthController::class, 'refresh']);
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth:api','auth.version',])->group(function () {
-    Route::post('auth/logout', [AuthController::class, 'logout']);
-    Route::get('auth/me', [AuthController::class, 'me']);
-    Route::put(
-        'auth/profile',
-        [AuthController::class, 'updateProfile']
-    );
+// Logout is intentionally outside auth:api. It is idempotent and must stay
+// reachable with an expired or already-blacklisted token, so that repeated
+// logout attempts still clear the cookie instead of returning 401.
+Route::post('auth/logout', [AuthController::class, 'logout']);
+
+// Requires a valid, non-expired token
+Route::middleware(['auth:api', 'auth.version'])->group(function () {
+    Route::get('auth/me',     [AuthController::class, 'me']);
+    Route::put('auth/profile',       [AuthController::class, 'updateProfile']);
+    Route::put('change-password', [AuthController::class, 'changePassword']);
+
+    // Takes a file rather than JSON, so it cannot go through updateProfile.
+    Route::post('auth/profile/photo', [AuthController::class, 'uploadPhoto']);
+    Route::delete('auth/profile/photo', [AuthController::class, 'removePhoto']);
 });
 
 /*
@@ -52,6 +66,9 @@ Route::middleware(['auth:api','auth.version',])->prefix('users')->group(function
     Route::get('/search', [UserController::class, 'search'])
     ->middleware('permission:users.view');
 
+    Route::get('/search-filters', [UserController::class, 'searchFilterOptions'])
+        ->middleware('permission:users.view');
+
     Route::get('', [UserController::class, 'index'])
         ->middleware('permission:users.view');
 
@@ -61,6 +78,10 @@ Route::middleware(['auth:api','auth.version',])->prefix('users')->group(function
     Route::put('/{user}/role', [UserController::class, 'assignRole'])
         ->whereNumber('user')
         ->middleware('permission:users.assign_roles');
+
+    Route::patch('/{user}/status', [UserController::class, 'updateStatus'])
+        ->whereNumber('user')
+        ->middleware('permission:users.update');
 
     Route::get('{user}', [UserController::class, 'show'])
         ->whereNumber('user')
@@ -77,11 +98,49 @@ Route::middleware(['auth:api','auth.version',])->prefix('users')->group(function
 
 /*
 |--------------------------------------------------------------------------
+| Manual database backups
+|--------------------------------------------------------------------------
+|
+| A backup contains every user record and password hash in the system, so
+| creating one, listing them and downloading one are three separate
+| permissions. Downloads are audited by BackupService.
+|
+*/
+Route::middleware(['auth:api', 'auth.version'])->prefix('backups')->group(function () {
+    Route::get('', [BackupController::class, 'index'])
+        ->middleware('permission:backups.view');
+
+    Route::post('', [BackupController::class, 'store'])
+        ->middleware('permission:backups.create');
+
+    Route::get('{backup}/download', [BackupController::class, 'download'])
+        ->whereNumber('backup')
+        ->middleware('permission:backups.download');
+
+    Route::post('{backup}/restore', [BackupController::class, 'restore'])
+        ->whereNumber('backup')
+        ->middleware('permission:backups.restore');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Role and permission management
 |--------------------------------------------------------------------------
 */
 
 Route::middleware(['auth:api','auth.version',])->group(function () {
+    Route::get('pdp-chapters', [PdpChapterController::class, 'index']);
+    Route::get('pdp-chapters/{chapter}', [PdpChapterController::class, 'show'])
+        ->whereNumber('chapter');
+    Route::post('pdp-chapters', [PdpChapterController::class, 'store'])
+        ->middleware('permission:pdp_chapters.manage');
+    Route::put('pdp-chapters/{chapter}', [PdpChapterController::class, 'update'])
+        ->whereNumber('chapter')
+        ->middleware('permission:pdp_chapters.manage');
+    Route::delete('pdp-chapters/{chapter}', [PdpChapterController::class, 'destroy'])
+        ->whereNumber('chapter')
+        ->middleware('permission:pdp_chapters.manage');
+
     // Roles
     Route::get('roles', [RoleController::class, 'index'])
         ->middleware('permission:roles.view');
@@ -165,6 +224,20 @@ Route::middleware(['auth:api','auth.version',])->group(function () {
 */
 
 Route::middleware(['auth:api','auth.version',])->group(function () {
+    // Strategic plan management
+    Route::get('strategic-plans', [PlanCreationController::class, 'index']);
+    Route::post('strategic-plans', [PlanCreationController::class, 'store']);
+    Route::post('strategic-plans/{id}/copy', [PlanCreationController::class, 'copy'])
+        ->whereNumber('id');
+    Route::patch('strategic-plans/{id}/status', [PlanCreationController::class, 'updateStatus'])
+        ->whereNumber('id');
+    Route::get('strategic-plans/{id}', [PlanCreationController::class, 'show'])
+        ->whereNumber('id');
+    Route::put('strategic-plans/{id}', [PlanCreationController::class, 'update'])
+        ->whereNumber('id');
+    Route::delete('strategic-plans/{id}', [PlanCreationController::class, 'destroy'])
+        ->whereNumber('id');
+
     // Strategic record parent relations
     Route::get(
         'strategic-records/{recordId}/relations',

@@ -48,6 +48,24 @@ class SearchUsersRequest extends ApiFormRequest
                 Rule::in(['active', 'inactive', 'suspended']),
             ],
 
+            'unit' => [
+                'sometimes',
+                'string',
+                'max:255',
+            ],
+
+            'office' => [
+                'sometimes',
+                'string',
+                'max:255',
+            ],
+
+            'department' => [
+                'sometimes',
+                'string',
+                'max:255',
+            ],
+
             'sort_by' => [
                 'sometimes',
                 'string',

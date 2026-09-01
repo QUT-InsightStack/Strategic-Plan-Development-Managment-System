@@ -1,5 +1,6 @@
 import { createStrategicPlan } from './api/strategic-plans-api.js';
 import { AppSidebar } from './components/AppSidebar.js';
+import { PageHeader } from './components/PageHeader.js';
 import { StrategicPlanForm } from './strategic-plans/StrategicPlanForm.js';
 import { enforcePageAccess } from './access/access-guard.js';
 
@@ -35,7 +36,7 @@ function CreateStrategicPlanApp() {
     return React.createElement(React.Fragment, null,
         React.createElement(AppSidebar, { onNotice: (message) => setStatus({ type: 'info', message }) }),
         React.createElement('main', { className: 'app-shell-main' }, React.createElement('div', { className: 'app-shell-container' },
-            React.createElement('header', { className: 'app-page-header' }, React.createElement('div', null, React.createElement('h1', { className: 'ui-page-title' }, 'Create Strategic Plan'), React.createElement('p', { className: 'ui-page-subtitle' }, 'Provide basic information and the strategic foundation for the plan.'))),
+            React.createElement(PageHeader, { section: 'Strategic Planning', title: 'Create Strategic Plan', subtitle: 'Provide basic information and the strategic foundation for the plan.' }),
             status.message ? React.createElement('div', { className: `ui-status ui-status--${status.type}`, role: 'status' }, status.message) : null,
             React.createElement(StrategicPlanForm, { mode: 'create', onSubmit: submit, submitting, serverErrors: errors })
         ))

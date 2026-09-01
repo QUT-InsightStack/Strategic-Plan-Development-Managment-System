@@ -17,9 +17,13 @@ class StoreStrategicObjectiveRequest extends ApiFormRequest
         $isDraft = $this->input('status', 'draft') === 'draft';
 
         return [
+            'created_by' => ['prohibited'],
+            'updated_by' => ['prohibited'],
+            'archived_at' => ['prohibited'],
+            'archived_by' => ['prohibited'],
+            'deleted_at' => ['prohibited'],
+            'status_before_archive' => ['prohibited'],
             'strategic_plan_id' => StrategicObjectiveValidationRules::strategicPlanIdRequired(),
-            'created_by' => StrategicObjectiveValidationRules::createdByRequired(),
-            'updated_by' => StrategicObjectiveValidationRules::updatedByOptional(),
             'status' => StrategicObjectiveValidationRules::statusOptional(),
             'objective_title' => StrategicObjectiveValidationRules::objectiveTitle(! $isDraft),
             'objective_description' => StrategicObjectiveValidationRules::objectiveDescription(! $isDraft),

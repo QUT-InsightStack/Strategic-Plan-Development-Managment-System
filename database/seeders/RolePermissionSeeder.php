@@ -11,15 +11,21 @@ class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        $administrator = Role::query()
-            ->where('role_name', 'Administrator')
-            ->first();
+        $permissionsByCode = Permission::query()->get()->keyBy('code');
 
-        if (! $administrator) {
-            throw new RuntimeException(
-                'The Administrator role must exist before role permissions are seeded.'
-            );
-        }
+       $planningPermissions = [
+    'dashboard.view',
+    'users.assign_roles',
+            'strategic_records.view', 'strategic_records.manage', 'strategic_records.create',
+            'strategic_records.update', 'strategic_records.archive',
+            'strategic_foundations.view', 'strategic_foundations.manage', 'strategic_foundations.create',
+            'strategic_foundations.update',
+            'strategic_objectives.view', 'strategic_objectives.create',
+            'strategic_objectives.update',
+            'relations.view', 'relations.manage', 'relations.create', 'relations.update',
+            'plan_core_values.view', 'plan_core_values.manage', 'plan_core_values.create',
+            'plan_core_values.update',
+        ];
 
         $permissionCodes = [
             'users.view',
@@ -34,41 +40,57 @@ class RolePermissionSeeder extends Seeder
             'permissions.manage',
             'logs.view',
             'login_history.view',
+        $viewOnlyPermissions = [
+    'dashboard.view',
+    'strategic_records.view', 'strategic_foundations.view', 'strategic_objectives.view',
+            'relations.view', 'plan_core_values.view',
         ];
 
-        $permissions = Permission::query()
-            ->whereIn('code', $permissionCodes)
-            ->get();
+        $assignments = [
+            'Administrator' => $permissionsByCode->keys()->all(),
+            'Planning Officer' => $planningPermissions,
+            'Division Head' => $viewOnlyPermissions,
+            'Viewer' => $viewOnlyPermissions,
+        ];
 
-        if ($permissions->count() !== count($permissionCodes)) {
-            $foundCodes = $permissions->pluck('code')->all();
-            $missingCodes = array_values(array_diff($permissionCodes, $foundCodes));
+        foreach ($assignments as $roleName => $codes) {
+            $role = Role::query()->where('role_name', $roleName)->first();
+            if (! $role) {
+                continue;
+            }
 
-            throw new RuntimeException(
-                'Missing permissions: ' . implode(', ', $missingCodes)
+            $missing = array_values(array_diff($codes, $permissionsByCode->keys()->all()));
+            if ($missing !== []) {
+                throw new RuntimeException("Missing {$roleName} permissions: " . implode(', ', $missing));
+            }
+
+            $role->permissions()->syncWithoutDetaching(
+                $permissionsByCode
+                    ->filter(fn (Permission $permission) => in_array($permission->code, $codes, true))
+                    ->pluck('permission_id')
+                    ->all()
             );
         }
 
-        $administrator->permissions()->syncWithoutDetaching(
-            $permissions->pluck('permission_id')->all()
-        );
+        // These contributor roles may create, review, update, and archive,
+        // but must never retain a permission whose action is Delete. The
+        // explicit detach is required because syncWithoutDetaching above does
+        // not revoke permissions assigned by an earlier seeder run.
+        $restrictedRoleNames = [
+            'Planning Officer',
+            'Planner/Encoder',
+            'Office Representative',
+            'Office/Agency',
+            'Offices / Agencies',
+        ];
 
-        // Optional: permit other approved administrative roles to assign
-        // ordinary roles without permitting protected-role assignment.
-        $planningOfficer = Role::query()
-            ->where('role_name', 'Planning Officer')
-            ->first();
+        $deletePermissionIds = $permissionsByCode
+            ->filter(fn (Permission $permission) => str_ends_with($permission->code, '.delete'))
+            ->pluck('permission_id')
+            ->all();
 
-        if ($planningOfficer) {
-            $ordinaryAssignmentPermission = Permission::query()
-                ->where('code', 'users.assign_roles')
-                ->first();
-
-            if ($ordinaryAssignmentPermission) {
-                $planningOfficer->permissions()->syncWithoutDetaching([
-                    $ordinaryAssignmentPermission->permission_id,
-                ]);
-            }
-        }
+        Role::query()
+            ->whereIn('role_name', $restrictedRoleNames)
+            ->each(fn (Role $role) => $role->permissions()->detach($deletePermissionIds));
     }
 }

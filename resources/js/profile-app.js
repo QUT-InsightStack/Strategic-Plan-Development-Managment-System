@@ -1,5 +1,9 @@
 import defaultAvatar from '../images/profile-avatar.svg';
 import { BrandLogo } from './brand-logo.js';
+import { logout, guardAgainstBackNavigation } from './auth-session.js';
+import { LogoutButton } from './components/LogoutButton.js';
+import { myLoginHistory } from './api/login-history-api.js';
+import { PHOTO_ACCEPT, checkPhoto, removeProfilePhoto, uploadProfilePhoto } from './api/profile-photo-api.js';
 
 const { useRef, useState, useEffect } = React;
 
@@ -8,9 +12,13 @@ const dashboardUrl = '/dashboard';
 const loginUrl = '/login';
 
 const apiConfig = {
-    profileUrl: rootElement?.dataset?.profileUrl || '/api/me',
-    updateUrl: rootElement?.dataset?.updateUrl || '/api/profile',
+    profileUrl: rootElement?.dataset?.profileUrl || '/api/auth/me',
+    updateUrl: rootElement?.dataset?.updateUrl || '/api/auth/profile',
 };
+
+// The fields this form owns. profile_picture is deliberately absent: it is a
+// file, handled by the photo endpoint, and the profile endpoint now rejects it.
+const EDITABLE_FIELDS = ['first_name', 'last_name', 'email', 'mobile', 'address', 'designation'];
 
 const initialProfile = {
     user_id: '',
@@ -19,6 +27,7 @@ const initialProfile = {
     email: '',
     mobile: '',
     address: '',
+    designation: '',
     profile_picture: '',
 };
 
@@ -40,7 +49,7 @@ function Brand() {
     );
 }
 
-function Header({ onMessage, onLogout }) {
+function Header({ onMessage, onLogout, loggingOut }) {
     return React.createElement(
         'header',
         { className: 'app-header', 'aria-label': 'Application header' },
@@ -52,7 +61,7 @@ function Header({ onMessage, onLogout }) {
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.help) }, 'Help'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.contact) }, 'Contact'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.support) }, 'Support'),
-            React.createElement('button', { className: 'nav-link logout-link', type: 'button', onClick: onLogout }, 'Logout')
+            React.createElement(LogoutButton)
         )
     );
 }
@@ -75,27 +84,65 @@ function Icon({ type }) {
     );
 }
 
-function ProfileSideCard({ avatar, onAvatarSelect }) {
+function ProfileSideCard({ avatar, onAvatarSelect, onMessage }) {
     const fileInputRef = useRef(null);
+    const [busy, setBusy] = useState(false);
+    const [photoError, setPhotoError] = useState('');
+
+    const hasPhoto = Boolean(avatar) && avatar !== defaultAvatar;
 
     function openFilePicker() {
         fileInputRef.current.click();
     }
 
-    function handleFileChange(event) {
+    async function handleFileChange(event) {
         const file = event.target.files[0];
+
+        // Cleared straight away so choosing the same file twice — after a
+        // failure, say — still fires a change event.
+        event.target.value = '';
 
         if (!file) {
             return;
         }
 
-        // For now, just create a data URL. In production, you'd upload to server
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const dataUrl = e.target.result;
-            onAvatarSelect(dataUrl);
-        };
-        reader.readAsDataURL(file);
+        const problem = checkPhoto(file);
+        if (problem) {
+            setPhotoError(problem);
+            return;
+        }
+
+        setPhotoError('');
+        setBusy(true);
+
+        try {
+            const payload = await uploadProfilePhoto(file);
+            onAvatarSelect(payload.data?.profile_picture || defaultAvatar);
+            onMessage('Photo updated successfully.', 'success');
+        } catch (error) {
+            setPhotoError(error.message);
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    async function handleRemove() {
+        if (!window.confirm('Remove your profile photo?')) {
+            return;
+        }
+
+        setPhotoError('');
+        setBusy(true);
+
+        try {
+            await removeProfilePhoto();
+            onAvatarSelect(defaultAvatar);
+            onMessage('Photo removed successfully.', 'success');
+        } catch (error) {
+            setPhotoError(error.message);
+        } finally {
+            setBusy(false);
+        }
     }
 
     return React.createElement(
@@ -109,16 +156,22 @@ function ProfileSideCard({ avatar, onAvatarSelect }) {
         React.createElement(
             'div',
             { className: 'upload-row' },
-            React.createElement('button', { className: 'upload-button', type: 'button', onClick: openFilePicker, 'aria-label': 'Upload profile photo' }, '+'),
-            React.createElement('button', { className: 'upload-action', type: 'button', onClick: openFilePicker }, 'Update your photo'),
+            React.createElement('button', { className: 'upload-button', type: 'button', onClick: openFilePicker, disabled: busy, 'aria-label': 'Upload profile photo' }, '+'),
+            React.createElement('button', { className: 'upload-action', type: 'button', onClick: openFilePicker, disabled: busy }, busy ? 'Uploading…' : 'Update your photo'),
             React.createElement('input', {
                 ref: fileInputRef,
                 type: 'file',
-                accept: 'image/*',
+                accept: PHOTO_ACCEPT,
                 hidden: true,
                 onChange: handleFileChange,
             })
         ),
+        hasPhoto
+            ? React.createElement('button', { className: 'photo-remove', type: 'button', onClick: handleRemove, disabled: busy }, 'Remove photo')
+            : null,
+        photoError
+            ? React.createElement('p', { className: 'photo-error', role: 'alert' }, photoError)
+            : React.createElement('p', { className: 'photo-hint' }, 'JPG, PNG or WebP, up to 2 MB.'),
     React.createElement('p', { className: 'side-copy' }, 'Manage your contact details', React.createElement('br'), 'and account information'),
 
 React.createElement(
@@ -155,28 +208,46 @@ function TextField({ id, label, value, error, type = 'text', icon, helperText, o
             type,
             value,
             disabled,
+            // Ties the message below to the input, so a screen reader reads
+            // the reason rather than just announcing the field as invalid.
+            'aria-invalid': error ? 'true' : undefined,
+            'aria-describedby': error ? `${id}-error` : undefined,
             onChange: (event) => onChange(event.target.value),
         }),
-        React.createElement('p', { className: 'field-error' }, error || '')
+        error
+            ? React.createElement('p', { id: `${id}-error`, className: 'field-error', role: 'alert' }, error)
+            : null
     );
 }
 
-function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
+function ProfileForm({ status, setStatus, onAvatarChange }) {
     const [profile, setProfile] = useState(initialProfile);
     const [originalProfile, setOriginalProfile] = useState(initialProfile);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+
+    // The photo is no longer part of this form. It is uploaded as a file by
+    // the side card and saved by its own endpoint, so nothing here has to
+    // keep `profile_picture` in step with the avatar.
+    const dirty = EDITABLE_FIELDS.some((field) => profile[field] !== originalProfile[field]);
 
     useEffect(() => {
         loadProfile();
     }, []);
 
+    // Unsaved edits are easy to lose on a page with a sidebar full of links.
     useEffect(() => {
-        // Sync profile_picture with avatar when avatar changes (e.g., from image upload)
-        if (avatar && avatar !== defaultAvatar && avatar !== profile.profile_picture) {
-            updateField('profile_picture', avatar);
+        if (!dirty) return undefined;
+
+        function warn(event) {
+            event.preventDefault();
+            event.returnValue = '';
         }
-    }, [avatar]);
+
+        window.addEventListener('beforeunload', warn);
+        return () => window.removeEventListener('beforeunload', warn);
+    }, [dirty]);
 
     function loadProfile() {
         fetch(apiConfig.profileUrl, {
@@ -208,6 +279,7 @@ function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
                 email: payload.email || '',
                 mobile: payload.mobile || payload.phone || '',
                 address: payload.address || '',
+                designation: payload.designation || '',
                 profile_picture: payload.profile_picture || '',
             };
 
@@ -255,6 +327,10 @@ function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
             nextErrors.mobile = 'Enter a valid phone number.';
         }
 
+        if (profile.designation && profile.designation.trim().length > 255) {
+            nextErrors.designation = 'Designation must be 255 characters or fewer.';
+        }
+
         setErrors(nextErrors);
         return Object.keys(nextErrors).length === 0;
     }
@@ -262,11 +338,16 @@ function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
     function handleSave(event) {
         event.preventDefault();
 
+        if (saving) {
+            return;
+        }
+
         if (!validate()) {
             setStatus('Please check the highlighted fields and try again.', 'error');
             return;
         }
 
+        setSaving(true);
         setStatus('Saving...', 'info');
 
         fetch(apiConfig.updateUrl, {
@@ -276,37 +357,60 @@ function ProfileForm({ status, setStatus, avatar, onAvatarChange }) {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
             },
+            // profile_picture is not sent: the endpoint rejects it, and the
+            // photo has already been saved by its own upload.
             body: JSON.stringify({
                 first_name: profile.first_name.trim(),
                 last_name: profile.last_name.trim(),
                 email: profile.email.trim(),
                 mobile: profile.mobile.trim(),
                 address: profile.address.trim(),
-                profile_picture: profile.profile_picture,
+                designation: profile.designation.trim(),
             }),
         })
         .then(response => {
             if (!response.ok) {
                 return response.json().then(data => {
                     if (data.errors && typeof data.errors === 'object') {
-                        setErrors(data.errors);
+                        // Laravel returns each field's errors as an array;
+                        // the form fields expect a single string.
+                        setErrors(Object.fromEntries(
+                            Object.entries(data.errors).map(([field, messages]) => [
+                                field,
+                                Array.isArray(messages) ? messages[0] : messages,
+                            ])
+                        ));
                     }
                     throw new Error(data.message || 'Failed to update profile');
                 });
             }
             return response.json();
         })
-        .then(data => {
+        .then(() => {
+            setErrors({});
             setOriginalProfile(profile);
             setStatus('Profile updated successfully!', 'success');
         })
         .catch(error => {
             console.error('Error updating profile:', error);
             setStatus(error.message || 'Failed to update profile.', 'error');
+        })
+        .finally(() => {
+            setSaving(false);
         });
     }
 
     function handleCancel() {
+        if (!dirty) {
+            setErrors({});
+            setStatus('There were no changes to discard.', 'info');
+            return;
+        }
+
+        if (!window.confirm('Discard your unsaved changes?')) {
+            return;
+        }
+
         setProfile(originalProfile);
         setErrors({});
         setStatus('Changes were cancelled.', 'info');
@@ -373,6 +477,15 @@ return React.createElement(
                         value: profile.email,
                         error: errors.email,
                         onChange: (value) => updateField('email', value),
+                    }),
+
+                    React.createElement(TextField, {
+                        id: 'designation',
+                        label: 'Designation',
+                        icon: 'employee',
+                        value: profile.designation,
+                        error: errors.designation,
+                        onChange: (value) => updateField('designation', value),
                     })
                 )
             ),
@@ -437,6 +550,7 @@ return React.createElement(
                 {
                     className: 'action-button secondary',
                     type: 'button',
+                    disabled: saving,
                     onClick: handleCancel,
                 },
                 'Reset'
@@ -447,10 +561,17 @@ return React.createElement(
                 {
                     className: 'action-button primary',
                     type: 'submit',
+                    // Nothing to save until something actually changes, which
+                    // also stops a second submit while the first is in flight.
+                    disabled: saving || !dirty,
                 },
-                'Save Changes'
+                saving ? 'Saving…' : 'Save Changes'
             )
         ),
+
+        dirty
+            ? React.createElement('p', { className: 'form-dirty-note' }, 'You have unsaved changes.')
+            : null,
 
         // STATUS MESSAGE
         React.createElement(
@@ -458,11 +579,88 @@ return React.createElement(
             {
                 className: `form-status modern-status is-${status.type}`,
                 role: 'status',
+                'aria-live': 'polite',
             },
             status.message
         )
     )
 );
+}
+
+/**
+ * The person's own recent sign-ins, so they can spot access they do not
+ * recognise. Read-only, and never shows anyone else's activity — the server
+ * takes the account from the session token.
+ */
+function RecentSignIns() {
+    const [entries, setEntries] = useState([]);
+    const [failures, setFailures] = useState(0);
+    const [state, setState] = useState('loading');
+
+    useEffect(() => {
+        let cancelled = false;
+
+        myLoginHistory(5)
+            .then((payload) => {
+                if (cancelled) return;
+                setEntries(payload.data || []);
+                setFailures(payload.meta?.recent_failures || 0);
+                setState('ready');
+            })
+            .catch(() => {
+                if (!cancelled) setState('error');
+            });
+
+        return () => { cancelled = true; };
+    }, []);
+
+    function formatWhen(value) {
+        if (!value) return 'Unknown';
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return 'Unknown';
+
+        return date.toLocaleString(undefined, {
+            day: '2-digit', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit',
+        });
+    }
+
+    return React.createElement(
+        'section',
+        { className: 'profile-card sign-ins', 'aria-labelledby': 'sign-ins-title' },
+        React.createElement('h2', { id: 'sign-ins-title', className: 'sign-ins__title' },
+            React.createElement('i', { className: 'bi bi-clock-history', 'aria-hidden': 'true' }),
+            ' Recent sign-ins'
+        ),
+        React.createElement('p', { className: 'sign-ins__intro' }, 'If you do not recognise one of these, change your password and tell an administrator.'),
+
+        failures > 0
+            ? React.createElement('p', { className: 'sign-ins__alert', role: 'status' },
+                React.createElement('i', { className: 'bi bi-exclamation-triangle-fill', 'aria-hidden': 'true' }),
+                ` ${failures} failed sign-in ${failures === 1 ? 'attempt' : 'attempts'} on your account in the last 30 days.`
+            )
+            : null,
+
+        state === 'loading'
+            ? React.createElement('p', { className: 'sign-ins__empty' }, 'Loading your sign-in history…')
+            : state === 'error'
+                ? React.createElement('p', { className: 'sign-ins__empty' }, 'Your sign-in history could not be loaded.')
+                : entries.length === 0
+                    ? React.createElement('p', { className: 'sign-ins__empty' }, 'No sign-ins recorded yet.')
+                    : React.createElement('ul', { className: 'sign-ins__list' },
+                        entries.map((entry) => React.createElement('li', { key: entry.login_history_id, className: 'sign-ins__item' },
+                            React.createElement('span', { className: 'sign-ins__when' }, formatWhen(entry.created_at)),
+                            React.createElement('span', { className: 'sign-ins__meta' },
+                                entry.ip_address || 'Unknown address',
+                                entry.device_label ? ` · ${entry.device_label}` : ''
+                            ),
+                            entry.outcome !== 'success'
+                                ? React.createElement('span', { className: 'sign-ins__failed' }, 'Failed attempt')
+                                : null
+                        ))
+                    )
+    );
 }
 
 function Footer({ onMessage }) {
@@ -479,27 +677,19 @@ function Footer({ onMessage }) {
 function ProfileApp() {
     const [avatar, setAvatar] = useState(defaultAvatar);
     const [status, setStatusState] = useState({ message: '', type: 'info' });
+    const [loggingOut, setLoggingOut] = useState(false);
+
+    useEffect(() => {
+        guardAgainstBackNavigation();
+    }, []);
 
     function setStatus(message, type = 'info') {
         setStatusState({ message, type });
     }
 
     function handleLogout() {
-        fetch('/api/logout', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Accept': 'application/json',
-            },
-        })
-        .then(() => {
-            localStorage.removeItem('auth_token');
-            window.location.href = loginUrl;
-        })
-        .catch(() => {
-            // Even if logout fails, clear token and redirect
-            localStorage.removeItem('auth_token');
-            window.location.href = loginUrl;
+        logout({
+            onStart: () => setLoggingOut(true),
         });
     }
 
@@ -510,7 +700,7 @@ function ProfileApp() {
     return React.createElement(
         'div',
         { className: 'profile-shell' },
-        React.createElement(Header, { onMessage: (message) => setStatus(message, 'info'), onLogout: handleLogout }),
+        React.createElement(Header, { onMessage: (message) => setStatus(message, 'info'), onLogout: handleLogout, loggingOut }),
         React.createElement(
             'main',
             { className: 'profile-main' },
@@ -526,8 +716,13 @@ function ProfileApp() {
                 React.createElement(
                     'div',
                     { className: 'profile-layout' },
-                    React.createElement(ProfileSideCard, { avatar, onAvatarSelect: handleAvatarSelect }),
-                    React.createElement(ProfileForm, { status, setStatus, avatar, onAvatarChange: setAvatar })
+                    React.createElement(ProfileSideCard, { avatar, onAvatarSelect: handleAvatarSelect, onMessage: setStatus }),
+                    React.createElement(
+                        'div',
+                        { className: 'profile-column' },
+                        React.createElement(ProfileForm, { status, setStatus, onAvatarChange: setAvatar }),
+                        React.createElement(RecentSignIns, null)
+                    )
                 )
             )
         ),

@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable implements JWTSubject
+class User extends Authenticatable implements JWTSubject, CanResetPasswordContract
 {
-    use HasFactory, Notifiable;
+    use CanResetPassword, HasFactory, Notifiable;
 
     protected $table      = 'tblusers';
     protected $primaryKey = 'user_id';
@@ -17,12 +19,16 @@ class User extends Authenticatable implements JWTSubject
     protected $fillable = [
         'first_name',
         'last_name',
-        'department',
         'email',
         'password',
+        'mobile',
+        'department',
+        'unit',
+        'office',
+        'position',
+        'designation',
         'role_id',
         'status',
-        'mobile',
         'address',
         'gender',
         'date_of_birth',
@@ -43,7 +49,6 @@ class User extends Authenticatable implements JWTSubject
         return [
             'email_verified_at' => 'datetime',
             'date_of_birth' => 'date',
-            'gender' => 'boolean',
             'auth_version' => 'integer',
             'password' => 'hashed',
         ];

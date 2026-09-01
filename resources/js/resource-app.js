@@ -1,5 +1,7 @@
 import './resource-crud-config.js';
 import { BrandLogo } from './brand-logo.js';
+import { logout, guardAgainstBackNavigation } from './auth-session.js';
+import { LogoutButton } from './components/LogoutButton.js';
 
 const { useState, useEffect } = React;
 const rootElement = document.getElementById('root');
@@ -22,7 +24,7 @@ function Brand() {
     );
 }
 
-function Header({ onMessage, onLogout }) {
+function Header({ onMessage, onLogout, loggingOut }) {
     return React.createElement(
         'header',
         { className: 'app-header', 'aria-label': 'Application header' },
@@ -34,7 +36,7 @@ function Header({ onMessage, onLogout }) {
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => window.location.href = profileUrl }, 'Profile'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(crud.messages.help) }, 'Help'),
             React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(crud.messages.contact) }, 'Contact'),
-            React.createElement('button', { className: 'nav-link logout-link', type: 'button', onClick: onLogout }, 'Logout')
+            React.createElement(LogoutButton)
         )
     );
 }
@@ -96,7 +98,7 @@ function ResourceTable({ items, onDelete }) {
                         React.createElement(
                             'td',
                             { key: `${id || index}-${column}`, 'data-label': crud.formatLabel(column) },
-                            React.createElement('span', { className: 'resource-cell-text' }, crud.formatCellValue(item[column]))
+                            React.createElement('span', { className: 'resource-cell-text' }, crud.formatCellValue(item[column], column))
                         )
                     ),
                     React.createElement(
@@ -136,7 +138,12 @@ function ResourceApp() {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState({ message: '', type: 'info' });
+    const [loggingOut, setLoggingOut] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
+
+    useEffect(() => {
+        guardAgainstBackNavigation();
+    }, []);
 
     useEffect(() => {
         loadResource();
@@ -147,12 +154,13 @@ function ResourceApp() {
     }
 
     function handleLogout() {
-        crud.requestJson('/api/logout', { method: 'POST' })
-            .catch(() => null)
-            .finally(() => {
-                localStorage.removeItem('auth_token');
-                window.location.href = loginUrl;
-            });
+        logout({
+            onStart: () => {
+                setLoggingOut(true);
+                setStatusMessage('Signing you out...', 'info');
+            },
+            onError: (message) => setStatusMessage(message, 'error'),
+        });
     }
 
     async function loadResource() {
@@ -210,7 +218,7 @@ function ResourceApp() {
     return React.createElement(
         'div',
         { className: 'profile-shell' },
-        React.createElement(Header, { onMessage: setStatusMessage, onLogout: handleLogout }),
+        React.createElement(Header, { onMessage: setStatusMessage, onLogout: handleLogout, loggingOut }),
         React.createElement(
             'main',
             { className: 'profile-main' },

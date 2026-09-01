@@ -1,6 +1,8 @@
 import { BrandLogo } from '../brand-logo.js';
 import { PERMISSIONS } from '../access/access-policy.js';
 import { can, clearAccessSession, getAccessSession } from '../access/access-session.js';
+import { displayRoleName } from '../access/role-labels.js';
+import { LogoutButton } from './LogoutButton.js';
 
 const { useState } = React;
 
@@ -12,9 +14,10 @@ const items = [
         permission: PERMISSIONS.PLANS_VIEW,
         children: [
             { label: 'Consolidate Inputs' },
-            { label: 'Create Plans', href: '/strategic-plans/create', permission: PERMISSIONS.PLANS_MANAGE },
+            { label: 'Create Plans', href: '/strategic-plans/create', permission: PERMISSIONS.PLANS_CREATE },
             { label: 'Manage Plans', href: '/strategic-plans', permission: PERMISSIONS.PLANS_VIEW },
             { label: 'Strategic Objectives', href: '/strategic-objectives', permission: PERMISSIONS.PLANS_VIEW },
+            { label: 'PDP Chapters', href: '/pdp-chapters' },
             { label: 'Monitor Plans' },
             { label: 'Finalize Plans' },
         ],
@@ -24,9 +27,11 @@ const items = [
         icon: 'bi-map',
         permission: PERMISSIONS.MAPPINGS_MANAGE,
         children: [
-            { label: 'Delete Mapping' },
-            { label: 'Update Mapping' },
-            { label: 'Create Mapping' },
+            { label: 'Create Mapping', permission: PERMISSIONS.PLANS_CREATE },
+            { label: 'Review Mappings', permission: PERMISSIONS.PLANS_VIEW },
+            { label: 'Update Mapping', permission: PERMISSIONS.PLANS_UPDATE },
+            { label: 'Archive Mapping', permission: PERMISSIONS.PLANS_ARCHIVE },
+            { label: 'Delete Mapping', permission: PERMISSIONS.PLANS_DELETE },
         ],
     },
     { label: 'FAQ', icon: 'bi-info-square-fill' },
@@ -37,7 +42,7 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
     const currentPath = window.location.pathname;
     const accessSession = getAccessSession();
     const [openMenus, setOpenMenus] = useState({
-        'Planning Module': currentPath.startsWith('/strategic-plan') || currentPath.startsWith('/strategic-objectives'),
+        'Planning Module': currentPath.startsWith('/strategic-plan') || currentPath.startsWith('/strategic-objectives') || currentPath.startsWith('/pdp-chapters'),
         'Mapping Module': false,
     });
 
@@ -45,16 +50,29 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
         setOpenMenus((current) => ({ ...current, [label]: !current[label] }));
     }
 
-    function logout() {
-        clearAccessSession();
-        fetch('/api/logout', { method: 'POST', credentials: 'include', headers: { Accept: 'application/json' } })
-            .catch(() => null)
-            .finally(() => { window.location.href = '/login'; });
-    }
-
     function renderChild(parent, child) {
         if (child.permission && !can(child.permission, accessSession)) return null;
-        const isCurrent = child.href === currentPath;
+        if (child.children) {
+            const visibleChildren = child.children.filter((nested) => !nested.permission || can(nested.permission, accessSession));
+            const expanded = Boolean(openMenus[child.label]);
+            const menuId = `sidebar-${child.label.toLowerCase().replaceAll(' ', '-')}`;
+
+            return React.createElement('div', { className: 'app-sidebar__nested-group', key: child.label },
+                React.createElement('button', {
+                    className: 'app-sidebar__subitem app-sidebar__nested-toggle',
+                    type: 'button',
+                    onClick: () => toggleMenu(child.label),
+                    'aria-expanded': expanded,
+                    'aria-controls': menuId,
+                },
+                React.createElement('span', null, child.label),
+                React.createElement('i', { className: `bi bi-chevron-${expanded ? 'up' : 'down'}`, 'aria-hidden': 'true' })),
+                expanded ? React.createElement('div', { className: 'app-sidebar__nested-menu', id: menuId }, visibleChildren.map((nested) => renderChild(child, nested))) : null
+            );
+        }
+        const isCurrent = child.href === currentPath ||
+            (child.href === '/strategic-plans' && currentPath.startsWith('/strategic-plans/') && currentPath !== '/strategic-plans/create') ||
+            (child.href === '/pdp-chapters' && currentPath.startsWith('/pdp-chapters/') && !currentPath.startsWith('/pdp-chapters/manage'));
         const className = `app-sidebar__subitem${isCurrent ? ' active' : ''}`;
 
         return child.href
@@ -85,7 +103,7 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
         }
 
         return item.href
-            ? React.createElement('a', { key: item.label, href: item.href, className: `app-sidebar__item${active === item.label ? ' active' : ''}` }, React.createElement('i', { className: `bi ${item.icon}` }), React.createElement('span', null, item.label))
+            ? React.createElement('a', { key: item.label, href: item.href, className: `app-sidebar__item${item.href === currentPath ? ' active' : ''}`, 'aria-current': item.href === currentPath ? 'page' : undefined }, React.createElement('i', { className: `bi ${item.icon}` }), React.createElement('span', null, item.label))
             : React.createElement('button', { key: item.label, type: 'button', className: `app-sidebar__item${active === item.label ? ' active' : ''}`, onClick: () => onNotice(`${item.label} is reserved for a later module.`) }, React.createElement('i', { className: `bi ${item.icon}` }), React.createElement('span', null, item.label));
     }
 
@@ -94,8 +112,8 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
             React.createElement(BrandLogo, { className: 'app-sidebar__logo' }),
             React.createElement('span', { className: 'app-sidebar__brand-copy' }, React.createElement('strong', null, 'SPDMS'), React.createElement('small', null, 'Strategic Planning System'))
         ),
-        React.createElement('a', { className: 'app-sidebar__profile', href: '/profile', 'aria-label': 'Open planner profile' }, React.createElement('i', { className: 'bi bi-person-vcard-fill' }), React.createElement('span', null, 'Planner/Encoder')),
+        React.createElement('a', { className: 'app-sidebar__profile', href: '/profile', 'aria-label': 'Open user profile' }, React.createElement('i', { className: 'bi bi-person-vcard-fill' }), React.createElement('span', null, displayRoleName(accessSession?.roleName, 'User'))),
         React.createElement('nav', { className: 'app-sidebar__nav' }, items.map(renderItem)),
-        React.createElement('button', { className: 'app-sidebar__item app-sidebar__logout', type: 'button', onClick: logout }, React.createElement('i', { className: 'bi bi-box-arrow-left' }), React.createElement('span', null, 'Log Out'))
+        React.createElement(LogoutButton, { className: 'app-sidebar__item app-sidebar__logout', label: 'Log Out', iconClass: 'bi bi-box-arrow-left' })
     );
 }

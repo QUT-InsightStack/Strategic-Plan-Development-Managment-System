@@ -55,6 +55,27 @@
     --font-weight-semibold: 600;
     --font-weight-bold: 700;
 
+    /* Header navigation and logout control.
+       These sizes were previously hardcoded and had drifted apart across
+       stylesheets (88px/94px wide, 12px/13px/14px text). They are exposed
+       here so the sizing can be adjusted in one place instead of edited in
+       each page's CSS. */
+    --nav-button-min-width: 88px;
+    --nav-button-height: 100%;
+    --nav-button-padding-x: 16px;
+    --nav-button-font-size: var(--font-size-sm);
+    --nav-button-font-weight: var(--font-weight-medium);
+    --nav-button-radius: 0;
+    --nav-button-hover-bg: rgba(255, 255, 255, 0.13);
+
+    /* Logout inherits the nav sizing by default. Override just these to make
+       the logout control differ from the other header buttons. */
+    --logout-button-min-width: var(--nav-button-min-width);
+    --logout-button-font-size: var(--nav-button-font-size);
+    --logout-button-font-weight: var(--nav-button-font-weight);
+    --logout-button-color: var(--color-brand-white);
+    --logout-button-hover-bg: var(--nav-button-hover-bg);
+
     /* Spacing — use these values for gaps, padding, and margins */
     --space-0: 0;
     --space-1: 4px;
@@ -89,7 +110,7 @@
 
     /* Layout */
     --sidebar-width: 230px;
-    --content-max-width: 1200px;
+    --content-max-width: 1440px;
     --page-gutter: clamp(16px, 2.5vw, 32px);
     --brand-logo-size: 36px;
 
