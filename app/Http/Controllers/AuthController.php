@@ -20,7 +20,6 @@ use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\UploadProfilePhotoRequest;
 use App\Http\Resources\UserResource;
 use App\Models\Log as LogModel;
-use App\Services\LoginHistoryService;
 use App\Services\ProfilePhotoService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
@@ -35,7 +34,6 @@ class AuthController extends Controller
     // ─── Login ───────────────────────────────────────────────────────
 
     public function __construct(
-        private LoginHistoryService $loginHistory,
         private ProfilePhotoService $profilePhotos
     ) {
     }
@@ -50,18 +48,12 @@ class AuthController extends Controller
         $token = Auth::guard('api')->attempt($credentials);
 
         if (! $token) {
-            // Recorded before responding, so an attempt on an account that
-            // does not exist is still visible to an administrator. The reply
-            // itself stays generic — never reveal whether the email exists.
-            $this->loginHistory->recordFailure((string) $request->input('email'), $request);
-
+            // generic message — never reveal whether the email exists
             return response()->json([
                 'success' => false,
                 'message' => 'The provided credentials are incorrect.',
             ], 401);
         }
-
-        $this->loginHistory->recordSuccess(Auth::guard('api')->user(), $request);
 
         return response()->json([
             'success' => true,
