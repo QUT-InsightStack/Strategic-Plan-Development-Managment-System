@@ -17,8 +17,13 @@ class UpdateStrategicObjectiveRequest extends ApiFormRequest
         $isPublishing = $this->input('status') === 'published';
 
         return [
-            'strategic_plan_id' => StrategicObjectiveValidationRules::strategicPlanIdOptional(),
-            'updated_by' => StrategicObjectiveValidationRules::updatedByOptional(),
+            'strategic_plan_id' => ['prohibited'],
+            'created_by' => ['prohibited'],
+            'updated_by' => ['prohibited'],
+            'archived_at' => ['prohibited'],
+            'archived_by' => ['prohibited'],
+            'deleted_at' => ['prohibited'],
+            'status_before_archive' => ['prohibited'],
             'status' => StrategicObjectiveValidationRules::statusOptional(),
             'objective_title' => StrategicObjectiveValidationRules::objectiveTitle($isPublishing),
             'objective_description' => StrategicObjectiveValidationRules::objectiveDescription($isPublishing),
