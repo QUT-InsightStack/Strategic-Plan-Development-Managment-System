@@ -16,14 +16,14 @@ class RolePermissionSeeder extends Seeder
         $planningPermissions = [
             'users.assign_roles',
             'strategic_records.view', 'strategic_records.manage', 'strategic_records.create',
-            'strategic_records.update', 'strategic_records.delete', 'strategic_records.archive',
+            'strategic_records.update', 'strategic_records.archive',
             'strategic_foundations.view', 'strategic_foundations.manage', 'strategic_foundations.create',
-            'strategic_foundations.update', 'strategic_foundations.delete',
+            'strategic_foundations.update',
             'strategic_objectives.view', 'strategic_objectives.create',
-            'strategic_objectives.update', 'strategic_objectives.delete',
-            'relations.view', 'relations.manage', 'relations.create', 'relations.update', 'relations.delete',
+            'strategic_objectives.update',
+            'relations.view', 'relations.manage', 'relations.create', 'relations.update',
             'plan_core_values.view', 'plan_core_values.manage', 'plan_core_values.create',
-            'plan_core_values.update', 'plan_core_values.delete',
+            'plan_core_values.update',
         ];
 
         $viewOnlyPermissions = [
@@ -56,5 +56,26 @@ class RolePermissionSeeder extends Seeder
                     ->all()
             );
         }
+
+        // These contributor roles may create, review, update, and archive,
+        // but must never retain a permission whose action is Delete. The
+        // explicit detach is required because syncWithoutDetaching above does
+        // not revoke permissions assigned by an earlier seeder run.
+        $restrictedRoleNames = [
+            'Planning Officer',
+            'Planner/Encoder',
+            'Office Representative',
+            'Office/Agency',
+            'Offices / Agencies',
+        ];
+
+        $deletePermissionIds = $permissionsByCode
+            ->filter(fn (Permission $permission) => str_ends_with($permission->code, '.delete'))
+            ->pluck('permission_id')
+            ->all();
+
+        Role::query()
+            ->whereIn('role_name', $restrictedRoleNames)
+            ->each(fn (Role $role) => $role->permissions()->detach($deletePermissionIds));
     }
 }

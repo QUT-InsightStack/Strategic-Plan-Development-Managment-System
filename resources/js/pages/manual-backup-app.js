@@ -3,6 +3,7 @@ import { PERMISSIONS } from '../access/access-policy.js';
 import { can, getAccessSession } from '../access/access-session.js';
 import { createBackup, downloadBackup, listBackups } from '../api/backups-api.js';
 import { AppDialog } from '../components/AppDialog.js';
+import { PageHeader } from '../components/PageHeader.js';
 import { TechnicalAdminSidebar } from '../components/TechnicalAdminSidebar.js';
 
 enforcePageAccess();
@@ -104,18 +105,19 @@ function ManualBackupApp() {
         React.createElement(TechnicalAdminSidebar, { onNotice: (message) => setNotice({ type: 'info', message }) }),
         React.createElement('main', { className: 'app-shell-main backup-page' },
             React.createElement('div', { className: 'app-shell-container' },
-                React.createElement('header', { className: 'app-page-header' },
-                    React.createElement('div', null,
-                        React.createElement('h1', { className: 'ui-page-title' }, 'Manual Backup'),
-                        React.createElement('p', { className: 'ui-page-subtitle' }, 'Create a copy of the system database and download it for safekeeping.')
-                    )
-                ),
+                React.createElement(PageHeader, { section: 'Technical Administration', title: 'Manual Backup', subtitle: 'Create a copy of the system database and download it for safekeeping.' }),
 
                 notice.message ? React.createElement('div', { className: `ui-status ui-status--${notice.type}`, role: 'status', 'aria-live': 'polite' }, notice.message) : null,
 
                 React.createElement('section', { className: 'ui-card backup-run', 'aria-labelledby': 'backup-run-title' },
+                    React.createElement('div', { className: 'ui-section-header' },
+                        React.createElement('div', { className: 'ui-section-header__copy' },
+                            React.createElement('h2', { id: 'backup-run-title' }, 'Create a manual backup'),
+                            React.createElement('p', null, 'Capture a secure copy of the current system database.')
+                        ),
+                        React.createElement('i', { className: 'bi bi-database-down', 'aria-hidden': 'true' })
+                    ),
                     React.createElement('div', { className: 'ui-card__body' },
-                        React.createElement('h2', { id: 'backup-run-title', className: 'backup-section-title' }, 'Create a manual backup'),
                         React.createElement('p', { className: 'backup-run__copy' }, 'Captures the entire database, including every user account and strategic plan. The system stays usable while a backup runs.'),
                         React.createElement('div', { className: 'backup-run__actions' },
                             canCreate
@@ -134,9 +136,14 @@ function ManualBackupApp() {
                 ),
 
                 React.createElement('section', { className: 'ui-card', 'aria-labelledby': 'backup-list-title' },
+                    React.createElement('div', { className: 'ui-section-header' },
+                        React.createElement('div', { className: 'ui-section-header__copy' },
+                            React.createElement('h2', { id: 'backup-list-title' }, 'Backup Register'),
+                            React.createElement('p', null, `${meta.total || 0} backup record${meta.total === 1 ? '' : 's'}`)
+                        ),
+                        React.createElement('i', { className: 'bi bi-shield-lock-fill', 'aria-hidden': 'true' })
+                    ),
                     React.createElement('div', { className: 'ui-card__body' },
-                        React.createElement('h2', { id: 'backup-list-title', className: 'backup-section-title' }, 'Previous backups'),
-
                         React.createElement('p', { className: 'backup-warning' },
                             React.createElement('i', { className: 'bi bi-shield-lock-fill', 'aria-hidden': 'true' }),
                             ' A backup file contains all system data, including user records. Store downloads securely — every download is recorded in the security log.'

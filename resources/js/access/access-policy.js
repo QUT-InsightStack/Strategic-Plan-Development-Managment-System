@@ -5,6 +5,7 @@ export const PERMISSIONS = Object.freeze({
     USERS_MANAGE: 'users.manage',
     USERS_CREATE: 'users.create',
     USERS_UPDATE: 'users.update',
+    USERS_DELETE: 'users.delete',
     USERS_ASSIGN_ROLES: 'users.assign_roles',
     ROLES_VIEW: 'roles.view',
     ROLES_MANAGE: 'roles.manage',
@@ -13,6 +14,10 @@ export const PERMISSIONS = Object.freeze({
     PERMISSIONS_MANAGE: 'permissions.manage',
     PLANS_VIEW: 'strategic_records.view',
     PLANS_MANAGE: 'strategic_records.manage',
+    PLANS_CREATE: 'strategic_records.create',
+    PLANS_UPDATE: 'strategic_records.update',
+    PLANS_DELETE: 'strategic_records.delete',
+    PLANS_ARCHIVE: 'strategic_records.archive',
     FOUNDATIONS_VIEW: 'strategic_foundations.view',
     FOUNDATIONS_MANAGE: 'strategic_foundations.manage',
     MAPPINGS_MANAGE: 'relations.manage',
@@ -21,17 +26,85 @@ export const PERMISSIONS = Object.freeze({
     SETTINGS_MANAGE: 'settings.manage',
     DASHBOARD_VIEW: 'dashboard.view',
     PDP_CHAPTERS_MANAGE: 'pdp_chapters.manage',
+    REFERENCE_DATA_MANAGE: 'reference_data.manage',
+    TEMPLATES_MANAGE: 'templates.manage',
+    MONITORING_VIEW: 'monitoring.view',
     BACKUPS_VIEW: 'backups.view',
     BACKUPS_CREATE: 'backups.create',
     BACKUPS_DOWNLOAD: 'backups.download',
 });
 
+const fullPlanningPermissions = [
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.PLANS_VIEW,
+    PERMISSIONS.PLANS_CREATE,
+    PERMISSIONS.PLANS_UPDATE,
+    PERMISSIONS.PLANS_ARCHIVE,
+    PERMISSIONS.PLANS_DELETE,
+    PERMISSIONS.FOUNDATIONS_VIEW,
+    PERMISSIONS.FOUNDATIONS_MANAGE,
+    PERMISSIONS.MAPPINGS_MANAGE,
+    PERMISSIONS.REPORTS_VIEW,
+];
+
+const contributorPlanningPermissions = [
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.PLANS_VIEW,
+    PERMISSIONS.PLANS_CREATE,
+    PERMISSIONS.PLANS_UPDATE,
+    PERMISSIONS.PLANS_ARCHIVE,
+    PERMISSIONS.FOUNDATIONS_VIEW,
+    PERMISSIONS.FOUNDATIONS_MANAGE,
+    PERMISSIONS.MAPPINGS_MANAGE,
+    PERMISSIONS.REPORTS_VIEW,
+];
+
+const technicalAdminPermissions = [
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.USERS_VIEW,
+    PERMISSIONS.USERS_MANAGE,
+    PERMISSIONS.USERS_CREATE,
+    PERMISSIONS.USERS_UPDATE,
+    PERMISSIONS.USERS_DELETE,
+    PERMISSIONS.USERS_ASSIGN_ROLES,
+    PERMISSIONS.ROLES_VIEW,
+    PERMISSIONS.ROLES_MANAGE,
+    PERMISSIONS.ROLES_ASSIGN_PROTECTED,
+    PERMISSIONS.PERMISSIONS_VIEW,
+    PERMISSIONS.PERMISSIONS_MANAGE,
+    PERMISSIONS.LOGS_VIEW,
+    PERMISSIONS.SETTINGS_MANAGE,
+    PERMISSIONS.BACKUPS_VIEW,
+    PERMISSIONS.BACKUPS_CREATE,
+    PERMISSIONS.BACKUPS_DOWNLOAD,
+];
+
+const administrativeAdminPermissions = [
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.REFERENCE_DATA_MANAGE,
+    PERMISSIONS.TEMPLATES_MANAGE,
+    PERMISSIONS.PDP_CHAPTERS_MANAGE,
+    PERMISSIONS.MONITORING_VIEW,
+    PERMISSIONS.REPORTS_VIEW,
+    PERMISSIONS.LOGS_VIEW,
+];
+
 const rolePolicies = {
     Administrator: { home: '/role-management', permissions: ['*'] },
-    'Technical Administrator': { home: '/role-management', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.USERS_VIEW, PERMISSIONS.USERS_MANAGE, PERMISSIONS.ROLES_VIEW, PERMISSIONS.ROLES_MANAGE, PERMISSIONS.PERMISSIONS_VIEW, PERMISSIONS.PERMISSIONS_MANAGE, PERMISSIONS.LOGS_VIEW, PERMISSIONS.SETTINGS_MANAGE, PERMISSIONS.PDP_CHAPTERS_MANAGE, PERMISSIONS.BACKUPS_VIEW, PERMISSIONS.BACKUPS_CREATE, PERMISSIONS.BACKUPS_DOWNLOAD] },
-    'Planning Officer': { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.PLANS_MANAGE, PERMISSIONS.FOUNDATIONS_VIEW, PERMISSIONS.FOUNDATIONS_MANAGE, PERMISSIONS.MAPPINGS_MANAGE, PERMISSIONS.REPORTS_VIEW] },
-    'Planner/Encoder': { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.PLANS_MANAGE, PERMISSIONS.FOUNDATIONS_VIEW, PERMISSIONS.FOUNDATIONS_MANAGE, PERMISSIONS.REPORTS_VIEW] },
-    'Division Head': { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.REPORTS_VIEW] },
+    'Administrative Admin': { home: '/dashboard', permissions: administrativeAdminPermissions },
+    'Administrative Administrator': { home: '/dashboard', permissions: administrativeAdminPermissions },
+    'Technical Administrator': { home: '/dashboard', permissions: technicalAdminPermissions },
+    'Technical Admin': { home: '/dashboard', permissions: technicalAdminPermissions },
+    test: { home: '/dashboard', permissions: technicalAdminPermissions },
+    'Planning Officer': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
+    'Planner/Encoder': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
+    'Office Representative': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
+    'Office/Agency': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
+    'Offices / Agencies': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
+    'Division Head': { home: '/strategic-plans', permissions: fullPlanningPermissions },
+    Management: { home: '/strategic-plans', permissions: fullPlanningPermissions },
+    Executive: { home: '/strategic-plans', permissions: fullPlanningPermissions },
+    'Management / Executive': { home: '/strategic-plans', permissions: fullPlanningPermissions },
     Viewer: { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.REPORTS_VIEW] },
 };
 
@@ -47,14 +120,20 @@ export function policyForRole(roleName) {
     return rolePolicies[roleName] || { home: '/access-denied', permissions: [] };
 }
 
+export function hasRolePolicy(roleName) {
+    return Object.prototype.hasOwnProperty.call(rolePolicies, roleName);
+}
+
 export const routeRules = [
+    { test: /^\/administrative-admin\/reference-data(?:\/|$)/, permission: PERMISSIONS.REFERENCE_DATA_MANAGE },
+    { test: /^\/administrative-admin\/templates(?:\/|$)/, permission: PERMISSIONS.TEMPLATES_MANAGE },
     { test: /^\/dashboard(?:\/|$)/, permission: PERMISSIONS.DASHBOARD_VIEW },
     { test: /^\/role-management(?:\/|$)/, permission: PERMISSIONS.ROLES_MANAGE },
     { test: /^\/user-management(?:\/|$)/, permission: PERMISSIONS.USERS_VIEW },
     { test: /^\/pdp-chapters\/manage(?:\/|$)/, permission: PERMISSIONS.PDP_CHAPTERS_MANAGE },
     { test: /^\/login-history(?:\/|$)/, permission: PERMISSIONS.LOGS_VIEW },
     { test: /^\/manual-backup(?:\/|$)/, permission: PERMISSIONS.BACKUPS_VIEW },
-    { test: /^\/strategic-plans\/create(?:\/|$)/, permission: PERMISSIONS.PLANS_MANAGE },
-    { test: /^\/strategic-plans\/\d+\/edit(?:\/|$)/, permission: PERMISSIONS.PLANS_MANAGE },
+    { test: /^\/strategic-plans\/create(?:\/|$)/, permission: PERMISSIONS.PLANS_CREATE },
+    { test: /^\/strategic-plans\/\d+\/edit(?:\/|$)/, permission: PERMISSIONS.PLANS_UPDATE },
     { test: /^\/strategic-(?:plans|objectives)(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
 ];

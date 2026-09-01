@@ -181,7 +181,7 @@ function LoginForm({ status, setStatus }) {
             const user = await currentUserRequest();
             const accessSession = saveAccessSession(createAccessSession(user));
             if (accessSession.home === '/access-denied') {
-                setStatus('Your account does not have an assigned application role.', 'error');
+                setStatus('Your account does not have any application permissions.', 'error');
             } else {
                 setStatus('Signed in successfully. Redirecting...', 'success');
             }

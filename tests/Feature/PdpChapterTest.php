@@ -26,6 +26,7 @@ class PdpChapterTest extends TestCase
         $this->getJson('/api/pdp-chapters')->assertUnauthorized();
         $this->getJson('/api/pdp-chapters/1')->assertUnauthorized();
         $this->postJson('/api/pdp-chapters', [])->assertUnauthorized();
+        $this->deleteJson('/api/pdp-chapters/1')->assertUnauthorized();
     }
 
     public function test_authenticated_user_can_view_but_cannot_manage_chapters(): void
@@ -39,9 +40,10 @@ class PdpChapterTest extends TestCase
             'chapter_title' => 'Chapter 1',
             'chapter_description' => 'Planning context.',
         ])->assertForbidden();
+        $this->deleteJson('/api/pdp-chapters/1')->assertForbidden();
     }
 
-    public function test_administrator_can_create_and_update_a_chapter(): void
+    public function test_administrator_can_create_update_and_delete_a_chapter(): void
     {
         $administrator = $this->createUser('Administrator', true);
         $this->actingAs($administrator, 'api');
@@ -62,6 +64,14 @@ class PdpChapterTest extends TestCase
         $this->assertDatabaseHas('tblpdp_chapters', [
             'chapter_id' => $chapterId,
             'chapter_title' => 'Updated Development Context',
+        ]);
+
+        $this->deleteJson("/api/pdp-chapters/{$chapterId}")
+            ->assertOk()
+            ->assertJsonPath('message', 'PDP Chapter deleted successfully.');
+
+        $this->assertDatabaseMissing('tblpdp_chapters', [
+            'chapter_id' => $chapterId,
         ]);
     }
 

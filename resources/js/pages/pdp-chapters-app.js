@@ -1,6 +1,7 @@
 import { enforcePageAccess } from '../access/access-guard.js';
 import { AppSidebar } from '../components/AppSidebar.js';
-import { TechnicalAdminSidebar } from '../components/TechnicalAdminSidebar.js';
+import { AdministrativeAdminSidebar } from '../components/AdministrativeAdminSidebar.js';
+import { PageHeader } from '../components/PageHeader.js';
 import { createPdpChapter, getPdpChapter, listPdpChapters, updatePdpChapter } from '../api/pdp-chapters-api.js';
 
 enforcePageAccess();
@@ -63,7 +64,14 @@ function ChapterDialog({ mode, chapter, onClose, onSaved }) {
 
 function ChapterTable({ chapters, loading, selectedIds, onToggle, onOpen }) {
     const columns = 5;
-    return React.createElement('section', { className: 'ui-card pdp-table-card' },
+    return React.createElement('section', { className: 'ui-card pdp-table-card', 'aria-labelledby': 'pdp-register-title' },
+        React.createElement('div', { className: 'ui-section-header' },
+            React.createElement('div', { className: 'ui-section-header__copy' },
+                React.createElement('h2', { id: 'pdp-register-title' }, 'PDP Chapter Register'),
+                React.createElement('p', null, loading ? 'Loading the latest chapter records…' : `${chapters.length} chapter record${chapters.length === 1 ? '' : 's'} shown`)
+            ),
+            React.createElement('i', { className: 'bi bi-journal-text', 'aria-hidden': 'true' })
+        ),
         React.createElement('div', { className: 'pdp-table-scroll' },
             React.createElement('table', { className: 'pdp-table' },
                 React.createElement('thead', null,
@@ -89,7 +97,7 @@ function ChapterTable({ chapters, loading, selectedIds, onToggle, onOpen }) {
 function PdpChapterDetailApp() {
     const [chapter, setChapter] = useState(null);
     const [error, setError] = useState('');
-    const Sidebar = fromManagement ? TechnicalAdminSidebar : AppSidebar;
+    const Sidebar = fromManagement ? AdministrativeAdminSidebar : AppSidebar;
 
     useEffect(() => {
         getPdpChapter(chapterId)
@@ -98,14 +106,16 @@ function PdpChapterDetailApp() {
     }, []);
 
     return React.createElement(React.Fragment, null,
-        React.createElement(Sidebar),
+        React.createElement(Sidebar, fromManagement ? { active: 'PDP Chapters' } : null),
         React.createElement('main', { className: 'app-shell-main pdp-page' },
             React.createElement('div', { className: 'app-shell-container pdp-detail-container' },
-                React.createElement('header', { className: 'app-page-header pdp-header' },
-                    React.createElement('div', null,
-                        React.createElement('h1', { className: 'ui-page-title' }, 'PDP Chapter Details'),
-                        React.createElement('p', { className: 'ui-page-subtitle' }, 'Review the complete chapter content.')),
-                    React.createElement('a', { className: 'ui-button ui-button--secondary', href: fromManagement ? '/pdp-chapters/manage' : '/pdp-chapters' }, 'Back to Chapter List')),
+                React.createElement(PageHeader, {
+                    className: 'pdp-header',
+                    section: fromManagement ? 'Administrative Administration' : 'Strategic Planning',
+                    title: 'PDP Chapter Details',
+                    subtitle: 'Review the complete chapter content.',
+                    actions: React.createElement('a', { className: 'ui-button ui-button--secondary', href: fromManagement ? '/pdp-chapters/manage' : '/pdp-chapters' }, 'Back to Chapter List'),
+                }),
                 error ? React.createElement('div', { className: 'ui-status ui-status--error' }, error) : null,
                 !chapter ? React.createElement('div', { className: 'ui-card pdp-detail-card' }, 'Loading chapter…')
                     : React.createElement('article', { className: 'ui-card pdp-detail-card' },
@@ -134,14 +144,22 @@ function PdpChaptersApp() {
     useEffect(() => { if (!isManageMode) sessionStorage.setItem(storageKey, JSON.stringify(selectedIds)); }, [selectedIds]);
 
     const visible = useMemo(() => { const term = search.trim().toLowerCase(); return chapters.filter((chapter) => !term || [chapter.chapter_title, chapter.chapter_description].some((value) => String(value || '').toLowerCase().includes(term))); }, [chapters, search]);
-    const Sidebar = isManageMode ? TechnicalAdminSidebar : AppSidebar;
+    const Sidebar = isManageMode ? AdministrativeAdminSidebar : AppSidebar;
 
     return React.createElement(React.Fragment, null,
-        React.createElement(Sidebar, { onNotice: (message) => setStatus({ type: 'info', message }) }),
+        React.createElement(Sidebar, { active: isManageMode ? 'PDP Chapters' : undefined, onNotice: (message) => setStatus({ type: 'info', message }) }),
         React.createElement('main', { className: 'app-shell-main pdp-page' }, React.createElement('div', { className: 'app-shell-container pdp-container' },
-            React.createElement('header', { className: 'app-page-header pdp-header' }, React.createElement('div', null, React.createElement('h1', { className: 'ui-page-title' }, isManageMode ? 'Manage PDP Chapters' : 'PDP Chapter List'), React.createElement('p', { className: 'ui-page-subtitle' }, isManageMode ? 'Create and maintain PDP Chapters.' : 'Review and select available PDP Chapters.')), isManageMode ? React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: () => setDialog({ mode: 'create', chapter: null }) }, React.createElement('i', { className: 'bi bi-plus-lg' }), ' Create New Chapter') : null),
+            React.createElement(PageHeader, {
+                className: 'pdp-header',
+                section: isManageMode ? 'Administrative Administration' : 'Strategic Planning',
+                title: isManageMode ? 'Manage PDP Chapters' : 'PDP Chapter List',
+                subtitle: isManageMode ? 'Create and maintain PDP Chapters.' : 'Review and select available PDP Chapters.',
+                actions: isManageMode ? React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: () => setDialog({ mode: 'create', chapter: null }) }, React.createElement('i', { className: 'bi bi-plus-lg' }), ' Create New Chapter') : null,
+            }),
             status.message ? React.createElement('div', { className: `ui-status ui-status--${status.type} pdp-status` }, status.message) : null,
-            React.createElement('section', { className: 'ui-card pdp-toolbar' }, React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'pdp-search' }, 'Search PDP Chapters'), React.createElement('input', { id: 'pdp-search', className: 'ui-input', value: search, placeholder: 'Search title or description', onChange: (event) => setSearch(event.target.value) })), React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setSearch('') }, 'Clear')),
+            React.createElement('section', { className: 'ui-card pdp-filter-card', 'aria-label': 'Search PDP Chapters' },
+                React.createElement('div', { className: 'pdp-toolbar' }, React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'pdp-search' }, 'Search PDP Chapters'), React.createElement('input', { id: 'pdp-search', className: 'ui-input', value: search, placeholder: 'Search title or description', onChange: (event) => setSearch(event.target.value) })), React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setSearch('') }, 'Clear'))
+            ),
             React.createElement('p', { className: 'pdp-summary' }, loading ? 'Loading PDP Chapters…' : `${visible.length} chapter(s)${!isManageMode ? ` · ${selectedIds.length} selected` : ''}`),
             React.createElement(ChapterTable, { chapters: visible, loading, selectedIds, onToggle: (id) => setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]), onOpen: (chapter) => setDialog({ mode: isManageMode ? 'edit' : 'view', chapter }) }),
             dialog ? React.createElement(ChapterDialog, { ...dialog, onClose: () => setDialog(null), onSaved: async (payload) => { setDialog(null); setStatus({ type: 'success', message: payload.message }); await load(); } }) : null

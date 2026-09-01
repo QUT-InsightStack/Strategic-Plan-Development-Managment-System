@@ -16,6 +16,11 @@ const loginUrl = '/login';
 const strategicPlanUrl = '/strategic-plan';
 const createUserUrl = '/create-user';
 const userManagementUrl = '/user-management';
+const referenceDataUrl = '/administrative-admin/reference-data';
+const templateManagementUrl = '/administrative-admin/templates';
+const pdpManagementUrl = '/pdp-chapters/manage';
+const loginHistoryUrl = '/login-history';
+const systemMaintenanceUrl = '/manual-backup';
 
 const modules = [
     { id: 'users', title: 'Users', description: 'Manage user accounts and active employees.', permission: PERMISSIONS.USERS_VIEW },
@@ -30,6 +35,11 @@ const modules = [
 ];
 
 const staticModules = [
+    { id: 'reference-data', title: 'Reference Data Management', description: 'Maintain the planning reference data used for mapping, filtering, and reporting.', href: referenceDataUrl, permission: PERMISSIONS.REFERENCE_DATA_MANAGE },
+    { id: 'template-management', title: 'Template Management', description: 'Maintain reusable planning and reporting templates.', href: templateManagementUrl, permission: PERMISSIONS.TEMPLATES_MANAGE },
+    { id: 'pdp-management', title: 'PDP Chapters Management', description: 'Create and maintain PDP chapter reference records.', href: pdpManagementUrl, permission: PERMISSIONS.PDP_CHAPTERS_MANAGE },
+    { id: 'login-history', title: 'Login History', description: 'Review successful and unsuccessful account sign-in attempts.', href: loginHistoryUrl, permission: PERMISSIONS.LOGS_VIEW },
+    { id: 'system-maintenance', title: 'System Maintenance', description: 'Create and download protected database backups.', href: systemMaintenanceUrl, permission: PERMISSIONS.BACKUPS_VIEW },
     { id: 'strategic-plan', title: 'Strategic Plan', description: 'Manage Mission, Vision, and Core Values for your organisation.', href: strategicPlanUrl, permission: PERMISSIONS.PLANS_VIEW },
 ];
 

@@ -2,13 +2,17 @@ import { getStrategicPlan } from '../api/strategic-plans-api.js';
 import { createStrategicObjective, deleteStrategicObjective, listStrategicObjectives, updateStrategicObjective } from '../api/strategic-objectives-api.js';
 import { AppSidebar } from '../components/AppSidebar.js';
 import { AppDialog } from '../components/AppDialog.js';
+import { PageHeader } from '../components/PageHeader.js';
 import { ObjectiveFormDialog } from '../strategic-objectives/ObjectiveFormDialog.js';
 import { enforcePageAccess } from '../access/access-guard.js';
 import { PERMISSIONS } from '../access/access-policy.js';
 import { can } from '../access/access-session.js';
 
 enforcePageAccess();
-const canManageObjectives = can(PERMISSIONS.PLANS_MANAGE);
+const canCreateObjectives = can(PERMISSIONS.PLANS_CREATE);
+const canUpdateObjectives = can(PERMISSIONS.PLANS_UPDATE);
+const canDeleteObjectives = can(PERMISSIONS.PLANS_DELETE);
+const hasObjectiveActions = canUpdateObjectives || canDeleteObjectives;
 
 const { useEffect, useState } = React;
 const root = document.getElementById('root');
@@ -75,7 +79,7 @@ function StrategicObjectivesApp() {
             const [planPayload, objectivesPayload] = await Promise.all([getStrategicPlan(planId), listStrategicObjectives(planId)]);
             setPlan(planPayload.data); setObjectives(objectivesPayload.data || []);
             const editId = new URLSearchParams(window.location.search).get('edit');
-            if (editId) {
+            if (editId && canUpdateObjectives) {
                 const objectiveToEdit = (objectivesPayload.data || []).find((item) => String(item.objective_id) === editId);
                 if (objectiveToEdit) { setEditing(objectiveToEdit); setFormOpen(true); }
                 window.history.replaceState({}, '', window.location.pathname);
@@ -87,6 +91,7 @@ function StrategicObjectivesApp() {
     useEffect(() => { load(); }, []);
 
     async function saveObjective(data) {
+        if ((editing && !canUpdateObjectives) || (!editing && !canCreateObjectives)) return;
         setSubmitting(true); setFormErrors({});
         try {
             const payload = editing
@@ -100,6 +105,7 @@ function StrategicObjectivesApp() {
     }
 
     function requestDelete(objective) {
+        if (!canDeleteObjectives) return;
         setDialog({ open: true, variant: 'danger', title: 'Delete Strategic Objective?', message: `Delete “${objective.objective_title || 'Untitled objective'}”? This action cannot be undone.`, objective });
     }
 
@@ -152,7 +158,7 @@ useEffect(() => {
     return React.createElement(React.Fragment, null,
         React.createElement(AppSidebar, { onNotice: (message) => setStatus({ type: 'info', message }) }),
         React.createElement('main', { className: 'app-shell-main objectives-page' }, React.createElement('div', { className: 'app-shell-container' },
-            React.createElement('header', { className: 'app-page-header objectives-header' }, React.createElement('div', null, React.createElement('h1', { className: 'ui-page-title' }, 'Add Strategic Objectives'), React.createElement('p', { className: 'ui-page-subtitle' }, 'Define measurable objectives, expected outcomes, indicators, targets, and accountable offices for this strategic plan.'))),
+            React.createElement(PageHeader, { className: 'objectives-header', section: 'Strategic Planning', title: 'Add Strategic Objectives', subtitle: 'Define measurable objectives, expected outcomes, indicators, targets, and accountable offices for this strategic plan.' }),
             status.message ? React.createElement('div', { className: `ui-status ui-status--${status.type}`, role: 'status' }, status.message) : null,
             archived ? React.createElement('div', { className: 'ui-status ui-status--error' }, 'This Strategic Plan is archived. Restore it before changing its objectives.') : null,
             React.createElement('section', { className: 'ui-card plan-summary', 'aria-labelledby': 'plan-summary-title' }, React.createElement('div', { className: 'ui-card__header' }, React.createElement('h2', { className: 'ui-card__title', id: 'plan-summary-title' }, 'Plan Summary')), React.createElement('div', { className: 'ui-card__body plan-summary-grid' },
@@ -224,14 +230,14 @@ React.createElement(
 )
             )),
             React.createElement('section', { className: 'ui-card objectives-card', 'aria-labelledby': 'objectives-title' },
-                React.createElement('div', { className: 'objectives-heading' }, React.createElement('h2', { id: 'objectives-title' }, 'Strategic Objectives'), canManageObjectives ? React.createElement('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', disabled: archived || loading, onClick: () => { setEditing(null); setFormOpen(true); } }, React.createElement('i', { className: 'bi bi-plus-lg' }), 'Add Objective') : null),
+                React.createElement('div', { className: 'objectives-heading' }, React.createElement('h2', { id: 'objectives-title' }, 'Strategic Objectives'), canCreateObjectives ? React.createElement('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', disabled: archived || loading, onClick: () => { setEditing(null); setFormOpen(true); } }, React.createElement('i', { className: 'bi bi-plus-lg' }), 'Add Objective') : null),
                 React.createElement('div', { className: 'ui-card__body' }, loading ? React.createElement('div', { className: 'ui-empty' }, 'Loading Strategic Objectives…') : objectives.length === 0 ? React.createElement('div', { className: 'ui-empty' }, 'No Strategic Objectives have been added yet.') : React.createElement('div', { className: 'ui-table-wrap' }, React.createElement('table', { className: 'ui-table objectives-table' },
                     React.createElement('thead', null, React.createElement('tr', null, ['No.', 'Strategic Objective', 'Expected Outcome', 'Indicator', 'Target', 'Responsible Office/Agency', 'Actions'].map((heading) => React.createElement('th', { key: heading }, heading)))),
                     React.createElement('tbody', null, visibleObjectives.map((objective, index) => React.createElement('tr', { key: objective.objective_id }, React.createElement(
     'td',
     null,
     ((currentPage - 1) * pageSize) + index + 1
-), React.createElement('td', null, objective.objective_title || 'Untitled objective'), React.createElement('td', null, objective.expected_outcome || '—'), React.createElement('td', null, objective.indicator || '—'), React.createElement('td', null, objective.target || '—'), React.createElement('td', null, objective.responsible_office_agency || '—'), React.createElement('td', null, canManageObjectives ? React.createElement('div', { className: 'objectives-table__actions' }, React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', disabled: archived, onClick: () => { setEditing(objective); setFormOpen(true); }, 'aria-label': `Update ${objective.objective_title}` }, React.createElement('i', { className: 'bi bi-pencil' })), React.createElement('button', { className: 'ui-button ui-button--danger ui-button--sm', type: 'button', disabled: archived, onClick: () => requestDelete(objective), 'aria-label': `Delete ${objective.objective_title}` }, React.createElement('i', { className: 'bi bi-trash3' }))) : React.createElement('span', { className: 'ui-help' }, 'View only')))))
+), React.createElement('td', null, objective.objective_title || 'Untitled objective'), React.createElement('td', null, objective.expected_outcome || '—'), React.createElement('td', null, objective.indicator || '—'), React.createElement('td', null, objective.target || '—'), React.createElement('td', null, objective.responsible_office_agency || '—'), React.createElement('td', null, hasObjectiveActions ? React.createElement('div', { className: 'objectives-table__actions' }, canUpdateObjectives ? React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', disabled: archived, onClick: () => { setEditing(objective); setFormOpen(true); }, 'aria-label': `Update ${objective.objective_title}` }, React.createElement('i', { className: 'bi bi-pencil' })) : null, canDeleteObjectives ? React.createElement('button', { className: 'ui-button ui-button--danger ui-button--sm', type: 'button', disabled: archived, onClick: () => requestDelete(objective), 'aria-label': `Delete ${objective.objective_title}` }, React.createElement('i', { className: 'bi bi-trash3' })) : null) : React.createElement('span', { className: 'ui-help' }, 'Review only')))))
                 ))), React.createElement(
     'div',
     { className: 'objectives-footer' },
@@ -289,7 +295,7 @@ React.createElement(
     )
 )
             ),
-            canManageObjectives ? React.createElement('div', { className: 'objectives-page-actions' }, React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', onClick: () => setDialog({ open: true, variant: 'success', title: 'Draft saved', message: 'All current Strategic Objectives are saved as draft.', objective: null }) }, 'Save as Draft'), React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: () => setStatus({ type: 'info', message: 'Strategic Mapping is reserved for the next module.' }) }, 'Next: Strategic Mapping')) : null
+            (canCreateObjectives || canUpdateObjectives) ? React.createElement('div', { className: 'objectives-page-actions' }, React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', onClick: () => setDialog({ open: true, variant: 'success', title: 'Draft saved', message: 'All current Strategic Objectives are saved as draft.', objective: null }) }, 'Save as Draft'), React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: () => setStatus({ type: 'info', message: 'Strategic Mapping is reserved for the next module.' }) }, 'Next: Strategic Mapping')) : null
         )),
         React.createElement(ObjectiveFormDialog, {
     open: formOpen,

@@ -14,6 +14,20 @@ Route::get('/reset-password/{token}', function (string $token, Request $request)
     ]);
 })->name('password.reset');
 Route::view('/dashboard', 'pages.dashboard')->name('dashboard');
+Route::view('/administrative-admin/reference-data', 'pages.reference-data')
+    ->name('administrative-admin.reference-data');
+Route::view('/administrative-admin/reference-data/agenda/create', 'pages.reference-data')
+    ->name('administrative-admin.reference-data.agenda.create');
+Route::view('/administrative-admin/reference-data/agenda/{agenda}/edit', 'pages.reference-data')
+    ->where('agenda', '[A-Za-z0-9-]+')
+    ->name('administrative-admin.reference-data.agenda.edit');
+Route::view('/administrative-admin/templates', 'pages.reference-data')
+    ->name('administrative-admin.templates');
+Route::view('/administrative-admin/templates/create', 'pages.reference-data')
+    ->name('administrative-admin.templates.create');
+Route::view('/administrative-admin/templates/{template}/edit', 'pages.reference-data')
+    ->where('template', '[A-Za-z0-9-]+')
+    ->name('administrative-admin.templates.edit');
 Route::view('/profile', 'pages.profile')->name('profile');
 Route::view('/change-password', 'pages.change-password')->name('change-password');
 Route::get('/resource', function (Request $request) {

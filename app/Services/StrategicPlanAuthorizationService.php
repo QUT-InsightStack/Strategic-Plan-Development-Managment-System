@@ -95,13 +95,13 @@ class StrategicPlanAuthorizationService
         return $user;
     }
 
-    public function authorizedPlanIdsForListing(?User $user = null): Collection
+    public function authorizedPlanIdsForListing(?User $user = null, array $excludedStatuses = ['archived', 'deleted']): Collection
     {
         $user = $this->permissionAuthorizationService->resolveUser($user);
 
         $query = Strategic::query()
             ->select('record_id')
-            ->whereNotIn('status', ['archived', 'deleted']);
+            ->whereNotIn('status', $excludedStatuses);
 
         $this->applyApprovedListingScopeHook($query, $user);
 

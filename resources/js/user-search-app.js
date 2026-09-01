@@ -1,6 +1,7 @@
 import './resource-crud-config.js';
 import { BrandLogo } from './brand-logo.js';
 import { LogoutButton } from './components/LogoutButton.js';
+import { displayRoleName } from './access/role-labels.js';
 
 const { useEffect, useRef, useState } = React;
 
@@ -146,7 +147,7 @@ function ResultsTable({ users }) {
                             [user.first_name, user.last_name].filter(Boolean).join(' ') || '-'
                         ),
                         React.createElement('td', { 'data-label': 'Email' }, user.email || '-'),
-                        React.createElement('td', { 'data-label': 'Role' }, user.role_name || '-'),
+                        React.createElement('td', { 'data-label': 'Role' }, displayRoleName(user.role_name, '-')),
                         React.createElement(
                             'td',
                             { 'data-label': 'Unit / Office' },
@@ -372,7 +373,7 @@ function UserSearchApp() {
 
         if (roleId) {
             const role = roles.find((item) => String(item.role_id) === String(roleId));
-            chips.push({ key: 'role_id', label: 'Role', value: role?.role_name || roleId });
+            chips.push({ key: 'role_id', label: 'Role', value: displayRoleName(role?.role_name, roleId) });
         }
 
         if (status) {
@@ -468,7 +469,7 @@ function UserSearchApp() {
                                 React.createElement(
                                     'option',
                                     { key: role.role_id, value: String(role.role_id) },
-                                    role.role_name
+                                    displayRoleName(role.role_name)
                                 )
                             )
                         )
