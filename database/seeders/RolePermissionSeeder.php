@@ -27,6 +27,19 @@ class RolePermissionSeeder extends Seeder
             'plan_core_values.update',
         ];
 
+        $permissionCodes = [
+            'users.view',
+            'users.create',
+            'users.update',
+            'users.delete',
+            'users.assign_roles',
+            'roles.view',
+            'roles.manage',
+            'roles.assign_protected',
+            'permissions.view',
+            'permissions.manage',
+            'logs.view',
+            'login_history.view',
         $viewOnlyPermissions = [
     'dashboard.view',
     'strategic_records.view', 'strategic_foundations.view', 'strategic_objectives.view',

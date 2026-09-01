@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\LoginHistoryController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\FoundationsController;
@@ -285,13 +286,55 @@ Route::middleware(['auth:api','auth.version',])->group(function () {
         RelationController::class
     );
 
-    Route::apiResource(
+    Route::get(
         'logs',
-        LogController::class
-    );
-
+        [LogController::class, 'index']
+    )->middleware('permission:logs.view');
+    
+    Route::get(
+        'logs/{log}',
+        [LogController::class, 'show']
+    )
+        ->whereNumber('log')
+        ->middleware('permission:logs.view');
+    
     Route::apiResource(
         'plan-core-values',
         LinkController::class
     );
 });
+
+/*
+|--------------------------------------------------------------------------
+| Login history
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware([
+    'auth:api',
+    'auth.version',
+])->group(function () {
+    Route::get(
+        'login-history',
+        [LoginHistoryController::class, 'index']
+    )->middleware('permission:login_history.view');
+
+    Route::get(
+        'login-history/{loginHistory}',
+        [LoginHistoryController::class, 'show']
+    )
+        ->whereNumber('loginHistory')
+        ->middleware('permission:login_history.view');
+});
+
+
+
+
+
+
+
+
+
+
+
+

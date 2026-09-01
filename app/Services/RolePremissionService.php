@@ -6,6 +6,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\RolePremission;
 use App\Models\User;
+use App\Contracts\StrategicLogWriter;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -21,6 +22,11 @@ class RolePremissionService
         'permissions.manage',
         'users.assign_roles',
     ];
+
+    public function __construct(
+        private readonly StrategicLogWriter $logWriter
+    ) {
+    }
 
     public function getAll(array $filters = []): Collection
     {
@@ -81,7 +87,17 @@ class RolePremissionService
             $relation = RolePremission::create($data);
 
             $this->invalidateRoleSessions($role->role_id);
-
+            
+            $this->logWriter->write('role.permission_added', [
+                'actor_user_id' => $this->authenticatedActor()->user_id,
+                'resource_type' => 'role',
+                'resource_id' => $role->role_id,
+                'role_id' => $role->role_id,
+                'role_name' => $role->role_name,
+                'permission_id' => $permission->permission_id,
+                'permission_code' => $permission->code,
+            ]);
+            
             return $relation->load([
                 'role',
                 'permission',
@@ -151,6 +167,16 @@ class RolePremissionService
                 $this->invalidateRoleSessions($roleId);
             }
 
+            $this->logWriter->write('role.permission_updated', [
+                'actor_user_id' => $this->authenticatedActor()->user_id,
+                'resource_type' => 'role',
+                'resource_id' => $roleId,
+                'old_role_id' => $oldRoleId,
+                'new_role_id' => $roleId,
+                'permission_id' => $permissionId,
+                'changed_fields' => array_keys($data),
+            ]);
+
             return $relation->load([
                 'role',
                 'permission',
@@ -185,8 +211,18 @@ class RolePremissionService
 
             if ($deleted) {
                 $this->invalidateRoleSessions($role->role_id);
+            
+                $this->logWriter->write('role.permission_removed', [
+                    'actor_user_id' => $this->authenticatedActor()->user_id,
+                    'resource_type' => 'role',
+                    'resource_id' => $role->role_id,
+                    'role_id' => $role->role_id,
+                    'role_name' => $role->role_name,
+                    'permission_id' => $permissionId,
+                    'permission_code' => $relation->permission?->code,
+                ]);
             }
-
+            
             return $deleted;
         });
     }
@@ -226,9 +262,26 @@ class RolePremissionService
                 return $this->getByRoleId($roleId);
             }
 
-            $role->permissions()->sync($normalizedIds);
+            $changes = $role->permissions()->sync($normalizedIds);
 
             $this->invalidateRoleSessions($roleId);
+
+            $this->logWriter->write('role.permissions_synced', [
+                'actor_user_id' => $this->authenticatedActor()->user_id,
+                'resource_type' => 'role',
+                'resource_id' => $role->role_id,
+                'role_id' => $role->role_id,
+                'role_name' => $role->role_name,
+                'attached_permission_ids' => array_values(
+                    array_map('intval', $changes['attached'] ?? [])
+                ),
+                'detached_permission_ids' => array_values(
+                    array_map('intval', $changes['detached'] ?? [])
+                ),
+                'updated_permission_ids' => array_values(
+                    array_map('intval', $changes['updated'] ?? [])
+                ),
+            ]);
 
             return $this->getByRoleId($roleId);
         });

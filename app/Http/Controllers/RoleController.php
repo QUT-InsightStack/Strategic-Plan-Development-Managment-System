@@ -42,4 +42,37 @@ class RoleController extends BaseCrudController
 
         return response()->json(['message' => 'Updated'], 200);
     }
+
+    /**
+     * Role creation, update, and deletion are all governed by
+     * the roles.manage permission.
+     *
+     * This overrides BaseCrudController::destroy(), which
+     * requires roles.delete.
+     */
+    public function destroy(int $id): JsonResponse
+    {
+        app(\App\Services\PermissionAuthorizationService::class)
+            ->ensureHasPermission(
+                'roles.manage',
+                auth('api')->user(),
+                'You are not authorized to manage roles.'
+            );
+
+
+        $deleted = $this->getService()->delete($id);
+
+
+        if (! $deleted) {
+            return response()->json([
+                'message' => 'Not found',
+            ], 404);
+        }
+
+
+        return response()->json([
+            'message' => 'Deleted',
+        ], 200);
+    }
+
 }
