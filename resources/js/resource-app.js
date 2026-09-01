@@ -98,7 +98,7 @@ function ResourceTable({ items, onDelete }) {
                         React.createElement(
                             'td',
                             { key: `${id || index}-${column}`, 'data-label': crud.formatLabel(column) },
-                            React.createElement('span', { className: 'resource-cell-text' }, crud.formatCellValue(item[column]))
+                            React.createElement('span', { className: 'resource-cell-text' }, crud.formatCellValue(item[column], column))
                         )
                     ),
                     React.createElement(

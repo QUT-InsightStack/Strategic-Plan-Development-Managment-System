@@ -1,8 +1,10 @@
 import { enforcePageAccess } from '../access/access-guard.js';
 import { PERMISSIONS } from '../access/access-policy.js';
 import { can, getAccessSession } from '../access/access-session.js';
+import { displayRoleName } from '../access/role-labels.js';
 import { createUser, listRoles, searchUsers, updateUser, updateUserStatus } from '../api/users-api.js';
 import { AppDialog } from '../components/AppDialog.js';
+import { PageHeader } from '../components/PageHeader.js';
 import { TechnicalAdminSidebar } from '../components/TechnicalAdminSidebar.js';
 import { useDialogBehaviour } from '../components/use-dialog-behaviour.js';
 
@@ -185,7 +187,7 @@ function UserManagementApp() {
 
         const role = roles.find((item) => Number(item.role_id) === Number(user.role?.role_id));
         if (role?.is_protected) {
-            return `${role.role_name} is a protected role. Change its protection or role assignment before disabling this account.`;
+            return `${displayRoleName(role.role_name)} is a protected role. Change its protection or role assignment before disabling this account.`;
         }
 
         return '';
@@ -334,17 +336,23 @@ function UserManagementApp() {
         React.createElement(TechnicalAdminSidebar, { onNotice: (message) => setNotice({ type: 'info', message }) }),
         React.createElement('main', { className: 'app-shell-main user-page' },
             React.createElement('div', { className: 'app-shell-container' },
-                React.createElement('header', { className: 'app-page-header user-page__header' },
-                    React.createElement('div', null,
-                        React.createElement('h1', { className: 'ui-page-title' }, 'User Management'),
-                        React.createElement('p', { className: 'ui-page-subtitle' }, 'Review account access and enable or disable user accounts.')
-                    ),
-                    canCreateUsers ? React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: () => { setNotice({ type: '', message: '' }); setCreateOpen(true); } }, React.createElement('i', { className: 'bi bi-person-plus-fill' }), 'Create Account') : null
-                ),
+                React.createElement(PageHeader, {
+                    className: 'user-page__header',
+                    section: 'Technical Administration',
+                    title: 'User Management',
+                    subtitle: 'Review account access and enable or disable user accounts.',
+                    actions: canCreateUsers ? React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: () => { setNotice({ type: '', message: '' }); setCreateOpen(true); } }, React.createElement('i', { className: 'bi bi-person-plus-fill' }), 'Create Account') : null,
+                }),
                 notice.message ? React.createElement('div', { className: `ui-status ui-status--${notice.type}`, role: 'status', 'aria-live': 'polite' }, notice.message) : null,
                 React.createElement('section', { className: 'ui-card user-filter-card', 'aria-labelledby': 'user-filter-title' },
+                    React.createElement('div', { className: 'ui-section-header' },
+                        React.createElement('div', { className: 'ui-section-header__copy' },
+                            React.createElement('h2', { id: 'user-filter-title' }, 'Find user accounts'),
+                            React.createElement('p', null, 'Search the account register or narrow results by role and status.')
+                        ),
+                        React.createElement('i', { className: 'bi bi-funnel', 'aria-hidden': 'true' })
+                    ),
                     React.createElement('div', { className: 'ui-card__body' },
-                        React.createElement('h2', { id: 'user-filter-title', className: 'user-section-title' }, 'Search and filter'),
                         React.createElement('form', { className: 'user-filters', onSubmit: applyFilters },
                             React.createElement('div', { className: 'ui-field user-filters__search' },
                                 React.createElement('label', { className: 'ui-label', htmlFor: 'user-search' }, 'Search'),
@@ -357,7 +365,7 @@ function UserManagementApp() {
                                 React.createElement('label', { className: 'ui-label', htmlFor: 'user-role' }, 'Role'),
                                 React.createElement('select', { id: 'user-role', className: 'ui-select', value: filters.role_id, onChange: (event) => setFilters((current) => ({ ...current, role_id: event.target.value })) },
                                     React.createElement('option', { value: '' }, 'All roles'),
-                                    roles.map((role) => React.createElement('option', { key: role.role_id, value: role.role_id }, role.role_name))
+                                    roles.map((role) => React.createElement('option', { key: role.role_id, value: role.role_id }, displayRoleName(role.role_name)))
                                 )
                             ),
                             React.createElement('div', { className: 'ui-field' },
@@ -378,7 +386,10 @@ function UserManagementApp() {
                 ),
                 React.createElement('section', { className: 'ui-card user-list-card', 'aria-labelledby': 'user-list-title' },
                     React.createElement('div', { className: 'ui-card__header user-list-header' },
-                        React.createElement('h2', { id: 'user-list-title', className: 'ui-card__title' }, 'User Accounts'),
+                        React.createElement('div', null,
+                            React.createElement('h2', { id: 'user-list-title', className: 'ui-card__title' }, 'User Account Register'),
+                            React.createElement('p', { className: 'ui-help' }, 'Review account ownership, assigned roles, and current access status.')
+                        ),
                         React.createElement('span', { className: 'user-count' }, `${meta.total || 0} account${meta.total === 1 ? '' : 's'}`)
                     ),
                     React.createElement('div', { className: 'ui-table-wrap' },
@@ -399,7 +410,7 @@ function UserManagementApp() {
                                         React.createElement('td', null, user.office || user.department || '—'),
                                         React.createElement('td', null, React.createElement('strong', null, user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim()), Number(user.user_id) === Number(accessSession?.userId) ? React.createElement('span', { className: 'user-current-label' }, 'You') : null),
                                         React.createElement('td', { className: 'user-email' }, user.email),
-                                        React.createElement('td', null, user.role?.role_name || 'Unassigned'),
+                                        React.createElement('td', null, displayRoleName(user.role?.role_name)),
                                         React.createElement('td', null, React.createElement('span', { className: `ui-badge ui-badge--${status.badge}` }, status.label)),
                                         React.createElement('td', null, user.updated_at ? new Date(user.updated_at).toLocaleDateString() : '—'),
                                         React.createElement('td', null,
@@ -451,7 +462,7 @@ function UserManagementApp() {
                             React.createElement('label', { className: 'ui-label', htmlFor: 'account-role' }, 'Role', React.createElement('span', { className: 'ui-required' }, ' *')),
                             React.createElement('select', { id: 'account-role', className: 'ui-select', value: account.role_id, required: true, onChange: (event) => setAccount((current) => ({ ...current, role_id: event.target.value })) },
                                 React.createElement('option', { value: '' }, 'Select an approved role'),
-                                roles.filter((role) => role.is_assignable).map((role) => React.createElement('option', { key: role.role_id, value: role.role_id, disabled: role.is_protected && !canAssignProtectedRoles }, `${role.role_name}${role.is_protected ? ' (Protected)' : ''}`))
+                                roles.filter((role) => role.is_assignable).map((role) => React.createElement('option', { key: role.role_id, value: role.role_id, disabled: role.is_protected && !canAssignProtectedRoles }, `${displayRoleName(role.role_name)}${role.is_protected ? ' (Protected)' : ''}`))
                             ),
                             accountErrors.role_id ? React.createElement('p', { className: 'ui-error' }, accountErrors.role_id[0]) : null
                         )
@@ -519,7 +530,7 @@ function UserManagementApp() {
                     // readers, which would hide the current role entirely.
                     React.createElement('div', { className: 'ui-form-grid ui-form-grid--2 user-edit__restricted' },
                         [
-                            ['role', 'Role', editUser.role?.role_name || 'Unassigned', 'Change roles using the role assignment action.'],
+                            ['role', 'Role', displayRoleName(editUser.role?.role_name), 'Change roles using the role assignment action.'],
                             ['status', 'Account status', statusDetails(editUser.status).label, 'Change status using the Enable or Disable action.'],
                         ].map(([name, label, value, help]) => React.createElement('div', { key: name, className: 'ui-field' },
                             React.createElement('label', { className: 'ui-label', htmlFor: `edit-locked-${name}` },

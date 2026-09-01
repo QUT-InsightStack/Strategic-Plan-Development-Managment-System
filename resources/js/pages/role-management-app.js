@@ -1,11 +1,28 @@
 import { TechnicalAdminSidebar } from '../components/TechnicalAdminSidebar.js';
 import { AppDialog } from '../components/AppDialog.js';
+import { PageHeader } from '../components/PageHeader.js';
 import { demoPermissions, demoRoles, demoUsers } from '../data/role-management-demo-data.js';
 import { enforcePageAccess } from '../access/access-guard.js';
 
 enforcePageAccess();
 
 const { useMemo, useState } = React;
+
+const actionPermissionIds = [7, 8, 9, 10, 11];
+const contributorActionPermissionIds = [7, 8, 9, 10];
+const fullActionRoleIds = [1, 2, 4, 6];
+const contributorActionRoleIds = [3, 5];
+
+function permissionsForRoles(permissionIds, roleIds) {
+    const nonActionPermissionIds = permissionIds.filter((id) => !actionPermissionIds.includes(id));
+    const allowedActionPermissionIds = roleIds.some((id) => fullActionRoleIds.includes(id))
+        ? actionPermissionIds
+        : roleIds.some((id) => contributorActionRoleIds.includes(id))
+            ? contributorActionPermissionIds
+            : [];
+
+    return [...new Set([...nonActionPermissionIds, ...allowedActionPermissionIds])];
+}
 
 function RoleManagementApp() {
     const [users, setUsers] = useState(demoUsers);
@@ -22,7 +39,7 @@ function RoleManagementApp() {
     function chooseUser(user) {
         setSelectedUserId(user.id);
         setDraftRoleIds([...user.roleIds]);
-        setDraftPermissionIds([...user.permissionIds]);
+        setDraftPermissionIds(permissionsForRoles(user.permissionIds, user.roleIds));
         setNotice('');
     }
 
@@ -32,10 +49,16 @@ function RoleManagementApp() {
             setDialog({ open: true, variant: 'error', title: 'Protected role', message: `${role.name} is required and cannot be removed in this demonstration.` });
             return;
         }
-        setDraftRoleIds((current) => selected ? current.filter((id) => id !== role.id) : [...current, role.id]);
+        const nextRoleIds = selected ? draftRoleIds.filter((id) => id !== role.id) : [...draftRoleIds, role.id];
+        setDraftRoleIds(nextRoleIds);
+        setDraftPermissionIds((current) => permissionsForRoles(current, nextRoleIds));
     }
 
     function togglePermission(permissionId) {
+        if (actionPermissionIds.includes(permissionId)) {
+            setDialog({ open: true, variant: 'error', title: 'Role-controlled action', message: 'Create, Review, Update, Archive, and Delete are assigned by role and cannot be overridden for an individual user.' });
+            return;
+        }
         setDraftPermissionIds((current) => current.includes(permissionId) ? current.filter((id) => id !== permissionId) : [...current, permissionId]);
     }
 
@@ -57,10 +80,13 @@ function RoleManagementApp() {
     return React.createElement(React.Fragment, null,
         React.createElement(TechnicalAdminSidebar, { onNotice: setNotice }),
         React.createElement('main', { className: 'app-shell-main role-page' }, React.createElement('div', { className: 'app-shell-container' },
-            React.createElement('header', { className: 'app-page-header role-page__header' },
-                React.createElement('div', { className: 'role-page__header-copy' }, React.createElement('h1', { className: 'ui-page-title' }, 'Assign Roles and Permissions'), React.createElement('p', { className: 'ui-page-subtitle' }, 'Select a user, assign approved roles, and control the permissions available to that user.')),
-                React.createElement('span', { className: 'role-demo-label' }, React.createElement('i', { className: 'bi bi-display' }), 'Frontend demonstration')
-            ),
+            React.createElement(PageHeader, {
+                className: 'role-page__header',
+                section: 'Technical Administration',
+                title: 'Assign Roles and Permissions',
+                subtitle: 'Select a user, assign approved roles, and control the permissions available to that user.',
+                actions: React.createElement('span', { className: 'role-demo-label' }, React.createElement('i', { className: 'bi bi-display' }), 'Frontend demonstration'),
+            }),
             notice ? React.createElement('div', { className: 'ui-status ui-status--info role-page__notice', role: 'status' }, notice) : null,
             React.createElement('div', { className: 'role-workspace' },
                 React.createElement('section', { className: 'ui-card role-panel role-panel--users', 'aria-labelledby': 'users-title' },
@@ -81,7 +107,8 @@ function RoleManagementApp() {
                     React.createElement('div', { className: 'role-panel__header' }, React.createElement('h2', { id: 'permissions-title' }, 'User Permissions'), React.createElement('p', null, 'Demonstration controls for this user’s effective permissions.')),
                     React.createElement('div', { className: 'role-panel__body permission-options' }, demoPermissions.map((permission) => {
                         const selected = draftPermissionIds.includes(permission.id);
-                        return React.createElement('div', { key: permission.id, className: `permission-option${selected ? ' is-selected' : ''}` }, React.createElement('span', null, React.createElement('strong', null, permission.name), React.createElement('small', null, permission.description)), React.createElement('label', { className: 'permission-switch' }, React.createElement('input', { type: 'checkbox', checked: selected, onChange: () => togglePermission(permission.id), 'aria-label': `Toggle ${permission.name}` }), React.createElement('span', null)));
+                        const controlledByRole = actionPermissionIds.includes(permission.id);
+                        return React.createElement('div', { key: permission.id, className: `permission-option${selected ? ' is-selected' : ''}` }, React.createElement('span', null, React.createElement('strong', null, permission.name), React.createElement('small', null, controlledByRole ? `${permission.description} Assigned automatically by role.` : permission.description)), React.createElement('label', { className: 'permission-switch' }, React.createElement('input', { type: 'checkbox', checked: selected, disabled: controlledByRole, onChange: () => togglePermission(permission.id), 'aria-label': `${permission.name} ${selected ? 'allowed' : 'not allowed'} by assigned role` }), React.createElement('span', null)));
                     }))
                 )
             ),

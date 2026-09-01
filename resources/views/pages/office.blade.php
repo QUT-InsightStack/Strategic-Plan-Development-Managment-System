@@ -29,7 +29,7 @@
             <span class="sidebar-title">SPDMS</span>
         </a>
 
-        <a href="/profile" class="sidebar-item active">Planner/Encoder</a>
+        <a href="/profile" class="sidebar-item active">Planning Officer</a>
         <a href="#" class="sidebar-item">Add reference</a>
         <a href="#" class="sidebar-item">Check records</a>
         <a href="#" class="sidebar-item">Pending draft</a>

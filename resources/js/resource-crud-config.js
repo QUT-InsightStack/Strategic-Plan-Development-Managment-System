@@ -1,3 +1,5 @@
+import { displayRoleName } from './access/role-labels.js';
+
 (function () {
     const loginUrl = '/login';
 
@@ -356,9 +358,13 @@
         return null;
     }
 
-    function formatCellValue(value) {
+    function formatCellValue(value, fieldName = '') {
         if (value === null || value === undefined || value === '') {
             return '-';
+        }
+
+        if (fieldName === 'role_name') {
+            return displayRoleName(value);
         }
 
         if (Array.isArray(value)) {
@@ -381,7 +387,7 @@
         const prefix = id ? `${id} - ` : '';
 
         const knownValue =
-            record.role_name ||
+            (record.role_name ? displayRoleName(record.role_name) : null) ||
             record.permission_name ||
             record.name ||
             [record.first_name, record.last_name].filter(Boolean).join(' ') ||

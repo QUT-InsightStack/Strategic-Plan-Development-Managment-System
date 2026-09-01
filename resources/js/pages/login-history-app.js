@@ -1,6 +1,9 @@
 import { enforcePageAccess } from '../access/access-guard.js';
+import { getAccessSession } from '../access/access-session.js';
 import { listLoginHistory } from '../api/login-history-api.js';
 import { searchUsers } from '../api/users-api.js';
+import { AdministrativeAdminSidebar } from '../components/AdministrativeAdminSidebar.js';
+import { PageHeader } from '../components/PageHeader.js';
 import { TechnicalAdminSidebar } from '../components/TechnicalAdminSidebar.js';
 
 enforcePageAccess();
@@ -30,6 +33,9 @@ function formatTimestamp(value) {
 }
 
 function LoginHistoryApp() {
+    const accessSession = getAccessSession();
+    const isAdministrativeAdmin = ['Administrative Admin', 'Administrative Administrator'].includes(accessSession?.roleName);
+    const Sidebar = isAdministrativeAdmin ? AdministrativeAdminSidebar : TechnicalAdminSidebar;
     const [entries, setEntries] = useState([]);
     const [users, setUsers] = useState([]);
     const [filters, setFilters] = useState(initialFilters);
@@ -77,21 +83,22 @@ function LoginHistoryApp() {
     }
 
     return React.createElement(React.Fragment, null,
-        React.createElement(TechnicalAdminSidebar, { onNotice: (message) => setNotice({ type: 'info', message }) }),
+        React.createElement(Sidebar, { active: isAdministrativeAdmin ? 'System Logs' : undefined, onNotice: (message) => setNotice({ type: 'info', message }) }),
         React.createElement('main', { className: 'app-shell-main login-history-page' },
             React.createElement('div', { className: 'app-shell-container' },
-                React.createElement('header', { className: 'app-page-header' },
-                    React.createElement('div', null,
-                        React.createElement('h1', { className: 'ui-page-title' }, 'Login History'),
-                        React.createElement('p', { className: 'ui-page-subtitle' }, 'Every sign-in attempt across all accounts, successful or not.')
-                    )
-                ),
+                React.createElement(PageHeader, { section: isAdministrativeAdmin ? 'Administrative Monitoring' : 'Technical Administration', title: isAdministrativeAdmin ? 'System Logs' : 'Login History', subtitle: 'Every sign-in attempt across all accounts, successful or not.' }),
 
                 notice.message ? React.createElement('div', { className: `ui-status ui-status--${notice.type}`, role: 'status', 'aria-live': 'polite' }, notice.message) : null,
 
                 React.createElement('section', { className: 'ui-card', 'aria-labelledby': 'history-filter-title' },
+                    React.createElement('div', { className: 'ui-section-header' },
+                        React.createElement('div', { className: 'ui-section-header__copy' },
+                            React.createElement('h2', { id: 'history-filter-title' }, 'Find sign-in attempts'),
+                            React.createElement('p', null, 'Filter the audit trail by account, outcome, or date range.')
+                        ),
+                        React.createElement('i', { className: 'bi bi-funnel', 'aria-hidden': 'true' })
+                    ),
                     React.createElement('div', { className: 'ui-card__body' },
-                        React.createElement('h2', { id: 'history-filter-title', className: 'login-history-section-title' }, 'Search and filter'),
                         React.createElement('form', { className: 'login-history-filters', onSubmit: applyFilters },
                             React.createElement('div', { className: 'ui-field login-history-filters__search' },
                                 React.createElement('label', { className: 'ui-label', htmlFor: 'history-search' }, 'Email'),
@@ -163,9 +170,14 @@ function LoginHistoryApp() {
                 ),
 
                 React.createElement('section', { className: 'ui-card', 'aria-labelledby': 'history-list-title' },
+                    React.createElement('div', { className: 'ui-section-header' },
+                        React.createElement('div', { className: 'ui-section-header__copy' },
+                            React.createElement('h2', { id: 'history-list-title' }, 'Sign-in Attempt Register'),
+                            React.createElement('p', null, `${meta.total || 0} recorded attempt${meta.total === 1 ? '' : 's'}`)
+                        ),
+                        React.createElement('i', { className: 'bi bi-clock-history', 'aria-hidden': 'true' })
+                    ),
                     React.createElement('div', { className: 'ui-card__body' },
-                        React.createElement('h2', { id: 'history-list-title', className: 'login-history-section-title' }, 'Sign-in attempts'),
-
                         loading
                             ? React.createElement('p', { className: 'ui-help' }, 'Loading login history…')
                             : entries.length === 0

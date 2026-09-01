@@ -14,7 +14,7 @@
     --plan-muted: var(--color-gray-600);
     --plan-panel: var(--color-brand-white);
     --plan-bg: #eaf4fb;
-    --plan-shadow: 0 2px 8px rgba(23, 76, 143, 0.14);
+    --plan-shadow: none;
 }
 
 * { box-sizing: border-box; }
@@ -114,6 +114,7 @@ button, input, select, textarea { font: inherit; }
 }
 
 .plan-form-card, .structure-card {
+    border: 1px solid var(--color-border-subtle);
     border-radius: 10px;
     background: var(--plan-panel);
     box-shadow: var(--plan-shadow);

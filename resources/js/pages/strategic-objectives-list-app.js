@@ -1,12 +1,16 @@
 import { deleteStrategicObjective, listAllStrategicObjectives } from '../api/strategic-objectives-api.js';
 import { AppSidebar } from '../components/AppSidebar.js';
 import { AppDialog } from '../components/AppDialog.js';
+import { PageHeader } from '../components/PageHeader.js';
 import { enforcePageAccess } from '../access/access-guard.js';
 import { PERMISSIONS } from '../access/access-policy.js';
 import { can } from '../access/access-session.js';
 
 enforcePageAccess();
-const canManageObjectives = can(PERMISSIONS.PLANS_MANAGE);
+const canReviewObjectives = can(PERMISSIONS.PLANS_VIEW);
+const canUpdateObjectives = can(PERMISSIONS.PLANS_UPDATE);
+const canDeleteObjectives = can(PERMISSIONS.PLANS_DELETE);
+const hasObjectiveActions = canReviewObjectives || canUpdateObjectives || canDeleteObjectives;
 
 const { useEffect, useState } = React;
 const currentYear = new Date().getFullYear();
@@ -78,6 +82,7 @@ function StrategicObjectivesListApp() {
     }
 
     function requestDelete(objective) {
+        if (!canDeleteObjectives) return;
         setDialog({ open: true, variant: 'danger', title: 'Delete Strategic Objective?', message: `Delete “${objective.objective_title || 'Untitled objective'}”? This action cannot be undone.`, objective });
     }
 
@@ -91,9 +96,17 @@ function StrategicObjectivesListApp() {
     return React.createElement(React.Fragment, null,
         React.createElement(AppSidebar, { onNotice: (message) => setStatus({ type: 'info', message }) }),
         React.createElement('main', { className: 'app-shell-main manage-plans-page' }, React.createElement('div', { className: 'app-shell-container' },
-            React.createElement('header', { className: 'app-page-header manage-plans-header' }, React.createElement('div', null, React.createElement('h1', { className: 'ui-page-title' }, 'Manage Strategic Objectives'), React.createElement('p', { className: 'ui-page-subtitle' }, 'View and maintain Strategic Objectives across all accessible Strategic Plans.'))),
+            React.createElement(PageHeader, { className: 'manage-plans-header', section: 'Strategic Planning', title: 'Manage Strategic Objectives', subtitle: 'View and maintain Strategic Objectives across all accessible Strategic Plans.' }),
             status.message ? React.createElement('div', { className: `ui-status ui-status--${status.type} plans-feedback`, role: 'status' }, status.message) : null,
-            React.createElement('section', { className: 'ui-card plans-filter-card', 'aria-labelledby': 'objective-filter-title' }, React.createElement('div', { className: 'ui-card__body' }, React.createElement('h2', { className: 'plans-filter-title', id: 'objective-filter-title' }, 'Search and filter'), React.createElement('form', { className: 'plans-toolbar', onSubmit: (event) => { event.preventDefault(); load(1); } },
+            React.createElement('section', { className: 'ui-card plans-filter-card', 'aria-labelledby': 'objective-filter-title' },
+                React.createElement('div', { className: 'plans-section-header' },
+                    React.createElement('div', null,
+                        React.createElement('h2', { className: 'plans-filter-title', id: 'objective-filter-title' }, 'Find strategic objectives'),
+                        React.createElement('p', null, 'Search all accessible objectives or narrow the register using the available filters.')
+                    ),
+                    React.createElement('i', { className: 'bi bi-funnel', 'aria-hidden': 'true' })
+                ),
+                React.createElement('div', { className: 'ui-card__body' }, React.createElement('form', { className: 'plans-toolbar', onSubmit: (event) => { event.preventDefault(); load(1); } },
                 React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'objective-search' }, 'Search'), React.createElement('div', { className: 'plans-search' }, React.createElement('input', { className: 'ui-input', id: 'objective-search', value: filters.search, placeholder: 'Search objectives', onChange: (event) => setFilters((current) => ({ ...current, search: event.target.value })) }), React.createElement('i', { className: 'bi bi-search' }))),
                 React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'plan-id-filter' }, 'Plan ID'), React.createElement('input', { className: 'ui-input', id: 'plan-id-filter', type: 'number', min: 1, value: filters.plan_id, placeholder: 'All plans', onChange: (event) => setFilters((current) => ({ ...current, plan_id: event.target.value })) })),
                 React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'objective-status' }, 'Status'), React.createElement('select', { className: 'ui-select', id: 'objective-status', value: filters.status, onChange: (event) => setFilters((current) => ({ ...current, status: event.target.value })) }, React.createElement('option', { value: '' }, 'All statuses'), React.createElement('option', { value: 'draft' }, 'Draft'), React.createElement('option', { value: 'published' }, 'Published'))),
@@ -101,7 +114,7 @@ function StrategicObjectivesListApp() {
                 React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'objective-year' }, 'Year'), React.createElement('select', { className: 'ui-select', id: 'objective-year', value: filters.year, onChange: (event) => setFilters((current) => ({ ...current, year: event.target.value })) }, React.createElement('option', { value: '' }, 'All years'), [0,1,2,3,4].map((offset) => React.createElement('option', { value: currentYear - offset, key: currentYear - offset }, currentYear - offset)))),
                 React.createElement('div', { className: 'plans-filter-actions' }, React.createElement('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'submit', disabled: loading }, React.createElement('i', { className: 'bi bi-funnel-fill' }), 'Filter'), React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: clearFilters, disabled: loading }, 'Clear'))
             ))),
-            React.createElement('section', { className: 'ui-card plans-card', 'aria-labelledby': 'objective-list-title' }, React.createElement('div', { className: 'plans-table-heading' }, React.createElement('h2', { id: 'objective-list-title' }, 'Strategic Objectives')), React.createElement('div', { className: 'ui-card__body' }, loading ? React.createElement('div', { className: 'ui-empty' }, 'Loading Strategic Objectives…') : objectives.length === 0 ? React.createElement('div', { className: 'ui-empty' }, 'No Strategic Objectives match the current filters.') :
+            React.createElement('section', { className: 'ui-card plans-card', 'aria-labelledby': 'objective-list-title' }, React.createElement('div', { className: 'plans-table-heading' }, React.createElement('div', null, React.createElement('h2', { id: 'objective-list-title' }, 'Strategic Objective Register'), React.createElement('p', null, loading ? 'Loading the latest objective records…' : `${meta.total || 0} objective record(s) available`))), React.createElement('div', { className: 'ui-card__body' }, loading ? React.createElement('div', { className: 'ui-empty' }, 'Loading Strategic Objectives…') : objectives.length === 0 ? React.createElement('div', { className: 'ui-empty' }, 'No Strategic Objectives match the current filters.') :
 
 
 
@@ -319,14 +332,30 @@ function StrategicObjectivesListApp() {
                             className:
                                 'objective-list-actions',
                         },
-                        canManageObjectives
+                        hasObjectiveActions
                             ? React.createElement(
                                 'div',
                                 {
                                     className:
                                         'ui-table__actions',
                                 },
-                                React.createElement(
+                                canReviewObjectives ? React.createElement(
+                                    'a',
+                                    {
+                                        className:
+                                            'ui-button ui-button--secondary ui-button--sm',
+                                        href:
+                                            `/strategic-plans/${objective.strategic_plan_id}/objectives`,
+                                        'aria-label':
+                                            `Review ${objective.objective_title || 'strategic objective'}`,
+                                    },
+                                    React.createElement('i', {
+                                        className:
+                                            'bi bi-eye',
+                                    }),
+                                    'Review'
+                                ) : null,
+                                canUpdateObjectives ? React.createElement(
                                     'a',
                                     {
                                         className:
@@ -339,8 +368,8 @@ function StrategicObjectivesListApp() {
                                             'bi bi-pencil',
                                     }),
                                     'Update'
-                                ),
-                                React.createElement(
+                                ) : null,
+                                canDeleteObjectives ? React.createElement(
                                     'button',
                                     {
                                         className:
@@ -356,12 +385,12 @@ function StrategicObjectivesListApp() {
                                             'bi bi-trash3',
                                     }),
                                     'Delete'
-                                )
+                                ) : null
                             )
                             : React.createElement(
                                 'span',
                                 { className: 'ui-help' },
-                                'View only'
+                                'Review only'
                             )
                     )
                 );

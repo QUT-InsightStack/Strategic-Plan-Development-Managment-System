@@ -1,12 +1,19 @@
 import { copyStrategicPlan, deleteStrategicPlan, listStrategicPlans, updateStrategicPlanStatus } from '../api/strategic-plans-api.js';
 import { AppSidebar } from '../components/AppSidebar.js';
 import { AppDialog } from '../components/AppDialog.js';
+import { PageHeader } from '../components/PageHeader.js';
 import { enforcePageAccess } from '../access/access-guard.js';
 import { PERMISSIONS } from '../access/access-policy.js';
 import { can } from '../access/access-session.js';
 
 enforcePageAccess();
-const canManagePlans = can(PERMISSIONS.PLANS_MANAGE);
+const canCreatePlans = can(PERMISSIONS.PLANS_CREATE);
+const canReviewPlans = can(PERMISSIONS.PLANS_VIEW);
+const canUpdatePlans = can(PERMISSIONS.PLANS_UPDATE);
+const canArchivePlans = can(PERMISSIONS.PLANS_ARCHIVE);
+const canDeletePlans = can(PERMISSIONS.PLANS_DELETE);
+const canSelectPlans = canCreatePlans || canDeletePlans;
+const hasPlanActions = canReviewPlans || canUpdatePlans || canArchivePlans || canDeletePlans;
 
 const { useEffect, useState } = React;
 const currentYear = new Date().getFullYear();
@@ -55,10 +62,12 @@ function StrategicPlanListApp() {
     }
 
     function requestDelete(plan) {
+        if (!canDeletePlans) return;
         setDialog({ open: true, variant: 'danger', title: 'Confirm deletion', message: `Are you sure you want to delete “${plan.title}”? This action cannot be undone.`, ids: [plan.record_id], action: 'delete' });
     }
 
     function requestDeleteSelected() {
+        if (!canDeletePlans) return;
         if (!selectedIds.length) return setStatus({ type: 'error', message: 'Select at least one plan to delete.' });
         setDialog({ open: true, variant: 'danger', title: 'Confirm bulk deletion', message: `Are you sure you want to delete ${selectedIds.length} selected plan(s)? This action cannot be undone.`, ids: selectedIds, action: 'delete' });
     }
@@ -76,6 +85,7 @@ function StrategicPlanListApp() {
     }
 
     function requestStatusChange(plan) {
+        if (!canArchivePlans) return;
         const restoring = plan.status === 'archived';
         setDialog({
             open: true,
@@ -134,16 +144,25 @@ function StrategicPlanListApp() {
     return React.createElement(React.Fragment, null,
         React.createElement(AppSidebar, { onNotice: (message) => setStatus({ type: 'info', message }) }),
         React.createElement('main', { className: 'app-shell-main manage-plans-page' }, React.createElement('div', { className: 'app-shell-container' },
-            React.createElement('header', { className: 'app-page-header manage-plans-header' }, React.createElement('div', null,
-                React.createElement('h1', { className: 'ui-page-title' }, 'Manage Strategic Plans'),
-                React.createElement('p', { className: 'ui-page-subtitle' }, 'Update draft strategic plans, consolidate agency inputs, monitor objective progress, and prepare finalized plans for approval.')
-            )),
+            React.createElement(PageHeader, {
+                className: 'manage-plans-header',
+                section: 'Strategic Planning',
+                title: 'Manage Strategic Plans',
+                subtitle: 'Update draft strategic plans, consolidate agency inputs, monitor objective progress, and prepare finalized plans for approval.',
+                actions: canCreatePlans ? React.createElement('a', { className: 'ui-button ui-button--primary manage-plans-create', href: '/strategic-plans/create' }, React.createElement('i', { className: 'bi bi-plus-lg' }), 'Create Strategic Plan') : null,
+            }),
             status.message ? React.createElement('div', { className: `ui-status ui-status--${status.type} plans-feedback`, role: 'status' }, status.message) : null,
             React.createElement('section', { className: 'ui-card plans-filter-card', 'aria-labelledby': 'filter-title' },
+                React.createElement('div', { className: 'plans-section-header' },
+                    React.createElement('div', null,
+                        React.createElement('h2', { className: 'plans-filter-title', id: 'filter-title' }, 'Find strategic plans'),
+                        React.createElement('p', null, 'Search the plan register or narrow the results using the available filters.')
+                    ),
+                    React.createElement('i', { className: 'bi bi-funnel', 'aria-hidden': 'true' })
+                ),
                 React.createElement('div', { className: 'ui-card__body' },
-                    React.createElement('h2', { className: 'plans-filter-title', id: 'filter-title' }, 'Search and filter'),
                     React.createElement('form', { className: 'plans-toolbar', onSubmit: (event) => { event.preventDefault(); load(1); } },
-                        React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'search' }, 'Search'), React.createElement('div', { className: 'plans-search' }, React.createElement('input', { className: 'ui-input', id: 'search', value: filters.search, placeholder: 'Search plans', onChange: (event) => setFilters((current) => ({ ...current, search: event.target.value })) }), React.createElement('i', { className: 'bi bi-search', 'aria-hidden': 'true' }))),
+                        React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'search' }, 'Plan title'), React.createElement('div', { className: 'plans-search' }, React.createElement('input', { className: 'ui-input', id: 'search', value: filters.search, placeholder: 'Search by plan title', onChange: (event) => setFilters((current) => ({ ...current, search: event.target.value })) }), React.createElement('i', { className: 'bi bi-search', 'aria-hidden': 'true' }))),
                         React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'office' }, 'Office'), React.createElement('select', { className: 'ui-select', id: 'office', value: filters.office, onChange: (event) => { setFilters((current) => ({ ...current, office: event.target.value })); setStatus({ type: 'info', message: 'Office filtering will be enabled when the plan department field is added to the database.' }); } }, React.createElement('option', { value: '' }, 'All offices'))),
                         React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'level' }, 'Type'), React.createElement('select', { className: 'ui-select', id: 'level', value: filters.level, onChange: (event) => setFilters((current) => ({ ...current, level: event.target.value })) }, React.createElement('option', { value: '' }, 'All types'), React.createElement('option', { value: 'strategic_plan' }, 'Strategic Plan'), React.createElement('option', { value: 'goal' }, 'Goal'))),
                         React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'status' }, 'Status'), React.createElement('select', { className: 'ui-select', id: 'status', value: filters.status, onChange: (event) => setFilters((current) => ({ ...current, status: event.target.value })) }, React.createElement('option', { value: '' }, 'All statuses'), React.createElement('option', { value: 'draft' }, 'Draft'), React.createElement('option', { value: 'finished' }, 'Finished'), React.createElement('option', { value: 'archived' }, 'Archived'))),
@@ -153,24 +172,28 @@ function StrategicPlanListApp() {
                 )
             ),
             React.createElement('section', { className: 'ui-card plans-card', 'aria-labelledby': 'plans-table-title' },
-                React.createElement('div', { className: 'plans-table-heading' }, React.createElement('h2', { id: 'plans-table-title' }, 'Strategic Plans'), canManagePlans ? React.createElement('div', { className: 'plans-heading-actions' },
-                    React.createElement('button', { className: 'plans-copy-button', type: 'button', onClick: copySelectedPlan, disabled: loading }, React.createElement('i', { className: 'bi bi-copy' }), 'Copy Selected'),
-                    React.createElement('button', { className: 'plans-bulk-delete', type: 'button', onClick: requestDeleteSelected, disabled: !selectedIds.length || loading }, 'Bulk Delete', React.createElement('i', { className: 'bi bi-trash3' }))
+                React.createElement('div', { className: 'plans-table-heading' }, React.createElement('div', null,
+                    React.createElement('h2', { id: 'plans-table-title' }, 'Strategic Plan Register'),
+                    React.createElement('p', null, loading ? 'Loading the latest plan records…' : `${meta.total || 0} plan record(s) available`)
+                ), canSelectPlans ? React.createElement('div', { className: 'plans-heading-actions' },
+                    canCreatePlans ? React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm plans-selection-action', type: 'button', onClick: copySelectedPlan, disabled: loading }, React.createElement('i', { className: 'bi bi-copy' }), 'Copy Selected') : null,
+                    canDeletePlans ? React.createElement('button', { className: 'ui-button ui-button--danger ui-button--sm plans-selection-action', type: 'button', onClick: requestDeleteSelected, disabled: !selectedIds.length || loading }, React.createElement('i', { className: 'bi bi-trash3' }), 'Delete Selected') : null
                 ) : null),
                 React.createElement('div', { className: 'ui-card__body' }, loading ? React.createElement('div', { className: 'ui-empty' }, 'Loading strategic plans…') : plans.length === 0 ? React.createElement('div', { className: 'ui-empty' }, 'No strategic plans match the current filters.') : React.createElement('div', { className: 'ui-table-wrap' }, React.createElement('table', { className: 'ui-table plans-table' },
                     React.createElement('thead', null, React.createElement('tr', null,
-                        canManagePlans ? React.createElement('th', { className: 'plans-select-column' }, React.createElement('input', { type: 'checkbox', checked: plans.length > 0 && selectedIds.length === plans.length, onChange: toggleAll, 'aria-label': 'Select all plans' })) : null,
+                        canSelectPlans ? React.createElement('th', { className: 'plans-select-column' }, React.createElement('input', { type: 'checkbox', checked: plans.length > 0 && selectedIds.length === plans.length, onChange: toggleAll, 'aria-label': 'Select all plans' })) : null,
                         ['Plan ID', 'Plan Title', 'Status', 'Created By', 'Department', 'Latest Upload', 'Actions'].map((heading) => React.createElement('th', { key: heading }, heading))
                     )),
                     React.createElement('tbody', null, plans.map((plan) => React.createElement('tr', { key: plan.record_id },
-                        canManagePlans ? React.createElement('td', { className: 'plans-select-column' }, React.createElement('input', { type: 'checkbox', checked: selectedIds.includes(plan.record_id), onChange: () => toggleSelection(plan.record_id), 'aria-label': `Select ${plan.title}` })) : null,
+                        canSelectPlans ? React.createElement('td', { className: 'plans-select-column' }, React.createElement('input', { type: 'checkbox', checked: selectedIds.includes(plan.record_id), onChange: () => toggleSelection(plan.record_id), 'aria-label': `Select ${plan.title}` })) : null,
                         React.createElement('td', null, React.createElement('span', { className: 'plans-id' }, String(plan.record_id).padStart(4, '0'))),
                         React.createElement('td', null, React.createElement('strong', null, plan.title)),
                         React.createElement('td', null, React.createElement('span', { className: `ui-badge ui-badge--${plan.status || 'draft'}` }, (plan.status || 'draft').replace(/^./, (letter) => letter.toUpperCase()))),
                         React.createElement('td', null, creatorName(plan)), React.createElement('td', null, plan.creator?.department || 'Pending DB field'),
                         React.createElement('td', null, plan.updated_at ? new Date(plan.updated_at).toLocaleDateString() : '—'),
-                        React.createElement('td', { className: 'plans-actions-cell' }, canManagePlans ? React.createElement('div', { className: 'ui-table__actions' },
-                            plan.status !== 'archived'
+                        React.createElement('td', { className: 'plans-actions-cell' }, hasPlanActions ? React.createElement('div', { className: 'ui-table__actions' },
+                            canReviewPlans ? React.createElement('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: `/strategic-plans/${plan.record_id}/objectives`, 'aria-label': `Review ${plan.title}` }, React.createElement('i', { className: 'bi bi-eye' }), 'Review') : null,
+                            canUpdatePlans && plan.status !== 'archived'
     ? React.createElement(
         'a',
         {
@@ -194,21 +217,23 @@ function StrategicPlanListApp() {
             : 'Update'
     )
     : null,
-                            ['finished', 'archived'].includes(plan.status) ? React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => requestStatusChange(plan), 'aria-label': `${plan.status === 'archived' ? 'Restore' : 'Archive'} ${plan.title}` }, React.createElement('i', { className: `bi ${plan.status === 'archived' ? 'bi-arrow-counterclockwise' : 'bi-archive'}` }), plan.status === 'archived' ? 'Restore' : 'Archive') : null,
-                            React.createElement('button', { className: 'ui-button ui-button--danger ui-button--sm', type: 'button', onClick: () => requestDelete(plan), 'aria-label': `Delete ${plan.title}` }, React.createElement('i', { className: 'bi bi-trash3' }), 'Delete')
+                            canArchivePlans && ['finished', 'archived'].includes(plan.status) ? React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => requestStatusChange(plan), 'aria-label': `${plan.status === 'archived' ? 'Restore' : 'Archive'} ${plan.title}` }, React.createElement('i', { className: `bi ${plan.status === 'archived' ? 'bi-arrow-counterclockwise' : 'bi-archive'}` }), plan.status === 'archived' ? 'Restore' : 'Archive') : null,
+                            canDeletePlans ? React.createElement('button', { className: 'ui-button ui-button--danger ui-button--sm', type: 'button', onClick: () => requestDelete(plan), 'aria-label': `Delete ${plan.title}` }, React.createElement('i', { className: 'bi bi-trash3' }), 'Delete') : null
                         ) : React.createElement('span', { className: 'ui-help' }, 'View only'))
                     )))
                 ))),
-                React.createElement('div', { className: 'plans-table-footer' }, React.createElement('span', null, `${selectedIds.length} of ${meta.total || 0} plan(s) selected.`), React.createElement('div', { className: 'ui-pagination__actions' }, React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', disabled: loading || page <= 1, onClick: () => load(page - 1), 'aria-label': 'Previous page' }, '‹'), React.createElement('span', { className: 'plans-current-page' }, meta.current_page || 1), React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', disabled: loading || page >= (meta.last_page || 1), onClick: () => load(page + 1), 'aria-label': 'Next page' }, '›')))
-            ),
-            canManagePlans ? React.createElement('div', { className: 'manage-plans-footer' }, React.createElement('a', { className: 'ui-button ui-button--secondary', href: '/strategic-plans' }, 'Cancel'), React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: requestDeleteSelected, disabled: !selectedIds.length || loading }, 'Delete')) : null
+                React.createElement('div', { className: 'plans-table-footer' }, React.createElement('span', null, canSelectPlans ? `${selectedIds.length} of ${meta.total || 0} plan(s) selected` : `${meta.total || 0} plan(s)`), React.createElement('div', { className: 'plans-pagination' },
+                    React.createElement('span', null, `Page ${meta.current_page || 1} of ${meta.last_page || 1}`),
+                    React.createElement('div', { className: 'ui-pagination__actions' }, React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', disabled: loading || page <= 1, onClick: () => load(page - 1), 'aria-label': 'Previous page' }, React.createElement('i', { className: 'bi bi-chevron-left' })), React.createElement('span', { className: 'plans-current-page' }, meta.current_page || 1), React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', disabled: loading || page >= (meta.last_page || 1), onClick: () => load(page + 1), 'aria-label': 'Next page' }, React.createElement('i', { className: 'bi bi-chevron-right' })))
+                ))
+            )
         )),
         React.createElement(AppDialog, {
             open: dialog.open,
             variant: dialog.variant,
             title: dialog.title,
             message: dialog.message,
-            confirmLabel: dialog.variant === 'danger' ? 'Confirm Delete' : 'Continue',
+            confirmLabel: dialog.action === 'delete' ? 'Confirm Delete' : dialog.targetStatus === 'archived' ? 'Archive' : dialog.targetStatus === 'finished' ? 'Restore' : 'Continue',
             onConfirm: dialog.variant === 'danger' ? confirmDialogAction : () => setDialog((current) => ({ ...current, open: false })),
             onCancel: () => setDialog((current) => ({ ...current, open: false })),
         })
