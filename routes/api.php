@@ -154,6 +154,9 @@ Route::middleware(['auth:api','auth.version',])->group(function () {
     Route::put('pdp-chapters/{chapter}', [PdpChapterController::class, 'update'])
         ->whereNumber('chapter')
         ->middleware('permission:pdp_chapters.manage');
+    Route::delete('pdp-chapters/{chapter}', [PdpChapterController::class, 'destroy'])
+        ->whereNumber('chapter')
+        ->middleware('permission:pdp_chapters.manage');
 
     // Roles
     Route::get('roles', [RoleController::class, 'index'])

@@ -69,4 +69,16 @@ class PdpChapterController extends Controller
             'data' => $chapter,
         ]);
     }
+
+    public function destroy(PdpChapter $chapter): JsonResponse
+    {
+        DB::transaction(function () use ($chapter): void {
+            $chapter->delete();
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'PDP Chapter deleted successfully.',
+        ]);
+    }
 }
