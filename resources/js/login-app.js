@@ -268,20 +268,16 @@ function LoginForm({ status, setStatus }) {
                     React.createElement('span', null, 'Remember Me')
                 ),
                 React.createElement(
-                    'button',
-                    {
-                        className: 'text-button',
-                        type: 'button',
-                    
-                        onClick: () => {
-                                        setStatus(
-                                            'A recovery password will be provided shortly by an authorised system administrator.',
-                                            'info'
-                                        );
-                                    },
-                    },
-                    'Forgot Password?'
-                )
+    'button',
+    {
+        className: 'text-button',
+        type: 'button',
+        onClick: () => {
+            window.location.href = '/forgot-password';
+        },
+    },
+    'Forgot Password?'
+)
             ),
             React.createElement('button', { className: 'signin-button', type: 'submit', disabled: isSubmitting }, isSubmitting ? 'Signing in...' : 'Sign in'),
             React.createElement('p', { className: `form-status is-${status.type}`, role: 'status', 'aria-live': 'polite' }, status.message),
