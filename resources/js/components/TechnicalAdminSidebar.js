@@ -30,7 +30,7 @@ const securityItems = [
     { label: 'Login History', icon: 'bi-clock-history', href: '/login-history', permission: PERMISSIONS.LOGS_VIEW },
     { label: 'Security Logs', icon: 'bi-shield-exclamation', notice: 'Security Logs is reserved for its implementation page.', permission: PERMISSIONS.LOGS_VIEW },
     { label: 'Audit Logs', icon: 'bi-journal-check', notice: 'Audit Logs is reserved for its implementation page.', permission: PERMISSIONS.LOGS_VIEW },
-    { label: 'System Security', icon: 'bi-shield-check', notice: 'System Security is reserved for its implementation page.', permission: PERMISSIONS.SETTINGS_MANAGE },
+    { label: 'System Security', icon: 'bi-shield-check', href: '/role-management?section=security', permission: PERMISSIONS.SETTINGS_MANAGE },
     { label: 'System Maintenance', icon: 'bi-tools', href: '/manual-backup', permission: PERMISSIONS.BACKUPS_VIEW },
 ];
 

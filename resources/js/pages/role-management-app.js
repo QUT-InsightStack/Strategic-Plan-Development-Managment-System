@@ -3,10 +3,11 @@ import { AppDialog } from '../components/AppDialog.js';
 import { PageHeader } from '../components/PageHeader.js';
 import { demoPermissions, demoRoles, demoUsers } from '../data/role-management-demo-data.js';
 import { enforcePageAccess } from '../access/access-guard.js';
+import { apiRequest } from '../api/api-client.js';
 
 enforcePageAccess();
 
-const { useMemo, useState } = React;
+const { useEffect, useMemo, useState } = React;
 
 const actionPermissionIds = [7, 8, 9, 10, 11];
 const contributorActionPermissionIds = [7, 8, 9, 10];
@@ -24,6 +25,47 @@ function permissionsForRoles(permissionIds, roleIds) {
     return [...new Set([...nonActionPermissionIds, ...allowedActionPermissionIds])];
 }
 
+function SecuritySettings() {
+    const [values, setValues] = useState({ session_timeout_minutes: 30, max_failed_login_attempts: 3, lockout_duration_minutes: 120 });
+    const [status, setStatus] = useState({ message: '', type: 'info' });
+
+    useEffect(() => {
+        apiRequest('/api/security-settings')
+            .then((response) => setValues(response.data))
+            .catch((error) => setStatus({ message: error.message, type: 'error' }));
+    }, []);
+
+    function update(key, value) {
+        setValues((current) => ({ ...current, [key]: Number(value) }));
+    }
+
+    async function save(event) {
+        event.preventDefault();
+        if (Object.values(values).some((value) => !Number.isInteger(value) || value < 1)) {
+            setStatus({ message: 'All security settings must be whole numbers greater than zero.', type: 'error' });
+            return;
+        }
+        try {
+            const response = await apiRequest('/api/security-settings', { method: 'PUT', body: JSON.stringify(values) });
+            setValues(response.data);
+            setStatus({ message: response.message, type: 'success' });
+        } catch (error) {
+            setStatus({ message: error.message, type: 'error' });
+        }
+    }
+
+    return React.createElement('section', { className: 'ui-card role-panel security-settings', 'aria-labelledby': 'security-settings-title' },
+        React.createElement('div', { className: 'role-panel__header' }, React.createElement('h2', { id: 'security-settings-title' }, 'Security Settings'), React.createElement('p', null, 'Configure authentication and session protection for all users.')),
+        React.createElement('form', { className: 'role-panel__body security-settings__form', onSubmit: save },
+            React.createElement('label', null, React.createElement('strong', null, 'Session Inactivity Timeout'), React.createElement('span', null, 'Minutes without activity before automatic logout.'), React.createElement('input', { className: 'ui-input', type: 'number', min: '1', value: values.session_timeout_minutes, onChange: (event) => update('session_timeout_minutes', event.target.value) })),
+            React.createElement('label', null, React.createElement('strong', null, 'Maximum Failed Login Attempts'), React.createElement('span', null, 'Failed passwords allowed before account lockout.'), React.createElement('input', { className: 'ui-input', type: 'number', min: '1', value: values.max_failed_login_attempts, onChange: (event) => update('max_failed_login_attempts', event.target.value) })),
+            React.createElement('label', null, React.createElement('strong', null, 'Account Lockout Duration'), React.createElement('span', null, 'Minutes an account remains locked after reaching the limit.'), React.createElement('input', { className: 'ui-input', type: 'number', min: '1', value: values.lockout_duration_minutes, onChange: (event) => update('lockout_duration_minutes', event.target.value) })),
+            status.message ? React.createElement('div', { className: `ui-status ui-status--${status.type}`, role: 'status' }, status.message) : null,
+            React.createElement('button', { className: 'ui-button ui-button--primary', type: 'submit' }, React.createElement('i', { className: 'bi bi-check2-circle' }), 'Save Security Settings')
+        )
+    );
+}
+
 function RoleManagementApp() {
     const [users, setUsers] = useState(demoUsers);
     const [selectedUserId, setSelectedUserId] = useState(demoUsers[0].id);
@@ -32,6 +74,7 @@ function RoleManagementApp() {
     const [search, setSearch] = useState('');
     const [notice, setNotice] = useState('');
     const [dialog, setDialog] = useState({ open: false, variant: 'success', title: '', message: '' });
+    const isSecuritySection = new URLSearchParams(window.location.search).get('section') === 'security';
 
     const selectedUser = users.find((user) => user.id === selectedUserId);
     const filteredUsers = useMemo(() => users.filter((user) => `${user.name} ${user.email} ${user.department}`.toLowerCase().includes(search.toLowerCase())), [users, search]);
@@ -88,7 +131,7 @@ function RoleManagementApp() {
                 actions: React.createElement('span', { className: 'role-demo-label' }, React.createElement('i', { className: 'bi bi-display' }), 'Frontend demonstration'),
             }),
             notice ? React.createElement('div', { className: 'ui-status ui-status--info role-page__notice', role: 'status' }, notice) : null,
-            React.createElement('div', { className: 'role-workspace' },
+            isSecuritySection ? React.createElement(SecuritySettings) : React.createElement('div', { className: 'role-workspace' },
                 React.createElement('section', { className: 'ui-card role-panel role-panel--users', 'aria-labelledby': 'users-title' },
                     React.createElement('div', { className: 'role-panel__header' }, React.createElement('h2', { id: 'users-title' }, 'Users'), React.createElement('p', null, 'Choose the user whose access you want to manage.')),
                     React.createElement('div', { className: 'role-panel__body' },
@@ -112,7 +155,7 @@ function RoleManagementApp() {
                     }))
                 )
             ),
-            React.createElement('div', { className: 'role-page__actions' }, React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', onClick: () => chooseUser(selectedUser) }, 'Reset'), React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: requestSave }, React.createElement('i', { className: 'bi bi-check2-circle' }), 'Save Changes'))
+            isSecuritySection ? null : React.createElement('div', { className: 'role-page__actions' }, React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', onClick: () => chooseUser(selectedUser) }, 'Reset'), React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: requestSave }, React.createElement('i', { className: 'bi bi-check2-circle' }), 'Save Changes'))
         )),
         React.createElement(AppDialog, { open: dialog.open, variant: dialog.variant, title: dialog.title, message: dialog.message, confirmLabel: dialog.variant === 'danger' ? 'Confirm Changes' : 'Continue', onConfirm: dialog.variant === 'danger' ? confirmSave : closeDialog, onCancel: closeDialog })
     );

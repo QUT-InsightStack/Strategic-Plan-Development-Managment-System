@@ -16,6 +16,7 @@ use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
 use App\Services\LoginHistoryRecorder;
+use App\Services\SecuritySettingsService;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\UploadProfilePhotoRequest;
@@ -35,8 +36,9 @@ class AuthController extends Controller
     // ─── Login ───────────────────────────────────────────────────────
 
     public function __construct(
-        private readonly LoginHistoryRecorder $loginHistoryRecorder
-        private ProfilePhotoService $profilePhotos
+        private readonly LoginHistoryRecorder $loginHistoryRecorder,
+        private ProfilePhotoService $profilePhotos,
+        private readonly SecuritySettingsService $securitySettings
     ) {
     }
 
@@ -47,9 +49,34 @@ class AuthController extends Controller
             'status' => 'active',
         ];
 
+        $existingUser = User::query()->where('email', $request->validated('email'))->first();
+        if ($existingUser?->locked_until?->isFuture()) {
+            $minutes = max(1, now()->diffInMinutes($existingUser->locked_until, false));
+            return response()->json([
+                'success' => false,
+                'message' => "This account is locked. Try again in {$minutes} minute(s).",
+                'locked_until' => $existingUser->locked_until->toIso8601String(),
+            ], 423);
+        }
+
+        if ($existingUser?->locked_until?->isPast()) {
+            $existingUser->forceFill(['failed_login_attempts' => 0, 'locked_until' => null])->save();
+        }
+
         $token = Auth::guard('api')->attempt($credentials);
 
         if (! $token) {
+            if ($existingUser) {
+                DB::transaction(function () use ($existingUser): void {
+                    $user = User::query()->lockForUpdate()->find($existingUser->user_id);
+                    if (! $user || $user->locked_until?->isFuture()) return;
+                    $user->failed_login_attempts++;
+                    if ($user->failed_login_attempts >= $this->securitySettings->get('max_failed_login_attempts')) {
+                        $user->locked_until = now()->addMinutes($this->securitySettings->get('lockout_duration_minutes'));
+                    }
+                    $user->save();
+                });
+            }
             $this->loginHistoryRecorder->recordFailedLogin(
                 (string) $request->validated('email'),
                 $request
@@ -85,6 +112,8 @@ class AuthController extends Controller
             $user,
             $request
         );
+
+        $user->forceFill(['failed_login_attempts' => 0, 'locked_until' => null, 'last_activity_at' => now()])->save();
 
         return response()->json([
             'success' => true,

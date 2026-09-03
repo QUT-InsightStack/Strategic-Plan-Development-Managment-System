@@ -15,6 +15,7 @@ use App\Http\Controllers\RolePremissionController;
 use App\Http\Controllers\StrategicController;
 use App\Http\Controllers\StrategicObjectiveController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\SecuritySettingsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -129,6 +130,11 @@ Route::middleware(['auth:api', 'auth.version'])->prefix('backups')->group(functi
 */
 
 Route::middleware(['auth:api','auth.version',])->group(function () {
+    Route::get('security-settings', [SecuritySettingsController::class, 'show'])
+        ->middleware('permission:settings.manage');
+    Route::put('security-settings', [SecuritySettingsController::class, 'update'])
+        ->middleware('permission:settings.manage');
+
     Route::get('pdp-chapters', [PdpChapterController::class, 'index']);
     Route::get('pdp-chapters/{chapter}', [PdpChapterController::class, 'show'])
         ->whereNumber('chapter');
