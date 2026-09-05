@@ -13,6 +13,12 @@ function resolveSessionHome(roleName, permissions) {
 }
 
 function permissionsFromUser(user, policyPermissions) {
+    const roleName = user?.role?.role_name || user?.role_name || '';
+
+    if (roleName === 'Administrator') {
+        return ['*'];
+    }
+
     // `/api/auth/me` returns `permissions` even when the role has none. Treat
     // that list as authoritative; only use the legacy role policy when an
     // older response does not include permission data at all.
@@ -59,7 +65,9 @@ export function getAccessSession() {
         // storage, for example after opening the application in a new tab.
         window.sessionStorage.setItem(ACCESS_SESSION_KEY, JSON.stringify(stored));
         const currentPolicy = policyForRole(stored.roleName);
-        const permissions = Array.isArray(stored.permissions)
+        const permissions = stored.roleName === 'Administrator'
+            ? ['*']
+            : Array.isArray(stored.permissions)
             ? normalizePermissionList(stored.permissions)
             : normalizePermissionList(currentPolicy.permissions);
         return {

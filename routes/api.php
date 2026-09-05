@@ -130,10 +130,8 @@ Route::middleware(['auth:api', 'auth.version'])->prefix('backups')->group(functi
 */
 
 Route::middleware(['auth:api','auth.version',])->group(function () {
-    Route::get('security-settings', [SecuritySettingsController::class, 'show'])
-        ->middleware('permission:settings.manage');
-    Route::put('security-settings', [SecuritySettingsController::class, 'update'])
-        ->middleware('permission:settings.manage');
+    Route::get('security-settings', [SecuritySettingsController::class, 'show']);
+    Route::put('security-settings', [SecuritySettingsController::class, 'update']);
 
     Route::get('pdp-chapters', [PdpChapterController::class, 'index']);
     Route::get('pdp-chapters/{chapter}', [PdpChapterController::class, 'show'])

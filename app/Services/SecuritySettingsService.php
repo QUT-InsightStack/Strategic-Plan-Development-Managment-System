@@ -16,7 +16,13 @@ class SecuritySettingsService
     public function all(): array
     {
         $values = SecuritySetting::query()->pluck('value', 'key')->all();
-        return array_map(fn (string $key): int => (int) ($values[$key] ?? self::DEFAULTS[$key]), array_keys(self::DEFAULTS));
+
+        $settings = [];
+        foreach (self::DEFAULTS as $key => $default) {
+            $settings[$key] = (int) ($values[$key] ?? $default);
+        }
+
+        return $settings;
     }
 
     public function get(string $key): int
@@ -35,6 +41,11 @@ class SecuritySettingsService
 
     public function technicalAdmin(User $user): bool
     {
-        return in_array($user->role?->role_name, ['Technical Administrator', 'Technical Admin', 'test'], true);
+        return in_array($user->role?->role_name, [
+            'Administrator',
+            'Technical Administrator',
+            'Technical Admin',
+            'test',
+        ], true);
     }
 }

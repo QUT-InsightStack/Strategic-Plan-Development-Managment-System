@@ -54,7 +54,7 @@ class AuthController extends Controller
             $minutes = max(1, now()->diffInMinutes($existingUser->locked_until, false));
             return response()->json([
                 'success' => false,
-                'message' => "This account is locked. Try again in {$minutes} minute(s).",
+                'message' => "This account is locked. Try again in " . round($minutes, 2) . " minute(s).",
                 'locked_until' => $existingUser->locked_until->toIso8601String(),
             ], 423);
         }
@@ -76,6 +76,22 @@ class AuthController extends Controller
                     }
                     $user->save();
                 });
+
+                $existingUser->refresh();
+                if ($existingUser->locked_until?->isFuture()) {
+                    $minutes = max(1, now()->diffInMinutes($existingUser->locked_until, false));
+
+                    $this->loginHistoryRecorder->recordFailedLogin(
+                        (string) $request->validated('email'),
+                        $request
+                    );
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => "This account is now locked. Try again in " . round($minutes, 2) . " minute(s).",
+                        'locked_until' => $existingUser->locked_until->toIso8601String(),
+                    ], 423);
+                }
             }
             $this->loginHistoryRecorder->recordFailedLogin(
                 (string) $request->validated('email'),
