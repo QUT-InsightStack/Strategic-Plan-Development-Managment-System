@@ -10,7 +10,7 @@
 }
 
 .objective-list-table {
-    min-width: 1280px;
+    min-width: 1600px;
     table-layout: fixed;
 }
 
@@ -27,7 +27,7 @@
 .objective-list-table th:nth-child(5) { width: 180px; }
 .objective-list-table th:nth-child(6) { width: 105px; }
 .objective-list-table th:nth-child(7) { width: 145px; }
-.objective-list-table th:nth-child(8) { width: 180px; }
+.objective-list-table th:nth-child(8) { width: 430px; }
 
 .objective-list-actions .ui-table__actions {
     flex-wrap: nowrap;
