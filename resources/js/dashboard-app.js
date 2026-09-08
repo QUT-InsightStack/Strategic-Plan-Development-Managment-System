@@ -4,6 +4,7 @@ import { enforcePageAccess } from './access/access-guard.js';
 import { can, clearAccessSession } from './access/access-session.js';
 import { PERMISSIONS } from './access/access-policy.js';
 import { LogoutButton } from './components/LogoutButton.js';
+import { PasswordAssistancePanel } from './components/PasswordAssistancePanel.js';
 
 enforcePageAccess();
 
@@ -45,6 +46,7 @@ const staticModules = [
 
 const visibleModules = modules.filter((module) => can(module.permission));
 const visibleStaticModules = staticModules.filter((module) => can(module.permission));
+const canManagePasswordAssistance = can(PERMISSIONS.USERS_MANAGE);
 
 const messages = {
     help: 'Help resources are not connected yet.',
@@ -233,6 +235,11 @@ function DashboardApp() {
                         'Open Profile'
                     )
                 ),
+                canManagePasswordAssistance
+                    ? React.createElement(PasswordAssistancePanel, {
+                    onNotice: setStatusMessage,
+                })
+                    : null,
                 React.createElement(
                     'div',
                     { className: 'dashboard-grid' },
