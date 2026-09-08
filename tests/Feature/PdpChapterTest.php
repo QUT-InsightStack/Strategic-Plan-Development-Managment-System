@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Http\Middleware\ValidateAuthVersion;
 use App\Models\Permission;
+use App\Models\PdpChapter;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -40,7 +41,13 @@ class PdpChapterTest extends TestCase
             'chapter_title' => 'Chapter 1',
             'chapter_description' => 'Planning context.',
         ])->assertForbidden();
-        $this->deleteJson('/api/pdp-chapters/1')->assertForbidden();
+        $chapter = PdpChapter::create([
+            'chapter_title' => 'Existing chapter',
+            'chapter_description' => 'Existing context.',
+            'created_by' => $viewer->user_id,
+        ]);
+        $this->deleteJson('/api/pdp-chapters/' . $chapter->chapter_id)->assertForbidden();
+        $this->assertDatabaseHas('tblpdp_chapters', ['chapter_id' => $chapter->chapter_id]);
     }
 
     public function test_administrator_can_create_update_and_delete_a_chapter(): void
@@ -85,7 +92,7 @@ class PdpChapterTest extends TestCase
         ]);
 
         if ($canManage) {
-            $permission = Permission::create([
+            $permission = Permission::firstOrCreate(['code' => 'pdp_chapters.manage'], [
                 'permission_name' => 'Manage PDP Chapters',
                 'description' => 'Manage PDP Chapters',
                 'code' => 'pdp_chapters.manage',

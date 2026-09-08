@@ -20,6 +20,16 @@ class BackupTest extends TestCase
     /** @var list<string> Absolute paths to remove after each test. */
     private array $temporaryFiles = [];
 
+    private string $testStorage;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->testStorage = sys_get_temp_dir() . '/spdms-backup-tests-' . \Illuminate\Support\Str::uuid();
+        mkdir($this->testStorage . '/app/backups', 0750, true);
+        $this->app->useStoragePath($this->testStorage);
+    }
+
     protected function tearDown(): void
     {
         foreach ($this->temporaryFiles as $path) {
@@ -31,6 +41,10 @@ class BackupTest extends TestCase
         foreach (glob(storage_path('app/backups/spdms-backup-*')) ?: [] as $path) {
             @unlink($path);
         }
+
+        @rmdir($this->testStorage . '/app/backups');
+        @rmdir($this->testStorage . '/app');
+        @rmdir($this->testStorage);
 
         parent::tearDown();
     }
@@ -151,7 +165,7 @@ class BackupTest extends TestCase
     {
         // The test database is :memory:, so there is no file to copy and the
         // dump fails — which is the case being exercised here.
-        $actor = $this->createUserWithPermissions(['backups.view', 'backups.create']);
+        $actor = $this->createUserWithPermissions(['backups.view', 'backups.create', 'logs.view']);
 
         $this->actingAs($actor, 'api');
         $this->withoutMiddleware(ValidateAuthVersion::class)
@@ -167,6 +181,32 @@ class BackupTest extends TestCase
             'backup.failed',
             (string) Log::latest('log_id')->value('operation')
         );
+        $this->assertDatabaseHas('tbllog', [
+            'operation' => 'backup.failed',
+            'outcome' => 'failure',
+            'states' => 'failed',
+            'resource_type' => 'backup',
+        ]);
+        $this->getJson('/api/logs?outcome=failure&action=backup.failed')
+            ->assertOk()->assertJsonPath('meta.total', 1)
+            ->assertJsonPath('data.0.outcome', 'failure')
+            ->assertJsonPath('data.0.action', 'backup.failed')
+            ->assertJsonPath('data.0.metadata.backup_id', (int) Backup::value('backup_id'));
+    }
+
+    public function test_backup_directory_failure_is_also_audited_and_emits_an_event(): void
+    {
+        config(['monitoring.enabled' => true]);
+        $actor = $this->createUserWithPermissions(['backups.create']);
+        $directory = storage_path('app/backups');
+        rmdir($directory);
+        file_put_contents($directory, 'occupied');
+        $this->temporaryFiles[] = $directory;
+        $this->actingAs($actor, 'api')->withoutMiddleware(ValidateAuthVersion::class)
+            ->postJson('/api/backups')->assertStatus(500);
+        $this->assertDatabaseHas('tblbackups', ['status' => 'failed']);
+        $this->assertDatabaseHas('tbllog', ['operation' => 'backup.failed', 'outcome' => 'failure']);
+        $this->assertDatabaseHas('tblsystem_events', ['event' => 'backup.failed', 'outcome' => 'failure']);
     }
 
     public function test_a_failed_backup_cannot_be_downloaded(): void

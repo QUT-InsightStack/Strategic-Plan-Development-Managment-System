@@ -30,7 +30,7 @@ class UsersSeeder extends Seeder
                 'office' => 'Main Office',
                 'position' => 'System Administrator',
                 'password' => Hash::make($defaultPassword),
-                'role_id' => 1,
+                'role_id' => Role::where('role_name', 'Administrator')->value('role_id'),
                 'status' => 'active',
             ],
             [
@@ -43,7 +43,7 @@ class UsersSeeder extends Seeder
                 'office' => 'Planning Office',
                 'position' => 'Planning Officer',
                 'password' => Hash::make($defaultPassword),
-                'role_id' => 2,
+                'role_id' => Role::where('role_name', 'Planning Officer')->value('role_id'),
                 'status' => 'active',
             ],
             [
@@ -55,7 +55,7 @@ class UsersSeeder extends Seeder
                 'office' => 'Records Office',
                 'position' => 'Viewer',
                 'password' => Hash::make($defaultPassword),
-                'role_id' => 4,
+                'role_id' => Role::where('role_name', 'Viewer')->value('role_id'),
                 'status' => 'inactive',
             ],
             [

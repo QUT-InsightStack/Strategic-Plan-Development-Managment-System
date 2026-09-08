@@ -18,6 +18,18 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\SecuritySettingsController;
 use Illuminate\Support\Facades\Route;
 
+Route::middleware(['auth:api', 'auth.version', 'permission:system_monitoring.view'])
+    ->prefix('system-monitoring')->group(function (): void {
+        Route::get('events', [\App\Http\Controllers\SystemMonitoringController::class, 'events']);
+        Route::get('events/{id}', [\App\Http\Controllers\SystemMonitoringController::class, 'event'])->whereNumber('id');
+        Route::get('alerts', [\App\Http\Controllers\SystemMonitoringController::class, 'alerts']);
+        Route::get('trends', [\App\Http\Controllers\SystemMonitoringController::class, 'trends']);
+        Route::get('summary', [\App\Http\Controllers\SystemMonitoringController::class, 'summary']);
+        Route::get('requests', [\App\Http\Controllers\SystemMonitoringController::class, 'requests']);
+        Route::get('health', [\App\Http\Controllers\SystemMonitoringController::class, 'health']);
+        Route::get('checks', [\App\Http\Controllers\SystemMonitoringController::class, 'checks']);
+    });
+
 /*
 |--------------------------------------------------------------------------
 | Public authentication routes
@@ -330,8 +342,6 @@ Route::middleware([
         ->whereNumber('loginHistory')
         ->middleware('permission:login_history.view');
 });
-
-
 
 
 

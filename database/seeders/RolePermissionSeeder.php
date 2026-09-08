@@ -13,9 +13,9 @@ class RolePermissionSeeder extends Seeder
     {
         $permissionsByCode = Permission::query()->get()->keyBy('code');
 
-       $planningPermissions = [
-    'dashboard.view',
-    'users.assign_roles',
+        $planningPermissions = [
+            'dashboard.view',
+            'users.assign_roles',
             'strategic_records.view', 'strategic_records.manage', 'strategic_records.create',
             'strategic_records.update', 'strategic_records.archive',
             'strategic_foundations.view', 'strategic_foundations.manage', 'strategic_foundations.create',
@@ -27,7 +27,8 @@ class RolePermissionSeeder extends Seeder
             'plan_core_values.update',
         ];
 
-        $permissionCodes = [
+        $technicalPermissions = [
+            'dashboard.view',
             'users.view',
             'users.create',
             'users.update',
@@ -40,14 +41,24 @@ class RolePermissionSeeder extends Seeder
             'permissions.manage',
             'logs.view',
             'login_history.view',
+            'system_monitoring.view',
+            'backups.view',
+            'backups.create',
+            'backups.download',
+            'backups.restore',
+        ];
+
         $viewOnlyPermissions = [
-    'dashboard.view',
-    'strategic_records.view', 'strategic_foundations.view', 'strategic_objectives.view',
+            'dashboard.view',
+            'strategic_records.view', 'strategic_foundations.view', 'strategic_objectives.view',
             'relations.view', 'plan_core_values.view',
         ];
 
         $assignments = [
             'Administrator' => $permissionsByCode->keys()->all(),
+            'Technical Administrator' => $technicalPermissions,
+            'Technical Admin' => $technicalPermissions,
+            'test' => $technicalPermissions,
             'Planning Officer' => $planningPermissions,
             'Division Head' => $viewOnlyPermissions,
             'Viewer' => $viewOnlyPermissions,

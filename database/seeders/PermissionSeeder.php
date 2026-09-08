@@ -243,6 +243,12 @@ class PermissionSeeder extends Seeder
                 'module' => 'logs',
             ],
             [
+                'permission_name' => 'View System Monitoring',
+                'description' => 'Allows viewing operational metrics, requests, and dependency health.',
+                'code' => 'system_monitoring.view',
+                'module' => 'system_monitoring',
+            ],
+            [
                 'permission_name' => 'Manage PDP Chapters',
                 'description' => 'Allows creating and editing PDP Chapters and their linked strategic objectives.',
                 'code' => 'pdp_chapters.manage',

@@ -159,6 +159,6 @@ class PasswordManagementTest extends TestCase
             'email' => fake()->unique()->safeEmail(),
             'password' => Hash::make('password'),
             'status' => 'active',
-        ], $attributes));
+        ], $attributes))->refresh();
     }
 }

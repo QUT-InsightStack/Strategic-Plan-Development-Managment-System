@@ -80,16 +80,10 @@ return new class extends Migration
          * Preserve those audit records while detaching them from missing
          * user account.
          */
-        DB::statement(
-            <<<'SQL'
-            UPDATE `tbllog` AS `audit_log`
-            LEFT JOIN `tblusers` AS `users`
-                ON `users`.`user_id` = `audit_log`.`user_id`
-            SET `audit_log`.`user_id` = NULL
-            WHERE `audit_log`.`user_id` IS NOT NULL
-              AND `users`.`user_id` IS NULL
-            SQL
-        );
+        DB::table(self::TABLE)
+            ->whereNotNull('user_id')
+            ->whereNotIn('user_id', DB::table('tblusers')->select('user_id'))
+            ->update(['user_id' => null]);
 
         /*
          * Re-create the relationship using a known name. Deleting a user
@@ -193,10 +187,16 @@ return new class extends Migration
          * does not provide for a composite index.
          */
         if (! $this->indexExists('tbllog_operation_created_idx')) {
-            DB::statement(
-                'CREATE INDEX `tbllog_operation_created_idx` '
-                . 'ON `tbllog` (`operation`(100), `created_at`)'
-            );
+            if (in_array(DB::getDriverName(), ['mysql', 'mariadb'], true)) {
+                DB::statement(
+                    'CREATE INDEX `tbllog_operation_created_idx` '
+                    . 'ON `tbllog` (`operation`(100), `created_at`)'
+                );
+            } else {
+                Schema::table(self::TABLE, function (Blueprint $table): void {
+                    $table->index(['operation', 'created_at'], 'tbllog_operation_created_idx');
+                });
+            }
         }
 
         if (! $this->indexExists('tbllog_resource_idx')) {
@@ -230,71 +230,34 @@ return new class extends Migration
 
         foreach ($indexes as $index) {
             if ($this->indexExists($index)) {
-                DB::statement(
-                    sprintf(
-                        'DROP INDEX `%s` ON `%s`',
-                        $index,
-                        self::TABLE
-                    )
-                );
+                Schema::table(self::TABLE, fn (Blueprint $table) => $table->dropIndex($index));
             }
         }
     }
 
     private function dropUserForeignKeys(): void
     {
-        $foreignKeys = DB::select(
-            <<<'SQL'
-            SELECT DISTINCT `CONSTRAINT_NAME`
-            FROM `information_schema`.`KEY_COLUMN_USAGE`
-            WHERE `CONSTRAINT_SCHEMA` = DATABASE()
-              AND `TABLE_NAME` = ?
-              AND `COLUMN_NAME` = 'user_id'
-              AND `REFERENCED_TABLE_NAME` IS NOT NULL
-            SQL,
-            [self::TABLE]
-        );
-
-        foreach ($foreignKeys as $foreignKey) {
-            $constraintName = (string) $foreignKey->CONSTRAINT_NAME;
-
-            /*
-             * constraint names came from information_schema, but retain
-             * strict validation before placing one in an identifier.
-             */
-            if (! preg_match('/^[A-Za-z0-9_$]+$/', $constraintName)) {
-                throw new \RuntimeException(
-                    'Unexpected foreign-key name on tbllog.user_id.'
-                );
+        foreach (Schema::getForeignKeys(self::TABLE) as $foreignKey) {
+            if ($foreignKey['columns'] !== ['user_id']) {
+                continue;
             }
-            
 
-            DB::statement(
-                sprintf(
-                    'ALTER TABLE `%s` DROP FOREIGN KEY `%s`',
-                    self::TABLE,
-                    $constraintName
-                )
-            );
+            Schema::table(self::TABLE, function (Blueprint $table) use ($foreignKey): void {
+                $table->dropForeign(DB::getDriverName() === 'sqlite' ? ['user_id'] : $foreignKey['name']);
+            });
         }
     }
 
     private function foreignKeyExists(string $constraintName): bool
     {
-        return DB::table('information_schema.TABLE_CONSTRAINTS')
-            ->whereRaw('CONSTRAINT_SCHEMA = DATABASE()')
-            ->where('TABLE_NAME', self::TABLE)
-            ->where('CONSTRAINT_NAME', $constraintName)
-            ->where('CONSTRAINT_TYPE', 'FOREIGN KEY')
-            ->exists();
+        return collect(Schema::getForeignKeys(self::TABLE))->contains(
+            fn (array $key): bool => $key['name'] === $constraintName
+                || (DB::getDriverName() === 'sqlite' && $key['columns'] === ['user_id'])
+        );
     }
 
     private function indexExists(string $indexName): bool
     {
-        return DB::table('information_schema.STATISTICS')
-            ->whereRaw('TABLE_SCHEMA = DATABASE()')
-            ->where('TABLE_NAME', self::TABLE)
-            ->where('INDEX_NAME', $indexName)
-            ->exists();
+        return Schema::hasIndex(self::TABLE, $indexName);
     }
 };

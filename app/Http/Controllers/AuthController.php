@@ -21,7 +21,6 @@ use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\UploadProfilePhotoRequest;
 use App\Http\Resources\UserResource;
-use App\Models\Log as LogModel;
 use App\Services\ProfilePhotoService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
@@ -38,7 +37,8 @@ class AuthController extends Controller
     public function __construct(
         private readonly LoginHistoryRecorder $loginHistoryRecorder,
         private ProfilePhotoService $profilePhotos,
-        private readonly SecuritySettingsService $securitySettings
+        private readonly SecuritySettingsService $securitySettings,
+        private readonly \App\Contracts\StrategicLogWriter $logWriter
     ) {
     }
 
@@ -51,6 +51,9 @@ class AuthController extends Controller
 
         $existingUser = User::query()->where('email', $request->validated('email'))->first();
         if ($existingUser?->locked_until?->isFuture()) {
+            $this->loginHistoryRecorder->recordFailedLogin(
+                (string) $request->validated('email'), $request, 'account_locked'
+            );
             $minutes = max(1, now()->diffInMinutes($existingUser->locked_until, false));
             return response()->json([
                 'success' => false,
@@ -83,7 +86,8 @@ class AuthController extends Controller
 
                     $this->loginHistoryRecorder->recordFailedLogin(
                         (string) $request->validated('email'),
-                        $request
+                        $request,
+                        'account_locked'
                     );
 
                     return response()->json([
@@ -95,7 +99,8 @@ class AuthController extends Controller
             }
             $this->loginHistoryRecorder->recordFailedLogin(
                 (string) $request->validated('email'),
-                $request
+                $request,
+                ! $existingUser ? 'unknown_email' : ($existingUser->status !== 'active' ? 'inactive_account' : 'invalid_credentials')
             );
 
             /*
@@ -156,14 +161,18 @@ class AuthController extends Controller
             $user = Auth::guard('api')->user();
 
             if ($user) {
-                LogModel::create([
-                    'user_id'   => $user->user_id,
-                    'operation' => 'logout',
+                // Session invalidation must complete even if audit persistence fails.
+                Auth::guard('api')->logout();
+                $this->logWriter->write('auth.logout', [
+                    'actor_user_id' => $user->user_id,
+                    'resource_type' => 'user', 'resource_id' => $user->user_id,
                     'states'    => 'success',
                 ]);
             }
 
-            Auth::guard('api')->logout();   // blacklists current token
+            if (! $user) {
+                Auth::guard('api')->logout();
+            }
         } catch (\Throwable $e) {
             // Token was absent, malformed or already blacklisted. The
             // desired end state — no valid session — already holds.
@@ -294,6 +303,7 @@ class AuthController extends Controller
             SystemLog::error('Unexpected JWT refresh failure.', [
                 'exception' => $e,
             ]);
+            app(\App\Services\SystemEventRecorder::class)->record('auth.refresh_failed', 'auth', 'error', 'failure', ['exception_type' => $e::class]);
 
 
             return response()->json([
@@ -418,9 +428,10 @@ class AuthController extends Controller
 
         $user->save();
 
-        LogModel::create([
-            'user_id'   => $user->user_id,
-            'operation' => 'Profile updated: ' . implode(', ', $changed),
+        $this->logWriter->write('user.profile_updated', [
+            'actor_user_id' => $user->user_id,
+            'resource_type' => 'user', 'resource_id' => $user->user_id,
+            'fields' => $changed,
             'states'    => 'success',
         ]);
 
@@ -457,11 +468,9 @@ class AuthController extends Controller
             $lockedUser->setRememberToken(Str::random(60));
             $lockedUser->save();
 
-            LogModel::create([
-                'user_id' => $lockedUser->user_id,
-                'operation' => json_encode([
-                    'event' => 'auth.password_changed',
-                ], JSON_UNESCAPED_SLASHES),
+            $this->logWriter->write('auth.password_changed', [
+                'actor_user_id' => $lockedUser->user_id,
+                'resource_type' => 'user', 'resource_id' => $lockedUser->user_id,
                 'states' => 'success',
             ]);
         });
@@ -485,6 +494,7 @@ class AuthController extends Controller
             try {
                 Password::broker()->sendResetLink(['email' => $email]);
             } catch (\Throwable $e) {
+                app(\App\Services\SystemEventRecorder::class)->record('auth.password_reset_delivery_failed', 'auth', 'error', 'failure', ['exception_type' => $e::class]);
                 SystemLog::error('Unable to send password reset link.', [
                     'email' => $email,
                     'exception' => $e,
@@ -518,11 +528,9 @@ class AuthController extends Controller
                     $lockedUser->setRememberToken(Str::random(60));
                     $lockedUser->save();
 
-                    LogModel::create([
-                        'user_id' => $lockedUser->user_id,
-                        'operation' => json_encode([
-                            'event' => 'auth.password_reset',
-                        ], JSON_UNESCAPED_SLASHES),
+                    $this->logWriter->write('auth.password_reset', [
+                        'actor_user_id' => $lockedUser->user_id,
+                        'resource_type' => 'user', 'resource_id' => $lockedUser->user_id,
                         'states' => 'success',
                     ]);
 

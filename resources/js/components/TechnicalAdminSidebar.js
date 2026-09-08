@@ -28,7 +28,7 @@ const planningItems = [
 ];
 
 const securityItems = [
-    { label: 'Login History', icon: 'bi-clock-history', href: '/login-history', permission: PERMISSIONS.LOGS_VIEW },
+    { label: 'Login History', icon: 'bi-clock-history', href: '/login-history', permission: PERMISSIONS.LOGIN_HISTORY_VIEW },
     { label: 'Security Logs', icon: 'bi-shield-exclamation', notice: 'Security Logs is reserved for its implementation page.', permission: PERMISSIONS.LOGS_VIEW },
     { label: 'Audit Logs', icon: 'bi-journal-check', notice: 'Audit Logs is reserved for its implementation page.', permission: PERMISSIONS.LOGS_VIEW },
     { label: 'System Maintenance', icon: 'bi-tools', href: '/manual-backup', permission: PERMISSIONS.BACKUPS_VIEW },

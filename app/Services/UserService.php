@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\Log;
 use App\Models\Role;
 use App\Models\User;
 use App\Repositories\UserRepository;
@@ -190,13 +189,11 @@ class UserService
 
             // Field names only — never the submitted values, which may
             // include a password.
-            Log::create([
-                'user_id' => $actor->user_id,
-                'operation' => json_encode([
-                    'event' => 'user.account_updated',
-                    'target_user_id' => $user->user_id,
-                    'fields' => $changed,
-                ], JSON_UNESCAPED_SLASHES),
+            $this->logWriter->write('user.account_updated', [
+                'actor_user_id' => $actor->user_id,
+                'resource_type' => 'user', 'resource_id' => $user->user_id,
+                'target_user_id' => $user->user_id,
+                'fields' => $changed,
                 'states' => 'success',
             ]);
 
@@ -251,15 +248,13 @@ class UserService
             $user->increment('auth_version');
             $user->save();
 
-            Log::create([
-                'user_id' => $actor->user_id,
-                'operation' => json_encode([
-                    'event' => 'user.account_status_changed',
-                    'target_user_id' => $user->user_id,
-                    'from' => $previousStatus,
-                    'to' => $status,
-                    'reason' => $reason,
-                ], JSON_UNESCAPED_SLASHES),
+            $this->logWriter->write('user.account_status_changed', [
+                'actor_user_id' => $actor->user_id,
+                'resource_type' => 'user', 'resource_id' => $user->user_id,
+                'target_user_id' => $user->user_id,
+                'from' => $previousStatus,
+                'to' => $status,
+                'reason' => $reason,
                 'states' => 'success',
             ]);
 
