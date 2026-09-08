@@ -208,7 +208,9 @@ Route::middleware(['auth:api','auth.version',])->group(function () {
         ->whereNumber('permission')
         ->middleware('permission:permissions.manage');
 
-    // Legacy direct role-permission pivot endpoints
+
+
+        // Legacy direct role-permission pivot endpoints
     Route::apiResource(
         'role-premissions',
         RolePremissionController::class
@@ -279,6 +281,10 @@ Route::middleware(['auth:api','auth.version',])->group(function () {
         'strategic-records',
         StrategicController::class
     );
+   Route::patch(
+        'strategic-objectives/{id}/status',
+        [StrategicObjectiveController::class, 'updateStatus']
+    )->whereNumber('id');
 
     Route::apiResource(
         'strategic-objectives',
