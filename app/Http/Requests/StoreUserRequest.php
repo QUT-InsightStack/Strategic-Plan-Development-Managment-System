@@ -25,7 +25,7 @@ class StoreUserRequest extends ApiFormRequest
                 'max:255',
                 Rule::unique('tblusers', 'email'),
             ],
-            'password'        => ['required', 'string', 'min:8', 'max:128'],
+            'password'        => ['required', 'string', 'min:16', 'max:128'],
             'mobile'          => ['sometimes', 'nullable', 'string', 'max:20'],
             'address'         => ['sometimes', 'nullable', 'string', 'max:255'],
             'gender'          => UserValidationRules::genderOptional(),
