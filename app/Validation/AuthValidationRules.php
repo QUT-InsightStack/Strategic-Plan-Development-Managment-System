@@ -28,7 +28,7 @@ class AuthValidationRules
             'string',
             'confirmed',
             'different:current_password',
-            Password::min(8)
+            Password::min(16)
                 ->letters()
                 ->mixedCase()
                 ->numbers()

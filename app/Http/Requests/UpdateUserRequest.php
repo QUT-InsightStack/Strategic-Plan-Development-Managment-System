@@ -27,7 +27,7 @@ class UpdateUserRequest extends ApiFormRequest
                 'max:255',
                 Rule::unique('tblusers', 'email')->ignore($userId, 'user_id'),
             ],
-            'password'        => ['sometimes', 'string', 'min:8', 'max:128'],
+            'password'        => ['sometimes', 'string', 'min:16', 'max:128'],
             'mobile'          => ['sometimes', 'nullable', 'string', 'max:20'],
             'address'         => ['sometimes', 'nullable', 'string', 'max:255'],
             'gender'          => UserValidationRules::genderOptional(),

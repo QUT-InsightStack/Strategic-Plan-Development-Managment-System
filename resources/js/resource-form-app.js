@@ -149,7 +149,7 @@ function getErrorMap(error) {
 
 function passwordIsValid(password) {
     return (
-        password.length >= 8 &&
+        password.length >= 16 &&
         /[A-Z]/.test(password) &&
         /[a-z]/.test(password) &&
         /\d/.test(password) &&
@@ -160,8 +160,8 @@ function passwordIsValid(password) {
 function PasswordRequirements({ password }) {
     const requirements = [
         {
-            label: 'At least 8 characters',
-            valid: password.length >= 8,
+            label: 'At least 16 characters',
+            valid: password.length >= 16,
         },
         {
             label: 'At least one uppercase letter',

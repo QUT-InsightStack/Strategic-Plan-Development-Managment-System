@@ -456,7 +456,7 @@ function UserManagementApp() {
                         React.createElement('div', { className: `ui-field${accountErrors.password ? ' is-invalid' : ''}` },
                             React.createElement('label', { className: 'ui-label', htmlFor: 'account-password' }, 'Password', React.createElement('span', { className: 'ui-required' }, ' *')),
                             React.createElement('input', { id: 'account-password', className: 'ui-input', type: 'password', autoComplete: 'new-password', value: account.password, required: true, minLength: 8, onChange: (event) => setAccount((current) => ({ ...current, password: event.target.value })) }),
-                            React.createElement('p', { className: accountErrors.password ? 'ui-error' : 'ui-help' }, accountErrors.password?.[0] || 'Use at least 8 characters.' )
+                            React.createElement('p', { className: accountErrors.password ? 'ui-error' : 'ui-help' }, accountErrors.password?.[0] || 'Use at least 16 characters.' )
                         ),
                         React.createElement('div', { className: `ui-field${accountErrors.role_id ? ' is-invalid' : ''}` },
                             React.createElement('label', { className: 'ui-label', htmlFor: 'account-role' }, 'Role', React.createElement('span', { className: 'ui-required' }, ' *')),
