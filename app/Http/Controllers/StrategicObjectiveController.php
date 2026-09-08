@@ -18,6 +18,14 @@ use Illuminate\Validation\ValidationException;
 
 class StrategicObjectiveController extends Controller
 {
+    private const RESPONSE_RELATIONS = [
+        'strategicPlan.creator',
+        'creator',
+        'updater',
+        'pdpChapters',
+        'presidentialAgendaItems',
+    ];
+
     public function __construct(
         private readonly StrategicLogWriter $logWriter,
         private readonly StrategicPlanAuthorizationService $authorizationService,
@@ -64,7 +72,7 @@ class StrategicObjectiveController extends Controller
             }
         }
 
-        $query = StrategicObjective::with(['strategicPlan.creator', 'creator', 'updater'])
+        $query = StrategicObjective::with(self::RESPONSE_RELATIONS)
             ->where('status', '!=', 'deleted')
             ->whereIn('strategic_plan_id', $authorizedPlanIds->all())
             ->whereHas('strategicPlan', fn (Builder $builder) => $builder->where('status', '!=', 'deleted'));
@@ -98,7 +106,9 @@ class StrategicObjectiveController extends Controller
             $query->whereYear('updated_at', $filters['year']);
         }
 
-        $objectives = $query->orderByDesc('updated_at')->paginate($filters['per_page'] ?? 10);
+        $objectives = $query->orderByDesc('updated_at')
+            ->orderByDesc('objective_id')
+            ->paginate($filters['per_page'] ?? 10);
 
         return response()->json([
             'success' => true,
@@ -131,7 +141,7 @@ class StrategicObjectiveController extends Controller
             'You are not authorized to view strategic objectives for this strategic plan.'
         );
 
-        $objectives = StrategicObjective::with(['strategicPlan.creator', 'creator', 'updater'])
+        $objectives = StrategicObjective::with(self::RESPONSE_RELATIONS)
             ->where('strategic_plan_id', $planId)
             ->where('status', '!=', 'deleted')
             ->orderBy('objective_id')
@@ -190,7 +200,7 @@ class StrategicObjectiveController extends Controller
         $data['deleted_at'] = null;
 
         $objective = StrategicObjective::create($data);
-        $objective->load(['strategicPlan.creator', 'creator', 'updater']);
+        $objective->load(self::RESPONSE_RELATIONS);
 
         $this->logWriter->write('strategic_objective.created', [
             'objective_id' => $objective->objective_id,
@@ -236,7 +246,7 @@ class StrategicObjectiveController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Updated',
-            'data' => $objective->fresh(['strategicPlan.creator', 'creator', 'updater']),
+            'data' => $objective->fresh(self::RESPONSE_RELATIONS),
         ], 200);
     }
 
@@ -310,7 +320,7 @@ class StrategicObjectiveController extends Controller
 
     private function findObjectiveForRead(int $id): ?StrategicObjective
     {
-        return StrategicObjective::with(['strategicPlan.creator', 'creator', 'updater'])
+        return StrategicObjective::with(self::RESPONSE_RELATIONS)
             ->where('status', '!=', 'deleted')
             ->find($id);
     }

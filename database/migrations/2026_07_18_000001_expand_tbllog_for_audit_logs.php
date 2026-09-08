@@ -80,16 +80,10 @@ return new class extends Migration
          * Preserve those audit records while detaching them from missing
          * user account.
          */
-        DB::statement(
-            <<<'SQL'
-            UPDATE `tbllog` AS `audit_log`
-            LEFT JOIN `tblusers` AS `users`
-                ON `users`.`user_id` = `audit_log`.`user_id`
-            SET `audit_log`.`user_id` = NULL
-            WHERE `audit_log`.`user_id` IS NOT NULL
-              AND `users`.`user_id` IS NULL
-            SQL
-        );
+        DB::table(self::TABLE)
+            ->whereNotNull('user_id')
+            ->whereNotIn('user_id', DB::table('tblusers')->select('user_id'))
+            ->update(['user_id' => null]);
 
         /*
          * Re-create the relationship using a known name. Deleting a user
@@ -193,10 +187,16 @@ return new class extends Migration
          * does not provide for a composite index.
          */
         if (! $this->indexExists('tbllog_operation_created_idx')) {
-            DB::statement(
-                'CREATE INDEX `tbllog_operation_created_idx` '
-                . 'ON `tbllog` (`operation`(100), `created_at`)'
-            );
+            if (Schema::getConnection()->getDriverName() === 'sqlite') {
+                Schema::table(self::TABLE, function (Blueprint $table): void {
+                    $table->index(['operation', 'created_at'], 'tbllog_operation_created_idx');
+                });
+            } else {
+                DB::statement(
+                    'CREATE INDEX `tbllog_operation_created_idx` '
+                    . 'ON `tbllog` (`operation`(100), `created_at`)'
+                );
+            }
         }
 
         if (! $this->indexExists('tbllog_resource_idx')) {
@@ -230,19 +230,23 @@ return new class extends Migration
 
         foreach ($indexes as $index) {
             if ($this->indexExists($index)) {
-                DB::statement(
-                    sprintf(
-                        'DROP INDEX `%s` ON `%s`',
-                        $index,
-                        self::TABLE
-                    )
-                );
+                Schema::table(self::TABLE, function (Blueprint $table) use ($index): void {
+                    $table->dropIndex($index);
+                });
             }
         }
     }
 
     private function dropUserForeignKeys(): void
     {
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            Schema::table(self::TABLE, function (Blueprint $table): void {
+                $table->dropForeign(['user_id']);
+            });
+
+            return;
+        }
+
         $foreignKeys = DB::select(
             <<<'SQL'
             SELECT DISTINCT `CONSTRAINT_NAME`
@@ -281,6 +285,12 @@ return new class extends Migration
 
     private function foreignKeyExists(string $constraintName): bool
     {
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            return collect(Schema::getForeignKeys(self::TABLE))->contains(
+                fn (array $foreignKey): bool => $foreignKey['columns'] === ['user_id']
+            );
+        }
+
         return DB::table('information_schema.TABLE_CONSTRAINTS')
             ->whereRaw('CONSTRAINT_SCHEMA = DATABASE()')
             ->where('TABLE_NAME', self::TABLE)
@@ -291,10 +301,6 @@ return new class extends Migration
 
     private function indexExists(string $indexName): bool
     {
-        return DB::table('information_schema.STATISTICS')
-            ->whereRaw('TABLE_SCHEMA = DATABASE()')
-            ->where('TABLE_NAME', self::TABLE)
-            ->where('INDEX_NAME', $indexName)
-            ->exists();
+        return Schema::hasIndex(self::TABLE, $indexName);
     }
 };
