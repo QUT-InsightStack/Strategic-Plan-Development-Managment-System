@@ -603,7 +603,7 @@ To set up the project locally:
 3. Clone repository
 4. Install dependencies
 5. Configure environment
-6. Run migrations
+6. Initialize the empty database with `php artisan migrate --seed` (see [database initialization](docs/database-initialization.md) for existing databases)
 7. Start the application
 
 This ensures consistency across all development environments.

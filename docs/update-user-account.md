@@ -50,11 +50,10 @@ migration. The accepted set lives in
 | `prefer_not_to_say` | Prefer not to say |
 | `null` | Not specified |
 
-This column was a `boolean` until it became clear that nothing in the
-application had ever defined which value meant what — no mapping, no seeder,
-no screen that read or wrote it. Rather than guess, the migration to a string
-clears any pre-existing value. See
-`2026_08_29_000004_change_gender_to_string_on_tblusers_table.php`.
+The initialization migration creates this column directly as a nullable
+`string(32)`. There is no boolean-to-string conversion during a fresh install.
+Older databases need an explicit data-mapping decision before conversion;
+see [database initialization](database-initialization.md).
 
 ### Date of birth
 

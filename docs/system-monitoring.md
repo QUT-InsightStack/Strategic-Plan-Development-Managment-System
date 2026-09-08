@@ -2,7 +2,10 @@
 
 ## Applying the update
 
-Apply the migrations and the three access-control seeders to the intended database:
+For a new database, apply the initialization migrations and the three
+access-control seeders below. Migrations have been consolidated into a fresh
+baseline; see [database initialization](database-initialization.md) before working
+with an existing installation whose migration history predates consolidation.
 
 ```console
 php artisan migrate
@@ -213,6 +216,6 @@ npm run build
 The PHPUnit configuration uses an isolated SQLite in-memory database. If the
 SQLite DLLs are installed but disabled on Windows, run PHP with temporary
 `-d extension=pdo_sqlite -d extension=sqlite3` options when invoking PHPUnit.
-The audit migration now uses portable schema inspection and retains the
+The audit create migration includes its complete schema and retains the
 MySQL text-prefix index where required. Backup tests use a separate temporary
 storage directory for each test.

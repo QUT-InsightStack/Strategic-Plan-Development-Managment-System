@@ -83,16 +83,13 @@ class ActivityHistoryTest extends TestCase
         }
     }
 
-    public function test_user_deletion_preserves_history_and_destructive_audit_rollback_is_rejected(): void
+    public function test_user_deletion_preserves_history_with_the_initialized_audit_foreign_key(): void
     {
         $user = $this->user();
         $log = Log::create(['user_id' => $user->user_id, 'actor_name' => 'Historical Operator', 'operation' => 'user.action']);
         $user->delete();
         $this->assertDatabaseHas('tbllog', ['log_id' => $log->log_id, 'user_id' => null, 'actor_name' => 'Historical Operator']);
-        $migration = require database_path('migrations/2026_07_18_000001_expand_tbllog_for_audit_logs.php');
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Cannot roll back the audit-log migration');
-        $migration->down();
+        $this->assertSame('Historical Operator', $log->fresh()->actor_name);
     }
 
     public function test_history_uses_canonical_fields_and_combined_status_date_filters(): void
