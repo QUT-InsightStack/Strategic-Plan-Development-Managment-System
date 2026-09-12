@@ -18,3 +18,7 @@ export function createPdpChapter(data) {
 export function updatePdpChapter(id, data) {
     return apiRequest(`${baseUrl}/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 }
+
+export function deletePdpChapter(id) {
+    return apiRequest(`${baseUrl}/${id}`, { method: 'DELETE' });
+}
