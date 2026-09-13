@@ -21,6 +21,7 @@ class RolePremissionService
         'roles.assign_protected',
         'permissions.manage',
         'users.assign_roles',
+        'settings.manage',
     ];
 
     public function __construct(
@@ -115,6 +116,8 @@ class RolePremissionService
                 ->lockForUpdate()
                 ->find($id);
 
+            $oldPermissionId = (int) $relation->permission_id;
+
             if (! $relation) {
                 return null;
             }
@@ -143,9 +146,12 @@ class RolePremissionService
 
             $this->authorizePermissionChange(
                 $oldRole,
-                [$permissionId]
+                array_values(array_unique([
+                    $oldPermissionId,
+                    $permissionId,
+                ]))
             );
-
+            
             if ($roleId !== $oldRoleId) {
                 $this->authorizePermissionChange(
                     $role,
@@ -243,17 +249,21 @@ class RolePremissionService
                 array_map('intval', $permissionIds)
             ));
 
-            $this->authorizePermissionChange(
-                $role,
-                $normalizedIds
-            );
-
+        
             $currentIds = $role->permissions()
                 ->pluck('tblpermissions.permission_id')
                 ->map(fn ($id): int => (int) $id)
                 ->sort()
                 ->values()
                 ->all();
+
+            $this->authorizePermissionChange(
+                $role,
+                array_values(array_unique([
+                    ...$currentIds,
+                    ...$normalizedIds,
+                ]))
+            );
 
             $newIds = $normalizedIds;
             sort($newIds);
@@ -314,6 +324,8 @@ class RolePremissionService
         array $newPermissionIds
     ): void {
         $actor = $this->authenticatedActor();
+        app(PermissionAuthorizationService::class)
+            ->ensureHasPermission('roles.manage', $actor);
 
         $requiresProtectedAccess = (bool) $role->is_protected;
 
