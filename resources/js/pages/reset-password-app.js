@@ -84,8 +84,9 @@ function ResetPasswordForm({ status, setStatus }) {
 
         if (!password) {
             nextErrors.password = 'Please enter a new password.';
+        } else if (password.length < 16) {
+            nextErrors.password = 'Password must be at least 16 characters.';
         }
-
         if (!passwordConfirmation) {
             nextErrors.password_confirmation =
                 'Please confirm your new password.';
@@ -202,6 +203,7 @@ function ResetPasswordForm({ status, setStatus }) {
                     name: 'password',
                     type: 'password',
                     autoComplete: 'new-password',
+                    minLength: 16,
                     value: password,
                     onChange: (event) => setPassword(event.target.value),
                 }),
@@ -222,6 +224,7 @@ function ResetPasswordForm({ status, setStatus }) {
                     name: 'password_confirmation',
                     type: 'password',
                     autoComplete: 'new-password',
+                    minLength: 16,
                     value: passwordConfirmation,
                     onChange: (event) => setPasswordConfirmation(event.target.value),
                 }),

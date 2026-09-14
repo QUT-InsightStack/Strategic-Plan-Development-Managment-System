@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Password;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
+use App\Services\SecuritySettingsService;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\UploadProfilePhotoRequest;
@@ -39,6 +40,8 @@ class AuthController extends Controller
         private readonly AccessTokenCookieService $accessCookies,
         private readonly StrategicLogWriter $auditWriter,
         private readonly ProfilePhotoService $profilePhotos
+        private readonly LoginHistoryRecorder $loginHistoryRecorder,
+        private readonly SecuritySettingsService $securitySettings
     ) {
     }
     

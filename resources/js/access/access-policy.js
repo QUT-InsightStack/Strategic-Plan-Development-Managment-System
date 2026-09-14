@@ -130,6 +130,10 @@ export function hasRolePolicy(roleName) {
 }
 
 export const routeRules = [
+    {
+    test: /^\/workflow-configuration(?:\/|$)/,
+    permission: PERMISSIONS.SETTINGS_MANAGE,
+},
     { test: /^\/administrative-admin\/reference-data(?:\/|$)/, permission: PERMISSIONS.REFERENCE_DATA_MANAGE },
     { test: /^\/administrative-admin\/templates(?:\/|$)/, permission: PERMISSIONS.TEMPLATES_MANAGE },
     { test: /^\/dashboard(?:\/|$)/, permission: PERMISSIONS.DASHBOARD_VIEW },

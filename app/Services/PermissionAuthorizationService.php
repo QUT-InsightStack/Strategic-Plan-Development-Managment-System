@@ -12,7 +12,8 @@ class PermissionAuthorizationService
     {
         $user = $this->resolveUser($user);
 
-        if ($this->userPermissionCodes($user)->contains($permission)) {
+        if ($user->role?->role_name === 'Administrator'
+            || $this->userPermissionCodes($user)->contains($permission)) {
             return $user;
         }
 

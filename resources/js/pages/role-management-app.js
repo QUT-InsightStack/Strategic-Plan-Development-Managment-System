@@ -3,10 +3,11 @@ import { AppDialog } from '../components/AppDialog.js';
 import { PageHeader } from '../components/PageHeader.js';
 import { demoPermissions, demoRoles, demoUsers } from '../data/role-management-demo-data.js';
 import { enforcePageAccess } from '../access/access-guard.js';
+import { apiRequest } from '../api/api-client.js';
 
 enforcePageAccess();
 
-const { useMemo, useState } = React;
+const { useEffect, useMemo, useState } = React;
 
 const actionPermissionIds = [7, 8, 9, 10, 11];
 const contributorActionPermissionIds = [7, 8, 9, 10];
@@ -24,6 +25,99 @@ function permissionsForRoles(permissionIds, roleIds) {
     return [...new Set([...nonActionPermissionIds, ...allowedActionPermissionIds])];
 }
 
+function SecuritySettings() {
+    const [values, setValues] = useState({ session_timeout_minutes: 30, max_failed_login_attempts: 3, lockout_duration_minutes: 120 });
+    const [status, setStatus] = useState({ message: '', type: 'info' });
+
+    useEffect(() => {
+        apiRequest('/api/security-settings')
+            .then((response) => setValues(response.data))
+            .catch((error) => setStatus({ message: error.message, type: 'error' }));
+    }, []);
+
+    function update(key, value) {
+        setValues((current) => ({ ...current, [key]: value }));
+    }
+
+    async function save(event) {
+        event.preventDefault();
+        const payload = Object.fromEntries(Object.entries(values).map(([key, value]) => [key, Number(value)]));
+        if (Object.values(payload).some((value) => !Number.isInteger(value) || value < 1)) {
+            setStatus({ message: 'All security settings must be whole numbers greater than zero.', type: 'error' });
+            return;
+        }
+        try {
+            const response = await apiRequest('/api/security-settings', { method: 'PUT', body: JSON.stringify(payload) });
+            setValues(response.data);
+            setStatus({ message: response.message, type: 'success' });
+        } catch (error) {
+            const details = Object.values(error.errors || {}).flat().join(' ');
+            setStatus({ message: details || error.message, type: 'error' });
+        }
+    }
+
+    return React.createElement('section', { className: 'ui-card role-panel security-settings', 'aria-labelledby': 'security-settings-title' },
+        React.createElement('div', { className: 'role-panel__header' }, React.createElement('h2', { id: 'security-settings-title' }, 'Security Settings'), React.createElement('p', null, 'Configure authentication and session protection for all users.')),
+        React.createElement('form', { className: 'role-panel__body security-settings__form', onSubmit: save },
+            React.createElement('label', null, React.createElement('strong', null, 'Session Inactivity Timeout'), React.createElement('span', null, 'Minutes without activity before automatic logout.'), React.createElement('input', { className: 'ui-input', type: 'number', min: '1', value: values.session_timeout_minutes, onChange: (event) => update('session_timeout_minutes', event.target.value) })),
+            React.createElement('label', null, React.createElement('strong', null, 'Maximum Failed Login Attempts'), React.createElement('span', null, 'Failed passwords allowed before account lockout.'), React.createElement('input', { className: 'ui-input', type: 'number', min: '1', value: values.max_failed_login_attempts, onChange: (event) => update('max_failed_login_attempts', event.target.value) })),
+            React.createElement('label', null, React.createElement('strong', null, 'Account Lockout Duration'), React.createElement('span', null, 'Minutes an account remains locked after reaching the limit.'), React.createElement('input', { className: 'ui-input', type: 'number', min: '1', value: values.lockout_duration_minutes, onChange: (event) => update('lockout_duration_minutes', event.target.value) })),
+            status.message ? React.createElement('div', { className: `ui-status ui-status--${status.type}`, role: 'status' }, status.message) : null,
+            React.createElement('button', { className: 'ui-button ui-button--primary', type: 'submit' }, React.createElement('i', { className: 'bi bi-check2-circle' }), 'Save Security Settings')
+        )
+    );
+}
+
+function PermissionSettings() {
+    const [roles, setRoles] = useState([]);
+    const [permissions, setPermissions] = useState([]);
+    const [roleId, setRoleId] = useState('');
+    const [selected, setSelected] = useState([]);
+    const [status, setStatus] = useState({ message: '', type: 'info' });
+
+    useEffect(() => {
+        Promise.all([apiRequest('/api/roles'), apiRequest('/api/permissions')])
+            .then(([roleResponse, permissionResponse]) => {
+                setRoles(roleResponse.data || []);
+                setPermissions(permissionResponse.data || []);
+                if (roleResponse.data?.length) setRoleId(String(roleResponse.data[0].role_id));
+            })
+            .catch((error) => setStatus({ message: error.message, type: 'error' }));
+    }, []);
+
+    useEffect(() => {
+        if (!roleId) return;
+        apiRequest(`/api/roles/${roleId}/permissions`)
+            .then((response) => setSelected((response.data || []).map((item) => Number(item.permission_id || item.permission?.permission_id))))
+            .catch((error) => setStatus({ message: error.message, type: 'error' }));
+    }, [roleId]);
+
+    function togglePermission(permissionId) {
+        setSelected((current) => current.includes(permissionId) ? current.filter((id) => id !== permissionId) : [...current, permissionId]);
+    }
+
+    async function save(event) {
+        event.preventDefault();
+        try {
+            const response = await apiRequest(`/api/roles/${roleId}/permissions`, { method: 'PUT', body: JSON.stringify({ permission_ids: selected }) });
+            setSelected((response.data || []).map((item) => Number(item.permission_id || item.permission?.permission_id)));
+            setStatus({ message: 'Permissions saved to this role successfully.', type: 'success' });
+        } catch (error) {
+            setStatus({ message: error.message, type: 'error' });
+        }
+    }
+
+    return React.createElement('section', { className: 'ui-card role-panel security-settings', 'aria-labelledby': 'permission-settings-title' },
+        React.createElement('div', { className: 'role-panel__header' }, React.createElement('h2', { id: 'permission-settings-title' }, 'Role Permission Settings'), React.createElement('p', null, 'Select a role and assign the permissions it should receive.')),
+        React.createElement('form', { className: 'role-panel__body permission-options', onSubmit: save },
+            React.createElement('label', { className: 'permission-settings__role' }, React.createElement('span', null, 'Role'), React.createElement('select', { className: 'ui-select', value: roleId, onChange: (event) => setRoleId(event.target.value) }, roles.map((role) => React.createElement('option', { key: role.role_id, value: role.role_id }, role.role_name)))),
+            React.createElement('div', { className: 'permission-settings__list' }, permissions.map((permission) => React.createElement('label', { key: permission.permission_id, className: `permission-option${selected.includes(Number(permission.permission_id)) ? ' is-selected' : ''}` }, React.createElement('span', null, React.createElement('strong', null, permission.permission_name || permission.code), React.createElement('small', null, permission.code)), React.createElement('input', { type: 'checkbox', checked: selected.includes(Number(permission.permission_id)), onChange: () => togglePermission(Number(permission.permission_id)), 'aria-label': `Assign ${permission.permission_name || permission.code}` })))),
+            status.message ? React.createElement('div', { className: `ui-status ui-status--${status.type}`, role: 'status' }, status.message) : null,
+            React.createElement('button', { className: 'ui-button ui-button--primary', type: 'submit', disabled: !roleId }, React.createElement('i', { className: 'bi bi-check2-circle' }), 'Save Role Permissions')
+        )
+    );
+}
+
 function RoleManagementApp() {
     const [users, setUsers] = useState(demoUsers);
     const [selectedUserId, setSelectedUserId] = useState(demoUsers[0].id);
@@ -32,6 +126,8 @@ function RoleManagementApp() {
     const [search, setSearch] = useState('');
     const [notice, setNotice] = useState('');
     const [dialog, setDialog] = useState({ open: false, variant: 'success', title: '', message: '' });
+    const isSecuritySection = new URLSearchParams(window.location.search).get('section') === 'security';
+    const isPermissionSection = new URLSearchParams(window.location.search).get('section') === 'permissions';
 
     const selectedUser = users.find((user) => user.id === selectedUserId);
     const filteredUsers = useMemo(() => users.filter((user) => `${user.name} ${user.email} ${user.department}`.toLowerCase().includes(search.toLowerCase())), [users, search]);
@@ -83,12 +179,12 @@ function RoleManagementApp() {
             React.createElement(PageHeader, {
                 className: 'role-page__header',
                 section: 'Technical Administration',
-                title: 'Assign Roles and Permissions',
-                subtitle: 'Select a user, assign approved roles, and control the permissions available to that user.',
-                actions: React.createElement('span', { className: 'role-demo-label' }, React.createElement('i', { className: 'bi bi-display' }), 'Frontend demonstration'),
+                title: isSecuritySection ? 'Security Settings' : isPermissionSection ? 'Role Permission Settings' : 'Assign Roles and Permissions',
+                subtitle: isSecuritySection ? 'Configure authentication and session protection for all users.' : isPermissionSection ? 'Select a role and manage the permissions stored for that role.' : 'Select a user, assign approved roles, and control the permissions available to that user.',
+                actions: isSecuritySection || isPermissionSection ? null : React.createElement('span', { className: 'role-demo-label' }, React.createElement('i', { className: 'bi bi-display' }), 'Frontend demonstration'),
             }),
             notice ? React.createElement('div', { className: 'ui-status ui-status--info role-page__notice', role: 'status' }, notice) : null,
-            React.createElement('div', { className: 'role-workspace' },
+            isSecuritySection ? React.createElement(SecuritySettings) : isPermissionSection ? React.createElement(PermissionSettings) : React.createElement('div', { className: 'role-workspace' },
                 React.createElement('section', { className: 'ui-card role-panel role-panel--users', 'aria-labelledby': 'users-title' },
                     React.createElement('div', { className: 'role-panel__header' }, React.createElement('h2', { id: 'users-title' }, 'Users'), React.createElement('p', null, 'Choose the user whose access you want to manage.')),
                     React.createElement('div', { className: 'role-panel__body' },
@@ -112,7 +208,7 @@ function RoleManagementApp() {
                     }))
                 )
             ),
-            React.createElement('div', { className: 'role-page__actions' }, React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', onClick: () => chooseUser(selectedUser) }, 'Reset'), React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: requestSave }, React.createElement('i', { className: 'bi bi-check2-circle' }), 'Save Changes'))
+            isSecuritySection || isPermissionSection ? null : React.createElement('div', { className: 'role-page__actions' }, React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', onClick: () => chooseUser(selectedUser) }, 'Reset'), React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: requestSave }, React.createElement('i', { className: 'bi bi-check2-circle' }), 'Save Changes'))
         )),
         React.createElement(AppDialog, { open: dialog.open, variant: dialog.variant, title: dialog.title, message: dialog.message, confirmLabel: dialog.variant === 'danger' ? 'Confirm Changes' : 'Continue', onConfirm: dialog.variant === 'danger' ? confirmSave : closeDialog, onCancel: closeDialog })
     );

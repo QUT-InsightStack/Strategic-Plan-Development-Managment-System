@@ -16,6 +16,7 @@ use App\Http\Controllers\StrategicController;
 use App\Http\Controllers\StrategicObjectiveController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SystemSettingsController;
+use App\Http\Controllers\SecuritySettingsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -130,6 +131,9 @@ Route::middleware(['auth:api','auth.version', 'auth.session','system.available',
 */
 
 Route::middleware(['auth:api','auth.version','auth.session','system.available',])->group(function () {
+    Route::get('security-settings', [SecuritySettingsController::class, 'show']);
+    Route::put('security-settings', [SecuritySettingsController::class, 'update']);
+
     Route::get('pdp-chapters', [PdpChapterController::class, 'index']);
     Route::get('pdp-chapters/{chapter}', [PdpChapterController::class, 'show'])
         ->whereNumber('chapter');
@@ -205,7 +209,9 @@ Route::middleware(['auth:api','auth.version','auth.session','system.available',]
         ->whereNumber('permission')
         ->middleware('permission:permissions.manage');
 
-    // Legacy direct role-permission pivot endpoints
+
+
+        // Legacy direct role-permission pivot endpoints
     Route::apiResource(
         'role-premissions',
         RolePremissionController::class
@@ -276,6 +282,10 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
         'strategic-records',
         StrategicController::class
     );
+   Route::patch(
+        'strategic-objectives/{id}/status',
+        [StrategicObjectiveController::class, 'updateStatus']
+    )->whereNumber('id');
 
     Route::apiResource(
         'strategic-objectives',

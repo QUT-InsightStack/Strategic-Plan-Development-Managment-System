@@ -29,6 +29,9 @@ class User extends Authenticatable implements JWTSubject, CanResetPasswordContra
         'designation',
         'role_id',
         'status',
+        'failed_login_attempts',
+        'locked_until',
+        'last_activity_at',
         'address',
         'gender',
         'date_of_birth',
@@ -51,6 +54,9 @@ class User extends Authenticatable implements JWTSubject, CanResetPasswordContra
             'date_of_birth' => 'date',
             'auth_version' => 'integer',
             'password' => 'hashed',
+            'locked_until' => 'datetime',
+            'last_activity_at' => 'datetime',
+            'failed_login_attempts' => 'integer',
         ];
     }
 

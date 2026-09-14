@@ -37,6 +37,10 @@ class PermissionMiddleware
             ], 403);
         }
 
+        if ($role->role_name === 'Administrator') {
+            return $next($request);
+        }
+
         $grantedPermissions = $role->permissions()
             ->whereIn('code', $requiredPermissions)
             ->pluck('code')

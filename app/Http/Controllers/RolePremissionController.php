@@ -103,6 +103,12 @@ class RolePremissionController extends Controller
     }
 
     public function syncPermissions(Request $request,int $roleId): JsonResponse {
+        $this->permissionAuthorizationService->ensureHasPermission(
+            'roles.manage',
+            Auth::guard('api')->user(),
+            'You are not authorized to manage role permissions.'
+        );
+
         $data = $request->validate([
             'permission_ids' => [
                 'required',
