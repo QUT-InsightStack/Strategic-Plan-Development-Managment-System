@@ -40,9 +40,11 @@ class RolePermissionSeeder extends Seeder
             'permissions.manage',
             'logs.view',
             'login_history.view',
+        ];
+
         $viewOnlyPermissions = [
-    'dashboard.view',
-    'strategic_records.view', 'strategic_foundations.view', 'strategic_objectives.view',
+            'dashboard.view',
+            'strategic_records.view', 'strategic_foundations.view', 'strategic_objectives.view',
             'relations.view', 'plan_core_values.view',
         ];
 
