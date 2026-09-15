@@ -28,7 +28,7 @@ function EditStrategicPlanApp() {
 
             if (goNext) {
                 window.location.href =
-                    `/strategic-plans/${planId}/objectives`;
+                    `/strategic-objectives?plan_id=${planId}`;
                 return;
             }
 

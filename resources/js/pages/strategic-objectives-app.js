@@ -12,7 +12,8 @@ import { PageHeader } from '../components/PageHeader.js';
 import { ObjectiveFormDialog } from '../strategic-objectives/ObjectiveFormDialog.js';
 import { enforcePageAccess } from '../access/access-guard.js';
 import { PERMISSIONS } from '../access/access-policy.js';
-import { can } from '../access/access-session.js';
+import { can, getAccessSession } from '../access/access-session.js';
+import { applyLocalObjectiveAssignments, assignObjectiveLocally, getAssignableUnits } from '../objective-assignment-storage.js';
 
 enforcePageAccess();
 const canCreateObjectives = can(PERMISSIONS.OBJECTIVES_CREATE);
@@ -45,14 +46,6 @@ function formatDate(value) {
         year: 'numeric',
     });
 }
-function formatStatus(value) {
-    if (!value) return 'Unknown';
-
-    return value
-        .replace(/_/g, ' ')
-        .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
 function displayName(user) {
     if (!user) return '';
 
@@ -88,6 +81,9 @@ function StrategicObjectivesApp() {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [editing, setEditing] = useState(null);
+    const [assigning, setAssigning] = useState(null);
+    const [selectedUnit, setSelectedUnit] = useState('');
+    const [assignmentError, setAssignmentError] = useState('');
     const [formOpen, setFormOpen] = useState(false);
     const [formErrors, setFormErrors] = useState({});
     const [page, setPage] = useState(1);
@@ -105,10 +101,11 @@ function StrategicObjectivesApp() {
         setLoading(true);
         try {
             const [planPayload, objectivesPayload] = await Promise.all([getStrategicPlan(planId), listStrategicObjectives(planId)]);
-            setPlan(planPayload.data); setObjectives(objectivesPayload.data || []);
+            const assignedObjectives = applyLocalObjectiveAssignments(objectivesPayload.data || []);
+            setPlan(planPayload.data); setObjectives(assignedObjectives);
             const editId = new URLSearchParams(window.location.search).get('edit');
             if (editId && canUpdateObjectives) {
-                const objectiveToEdit = (objectivesPayload.data || []).find((item) => String(item.objective_id) === editId);
+                const objectiveToEdit = assignedObjectives.find((item) => String(item.objective_id) === editId);
                 if (objectiveToEdit) { setEditing(objectiveToEdit); setFormOpen(true); }
                 window.history.replaceState({}, '', window.location.pathname);
             }
@@ -126,6 +123,7 @@ function StrategicObjectivesApp() {
                 ? await updateStrategicObjective(editing.objective_id, data)
                 : await createStrategicObjective({ ...data, strategic_plan_id: Number(planId) });
             setFormOpen(false); setEditing(null); await load();
+            if (!editing) setPage(Math.ceil((objectives.length + 1) / pageSize));
             setDialog({ open: true, variant: 'success', title: 'Operation successful', message: editing ? 'Strategic Objective updated successfully.' : 'Strategic Objective added successfully.', objective: null });
             return payload;
         } catch (error) { setFormErrors(error.errors || {}); setStatus({ type: 'error', message: error.message }); }
@@ -235,16 +233,23 @@ async function confirmArchiveChange() {
     }
 }
     const archived = plan?.status === 'archived';
-    const officeSuggestions = [
-    ...new Set([
-        plan?.department_agency,
-        plan?.creator?.department,
-        plan?.creator?.office,
-        ...objectives.map(
-            (objective) => objective.responsible_office_agency
-        ),
-    ].filter(Boolean)),
-].sort();
+    const availableUnits = getAssignableUnits(objectives, [getAccessSession()?.office]);
+
+    async function assignUnit() {
+        if (!assigning || !canUpdateObjectives || !selectedUnit.trim()) return;
+        setSubmitting(true);
+        setAssignmentError('');
+        try {
+            const updated = assignObjectiveLocally(assigning, selectedUnit, getAccessSession());
+            setObjectives(current => current.map(objective => objective.objective_id === updated.objective_id ? updated : objective));
+            setAssigning(null);
+            setStatus({ type: 'success', message: `Objective assigned to ${selectedUnit}. It is now available in that Office / Agency view.` });
+        } catch (error) {
+            setAssignmentError(error.message || 'Unable to assign Responsible Unit.');
+        } finally {
+            setSubmitting(false);
+        }
+    }
 const planYear = plan?.created_at
     ? new Date(plan.created_at).getFullYear()
     : new Date().getFullYear();
@@ -275,7 +280,7 @@ useEffect(() => {
     return React.createElement(React.Fragment, null,
         React.createElement(AppSidebar, { onNotice: (message) => setStatus({ type: 'info', message }) }),
         React.createElement('main', { className: 'app-shell-main objectives-page' }, React.createElement('div', { className: 'app-shell-container' },
-            React.createElement(PageHeader, { className: 'objectives-header', section: 'Strategic Planning', title: 'Add Strategic Objectives', subtitle: 'Define measurable objectives, expected outcomes, indicators, targets, and accountable offices for this strategic plan.' }),
+            React.createElement(PageHeader, { className: 'objectives-header', section: 'Strategic Planning', title: 'Manage Objectives', subtitle: 'Create strategic objectives and assign responsible offices and agencies.' }),
             status.message ? React.createElement('div', { className: `ui-status ui-status--${status.type}`, role: 'status' }, status.message) : null,
             archived ? React.createElement('div', { className: 'ui-status ui-status--error' }, 'This Strategic Plan is archived. Restore it before changing its objectives.') : null,
             React.createElement('section', { className: 'ui-card plan-summary', 'aria-labelledby': 'plan-summary-title' }, React.createElement('div', { className: 'ui-card__header' }, React.createElement('h2', { className: 'ui-card__title', id: 'plan-summary-title' }, 'Plan Summary')), React.createElement('div', { className: 'ui-card__body plan-summary-grid' },
@@ -349,25 +354,13 @@ React.createElement(
             React.createElement('section', { className: 'ui-card objectives-card', 'aria-labelledby': 'objectives-title' },
                 React.createElement('div', { className: 'objectives-heading' }, React.createElement('h2', { id: 'objectives-title' }, 'Strategic Objectives'), canCreateObjectives ? React.createElement('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', disabled: archived || loading, onClick: () => { setEditing(null); setFormOpen(true); } }, React.createElement('i', { className: 'bi bi-plus-lg' }), 'Add Objective') : null),
                 React.createElement('div', { className: 'ui-card__body' }, loading ? React.createElement('div', { className: 'ui-empty' }, 'Loading Strategic Objectives…') : objectives.length === 0 ? React.createElement('div', { className: 'ui-empty' }, 'No Strategic Objectives have been added yet.') : React.createElement('div', { className: 'ui-table-wrap' }, React.createElement('table', { className: 'ui-table objectives-table' },
-                    React.createElement('thead', null, React.createElement('tr', null, ['No.', 'Strategic Objective', 'Expected Outcome', 'Indicator', 'Target', 'Responsible Office/Agency', 'Status', 'Actions']
+                    React.createElement('thead', null, React.createElement('tr', null, ['No.', 'Strategic Objective', 'Expected Outcome', 'Indicator', 'Responsible Unit', 'Actions']
                         .map((heading) => React.createElement('th', { key: heading }, heading)))),
                     React.createElement('tbody', null, visibleObjectives.map((objective, index) => React.createElement('tr', { key: objective.objective_id }, React.createElement(
     'td',
     null,
     ((currentPage - 1) * pageSize) + index + 1
-), React.createElement('td', null, objective.objective_title || 'Untitled objective'), React.createElement('td', null, objective.expected_outcome || '—'), React.createElement('td', null, objective.indicator || '—'), React.createElement('td', null, objective.target || '—'), React.createElement('td', null, objective.responsible_office_agency || '—'), React.createElement(
-    'td',
-    null,
-    React.createElement(
-        'span',
-        {
-            className:
-                `ui-badge ui-badge--${objective.status || 'draft'}`,
-        },
-        formatStatus(objective.status || 'draft')
-    )
-),
-
+), React.createElement('td', null, objective.objective_title || 'Untitled objective'), React.createElement('td', null, objective.expected_outcome || '—'), React.createElement('td', null, objective.indicator || '—'), React.createElement('td', null, objective.responsible_office_agency || 'Unassigned'),
 
 React.createElement(
     'td',
@@ -376,6 +369,13 @@ React.createElement(
         ? React.createElement(
             'div',
             { className: 'objectives-table__actions' },
+            canUpdateObjectives && objective.status !== 'archived'
+                ? React.createElement('button', {
+                    className: 'ui-button ui-button--secondary ui-button--sm',
+                    type: 'button', disabled: archived || submitting,
+                    onClick: () => { setAssigning(objective); setSelectedUnit(objective.responsible_office_agency || ''); setAssignmentError(''); },
+                    'aria-label': `Assign Responsible Unit to ${objective.objective_title || 'strategic objective'}`,
+                }, 'Assign') : null,
 
             canUpdateObjectives &&
             objective.status !== 'archived'
@@ -505,14 +505,28 @@ React.createElement(
     )
 )
             ),
-            (canCreateObjectives || canUpdateObjectives) ? React.createElement('div', { className: 'objectives-page-actions' }, React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', onClick: () => setDialog({ open: true, variant: 'success', title: 'Draft saved', message: 'All current Strategic Objectives are saved as draft.', objective: null }) }, 'Save as Draft'), React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: () => setStatus({ type: 'info', message: 'Strategic Mapping is reserved for the next module.' }) }, 'Next: Strategic Mapping')) : null
+            (canCreateObjectives || canUpdateObjectives) ? React.createElement('div', { className: 'objectives-page-actions' }, React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: () => setStatus({ type: 'info', message: 'Strategic Mapping is reserved for the next module.' }) }, 'Next: Strategic Mapping')) : null
         )),
+        assigning ? React.createElement('div', { className: 'objective-modal-backdrop' },
+            React.createElement('section', { className: 'objective-modal ui-card', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'assign-unit-title', onKeyDown: (event) => { if (event.key === 'Escape' && !submitting) setAssigning(null); } },
+                React.createElement('div', { className: 'objective-modal__header' },
+                    React.createElement('h2', { id: 'assign-unit-title' }, 'Assign Responsible Unit'),
+                    React.createElement('button', { type: 'button', disabled: submitting, onClick: () => setAssigning(null), 'aria-label': 'Close assignment' }, '?')),
+                React.createElement('div', { className: 'objective-modal__body' },
+                    React.createElement('p', null, assigning.objective_title),
+                    React.createElement('label', { className: 'ui-label', htmlFor: 'responsible-unit' }, 'Responsible Unit'),
+                    React.createElement('input', { id: 'responsible-unit', className: 'ui-input', value: selectedUnit, list: 'responsible-unit-options', placeholder: 'Select or type the exact Office / Agency name', autoFocus: true, disabled: submitting, onChange: (event) => setSelectedUnit(event.target.value) }),
+                    React.createElement('datalist', { id: 'responsible-unit-options' }, availableUnits.map((unit) => React.createElement('option', { key: unit, value: unit }))),
+                    React.createElement('small', { className: 'ui-help' }, 'Use the exact Office / Agency account name to sync this objective.'),
+                    assignmentError ? React.createElement('p', { className: 'ui-error', role: 'alert' }, assignmentError) : null),
+                React.createElement('div', { className: 'objective-modal__actions' },
+                    React.createElement('button', { type: 'button', className: 'ui-button ui-button--secondary', disabled: submitting, onClick: () => setAssigning(null) }, 'Cancel'),
+                    React.createElement('button', { type: 'button', className: 'ui-button ui-button--primary', disabled: submitting || !selectedUnit, onClick: assignUnit }, submitting ? 'Assigning?' : 'Assign')))) : null,
         React.createElement(ObjectiveFormDialog, {
     open: formOpen,
     objective: editing,
     submitting,
     serverErrors: formErrors,
-    officeSuggestions,
     onSave: saveObjective,
     onClose: () => {
         setFormOpen(false);

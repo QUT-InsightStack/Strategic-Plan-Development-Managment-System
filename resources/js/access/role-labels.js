@@ -21,3 +21,11 @@ export function displayRoleName(roleName, fallback = 'Unassigned') {
 
     return ROLE_DISPLAY_NAMES[normalizedRoleName] || normalizedRoleName;
 }
+
+// Administrator is a separate legacy full-access role, not Administrative Admin.
+export function adminRoleKind(roleName) {
+    const label = displayRoleName(roleName, '');
+    if (label === 'Administrative Admin') return 'administrative';
+    if (label === 'Technical Admin') return 'technical';
+    return null;
+}

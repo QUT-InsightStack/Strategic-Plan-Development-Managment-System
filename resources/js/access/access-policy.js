@@ -94,6 +94,10 @@ const administrativeAdminPermissions = [
     PERMISSIONS.LOGS_VIEW,
 ];
 
+const officePermissions = [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW,
+    PERMISSIONS.OBJECTIVES_VIEW, PERMISSIONS.OBJECTIVES_CREATE, PERMISSIONS.OBJECTIVES_UPDATE,
+    PERMISSIONS.FOUNDATIONS_VIEW, 'relations.view', 'relations.create', PERMISSIONS.REPORTS_VIEW];
+
 const rolePolicies = {
     Administrator: { home: '/role-management', permissions: ['*'] },
     'Administrative Admin': { home: '/dashboard', permissions: administrativeAdminPermissions },
@@ -103,9 +107,9 @@ const rolePolicies = {
     test: { home: '/dashboard', permissions: technicalAdminPermissions },
     'Planning Officer': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
     'Planner/Encoder': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
-    'Office Representative': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
-    'Office/Agency': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
-    'Offices / Agencies': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
+    'Office Representative': { home: '/office', permissions: officePermissions },
+    'Office/Agency': { home: '/office', permissions: officePermissions },
+    'Offices / Agencies': { home: '/office', permissions: officePermissions },
     'Division Head': { home: '/strategic-plans', permissions: fullPlanningPermissions },
     Management: { home: '/strategic-plans', permissions: fullPlanningPermissions },
     Executive: { home: '/strategic-plans', permissions: fullPlanningPermissions },
@@ -130,6 +134,8 @@ export function hasRolePolicy(roleName) {
 }
 
 export const routeRules = [
+    { test: /^\/consolidate-inputs(?:\/|$)/, permission: PERMISSIONS.PLANS_UPDATE },
+    { test: /^\/office(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
     {
     test: /^\/workflow-configuration(?:\/|$)/,
     permission: PERMISSIONS.SETTINGS_MANAGE,
@@ -146,3 +152,4 @@ export const routeRules = [
     { test: /^\/strategic-plans\/\d+\/edit(?:\/|$)/, permission: PERMISSIONS.PLANS_UPDATE },
     { test: /^\/strategic-(?:plans|objectives)(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
 ];
+

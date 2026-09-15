@@ -23,7 +23,7 @@ function CreateStrategicPlanApp() {
                 return;
             }
             if (goNext) {
-                window.location.href = `/strategic-plans/${payload.data.record_id}/objectives`;
+                window.location.href = `/strategic-objectives?plan_id=${payload.data.record_id}`;
                 return;
             }
             const pending = ' Planning period and department/agency require the reserved database columns before they can be persisted.';
