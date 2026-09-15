@@ -77,7 +77,7 @@ class RolePremissionController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $this->permissionAuthorizationService->ensureHasPermission(
-            'role_permissions.delete',
+            'roles.manage',
             Auth::guard('api')->user(),
             'You are not authorized to delete role permissions.'
         );
@@ -93,7 +93,7 @@ class RolePremissionController extends Controller
     public function byRole(int $roleId): JsonResponse
     {
         $this->permissionAuthorizationService->ensureHasPermission(
-            'role_permissions.view',
+            'roles.view',
             Auth::guard('api')->user(),
             'You are not authorized to view role permissions.'
         );

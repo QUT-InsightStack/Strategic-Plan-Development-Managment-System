@@ -152,6 +152,7 @@ return [
         'sub',
         'jti',
         'auth_version',
+        'sid',
     ],
 
     /*
@@ -171,6 +172,7 @@ return [
         'role_id',
         'role_name',
         'auth_version',
+        'sid',
 
         // 'foo',
         // 'bar',

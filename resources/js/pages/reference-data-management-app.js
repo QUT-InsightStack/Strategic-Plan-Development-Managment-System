@@ -1,8 +1,12 @@
 import { AdministrativeAdminSidebar } from '../components/AdministrativeAdminSidebar.js';
 import { AdministrativeActionMenu } from '../components/AdministrativeActionMenu.js';
 import { PageHeader } from '../components/PageHeader.js';
+import { AppDialog } from '../components/AppDialog.js';
 
 const { useMemo, useState } = React;
+
+const STATUS_LABELS = { active: 'Active', archived: 'Archived', deleted: 'Deleted', inactive: 'Inactive' };
+const STATUS_BADGES = { active: 'success', archived: 'archived', inactive: 'neutral' };
 
 const tabs = [
     { id: 'agenda', label: 'Presidential Agenda', icon: 'bi-bank2' },
@@ -33,7 +37,7 @@ function ReferenceDataTable({ rows, loading, onReview, onUpdate, onArchive, onDe
                     React.createElement('td', null, row.title),
                     React.createElement('td', null, row.date),
                     React.createElement('td', { className: 'reference-note' }, row.note),
-                    React.createElement('td', null, React.createElement('span', { className: `ui-badge ui-badge--${row.status === 'active' ? 'success' : 'neutral'}` }, row.status === 'active' ? 'Active' : 'Inactive')),
+                    React.createElement('td', null, React.createElement('span', { className: `ui-badge ui-badge--${STATUS_BADGES[row.status] || 'neutral'}` }, STATUS_LABELS[row.status] || 'Inactive')),
                     React.createElement('td', { className: 'reference-action-cell' }, React.createElement(AdministrativeActionMenu, { actions: [
                         { label: 'Review', icon: 'bi-eye-fill', onSelect: () => onReview(row) },
                         { label: 'Update', icon: 'bi-pencil-fill', onSelect: () => onUpdate(row) },
@@ -54,14 +58,73 @@ export function ReferenceDataManagementApp() {
     const [filters, setFilters] = useState({ status: '', time: '', search: '' });
     const [notice, setNotice] = useState({ type: '', message: '' });
 
+    /*
+     * Presidential Agenda rows are still the design data set: this page has no
+     * agenda API yet. Holding them in state lets the archive action behave
+     * correctly in the interface; swapping agendaRows for a fetch, and the
+     * archive below for a request, is all that is needed once the endpoint
+     * exists.
+     */
+    const [rows, setRows] = useState(agendaRows);
+    const [confirmDialog, setConfirmDialog] = useState({ open: false, variant: 'danger', title: '', message: '', row: null, action: null });
+
     const visibleRows = useMemo(() => {
         if (activeTab !== 'agenda') return [];
         const term = filters.search.trim().toLowerCase();
-        return agendaRows.filter((row) =>
+        return rows.filter((row) =>
+            // A deleted item is retained as a record but is never an active option.
+            row.status !== 'deleted' &&
             (!filters.status || row.status === filters.status) &&
             (!term || `${row.id} ${row.title} ${row.note}`.toLowerCase().includes(term))
         );
-    }, [activeTab, filters]);
+    }, [activeTab, filters, rows]);
+
+    function closeConfirmDialog() {
+        setConfirmDialog((current) => ({ ...current, open: false }));
+    }
+
+    function requestArchive(row) {
+        if (row.status === 'archived') {
+            setNotice({ type: 'info', message: `${row.id} is already archived.` });
+            return;
+        }
+
+        setConfirmDialog({
+            open: true,
+            variant: 'danger',
+            title: 'Archive Presidential Agenda?',
+            message: `Archive \u201C${row.title}\u201D (${row.id})? It will no longer be offered as an active agenda item, and the record is kept for historical reference.`,
+            row,
+            action: 'archive',
+        });
+    }
+
+    function confirmArchive() {
+        const target = confirmDialog.row;
+
+        closeConfirmDialog();
+        setRows((current) => current.map((row) => (row.id === target.id ? { ...row, status: 'archived' } : row)));
+        setNotice({ type: 'success', message: `${target.id} archived successfully.` });
+    }
+
+    function requestDelete(row) {
+        setConfirmDialog({
+            open: true,
+            variant: 'danger',
+            title: 'Delete Presidential Agenda?',
+            message: `Delete \u201C${row.title}\u201D (${row.id})? It will be removed from the agenda list. The record is retained so existing references and history stay intact.`,
+            row,
+            action: 'delete',
+        });
+    }
+
+    function confirmDelete() {
+        const target = confirmDialog.row;
+
+        closeConfirmDialog();
+        setRows((current) => current.map((row) => (row.id === target.id ? { ...row, status: 'deleted' } : row)));
+        setNotice({ type: 'success', message: `${target.id} deleted successfully.` });
+    }
 
     function chooseTab(tab) {
         setActiveTab(tab.id);
@@ -82,6 +145,15 @@ export function ReferenceDataManagementApp() {
 
     return React.createElement(React.Fragment, null,
         React.createElement(AdministrativeAdminSidebar, { active: sidebarActive, onNotice: (message) => setNotice({ type: 'info', message }) }),
+        React.createElement(AppDialog, {
+            open: confirmDialog.open,
+            variant: confirmDialog.variant,
+            title: confirmDialog.title,
+            message: confirmDialog.message,
+            confirmLabel: confirmDialog.action === 'archive' ? 'Confirm Archive' : confirmDialog.action === 'delete' ? 'Confirm Delete' : 'Close',
+            onConfirm: confirmDialog.action === 'archive' ? confirmArchive : confirmDialog.action === 'delete' ? confirmDelete : closeConfirmDialog,
+            onCancel: closeConfirmDialog,
+        }),
         React.createElement('main', { className: 'app-shell-main reference-data-page' },
             React.createElement('div', { className: 'app-shell-container' },
                 React.createElement(PageHeader, {
@@ -105,6 +177,7 @@ export function ReferenceDataManagementApp() {
                         React.createElement('select', { className: 'ui-select', 'aria-label': 'Filter by status', value: filters.status, onChange: (event) => setFilters((current) => ({ ...current, status: event.target.value })) },
                             React.createElement('option', { value: '' }, 'All Status'),
                             React.createElement('option', { value: 'active' }, 'Active'),
+                            React.createElement('option', { value: 'archived' }, 'Archived'),
                             React.createElement('option', { value: 'inactive' }, 'Inactive')
                         ),
                         React.createElement('select', { className: 'ui-select', 'aria-label': 'Filter by time', value: filters.time, onChange: (event) => setFilters((current) => ({ ...current, time: event.target.value })) },
@@ -125,8 +198,8 @@ export function ReferenceDataManagementApp() {
                         loading: false,
                         onReview: (row) => { window.location.href = `/administrative-admin/reference-data/agenda/${encodeURIComponent(row.id)}/edit?mode=review`; },
                         onUpdate: (row) => { window.location.href = `/administrative-admin/reference-data/agenda/${encodeURIComponent(row.id)}/edit`; },
-                        onArchive: (row) => setNotice({ type: 'info', message: `Archive for ${row.id} requires the approved backend archive endpoint.` }),
-                        onDelete: (row) => setNotice({ type: 'info', message: `Delete for ${row.id} requires backend approval and a confirmation workflow.` }),
+                        onArchive: requestArchive,
+                        onDelete: requestDelete,
                     }),
                     React.createElement('footer', { className: 'reference-table-footer' },
                         React.createElement('span', null, `0 of ${visibleRows.length} row(s) selected.`),
