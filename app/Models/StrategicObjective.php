@@ -11,6 +11,7 @@ class StrategicObjective extends Model
     use HasFactory;
 
     protected $table = 'tblstrategic_objectives';
+
     protected $primaryKey = 'objective_id';
 
     protected $fillable = [
@@ -66,6 +67,21 @@ class StrategicObjective extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by', 'user_id');
+    }
+
+    public function responsibleUnitAssignment()
+    {
+        return $this->hasOne(ObjectiveResponsibleUnit::class, 'objective_id', 'objective_id');
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(ObjectiveComment::class, 'objective_id', 'objective_id');
+    }
+
+    public function inputs()
+    {
+        return $this->hasMany(ImplementationInput::class, 'objective_id', 'objective_id');
     }
 
     public function updater()

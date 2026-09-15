@@ -11,6 +11,12 @@ const accessItems = [
     { label: 'Role Management', icon: 'bi-person-gear', href: '/role-management', permission: PERMISSIONS.ROLES_MANAGE },
     { label: 'Access Permission Management', icon: 'bi-shield-lock-fill', href: '/role-management?section=permissions', permission: PERMISSIONS.PERMISSIONS_MANAGE },
     { label: 'Settings', icon: 'bi-gear-fill', href: '/role-management?section=security', permission: PERMISSIONS.SETTINGS_MANAGE },
+    {
+    label: 'Approval Workflow',
+    icon: 'bi-diagram-3-fill',
+    href: '/workflow-configuration',
+    permission: PERMISSIONS.SETTINGS_MANAGE,
+},
 ];
 const planningItems = [
     {

@@ -369,7 +369,7 @@ class PlanCreationService
             'deleted_at' => null,
         ]);
 
-        $this->archiveObjectives($planId, $userId);
+
         $this->archiveLinks($planId, $userId);
         $this->syncRelationsForPlan($planId, $userId);
         $this->syncPlanFoundationsLifecycle($planId, $userId);
@@ -387,7 +387,7 @@ class PlanCreationService
             'deleted_at' => null,
         ]);
 
-        $this->restoreObjectives($planId, $userId);
+
         $this->restoreLinks($planId, $userId);
         $this->syncRelationsForPlan($planId, $userId);
         $this->syncPlanFoundationsLifecycle($planId, $userId);
