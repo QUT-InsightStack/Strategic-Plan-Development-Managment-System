@@ -3,7 +3,7 @@ import { AppSidebar } from '../components/AppSidebar.js';
 import { AdministrativeAdminSidebar } from '../components/AdministrativeAdminSidebar.js';
 import { PageHeader } from '../components/PageHeader.js';
 import { AppDialog } from '../components/AppDialog.js';
-import { createPdpChapter, deletePdpChapter, getPdpChapter, listPdpChapters, updatePdpChapter } from '../api/pdp-chapters-api.js';
+import { archivePdpChapter, createPdpChapter, deletePdpChapter, getPdpChapter, listPdpChapters, updatePdpChapter } from '../api/pdp-chapters-api.js';
 
 enforcePageAccess();
 const { useEffect, useMemo, useState } = React;
@@ -63,7 +63,7 @@ function ChapterDialog({ mode, chapter, onClose, onSaved }) {
         ));
 }
 
-function ChapterTable({ chapters, loading, selectedIds, onToggle, onOpen, onDelete }) {
+function ChapterTable({ chapters, loading, selectedIds, onToggle, onOpen, onArchive, onDelete }) {
     const columns = 5;
     return React.createElement('section', { className: 'ui-card pdp-table-card', 'aria-labelledby': 'pdp-register-title' },
         React.createElement('div', { className: 'ui-section-header' },
@@ -95,6 +95,7 @@ function ChapterTable({ chapters, loading, selectedIds, onToggle, onOpen, onDele
                             isManageMode ? React.createElement('td', null,
                                 React.createElement('div', { className: 'pdp-table__actions' },
                                     React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => onOpen(chapter) }, 'Edit'),
+                                    React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => onArchive(chapter) }, 'Archive'),
                                     React.createElement('button', { className: 'ui-button ui-button--danger ui-button--sm', type: 'button', onClick: () => onDelete(chapter) }, 'Delete'))) : null))))));
 }
 
@@ -163,6 +164,39 @@ function PdpChaptersApp() {
         });
     }
 
+    function requestArchive(chapter) {
+        setConfirmDialog({
+            open: true,
+            variant: 'danger',
+            title: 'Archive PDP Chapter?',
+            message: `Archive \u201C${chapter.chapter_title || 'Untitled chapter'}\u201D? It will no longer appear as an active chapter, and the record and its history are kept.`,
+            chapter,
+            action: 'archive',
+        });
+    }
+
+    async function confirmArchive() {
+        const chapter = confirmDialog.chapter;
+
+        closeConfirmDialog();
+        setStatus({ type: '', message: '' });
+
+        try {
+            const payload = await archivePdpChapter(chapter.chapter_id);
+            await load();
+            setStatus({ type: 'success', message: payload.message || 'PDP Chapter archived successfully.' });
+        } catch (error) {
+            setConfirmDialog({
+                open: true,
+                variant: 'error',
+                title: 'Archive failed',
+                message: error.message || 'The chapter could not be archived.',
+                chapter: null,
+                action: null,
+            });
+        }
+    }
+
     async function confirmDelete() {
         const chapter = confirmDialog.chapter;
 
@@ -185,7 +219,13 @@ function PdpChaptersApp() {
         }
     }
 
-    const visible = useMemo(() => { const term = search.trim().toLowerCase(); return chapters.filter((chapter) => !term || [chapter.chapter_title, chapter.chapter_description].some((value) => String(value || '').toLowerCase().includes(term))); }, [chapters, search]);
+    const visible = useMemo(() => {
+        const term = search.trim().toLowerCase();
+
+        return chapters
+            .filter((chapter) => chapter.status !== 'archived' && chapter.status !== 'deleted')
+            .filter((chapter) => !term || [chapter.chapter_title, chapter.chapter_description].some((value) => String(value || '').toLowerCase().includes(term)));
+    }, [chapters, search]);
     const Sidebar = isManageMode ? AdministrativeAdminSidebar : AppSidebar;
 
     return React.createElement(React.Fragment, null,
@@ -203,15 +243,15 @@ function PdpChaptersApp() {
                 React.createElement('div', { className: 'pdp-toolbar' }, React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'pdp-search' }, 'Search PDP Chapters'), React.createElement('input', { id: 'pdp-search', className: 'ui-input', value: search, placeholder: 'Search title or description', onChange: (event) => setSearch(event.target.value) })), React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setSearch('') }, 'Clear'))
             ),
             React.createElement('p', { className: 'pdp-summary' }, loading ? 'Loading PDP Chapters…' : `${visible.length} chapter(s)${!isManageMode ? ` · ${selectedIds.length} selected` : ''}`),
-            React.createElement(ChapterTable, { chapters: visible, loading, selectedIds, onToggle: (id) => setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]), onOpen: (chapter) => setDialog({ mode: isManageMode ? 'edit' : 'view', chapter }), onDelete: requestDelete }),
+            React.createElement(ChapterTable, { chapters: visible, loading, selectedIds, onToggle: (id) => setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]), onOpen: (chapter) => setDialog({ mode: isManageMode ? 'edit' : 'view', chapter }), onArchive: requestArchive, onDelete: requestDelete }),
             dialog ? React.createElement(ChapterDialog, { ...dialog, onClose: () => setDialog(null), onSaved: async (payload) => { setDialog(null); setStatus({ type: 'success', message: payload.message }); await load(); } }) : null,
             React.createElement(AppDialog, {
                 open: confirmDialog.open,
                 variant: confirmDialog.variant,
                 title: confirmDialog.title,
                 message: confirmDialog.message,
-                confirmLabel: confirmDialog.action === 'delete' ? 'Confirm Delete' : 'Close',
-                onConfirm: confirmDialog.action === 'delete' ? confirmDelete : closeConfirmDialog,
+                confirmLabel: confirmDialog.action === 'delete' ? 'Confirm Delete' : confirmDialog.action === 'archive' ? 'Confirm Archive' : 'Close',
+                onConfirm: confirmDialog.action === 'delete' ? confirmDelete : confirmDialog.action === 'archive' ? confirmArchive : closeConfirmDialog,
                 onCancel: closeConfirmDialog,
             })
         ))
