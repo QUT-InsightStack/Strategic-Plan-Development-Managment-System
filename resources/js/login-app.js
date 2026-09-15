@@ -36,10 +36,39 @@ async function loginRequest(credentials) {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-        throw new Error(data.message || 'Invalid credentials.');
+        const error = new Error(data.message || 'Invalid credentials.');
+        error.status = response.status;
+
+        // The API sends Retry-After (seconds) alongside 429 when an account is
+        // locked. Without it the form would have no idea how long to wait.
+        const retryAfter = Number(response.headers.get('Retry-After'));
+        error.retryAfter = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : null;
+
+        throw error;
     }
 
     return data;
+}
+
+/**
+ * Fallback lock length when the API does not send Retry-After.
+ *
+ * Kept short deliberately: re-enabling the form after a minute lets the server
+ * decide authoritatively whether the account is still locked, rather than this
+ * page stranding someone behind a countdown it had to invent.
+ */
+const FALLBACK_LOCK_SECONDS = 60;
+
+function formatLockCountdown(totalSeconds) {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+        return `${hours}h ${String(minutes).padStart(2, '0')}m`;
+    }
+
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
 async function currentUserRequest() {
@@ -119,6 +148,10 @@ function LoginForm({ status, setStatus }) {
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [lockedUntil, setLockedUntil] = useState(null);
+    const [lockSecondsLeft, setLockSecondsLeft] = useState(0);
+
+    const isLocked = lockedUntil !== null;
 
     useEffect(() => {
         const savedEmail = window.localStorage.getItem('spms.rememberedEmail');
@@ -128,6 +161,28 @@ function LoginForm({ status, setStatus }) {
             setRemember(true);
         }
     }, []);
+
+    useEffect(() => {
+        if (lockedUntil === null) return undefined;
+
+        function tick() {
+            const remaining = Math.ceil((lockedUntil - Date.now()) / 1000);
+
+            if (remaining <= 0) {
+                setLockedUntil(null);
+                setLockSecondsLeft(0);
+                setStatus('You can try signing in again.', 'info');
+                return;
+            }
+
+            setLockSecondsLeft(remaining);
+        }
+
+        tick();
+        const timer = window.setInterval(tick, 1000);
+
+        return () => window.clearInterval(timer);
+    }, [lockedUntil]);
 
     function validate() {
         const nextErrors = {};
@@ -149,6 +204,8 @@ function LoginForm({ status, setStatus }) {
 
     async function handleSubmit(event) {
         event.preventDefault();
+
+        if (isLocked) return;
 
         if (!validate()) {
             setStatus('Check the highlighted fields and try again.', 'error');
@@ -189,7 +246,15 @@ function LoginForm({ status, setStatus }) {
                 window.location.href = accessSession.home;
             }, 1000);
         } catch (error) {
-            setStatus(error.message, 'error');
+            if (error.status === 429) {
+                // The banner carries the lockout message, so the inline status
+                // line is cleared to avoid saying the same thing twice.
+                setLockedUntil(Date.now() + (error.retryAfter || FALLBACK_LOCK_SECONDS) * 1000);
+                setPassword('');
+                setStatus('', 'info');
+            } else {
+                setStatus(error.message, 'error');
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -207,6 +272,29 @@ function LoginForm({ status, setStatus }) {
         React.createElement(
             'form',
             { className: 'login-form', noValidate: true, onSubmit: handleSubmit },
+            isLocked
+                ? React.createElement(
+                    'div',
+                    { className: 'login-lockout', role: 'alert' },
+                    React.createElement('h2', null, 'Account temporarily locked'),
+                    React.createElement(
+                        'p',
+                        null,
+                        'Too many failed sign in attempts. This account has been locked to protect it from unauthorised access.'
+                    ),
+                    React.createElement(
+                        'p',
+                        { className: 'login-lockout__countdown' },
+                        'You can try again in ',
+                        React.createElement('strong', null, formatLockCountdown(lockSecondsLeft))
+                    ),
+                    React.createElement(
+                        'p',
+                        { className: 'login-lockout__help' },
+                        'Contact a Technical Administrator if you need the account unlocked sooner.'
+                    )
+                )
+                : null,
             React.createElement(
                 'div',
                 { className: `field-group ${errors.email ? 'has-error' : ''}` },
@@ -218,6 +306,7 @@ function LoginForm({ status, setStatus }) {
                     autoComplete: 'email',
                     placeholder: 'Enter your email id',
                     value: email,
+                    disabled: isLocked,
                     onChange: (event) => setEmail(event.target.value),
                 }),
                 React.createElement(FieldError, { message: errors.email })
@@ -236,6 +325,7 @@ function LoginForm({ status, setStatus }) {
                         autoComplete: 'current-password',
                         placeholder: 'Enter your password',
                         value: password,
+                        disabled: isLocked,
                         onChange: (event) => setPassword(event.target.value),
                     }),
                     React.createElement(
@@ -279,7 +369,11 @@ function LoginForm({ status, setStatus }) {
     'Forgot Password?'
 )
             ),
-            React.createElement('button', { className: 'signin-button', type: 'submit', disabled: isSubmitting }, isSubmitting ? 'Signing in...' : 'Sign in'),
+            React.createElement(
+                'button',
+                { className: 'signin-button', type: 'submit', disabled: isSubmitting || isLocked },
+                isLocked ? `Locked - ${formatLockCountdown(lockSecondsLeft)}` : isSubmitting ? 'Signing in...' : 'Sign in'
+            ),
             React.createElement('p', { className: `form-status is-${status.type}`, role: 'status', 'aria-live': 'polite' }, status.message),
             React.createElement('p', { className: 'access-note' }, "Access is granted based on the user's assigned role and permissions.")
         )
