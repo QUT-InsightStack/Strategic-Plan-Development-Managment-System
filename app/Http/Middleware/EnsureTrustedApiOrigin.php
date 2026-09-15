@@ -21,7 +21,10 @@ class EnsureTrustedApiOrigin
          * Cookie-authenticated mutation requests are still protected.
          * Bearer/API clients without a cookie are also allowed.
          */
-        if (! $request->cookies->has('access_token')) {
+        if (
+            $request->is('api/auth/login')
+            || ! $request->cookies->has('access_token')
+        ) {
             return $next($request);
         }
 
