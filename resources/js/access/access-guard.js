@@ -1,5 +1,6 @@
 import { routeRules } from './access-policy.js';
 import { can, createAccessSession, getAccessSession, saveAccessSession } from './access-session.js';
+import { startSessionTimeout } from '../session-timeout.js';
 
 let recoveryStarted = false;
 
@@ -39,5 +40,10 @@ export function enforcePageAccess(pathname = window.location.pathname) {
         window.location.replace('/access-denied');
         return false;
     }
+
+    // Every authenticated page funnels through here, so this is the single
+    // place the inactivity watcher needs to start.
+    startSessionTimeout();
+
     return true;
 }

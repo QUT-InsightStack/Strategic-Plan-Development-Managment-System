@@ -44,9 +44,21 @@ Route::view('/strategic-plans/create', 'pages.strategic-plan')->name('strategic-
 Route::get('/strategic-plans/{id}/edit', function (int $id) {
     return view('pages.strategic-plans.edit', ['planId' => $id]);
 })->name('strategic-plans.edit');
-Route::get('/strategic-plans/{id}/objectives', function (int $id) {
-    return view('pages.strategic-plans.objectives', ['planId' => $id]);
-})->name('strategic-plans.objectives');
+Route::view('/strategic-plans/finalize', 'pages.strategic-plans.finalize', ['planId' => null])
+    ->name('strategic-plans.finalize.index');
+Route::get('/strategic-plans/{id}/finalize', function (int $id) {
+    return view('pages.strategic-plans.finalize', ['planId' => $id]);
+})->whereNumber('id')->name('strategic-plans.finalize');
+Route::get('/strategic-plans/{id}/objectives', function (Request $request, int $id) {
+    $parameters = ['plan_id' => $id];
+    $edit = $request->query('edit');
+
+    if (is_string($edit) && preg_match('/^[1-9][0-9]*$/D', $edit)) {
+        $parameters['edit'] = $edit;
+    }
+
+    return redirect('/strategic-objectives?' . http_build_query($parameters));
+})->whereNumber('id')->name('strategic-plans.objectives');
 Route::redirect('/strategic-plan', '/strategic-plans/create')->name('strategic-plan');
 Route::view('/strategic-objectives', 'pages.strategic-objectives.index')->name('strategic-objectives.index');
 Route::view('/pdp-chapters', 'pages.pdp-chapters', ['mode' => 'view'])->name('pdp-chapters.index');
@@ -56,8 +68,10 @@ Route::view('/pdp-chapters/{chapter}', 'pages.pdp-chapters', ['mode' => 'detail'
     ->name('pdp-chapters.show');
 Route::view('/office', 'pages.office')->name('office');
 Route::view('/role-management', 'pages.role-management')->name('role-management.index');
+Route::view('/settings', 'pages.settings')->name('settings.index');
 Route::view('/user-management', 'pages.user-management')->name('user-management.index');
 Route::view('/login-history', 'pages.login-history')->name('login-history.index');
+Route::view('/audit-logs', 'pages.audit-logs')->name('audit-logs.index');
 Route::view('/manual-backup', 'pages.manual-backup')->name('manual-backup.index');
 Route::view(
     '/workflow-configuration',
@@ -78,3 +92,5 @@ Route::get('/resource-form.html', function (Request $request) {
     $query = $request->getQueryString();
     return redirect()->to('/resource-form' . ($query ? "?{$query}" : ''));
 });
+Route::view('/consolidate-inputs', 'pages.consolidate-inputs')->name('consolidate-inputs');
+Route::view('/mappings', 'pages.mappings')->name('mappings');

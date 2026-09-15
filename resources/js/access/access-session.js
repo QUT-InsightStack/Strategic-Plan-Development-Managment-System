@@ -1,5 +1,6 @@
 import { ACCESS_SESSION_KEY, PERMISSIONS, hasRolePolicy, normalizePermissionList, policyForRole } from './access-policy.js';
 import { displayRoleName } from './role-labels.js';
+import { rememberOfficeSession } from '../objective-assignment-storage.js';
 
 function resolveSessionHome(roleName, permissions) {
     const policy = policyForRole(roleName);
@@ -40,6 +41,7 @@ export function createAccessSession(user) {
 
     return {
         userId: user?.user_id,
+        office: user?.office || '',
         name: user?.name || `${user?.first_name || ''} ${user?.last_name || ''}`.trim(),
         roleName,
         roleLabel: displayRoleName(roleName, ''),
@@ -51,6 +53,7 @@ export function createAccessSession(user) {
 export function saveAccessSession(session) {
     window.sessionStorage.setItem(ACCESS_SESSION_KEY, JSON.stringify(session));
     window.localStorage.setItem(ACCESS_SESSION_KEY, JSON.stringify(session));
+    rememberOfficeSession(session);
     return session;
 }
 

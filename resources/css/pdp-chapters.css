@@ -6,7 +6,7 @@
 @import './layouts/app-shell.css';
 @import './layouts/sidebar.css';
 
-.pdp-page { min-height: 100vh; background: var(--color-primary-soft); }
+.pdp-page { min-height: 100vh; background: var(--color-background); }
 .pdp-container { max-width: none; }
 .pdp-header { display: flex; max-width: none; align-items: center; justify-content: space-between; gap: var(--space-4); }
 .pdp-filter-card { margin-bottom: var(--space-4); overflow: hidden; }
@@ -17,12 +17,13 @@
 .pdp-table-card { padding: 0; overflow: hidden; }
 .pdp-table-scroll { width: 100%; overflow-x: auto; }
 .pdp-table { width: 100%; border-collapse: collapse; font-size: var(--font-size-xs); }
-.pdp-table th { padding: var(--space-3); color: var(--color-primary); background: #eef5fb; text-align: left; letter-spacing: .015em; white-space: nowrap; }
+.pdp-table th { padding: var(--space-3); color: var(--color-primary); background: var(--color-surface-header); text-align: left; letter-spacing: .015em; white-space: nowrap; }
 .pdp-table td { max-width: 320px; padding: var(--space-3); border-top: 1px solid var(--color-border-subtle); color: var(--color-text-secondary); vertical-align: top; }
 .pdp-table__title { min-width: 170px; color: var(--color-primary) !important; font-weight: var(--font-weight-semibold); }
 .pdp-table__title a { color: var(--color-primary); text-decoration: none; }
 .pdp-table__title a:hover { text-decoration: underline; }
 .pdp-table__description { min-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pdp-table__actions { display: flex; gap: var(--space-2, 8px); flex-wrap: wrap; }
 .pdp-table__select { width: 64px; text-align: center !important; }
 .pdp-table__select input { width: 17px; height: 17px; accent-color: var(--color-primary); }
 .pdp-table__empty { padding: var(--space-8) !important; text-align: center; }

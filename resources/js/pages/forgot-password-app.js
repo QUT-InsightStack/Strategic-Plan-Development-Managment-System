@@ -284,7 +284,7 @@ setIsSubmitting(false);
             React.createElement(
                 'button',
                 {
-                    className: 'signin-button',
+                    className: 'ui-button ui-button--primary signin-button',
                     type: 'submit',
                     disabled: isSubmitting,
                 },
