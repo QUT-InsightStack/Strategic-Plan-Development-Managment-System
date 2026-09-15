@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Http\Middleware\ValidateAuthVersion;
+use App\Models\PdpChapter;
 use App\Models\Permission;
 use App\Models\PdpChapter;
 use App\Models\Role;
@@ -33,6 +34,11 @@ class PdpChapterTest extends TestCase
     public function test_authenticated_user_can_view_but_cannot_manage_chapters(): void
     {
         $viewer = $this->createUser('Planning Officer');
+        $chapter = PdpChapter::create([
+            'chapter_title' => 'Existing chapter',
+            'chapter_description' => 'Planning context.',
+            'created_by' => $viewer->user_id,
+        ]);
         $this->actingAs($viewer, 'api');
         $this->withoutMiddleware(ValidateAuthVersion::class);
 

@@ -21,6 +21,14 @@ use Illuminate\Validation\ValidationException;
 
 class StrategicObjectiveController extends Controller
 {
+    private const RESPONSE_RELATIONS = [
+        'strategicPlan.creator',
+        'creator',
+        'updater',
+        'pdpChapters',
+        'presidentialAgendaItems',
+    ];
+
     public function __construct(
         private readonly StrategicLogWriter $logWriter,
         private readonly StrategicPlanAuthorizationService $authorizationService,
@@ -101,7 +109,9 @@ class StrategicObjectiveController extends Controller
             $query->whereYear('updated_at', $filters['year']);
         }
 
-        $objectives = $query->orderByDesc('updated_at')->paginate($filters['per_page'] ?? 10);
+        $objectives = $query->orderByDesc('updated_at')
+            ->orderByDesc('objective_id')
+            ->paginate($filters['per_page'] ?? 10);
 
         return response()->json([
             'success' => true,
@@ -352,6 +362,9 @@ class StrategicObjectiveController extends Controller
                 'updater',
             ]),
         ]);
+            'message' => 'Updated',
+            'data' => $objective->fresh(self::RESPONSE_RELATIONS),
+        ], 200);
     }
 
     $restoredStatus = $objective->status_before_archive ?? 'draft';

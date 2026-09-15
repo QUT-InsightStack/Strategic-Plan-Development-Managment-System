@@ -79,7 +79,8 @@ return new class extends Migration
          * Preserve those audit records while detaching them from missing
          * user account.
          */
-        DB::table(self::TABLE)->whereNotNull('user_id')
+        DB::table(self::TABLE)
+            ->whereNotNull('user_id')
             ->whereNotIn('user_id', DB::table('tblusers')->select('user_id'))
             ->update(['user_id' => null]);
 
@@ -279,8 +280,10 @@ return new class extends Migration
 
     private function foreignKeyExists(string $constraintName): bool
     {
-        if (DB::getDriverName() === 'sqlite') {
-            return collect(Schema::getForeignKeys(self::TABLE))->contains(fn ($key) => $key['columns'] === ['user_id']);
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            return collect(Schema::getForeignKeys(self::TABLE))->contains(
+                fn (array $foreignKey): bool => $foreignKey['columns'] === ['user_id']
+            );
         }
 
         return DB::table('information_schema.TABLE_CONSTRAINTS')
