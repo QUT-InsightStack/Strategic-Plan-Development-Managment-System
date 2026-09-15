@@ -5,7 +5,7 @@ import { AppDialog } from '../components/AppDialog.js';
 
 const { useMemo, useState } = React;
 
-const STATUS_LABELS = { active: 'Active', archived: 'Archived', inactive: 'Inactive' };
+const STATUS_LABELS = { active: 'Active', archived: 'Archived', deleted: 'Deleted', inactive: 'Inactive' };
 const STATUS_BADGES = { active: 'success', archived: 'archived', inactive: 'neutral' };
 
 const tabs = [
@@ -72,6 +72,8 @@ export function ReferenceDataManagementApp() {
         if (activeTab !== 'agenda') return [];
         const term = filters.search.trim().toLowerCase();
         return rows.filter((row) =>
+            // A deleted item is retained as a record but is never an active option.
+            row.status !== 'deleted' &&
             (!filters.status || row.status === filters.status) &&
             (!term || `${row.id} ${row.title} ${row.note}`.toLowerCase().includes(term))
         );
@@ -105,6 +107,25 @@ export function ReferenceDataManagementApp() {
         setNotice({ type: 'success', message: `${target.id} archived successfully.` });
     }
 
+    function requestDelete(row) {
+        setConfirmDialog({
+            open: true,
+            variant: 'danger',
+            title: 'Delete Presidential Agenda?',
+            message: `Delete \u201C${row.title}\u201D (${row.id})? It will be removed from the agenda list. The record is retained so existing references and history stay intact.`,
+            row,
+            action: 'delete',
+        });
+    }
+
+    function confirmDelete() {
+        const target = confirmDialog.row;
+
+        closeConfirmDialog();
+        setRows((current) => current.map((row) => (row.id === target.id ? { ...row, status: 'deleted' } : row)));
+        setNotice({ type: 'success', message: `${target.id} deleted successfully.` });
+    }
+
     function chooseTab(tab) {
         setActiveTab(tab.id);
         setFilters({ status: '', time: '', search: '' });
@@ -129,8 +150,8 @@ export function ReferenceDataManagementApp() {
             variant: confirmDialog.variant,
             title: confirmDialog.title,
             message: confirmDialog.message,
-            confirmLabel: confirmDialog.action === 'archive' ? 'Confirm Archive' : 'Close',
-            onConfirm: confirmDialog.action === 'archive' ? confirmArchive : closeConfirmDialog,
+            confirmLabel: confirmDialog.action === 'archive' ? 'Confirm Archive' : confirmDialog.action === 'delete' ? 'Confirm Delete' : 'Close',
+            onConfirm: confirmDialog.action === 'archive' ? confirmArchive : confirmDialog.action === 'delete' ? confirmDelete : closeConfirmDialog,
             onCancel: closeConfirmDialog,
         }),
         React.createElement('main', { className: 'app-shell-main reference-data-page' },
@@ -178,7 +199,7 @@ export function ReferenceDataManagementApp() {
                         onReview: (row) => { window.location.href = `/administrative-admin/reference-data/agenda/${encodeURIComponent(row.id)}/edit?mode=review`; },
                         onUpdate: (row) => { window.location.href = `/administrative-admin/reference-data/agenda/${encodeURIComponent(row.id)}/edit`; },
                         onArchive: requestArchive,
-                        onDelete: (row) => setNotice({ type: 'info', message: `Delete for ${row.id} requires backend approval and a confirmation workflow.` }),
+                        onDelete: requestDelete,
                     }),
                     React.createElement('footer', { className: 'reference-table-footer' },
                         React.createElement('span', null, `0 of ${visibleRows.length} row(s) selected.`),
