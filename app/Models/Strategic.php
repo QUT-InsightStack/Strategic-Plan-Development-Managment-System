@@ -10,6 +10,7 @@ class Strategic extends Model
     use HasFactory;
 
     protected $table = 'tblstrategic_record';
+
     protected $primaryKey = 'record_id';
 
     protected $fillable = [
@@ -111,5 +112,10 @@ class Strategic extends Model
     {
         return $this->hasMany(StrategicObjective::class, 'strategic_plan_id', 'record_id')
             ->where('status', '!=', 'deleted');
+    }
+
+    public function inputs()
+    {
+        return $this->hasMany(ImplementationInput::class, 'strategic_plan_id', 'record_id');
     }
 }

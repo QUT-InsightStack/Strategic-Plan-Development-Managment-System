@@ -32,6 +32,22 @@ return [
 
     'connections' => [
 
+        // Test credentials never fall back to the application's DB_* settings.
+        'mysql_testing' => [
+            'driver' => 'mysql',
+            'host' => env('TEST_DB_HOST', '127.0.0.1'),
+            'port' => env('TEST_DB_PORT', '3306'),
+            'database' => env('TEST_DB_DATABASE', 'db_spdms_test'),
+            'username' => env('TEST_DB_USERNAME', 'spdms_test'),
+            'password' => env('TEST_DB_PASSWORD', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => 'InnoDB',
+        ],
+
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DB_URL'),

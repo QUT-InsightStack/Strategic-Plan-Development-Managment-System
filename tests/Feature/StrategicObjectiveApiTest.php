@@ -19,7 +19,7 @@ class StrategicObjectiveApiTest extends TestCase
 
     public function test_authorized_user_can_create_an_objective_and_backend_sets_created_by(): void
     {
-        $actor = $this->createUserWithPermissions(['strategic_objectives.create']);
+        $actor = $this->createUserWithPermissions(['strategic_objectives.create', 'strategic_objectives.assign_responsible_unit']);
         $plan = $this->createPlan($actor, ['status' => 'finished']);
 
         $this->actingAs($actor, 'api');
@@ -189,7 +189,7 @@ class StrategicObjectiveApiTest extends TestCase
     public function test_authorized_user_can_update_an_objective_without_changing_creation_or_relationship_metadata(): void
     {
         $creator = $this->createUser();
-        $actor = $this->createUserWithPermissions(['strategic_objectives.update']);
+        $actor = $this->createUserWithPermissions(['strategic_objectives.update', 'strategic_objectives.assign_responsible_unit']);
         $plan = $this->createPlan($creator, ['status' => 'finished']);
         $objective = $this->createObjective($plan, $creator, [
             'objective_title' => 'Original objective',

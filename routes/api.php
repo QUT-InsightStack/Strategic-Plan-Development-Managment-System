@@ -14,6 +14,9 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RolePremissionController;
 use App\Http\Controllers\StrategicController;
 use App\Http\Controllers\StrategicObjectiveController;
+use App\Http\Controllers\ResponsibleUnitController;
+use App\Http\Controllers\ObjectiveCommentController;
+use App\Http\Controllers\ImplementationInputController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SecuritySettingsController;
 use Illuminate\Support\Facades\Route;
@@ -267,6 +270,16 @@ Route::middleware(['auth:api','auth.version',])->group(function () {
     )->whereNumber('planId');
 
     // Strategic objectives, including plan-filtered listing
+    Route::get('responsible-units', [ResponsibleUnitController::class, 'index']);
+    Route::put('strategic-objectives/responsible-unit', [ResponsibleUnitController::class, 'assign']);
+    Route::put('strategic-objectives/{id}/responsible-unit', [ResponsibleUnitController::class, 'assign'])->whereNumber('id');
+    Route::get('strategic-objectives/{objectiveId}/comments', [ObjectiveCommentController::class, 'index'])->whereNumber('objectiveId');
+    Route::post('strategic-objectives/{objectiveId}/comments', [ObjectiveCommentController::class, 'store'])->whereNumber('objectiveId');
+    Route::get('strategic-objectives/{objectiveId}/inputs', [ImplementationInputController::class, 'index'])->whereNumber('objectiveId');
+    Route::post('strategic-objectives/{objectiveId}/inputs', [ImplementationInputController::class, 'store'])->whereNumber('objectiveId');
+    Route::get('strategic-plans/{planId}/inputs', [ImplementationInputController::class, 'index'])->whereNumber('planId');
+    Route::post('strategic-plans/{planId}/inputs', [ImplementationInputController::class, 'store'])->whereNumber('planId');
+
     Route::get(
         'strategic-plans/{planId}/objectives',
         [StrategicObjectiveController::class, 'byPlan']
