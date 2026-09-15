@@ -27,6 +27,40 @@ class StrategicObjectiveAlignmentService
         );
     }
 
+    /**
+     * Replace supplied lists only. The caller must lock the objective in a transaction.
+     * Retained pivots (including historical inactive agenda links) are never rewritten.
+     */
+    public function update(StrategicObjective $objective, array $data): array
+    {
+        $changes = [];
+
+        foreach ([
+            'pdp_chapter_ids' => $objective->pdpChapters(),
+            'presidential_agenda_item_ids' => $objective->presidentialAgendaItems(),
+        ] as $field => $relation) {
+            if (! array_key_exists($field, $data)) {
+                continue;
+            }
+
+            $existing = $relation->newPivotQuery()->lockForUpdate()
+                ->pluck($relation->getRelatedPivotKeyName())->all();
+            $added = array_diff($data[$field], $existing);
+            $removed = array_values(array_diff($existing, $data[$field]));
+
+            $this->attachNewMappings($relation, $field, $added, activeOnly: $field === 'presidential_agenda_item_ids');
+            if ($removed !== []) {
+                $relation->detach($removed);
+            }
+
+            if ($added !== [] || $removed !== []) {
+                $changes[$field] = ['added' => array_values($added), 'removed' => $removed];
+            }
+        }
+
+        return $changes;
+    }
+
     private function attachNewMappings(BelongsToMany $relation, string $field, array $ids, bool $activeOnly = false): void
     {
         if ($ids === []) {

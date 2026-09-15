@@ -271,6 +271,10 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
     )->whereNumber('planId');
 
     // Strategic objectives, including plan-filtered listing
+    Route::put(
+        'strategic-objectives/{id}/alignments',
+        [StrategicObjectiveController::class, 'updateAlignments']
+    )->whereNumber('id');
     Route::post(
         'strategic-objectives/{id}/alignments',
         [StrategicObjectiveController::class, 'storeAlignments']
@@ -376,7 +380,6 @@ Route::middleware([
     Route::patch('', [SystemSettingsController::class, 'update'])
         ->middleware('permission:settings.manage');
 });
-
 
 
 

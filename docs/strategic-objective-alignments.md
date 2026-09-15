@@ -1,8 +1,8 @@
 # Strategic Objective alignment mappings
 
 Strategic Objective responses include the PDP Chapters and Presidential Agenda
-items linked to each objective. Planning Officers can explicitly add mappings to
-existing objectives through the alignment creation endpoint. The backend uses
+items linked to each objective. Planning Officers can add, replace, and remove
+mappings on existing objectives through the alignment endpoints. The backend uses
 Eloquent many-to-many relationships; it does not infer links from titles, codes,
 or the parent plan.
 
@@ -65,6 +65,49 @@ locks on selected references while checking and inserting mappings. Duplicate
 checks use locking reads, and the composite primary keys provide a final guard
 against competing writers. Database uniqueness conflicts are returned as `422`
 and roll back the batch.
+
+### Update mappings
+
+`PUT /api/strategic-objectives/{id}/alignments`
+
+Requires the same authentication, `strategic_objectives.update` permission,
+plan scope authorization, and editable objective/plan status as creation.
+Returns `200` with `success`, `message`, and the refreshed objective in `data`.
+The same `401`, `403`, `404`, and `422` error envelopes apply.
+
+```json
+{
+  "pdp_chapter_ids": [2, 3],
+  "presidential_agenda_item_ids": []
+}
+```
+
+Each supplied list is the desired final set for that framework on the objective
+selected by the URL. For example, if the PDP set was `[1, 2]`, this request adds
+chapter 3, removes chapter 1, and retains chapter 2. It also clears all Presidential
+Agenda mappings. Other objectives, reference records, and the parent plan are not
+modified.
+
+- At least one list must be present. An omitted list is unchanged; an empty list
+  removes all mappings for that framework. Both empty lists are accepted.
+- Each list allows up to 100 distinct positive JSON integers. Invalid IDs,
+  malformed arrays, duplicate input IDs, and client-supplied target/audit fields
+  are rejected, using the same rules as creation. JSON objects (including `{}`
+  and objects with numeric keys) are rejected; use `[]` to clear mappings.
+- Newly added references must exist, and new agenda links must be active.
+  Previously linked inactive agenda items can be retained or removed.
+- Existing pairs are valid selections. Only added pairs are inserted and only
+  removed pairs are deleted. Retained pivot rows, including both timestamps,
+  remain unchanged. Saving the same set again (even in a different order) succeeds
+  without rewriting mappings, objective metadata, or an audit event.
+- Both mapping tables, the objective's `updated_by`/`updated_at`, and the
+  `strategic_objective.alignments_updated` audit event commit in one transaction.
+  The event identifies the actor and objective and records `changes`, with
+  `added` and `removed` ID lists for each changed framework. Invalid references,
+  database uniqueness conflicts, or audit failures roll back all changes.
+- Writes lock the parent plan before the selected objective; composite primary
+  keys continue to reject duplicate pairs. No additional mapping-table migration
+  is required.
 
 ### Read mappings
 
@@ -171,12 +214,43 @@ intact. No sample national-framework records or inferred mappings are seeded.
 
 `StrategicObjective::pdpChapters()` and `presidentialAgendaItems()` expose the
 forward relationships; each reference model exposes `strategicObjectives()` for
-the inverse relationship. User-initiated additions go through the alignment
+the inverse relationship. User-initiated mapping changes go through the alignment
 endpoint so validation, authorization, duplicate rejection, and audit logging
-are applied. No additional schema migration is needed for the creation endpoint;
+are applied. No additional schema migration is needed for creation or updates;
 the alignment-table migration above must already be applied.
 
 ## Verification
+
+### Update acceptance verification — 2026-09-16
+
+**161 related tests passed (983 assertions) on the isolated MySQL test database.**
+This includes 62 update cases, 59 creation cases, alignment reads/database guards,
+objective CRUD/archive/restore, and PDP Chapter regression tests.
+
+```powershell
+php -d xdebug.mode=off vendor/phpunit/phpunit/phpunit --filter='StrategicObjectiveAlignment|StrategicObjectiveApiTest|PdpChapterTest'
+```
+
+`StrategicObjectiveAlignmentUpdateTest` verifies API changes with authentication
+and session middleware enabled: additions, removals, clearing one/both frameworks,
+omitted lists, retained pivot timestamps, repeated/reordered selections, inactive
+historical references, changes by the same editor, and isolation from other
+objectives in the same or different plans. It checks saved data through subsequent
+GET requests and verifies audit metadata, validation failures, denied permissions
+and sessions, unavailable targets, and rollback after database/audit failures.
+Database uniqueness conflicts are injected to exercise the MySQL error path;
+simultaneous HTTP load was not tested.
+
+The controller syntax/structure and missing alignment eager-loading were repaired.
+Related test authentication now creates a real database session with the required
+JWT `sid` claim. Duplicate imports/fixtures, MySQL migration-test transaction
+handling, and outdated archive fixture assumptions were corrected. All changed
+PHP files and the JavaScript API module passed syntax checks; the implementation
+and alignment tests passed Pint, and `git diff --check` passed. The application
+database was not migrated or reset. This is a related regression run, not a
+claim that the complete application test suite passed.
+
+### Earlier verification
 
 Verification on 2026-09-15: 103 related tests passed (645 assertions), covering
 alignment reads/writes, objective CRUD, plan creation/lifecycle, PDP Chapters,

@@ -9,6 +9,9 @@ export function listAllStrategicObjectives(params = {}) {
 }
 export function createStrategicObjective(data) { return apiRequest(baseUrl, { method: 'POST', body: JSON.stringify(data) }); }
 export function updateStrategicObjective(id, data) { return apiRequest(`${baseUrl}/${id}`, { method: 'PUT', body: JSON.stringify(data) }); }
+export function updateStrategicObjectiveAlignments(id, data) {
+    return apiRequest(`${baseUrl}/${id}/alignments`, { method: 'PUT', body: JSON.stringify(data) });
+}
 export function updateStrategicObjectiveStatus(id, status) {
     return apiRequest(`${baseUrl}/${id}/status`, {
         method: 'PATCH',

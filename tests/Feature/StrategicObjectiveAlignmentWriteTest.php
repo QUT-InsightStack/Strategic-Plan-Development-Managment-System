@@ -191,7 +191,7 @@ class StrategicObjectiveAlignmentWriteTest extends TestCase
             'empty lists' => [['pdp_chapter_ids' => [], 'presidential_agenda_item_ids' => []], 'pdp_chapter_ids'],
         ];
         foreach (['pdp_chapter_ids', 'presidential_agenda_item_ids'] as $field) {
-            foreach ([null, '1', ['named' => 1], range(1, 101)] as $index => $value) {
+            foreach ([null, '1', ['named' => 1], range(1, 101), (object) [], (object) ['0' => 1]] as $index => $value) {
                 $cases["{$field} invalid list {$index}"] = [[$field => $value], $field];
             }
             foreach ([0, -1, 1.5, true, null, 'invalid', '1', [1]] as $index => $value) {
@@ -296,7 +296,8 @@ class StrategicObjectiveAlignmentWriteTest extends TestCase
             $model->update(['status' => 'deleted', 'deleted_at' => now()]);
         } elseif (str_starts_with($case, 'archived-')) {
             $model = $case === 'archived-plan' ? $this->plan : $this->objective;
-            $model->update(['status' => 'archived', 'archived_at' => now(), 'archived_by' => $this->officer->user_id]);
+            $metadata = $case === 'archived-objective' ? ['status_before_archive' => $model->status] : [];
+            $model->update([...$metadata, 'status' => 'archived', 'archived_at' => now(), 'archived_by' => $this->officer->user_id]);
         }
         $this->authenticateOfficer();
         $url = $case === 'missing' ? '/api/strategic-objectives/999999/alignments' : $this->endpoint();
@@ -308,8 +309,9 @@ class StrategicObjectiveAlignmentWriteTest extends TestCase
     {
         // Insert a conflicting pair after the duplicate check to exercise the database guard.
         $injected = false;
-        DB::connection()->beforeExecuting(function (string $query) use (&$injected): void {
-            if (! $injected && str_starts_with($query, 'insert into "tblobjective_presidential_agenda"')) {
+        $insertPrefix = 'insert into '.DB::connection()->getQueryGrammar()->wrapTable('tblobjective_presidential_agenda');
+        DB::connection()->beforeExecuting(function (string $query) use (&$injected, $insertPrefix): void {
+            if (! $injected && str_starts_with($query, $insertPrefix)) {
                 $injected = true;
                 $this->objective->presidentialAgendaItems()->attach($this->agenda->agenda_id);
             }
@@ -343,7 +345,7 @@ class StrategicObjectiveAlignmentWriteTest extends TestCase
 
     private function authenticateOfficer(): void
     {
-        $this->withToken(auth('api')->login($this->officer));
+        $this->authenticateApiUser($this->officer);
     }
 
     private function endpoint(): string
