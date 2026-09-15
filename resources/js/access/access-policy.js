@@ -112,6 +112,7 @@ const rolePolicies = {
     'Office Representative': { home: '/office', permissions: officePermissions },
     'Office/Agency': { home: '/office', permissions: officePermissions },
     'Offices / Agencies': { home: '/office', permissions: officePermissions },
+    'Responsible Unit User': { home: '/office', permissions: officePermissions },
     'Division Head': { home: '/strategic-plans', permissions: fullPlanningPermissions },
     Management: { home: '/strategic-plans', permissions: fullPlanningPermissions },
     Executive: { home: '/strategic-plans', permissions: fullPlanningPermissions },
@@ -156,4 +157,3 @@ export const routeRules = [
     { test: /^\/strategic-plans\/\d+\/edit(?:\/|$)/, permission: PERMISSIONS.PLANS_UPDATE },
     { test: /^\/strategic-(?:plans|objectives)(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
 ];
-

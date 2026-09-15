@@ -9,6 +9,7 @@ const ROLE_DISPLAY_NAMES = Object.freeze({
     'Office Representative': 'Office/Agency',
     'Offices / Agencies': 'Office/Agency',
     'Office/Agency': 'Office/Agency',
+    'Responsible Unit User': 'Office/Agency',
     Management: 'Management / Executive',
     Executive: 'Management / Executive',
     'Management / Executive': 'Management / Executive',

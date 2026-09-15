@@ -4,6 +4,8 @@ import {
     updateStrategicObjective,
     deleteStrategicObjective,
     listAllStrategicObjectives,
+    assignResponsibleUnit,
+    listResponsibleUnits,
     updateStrategicObjectiveStatus,
 } from '../api/strategic-objectives-api.js';
 import { listStrategicPlans } from '../api/strategic-plans-api.js';
@@ -15,7 +17,7 @@ import { PageHeader } from '../components/PageHeader.js';
 import { enforcePageAccess } from '../access/access-guard.js';
 import { PERMISSIONS } from '../access/access-policy.js';
 import { can, getAccessSession } from '../access/access-session.js';
-import { applyLocalObjectiveAssignments, assignObjectiveLocally, getAssignableUnits } from '../objective-assignment-storage.js';
+import { getAssignableUnits } from '../objective-assignment-storage.js';
 
 enforcePageAccess();
 
@@ -84,6 +86,7 @@ function StrategicObjectivesListApp() {
     const [submitting, setSubmitting] = useState(false);
     const [assigning, setAssigning] = useState(null);
     const [assignmentError, setAssignmentError] = useState('');
+    const [responsibleUnits, setResponsibleUnits] = useState([]);
     const [page, setPage] = useState(1);
     const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
     const [loading, setLoading] = useState(true);
@@ -103,12 +106,15 @@ function StrategicObjectivesListApp() {
             const payload = await listAllStrategicObjectives({ ...nextFilters, page: targetPage });
             const lastPage = payload.meta?.last_page || 1;
             if (targetPage > lastPage) return await load(lastPage, nextFilters);
-            setObjectives(applyLocalObjectiveAssignments(payload.data || [])); setMeta(payload.meta || {}); setPage(targetPage); setAppliedFilters(nextFilters);
+            setObjectives(payload.data || []); setMeta(payload.meta || {}); setPage(targetPage); setAppliedFilters(nextFilters);
         } catch (error) { setStatus({ type: 'error', message: error.message }); }
         finally { setLoading(false); }
     }
     useEffect(() => {
         load(1);
+        listResponsibleUnits({ per_page: 100 })
+            .then(payload => setResponsibleUnits((payload.data || []).map(unit => unit.responsible_office_agency)))
+            .catch(error => setStatus({ type: 'error', message: error.message }));
         if (canCreateObjectives) {
             loadPlanOptions();
         }
@@ -169,7 +175,8 @@ function StrategicObjectivesListApp() {
         if (!canUpdateObjectives || !assigning) return;
         setSubmitting(true); setAssignmentError('');
         try {
-            const updated = assignObjectiveLocally(assigning, unit, getAccessSession());
+            const payload = await assignResponsibleUnit(assigning.objective_id, unit.trim());
+            const updated = payload.data;
             setObjectives(current => current.map(objective => objective.objective_id === updated.objective_id ? updated : objective));
             setAssigning(null);
             setStatus({ type: 'success', message: `Objective assigned to ${unit}. It is now available in that Office / Agency view.` });
@@ -590,7 +597,7 @@ canArchiveObjectives
         }),
         React.createElement(AssignUnitDialog, {
             objective: assigning, submitting, error: assignmentError,
-            availableUnits: getAssignableUnits(objectives, [getAccessSession()?.office]),
+            availableUnits: getAssignableUnits(objectives, [getAccessSession()?.office, ...responsibleUnits]),
             onAssign: assignUnit, onClose: () => { if (!submitting) setAssigning(null); },
         }),
        React.createElement(AppDialog, {

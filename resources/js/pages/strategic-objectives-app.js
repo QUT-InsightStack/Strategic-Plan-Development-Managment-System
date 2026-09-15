@@ -3,6 +3,8 @@ import {
     createStrategicObjective,
     deleteStrategicObjective,
     listStrategicObjectives,
+    assignResponsibleUnit,
+    listResponsibleUnits,
     updateStrategicObjective,
     updateStrategicObjectiveStatus,
 } from '../api/strategic-objectives-api.js';
@@ -13,7 +15,7 @@ import { ObjectiveFormDialog } from '../strategic-objectives/ObjectiveFormDialog
 import { enforcePageAccess } from '../access/access-guard.js';
 import { PERMISSIONS } from '../access/access-policy.js';
 import { can, getAccessSession } from '../access/access-session.js';
-import { applyLocalObjectiveAssignments, assignObjectiveLocally, getAssignableUnits } from '../objective-assignment-storage.js';
+import { getAssignableUnits } from '../objective-assignment-storage.js';
 
 enforcePageAccess();
 const canCreateObjectives = can(PERMISSIONS.OBJECTIVES_CREATE);
@@ -83,6 +85,7 @@ function StrategicObjectivesApp() {
     const [editing, setEditing] = useState(null);
     const [assigning, setAssigning] = useState(null);
     const [selectedUnit, setSelectedUnit] = useState('');
+    const [responsibleUnits, setResponsibleUnits] = useState([]);
     const [assignmentError, setAssignmentError] = useState('');
     const [formOpen, setFormOpen] = useState(false);
     const [formErrors, setFormErrors] = useState({});
@@ -100,9 +103,14 @@ function StrategicObjectivesApp() {
     async function load() {
         setLoading(true);
         try {
-            const [planPayload, objectivesPayload] = await Promise.all([getStrategicPlan(planId), listStrategicObjectives(planId)]);
-            const assignedObjectives = applyLocalObjectiveAssignments(objectivesPayload.data || []);
+            const [planPayload, objectivesPayload, unitsPayload] = await Promise.all([
+                getStrategicPlan(planId),
+                listStrategicObjectives(planId),
+                listResponsibleUnits({ per_page: 100 }),
+            ]);
+            const assignedObjectives = objectivesPayload.data || [];
             setPlan(planPayload.data); setObjectives(assignedObjectives);
+            setResponsibleUnits((unitsPayload.data || []).map(unit => unit.responsible_office_agency));
             const editId = new URLSearchParams(window.location.search).get('edit');
             if (editId && canUpdateObjectives) {
                 const objectiveToEdit = assignedObjectives.find((item) => String(item.objective_id) === editId);
@@ -233,14 +241,15 @@ async function confirmArchiveChange() {
     }
 }
     const archived = plan?.status === 'archived';
-    const availableUnits = getAssignableUnits(objectives, [getAccessSession()?.office]);
+    const availableUnits = getAssignableUnits(objectives, [getAccessSession()?.office, ...responsibleUnits]);
 
     async function assignUnit() {
         if (!assigning || !canUpdateObjectives || !selectedUnit.trim()) return;
         setSubmitting(true);
         setAssignmentError('');
         try {
-            const updated = assignObjectiveLocally(assigning, selectedUnit, getAccessSession());
+            const payload = await assignResponsibleUnit(assigning.objective_id, selectedUnit.trim());
+            const updated = payload.data;
             setObjectives(current => current.map(objective => objective.objective_id === updated.objective_id ? updated : objective));
             setAssigning(null);
             setStatus({ type: 'success', message: `Objective assigned to ${selectedUnit}. It is now available in that Office / Agency view.` });

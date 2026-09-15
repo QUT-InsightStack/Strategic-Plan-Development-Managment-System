@@ -1,5 +1,5 @@
 import { PERMISSIONS as P } from './access-policy.js';
-export const isOfficeRole = role => ['Office Representative', 'Office/Agency', 'Offices / Agencies'].includes(role);
+export const isOfficeRole = role => ['Office Representative', 'Office/Agency', 'Offices / Agencies', 'Responsible Unit User'].includes(role);
 export const officeItems = [
  { label: 'Planning Module', icon: 'bi-clipboard2-check', permission: P.PLANS_VIEW, children: [
   { label: 'Plan List', href: '/office', permission: P.PLANS_VIEW },

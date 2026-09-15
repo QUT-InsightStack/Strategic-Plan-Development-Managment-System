@@ -12,7 +12,7 @@ function normalize(value) {
 }
 
 export function rememberOfficeSession(session) {
-    const officeRoles = ['Office Representative', 'Office/Agency', 'Offices / Agencies'];
+    const officeRoles = ['Office Representative', 'Office/Agency', 'Offices / Agencies', 'Responsible Unit User'];
     const office = String(session?.office || '').trim();
     if (!office || !officeRoles.includes(session?.roleName)) return;
     const offices = read(OFFICES_KEY, []);
@@ -22,9 +22,8 @@ export function rememberOfficeSession(session) {
 }
 
 export function getAssignableUnits(objectives = [], additionalUnits = []) {
-    const assignments = Object.values(read(ASSIGNMENTS_KEY, {})).map(item => item.office);
     const existing = objectives.map(item => item.responsible_office_agency);
-    return [...new Set([...read(OFFICES_KEY, []), ...assignments, ...existing, ...additionalUnits, ...FALLBACK_UNITS].map(item => String(item || '').trim()).filter(Boolean))].sort();
+    return [...new Set([...read(OFFICES_KEY, []), ...existing, ...additionalUnits, ...FALLBACK_UNITS].map(item => String(item || '').trim()).filter(Boolean))].sort();
 }
 
 export function assignObjectiveLocally(objective, office, session = {}) {
@@ -52,5 +51,5 @@ export function applyLocalObjectiveAssignments(objectives = []) {
 export function objectivesAssignedToOffice(objectives = [], office = '') {
     const officeName = normalize(office);
     if (!officeName) return [];
-    return applyLocalObjectiveAssignments(objectives).filter(objective => normalize(objective.responsible_office_agency) === officeName);
+    return objectives.filter(objective => normalize(objective.responsible_office_agency) === officeName);
 }

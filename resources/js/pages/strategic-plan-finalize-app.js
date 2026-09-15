@@ -4,7 +4,6 @@ import { listStrategicObjectives } from '../api/strategic-objectives-api.js';
 import { enforcePageAccess } from '../access/access-guard.js';
 import { listLocalMappings } from '../mappings/mapping-storage.js';
 import { getLocalFinalization, listLocalAgencyInputs, saveLocalFinalization } from '../office-demo-storage.js';
-import { applyLocalObjectiveAssignments } from '../objective-assignment-storage.js';
 
 enforcePageAccess();
 
@@ -80,7 +79,7 @@ function FinalizeStrategicPlanApp() {
         ]).then(([planPayload, objectivePayload, relationPayload, inputPayload]) => {
             if (!active) return;
             setPlan({ ...planPayload.data, ...(getLocalFinalization(planId) || {}) });
-            setObjectives(applyLocalObjectiveAssignments(objectivePayload.data || []).filter(item => !['archived', 'deleted'].includes(item.status)));
+            setObjectives((objectivePayload.data || []).filter(item => !['archived', 'deleted'].includes(item.status)));
             setRelations((relationPayload.data || []).filter(item => !['archived', 'deleted'].includes(item.status)));
             const planInputs = inputPayload.data || [];
             setInputMeta({ summary: planInputs.reduce((summary, item) => ({ ...summary, [item.status]: Number(summary[item.status] || 0) + 1 }), {}) });

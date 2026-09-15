@@ -8,7 +8,7 @@ import { isOfficeRole } from '../access/office-navigation.js';
 import { enforcePageAccess } from '../access/access-guard.js';
 import { agendaCatalog, listLocalMappings, removeLocalMapping, saveLocalMappings, updateLocalMappingReference } from '../mappings/mapping-storage.js';
 import { listLocalAgencyInputs } from '../office-demo-storage.js';
-import { applyLocalObjectiveAssignments, objectivesAssignedToOffice } from '../objective-assignment-storage.js';
+import { objectivesAssignedToOffice } from '../objective-assignment-storage.js';
 
 const h = React.createElement;
 const { useEffect, useState } = React;
@@ -84,7 +84,7 @@ function MappingApp({ session }) {
         let active = true; setLoading(true); setMessage({ type: '', text: '' });
         Promise.all([listPdpChapters(), listStrategicObjectives(planId), Promise.resolve(officeMode ? listLocalAgencyInputs({ plan_id: planId, created_by: session.userId, per_page: 100 }) : { data: [] })]).then(([pdpResult, objectiveResult, inputResult]) => {
             if (!active) return;
-            const objectives = applyLocalObjectiveAssignments(objectiveResult.data || []).filter(item => !['archived', 'deleted'].includes(item.status));
+            const objectives = (objectiveResult.data || []).filter(item => !['archived', 'deleted'].includes(item.status));
             setCatalog({ agendas: agendaCatalog, pdp_chapters: pdpResult.data || [], dost_objectives: objectives, agency_inputs: inputResult.data || [], agency_objectives: officeMode ? objectivesAssignedToOffice(objectives, session.office) : [] });
             setMappings(listLocalMappings(planId, officeMode ? session.office : '')); setSelected({ agendas: [], pdp: [], dost: [] }); setAgencyItem(''); setSelectedMappingId(''); setDetails(blankDetails);
         }).catch(error => { if (active) setMessage({ type: 'error', text: errorText(error) }); }).finally(() => { if (active) setLoading(false); });
