@@ -118,4 +118,9 @@ class Strategic extends Model
     {
         return $this->hasMany(ImplementationInput::class, 'strategic_plan_id', 'record_id');
     }
+
+    public function documents()
+    {
+        return $this->hasMany(StrategicDocument::class, 'strategic_plan_id', 'record_id');
+    }
 }

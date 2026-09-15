@@ -20,6 +20,7 @@ use App\Http\Controllers\ImplementationInputController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\SecuritySettingsController;
+use App\Http\Controllers\StrategicDocumentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -234,6 +235,17 @@ Route::middleware(['auth:api','auth.version','auth.session','system.available',]
 */
 
 Route::middleware(['auth:api', 'auth.version','auth.session','system.available',])->group(function () {
+    Route::get('strategic-plans/{plan}/documents', [StrategicDocumentController::class, 'planIndex'])
+        ->whereNumber('plan')->middleware('permission:strategic_documents.view');
+    Route::post('strategic-plans/{plan}/documents', [StrategicDocumentController::class, 'storeForPlan'])
+        ->whereNumber('plan')->middleware('permission:strategic_documents.upload');
+    Route::get('strategic-objectives/{objective}/documents', [StrategicDocumentController::class, 'objectiveIndex'])
+        ->whereNumber('objective')->middleware('permission:strategic_documents.view');
+    Route::post('strategic-objectives/{objective}/documents', [StrategicDocumentController::class, 'storeForObjective'])
+        ->whereNumber('objective')->middleware('permission:strategic_documents.upload');
+    Route::get('strategic-documents/{document}/download', [StrategicDocumentController::class, 'download'])
+        ->whereNumber('document')->middleware('permission:strategic_documents.download');
+
     // Strategic plan management
     Route::get('strategic-plans', [PlanCreationController::class, 'index']);
     Route::post('strategic-plans', [PlanCreationController::class, 'store']);
