@@ -37,6 +37,7 @@ export const PERMISSIONS = Object.freeze({
     BACKUPS_VIEW: 'backups.view',
     BACKUPS_CREATE: 'backups.create',
     BACKUPS_DOWNLOAD: 'backups.download',
+    BACKUPS_RESTORE: 'backups.restore',
 });
 
 const fullPlanningPermissions = [
@@ -82,6 +83,7 @@ const technicalAdminPermissions = [
     PERMISSIONS.BACKUPS_VIEW,
     PERMISSIONS.BACKUPS_CREATE,
     PERMISSIONS.BACKUPS_DOWNLOAD,
+    PERMISSIONS.BACKUPS_RESTORE,
 ];
 
 const administrativeAdminPermissions = [

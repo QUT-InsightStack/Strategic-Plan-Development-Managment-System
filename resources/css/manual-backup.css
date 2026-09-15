@@ -23,6 +23,7 @@
 
 .backup-table td strong { display: block; color: var(--color-text); }
 .backup-filename { display: block; margin-top: 2px; color: var(--color-text-secondary); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; overflow-wrap: anywhere; }
+.backup-restore { margin-left: var(--space-2); }
 .backup-error { display: block; margin-top: var(--space-1); color: var(--color-danger); font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
 
 @media (max-width: 620px) {

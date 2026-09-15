@@ -1,7 +1,8 @@
 import { enforcePageAccess } from '../access/access-guard.js';
 import { PERMISSIONS } from '../access/access-policy.js';
 import { can, getAccessSession } from '../access/access-session.js';
-import { createBackup, downloadBackup, listBackups } from '../api/backups-api.js';
+import { createBackup, downloadBackup, listBackups, restoreBackup } from '../api/backups-api.js';
+import { logout } from '../auth-session.js';
 import { AppDialog } from '../components/AppDialog.js';
 import { PageHeader } from '../components/PageHeader.js';
 import { TechnicalAdminSidebar } from '../components/TechnicalAdminSidebar.js';
@@ -26,6 +27,7 @@ function ManualBackupApp() {
     const accessSession = getAccessSession();
     const canCreate = can(PERMISSIONS.BACKUPS_CREATE, accessSession);
     const canDownload = can(PERMISSIONS.BACKUPS_DOWNLOAD, accessSession);
+    const canRestore = can(PERMISSIONS.BACKUPS_RESTORE, accessSession);
 
     const [backups, setBackups] = useState([]);
     const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
@@ -34,8 +36,11 @@ function ManualBackupApp() {
     // runs, and so the button can show its own progress.
     const [creating, setCreating] = useState(false);
     const [downloadingId, setDownloadingId] = useState(null);
+    const [restoringId, setRestoringId] = useState(null);
     const [notice, setNotice] = useState({ type: '', message: '' });
-    const [confirmOpen, setConfirmOpen] = useState(false);
+    // One dialog serves the create confirmation, the restore confirmation and
+    // the sign-out notice that has to follow a restore.
+    const [dialog, setDialog] = useState({ open: false, kind: null, backup: null });
 
     async function loadBackups(page = 1) {
         setLoading(true);
@@ -56,7 +61,7 @@ function ManualBackupApp() {
 
     // A backup can take minutes, so warn before the tab is closed mid-run.
     useEffect(() => {
-        if (!creating) return undefined;
+        if (!creating && restoringId === null) return undefined;
 
         function warn(event) {
             event.preventDefault();
@@ -65,10 +70,14 @@ function ManualBackupApp() {
 
         window.addEventListener('beforeunload', warn);
         return () => window.removeEventListener('beforeunload', warn);
-    }, [creating]);
+    }, [creating, restoringId]);
+
+    function closeDialog() {
+        setDialog((current) => ({ ...current, open: false }));
+    }
 
     async function runBackup() {
-        setConfirmOpen(false);
+        closeDialog();
         setCreating(true);
         setNotice({ type: 'info', message: 'Creating backup. This can take a few minutes on a large database — leave this page open.' });
 
@@ -85,6 +94,28 @@ function ManualBackupApp() {
             await loadBackups(1);
         } finally {
             setCreating(false);
+        }
+    }
+
+    async function runRestore() {
+        const backup = dialog.backup;
+
+        closeDialog();
+        setRestoringId(backup.backup_id);
+        setNotice({ type: 'info', message: 'Restoring the database. This can take several minutes — leave this page open.' });
+
+        try {
+            await restoreBackup(backup.backup_id);
+
+            // Every session is invalidated by a restore, this one included, so
+            // there is nothing useful left to show on this page.
+            setNotice({ type: '', message: '' });
+            setDialog({ open: true, kind: 'restored', backup: null });
+        } catch (error) {
+            setNotice({ type: 'error', message: error.message });
+            await loadBackups(meta.current_page || 1);
+        } finally {
+            setRestoringId(null);
         }
     }
 
@@ -125,7 +156,7 @@ function ManualBackupApp() {
                                     className: 'ui-button ui-button--primary',
                                     type: 'button',
                                     disabled: creating,
-                                    onClick: () => setConfirmOpen(true),
+                                    onClick: () => setDialog({ open: true, kind: 'create', backup: null }),
                                 },
                                     React.createElement('i', { className: `bi ${creating ? 'bi-hourglass-split' : 'bi-database-down'}`, 'aria-hidden': 'true' }),
                                     creating ? 'Creating backup…' : 'Create backup'
@@ -190,7 +221,18 @@ function ManualBackupApp() {
                                                             React.createElement('i', { className: 'bi bi-download', 'aria-hidden': 'true' }),
                                                             downloadingId === backup.backup_id ? 'Preparing…' : 'Download'
                                                         )
-                                                        : React.createElement('span', { className: 'ui-help' }, backup.downloadable ? 'Not permitted' : 'Unavailable')
+                                                        : React.createElement('span', { className: 'ui-help' }, backup.downloadable ? 'Not permitted' : 'Unavailable'),
+                                                    backup.restorable && canRestore
+                                                        ? React.createElement('button', {
+                                                            className: 'ui-button ui-button--danger ui-button--sm backup-restore',
+                                                            type: 'button',
+                                                            disabled: restoringId !== null || creating,
+                                                            onClick: () => setDialog({ open: true, kind: 'restore', backup }),
+                                                        },
+                                                            React.createElement('i', { className: 'bi bi-arrow-counterclockwise', 'aria-hidden': 'true' }),
+                                                            restoringId === backup.backup_id ? 'Restoring…' : 'Restore'
+                                                        )
+                                                        : null
                                                 )
                                             ))
                                         )
@@ -210,14 +252,30 @@ function ManualBackupApp() {
         ),
 
         React.createElement(AppDialog, {
-            open: confirmOpen,
-            variant: 'danger',
-            title: 'Create backup',
-            message: 'This copies the entire database, including every user account and password hash. It can take several minutes and the file will be downloadable by anyone with backup download permission. Continue?',
-            confirmLabel: 'Create backup',
+            open: dialog.open,
+            variant: dialog.kind === 'restored' ? 'success' : 'danger',
+            title: dialog.kind === 'create'
+                ? 'Create backup'
+                : dialog.kind === 'restore'
+                    ? 'Restore this backup?'
+                    : 'Database restored',
+            message: dialog.kind === 'create'
+                ? 'This copies the entire database, including every user account and password hash. It can take several minutes and the file will be downloadable by anyone with backup download permission. Continue?'
+                : dialog.kind === 'restore'
+                    ? `Replace all system data with ${dialog.backup?.filename || 'this backup'}, taken ${formatTimestamp(dialog.backup?.created_at)}. Everything recorded since then is lost and cannot be recovered. Every signed-in user is signed out, including you.`
+                    : 'The database was replaced and all sessions were ended. Sign in again to continue.',
+            confirmLabel: dialog.kind === 'create'
+                ? 'Create backup'
+                : dialog.kind === 'restore'
+                    ? 'Restore database'
+                    : 'Return to sign in',
             cancelLabel: 'Cancel',
-            onConfirm: runBackup,
-            onCancel: () => setConfirmOpen(false),
+            onConfirm: dialog.kind === 'create'
+                ? runBackup
+                : dialog.kind === 'restore'
+                    ? runRestore
+                    : () => logout(),
+            onCancel: closeDialog,
         })
     );
 }
