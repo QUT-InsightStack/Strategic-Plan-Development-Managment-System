@@ -45,6 +45,18 @@ class PermissionSeeder extends Seeder
                 'module' => 'users',
             ],
             [
+                'permission_name' => 'View System Settings',
+                'description' => 'Allows viewing centralized system configuration.',
+                'code' => 'settings.view',
+                'module' => 'settings',
+            ],
+            [
+                'permission_name' => 'Manage System Settings',
+                'description' => 'Allows changing centralized system configuration and accessing the system during maintenance.',
+                'code' => 'settings.manage',
+                'module' => 'settings',
+            ],
+            [
                 'permission_name' => 'View Roles',
                 'description' => 'Allows viewing roles and their details.',
                 'code' => 'roles.view',
