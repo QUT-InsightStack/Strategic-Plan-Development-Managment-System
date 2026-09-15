@@ -13,6 +13,17 @@ export function createBackup() {
 }
 
 /**
+ * Replace the database contents with a backup.
+ *
+ * The response clears the access cookie and every session is invalidated,
+ * including the caller's, so nothing authenticated should be attempted after
+ * this resolves.
+ */
+export function restoreBackup(backupId) {
+    return apiRequest(`/api/backups/${backupId}/restore`, { method: 'POST' });
+}
+
+/**
  * Download a backup file.
  *
  * Fetched as a blob rather than navigating to the URL, so a 403 or a missing
