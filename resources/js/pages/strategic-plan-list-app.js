@@ -1,4 +1,5 @@
 import { copyStrategicPlan, deleteStrategicPlan, listStrategicPlans, updateStrategicPlanStatus } from '../api/strategic-plans-api.js';
+import { applySubmissionToPlan,getActiveApprovalWorkflow,submitPlanForApproval,} from '../data/plan-approval-demo-data.js';
 import { AppSidebar } from '../components/AppSidebar.js';
 import { AppDialog } from '../components/AppDialog.js';
 import { PageHeader } from '../components/PageHeader.js';
@@ -10,10 +11,11 @@ enforcePageAccess();
 const canCreatePlans = can(PERMISSIONS.PLANS_CREATE);
 const canReviewPlans = can(PERMISSIONS.PLANS_VIEW);
 const canUpdatePlans = can(PERMISSIONS.PLANS_UPDATE);
+const canSubmitPlans = can(PERMISSIONS.PLANS_UPDATE);
 const canArchivePlans = can(PERMISSIONS.PLANS_ARCHIVE);
 const canDeletePlans = can(PERMISSIONS.PLANS_DELETE);
 const canSelectPlans = canCreatePlans || canDeletePlans;
-const hasPlanActions = canReviewPlans || canUpdatePlans || canArchivePlans || canDeletePlans;
+const hasPlanActions = canReviewPlans || canUpdatePlans || canSubmitPlans || canArchivePlans || canDeletePlans;
 
 const { useEffect, useState } = React;
 const currentYear = new Date().getFullYear();
@@ -32,7 +34,8 @@ function StrategicPlanListApp() {
         setLoading(true);
         try {
             const payload = await listStrategicPlans({ search: filters.search, level: filters.level, status: filters.status, year: filters.year, page: targetPage });
-            setPlans(payload.data || []); setMeta(payload.meta || {}); setPage(targetPage); setSelectedIds([]);
+            setPlans(
+                (payload.data || []).map(applySubmissionToPlan)); setMeta(payload.meta || {}); setPage(targetPage); setSelectedIds([]);
         } catch (error) { setStatus({ type: 'error', message: error.message }); }
         finally { setLoading(false); }
     }
@@ -50,7 +53,8 @@ function StrategicPlanListApp() {
         const cleared = { search: '', office: '', level: '', status: '', year: '' };
         setFilters(cleared);
         setLoading(true);
-        listStrategicPlans({ page: 1 }).then((payload) => { setPlans(payload.data || []); setMeta(payload.meta || {}); setPage(1); setSelectedIds([]); }).catch((error) => setStatus({ type: 'error', message: error.message })).finally(() => setLoading(false));
+        listStrategicPlans({ page: 1 }).then((payload) => { setPlans(
+    (payload.data || []).map(applySubmissionToPlan)); setMeta(payload.meta || {}); setPage(1); setSelectedIds([]); }).catch((error) => setStatus({ type: 'error', message: error.message })).finally(() => setLoading(false));
     }
 
     function toggleSelection(id) {
@@ -100,8 +104,125 @@ function StrategicPlanListApp() {
         });
     }
 
+    function requestSubmission(plan) {
+    if (!canSubmitPlans) {
+        return;
+    }
+
+    if (plan.approval_status === 'under_approval') {
+        setDialog({
+            open: true,
+            variant: 'error',
+            title: 'Plan already submitted',
+            message:
+                'This Strategic Plan is already under approval.',
+            ids: [],
+            action: '',
+        });
+
+        return;
+    }
+
+    if (plan.status !== 'finished') {
+        setDialog({
+            open: true,
+            variant: 'error',
+            title: 'Plan is not eligible',
+            message:
+                'Only a finished Strategic Plan can be submitted for approval.',
+            ids: [],
+            action: '',
+        });
+
+        return;
+    }
+
+    const activeWorkflow =
+        getActiveApprovalWorkflow();
+
+    if (!activeWorkflow) {
+        setDialog({
+            open: true,
+            variant: 'error',
+            title: 'Submission unavailable',
+            message:
+                'No active approval workflow is configured. Please contact the Technical Administrator before submitting this plan.',
+            ids: [],
+            action: '',
+        });
+
+        return;
+    }
+
+    const firstStage = activeWorkflow.stages[0];
+
+    setDialog({
+        open: true,
+        variant: 'danger',
+        title: 'Submit Strategic Plan for approval?',
+        message:
+            `“${plan.title}” will enter the ` +
+            `“${activeWorkflow.name}” workflow. ` +
+            `The first stage will be ` +
+            `“${firstStage.name}”, assigned to ` +
+            `${firstStage.approver}.`,
+        ids: [plan.record_id],
+        action: 'submit',
+        plan,
+    });
+}
+
+
+function confirmSubmission() {
+    const plan = dialog.plan;
+
+    setDialog((current) => ({
+        ...current,
+        open: false,
+    }));
+
+    try {
+        const submission =
+            submitPlanForApproval(plan);
+
+        setPlans((current) =>
+            current.map((currentPlan) =>
+                currentPlan.record_id ===
+                plan.record_id
+                    ? applySubmissionToPlan(
+                        currentPlan
+                    )
+                    : currentPlan
+            )
+        );
+
+        setDialog({
+            open: true,
+            variant: 'success',
+            title: 'Plan submitted successfully',
+            message:
+                `“${plan.title}” is now under approval. ` +
+                `Current stage: ${submission.currentStage.name}. ` +
+                `Assigned to: ${submission.currentStage.approver}.`,
+            ids: [],
+            action: '',
+        });
+    } catch (error) {
+        setDialog({
+            open: true,
+            variant: 'error',
+            title: 'Submission failed',
+            message:
+                error.message ||
+                'The Strategic Plan could not be submitted.',
+            ids: [],
+            action: '',
+        });
+    }
+}
     async function confirmDialogAction() {
         if (dialog.action === 'delete') return confirmDeletion();
+        if (dialog.action === 'submit') { return confirmSubmission();}
         if (dialog.action !== 'status') return;
 
         const id = dialog.ids[0];
@@ -182,13 +303,17 @@ function StrategicPlanListApp() {
                 React.createElement('div', { className: 'ui-card__body' }, loading ? React.createElement('div', { className: 'ui-empty' }, 'Loading strategic plans…') : plans.length === 0 ? React.createElement('div', { className: 'ui-empty' }, 'No strategic plans match the current filters.') : React.createElement('div', { className: 'ui-table-wrap' }, React.createElement('table', { className: 'ui-table plans-table' },
                     React.createElement('thead', null, React.createElement('tr', null,
                         canSelectPlans ? React.createElement('th', { className: 'plans-select-column' }, React.createElement('input', { type: 'checkbox', checked: plans.length > 0 && selectedIds.length === plans.length, onChange: toggleAll, 'aria-label': 'Select all plans' })) : null,
-                        ['Plan ID', 'Plan Title', 'Status', 'Created By', 'Department', 'Latest Upload', 'Actions'].map((heading) => React.createElement('th', { key: heading }, heading))
+                        ['Plan ID', 'Plan Title', 'Status', 'Plan Status', 'Approval Status', 'Current Stage', 'Created By', 'Department', 'Latest Upload', 'Actions'].map((heading) => React.createElement('th', { key: heading }, heading))
                     )),
                     React.createElement('tbody', null, plans.map((plan) => React.createElement('tr', { key: plan.record_id },
                         canSelectPlans ? React.createElement('td', { className: 'plans-select-column' }, React.createElement('input', { type: 'checkbox', checked: selectedIds.includes(plan.record_id), onChange: () => toggleSelection(plan.record_id), 'aria-label': `Select ${plan.title}` })) : null,
                         React.createElement('td', null, React.createElement('span', { className: 'plans-id' }, String(plan.record_id).padStart(4, '0'))),
                         React.createElement('td', null, React.createElement('strong', null, plan.title)),
                         React.createElement('td', null, React.createElement('span', { className: `ui-badge ui-badge--${plan.status || 'draft'}` }, (plan.status || 'draft').replace(/^./, (letter) => letter.toUpperCase()))),
+                        React.createElement('td', null,plan.approval_status? React.createElement( 'span',{className:'ui-badge plan-approval-badge',},'Under Approval'): React.createElement('span',{className:'plan-approval-not-submitted',},'Not submitted' )),
+                        React.createElement('td',null,plan.approval_stage? React.createElement('div',{className:'plan-current-stage',},
+                        React.createElement('strong',null,plan.approval_stage.name),
+                        React.createElement('small',null,`Assigned to: ${plan.approval_stage.approver}`)): React.createElement('span',{className: 'ui-help', },'—')),
                         React.createElement('td', null, creatorName(plan)), React.createElement('td', null, plan.creator?.department || 'Pending DB field'),
                         React.createElement('td', null, plan.updated_at ? new Date(plan.updated_at).toLocaleDateString() : '—'),
                         React.createElement('td', { className: 'plans-actions-cell' }, hasPlanActions ? React.createElement('div', { className: 'ui-table__actions' },
@@ -217,6 +342,52 @@ function StrategicPlanListApp() {
             : 'Update'
     )
     : null,
+        canSubmitPlans &&
+plan.status === 'finished' &&
+!plan.approval_status
+    ? React.createElement(
+        'button',
+        {
+            className:
+                'ui-button ui-button--primary ui-button--sm',
+            type: 'button',
+            onClick: () =>
+                requestSubmission(plan),
+            'aria-label':
+                `Submit ${plan.title} for approval`,
+        },
+
+        React.createElement('i', {
+            className:
+                'bi bi-send-check',
+        }),
+
+        'Submit for Approval'
+    )
+    : null,
+    canSubmitPlans &&
+plan.approval_status === 'under_approval'
+    ? React.createElement(
+        'button',
+        {
+            className:
+                'ui-button ui-button--secondary ui-button--sm',
+            type: 'button',
+            disabled: true,
+            title:
+                'This plan is already under approval.',
+        },
+
+        React.createElement('i', {
+            className:
+                'bi bi-hourglass-split',
+        }),
+
+        'Submitted'
+    )
+    : null,
+
+
                             canArchivePlans && ['finished', 'archived'].includes(plan.status) ? React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => requestStatusChange(plan), 'aria-label': `${plan.status === 'archived' ? 'Restore' : 'Archive'} ${plan.title}` }, React.createElement('i', { className: `bi ${plan.status === 'archived' ? 'bi-arrow-counterclockwise' : 'bi-archive'}` }), plan.status === 'archived' ? 'Restore' : 'Archive') : null,
                             canDeletePlans ? React.createElement('button', { className: 'ui-button ui-button--danger ui-button--sm', type: 'button', onClick: () => requestDelete(plan), 'aria-label': `Delete ${plan.title}` }, React.createElement('i', { className: 'bi bi-trash3' }), 'Delete') : null
                         ) : React.createElement('span', { className: 'ui-help' }, 'View only'))
@@ -233,7 +404,7 @@ function StrategicPlanListApp() {
             variant: dialog.variant,
             title: dialog.title,
             message: dialog.message,
-            confirmLabel: dialog.action === 'delete' ? 'Confirm Delete' : dialog.targetStatus === 'archived' ? 'Archive' : dialog.targetStatus === 'finished' ? 'Restore' : 'Continue',
+            confirmLabel: dialog.action === 'delete' ? 'Confirm Delete' : dialog.action === 'submit'? 'Submit Plan': dialog.targetStatus === 'archived' ? 'Archive' : dialog.targetStatus === 'finished' ? 'Restore' : 'Continue',
             onConfirm: dialog.variant === 'danger' ? confirmDialogAction : () => setDialog((current) => ({ ...current, open: false })),
             onCancel: () => setDialog((current) => ({ ...current, open: false })),
         })
