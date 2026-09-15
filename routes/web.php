@@ -71,6 +71,7 @@ Route::view('/role-management', 'pages.role-management')->name('role-management.
 Route::view('/settings', 'pages.settings')->name('settings.index');
 Route::view('/user-management', 'pages.user-management')->name('user-management.index');
 Route::view('/login-history', 'pages.login-history')->name('login-history.index');
+Route::view('/audit-logs', 'pages.audit-logs')->name('audit-logs.index');
 Route::view('/manual-backup', 'pages.manual-backup')->name('manual-backup.index');
 Route::view(
     '/workflow-configuration',
