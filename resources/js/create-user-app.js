@@ -143,8 +143,8 @@ function getValidationMessage(field, value) {
         return 'Please enter a valid email address.';
     }
 
-    if (field.name === 'password' && String(value).length < 8) {
-        return 'Password must be at least 8 characters.';
+    if (field.name === 'password' && String(value).length < 16) {
+        return 'Password must be at least 16 characters.';
     }
 
     return '';
@@ -189,7 +189,7 @@ function FormField({ field, value, error, options, showPassword, onTogglePasswor
                 ...commonProps,
                 type: showPassword ? 'text' : 'password',
                 autoComplete: 'new-password',
-                placeholder: 'Minimum 8 characters',
+                placeholder: 'Minimum 16 characters',
             }),
             React.createElement(
                 'button',

@@ -2,6 +2,10 @@
 
 # Environment Setup Guide
 
+Automated tests use a separate MySQL database, `db_spdms_test`. Follow the
+[MySQL test environment guide](docs/mysql-testing.md) to configure `.env.testing`,
+then run `php artisan test`. Tests do not use the application's business database.
+
 ---
 
 ## 1. Prerequisites

@@ -16,3 +16,27 @@ export function updateStrategicObjectiveStatus(id, status) {
     });
 }
 export function deleteStrategicObjective(id) { return apiRequest(`${baseUrl}/${id}`, { method: 'DELETE' }); }
+
+export function assignResponsibleUnit(id, responsibleOfficeAgency) {
+    return apiRequest(`${baseUrl}/${id}/responsible-unit`, {
+        method: 'PUT', body: JSON.stringify({ responsible_office_agency: responsibleOfficeAgency }),
+    });
+}
+
+export function assignResponsibleUnitToObjectives(objectiveIds, responsibleUnitId) {
+    return apiRequest(`${baseUrl}/responsible-unit`, {
+        method: 'PUT', body: JSON.stringify({ objective_ids: objectiveIds, responsible_unit_id: responsibleUnitId }),
+    });
+}
+
+export function listResponsibleUnits(params = {}) {
+    return apiRequest(`/api/responsible-units?${new URLSearchParams(params)}`);
+}
+
+export function listObjectiveComments(id, params = {}) {
+    return apiRequest(`${baseUrl}/${id}/comments?${new URLSearchParams(params)}`);
+}
+
+export function addObjectiveComment(id, content) {
+    return apiRequest(`${baseUrl}/${id}/comments`, { method: 'POST', body: JSON.stringify({ content }) });
+}

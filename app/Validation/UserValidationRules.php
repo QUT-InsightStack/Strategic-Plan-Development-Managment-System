@@ -68,7 +68,7 @@ class UserValidationRules
         return [
             'sometimes',
             'string',
-            'min:8',
+            'min:16',
             'max:128',
             self::passwordComplexityRule(),
         ];

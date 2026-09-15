@@ -5,7 +5,6 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-
 return new class extends Migration
 {
     private const TABLE = 'tbllog';
@@ -116,13 +115,12 @@ return new class extends Migration
             ->count();
 
         if ($nullUserCount > 0) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'Cannot roll back the audit-log migration because '
-                . $nullUserCount
-                . ' audit record(s) no longer have an associated user.'
+                .$nullUserCount
+                .' audit record(s) no longer have an associated user.'
             );
         }
-            
 
         $this->dropUserForeignKeys();
         $this->dropIndexes();
@@ -187,14 +185,12 @@ return new class extends Migration
          * does not provide for a composite index.
          */
         if (! $this->indexExists('tbllog_operation_created_idx')) {
-            if (Schema::getConnection()->getDriverName() === 'sqlite') {
-                Schema::table(self::TABLE, function (Blueprint $table): void {
-                    $table->index(['operation', 'created_at'], 'tbllog_operation_created_idx');
-                });
+            if (DB::getDriverName() === 'sqlite') {
+                Schema::table(self::TABLE, fn (Blueprint $table) => $table->index(['operation', 'created_at'], 'tbllog_operation_created_idx'));
             } else {
                 DB::statement(
                     'CREATE INDEX `tbllog_operation_created_idx` '
-                    . 'ON `tbllog` (`operation`(100), `created_at`)'
+                    .'ON `tbllog` (`operation`(100), `created_at`)'
                 );
             }
         }
@@ -230,23 +226,23 @@ return new class extends Migration
 
         foreach ($indexes as $index) {
             if ($this->indexExists($index)) {
-                Schema::table(self::TABLE, function (Blueprint $table) use ($index): void {
-                    $table->dropIndex($index);
-                });
+                Schema::table(self::TABLE, fn (Blueprint $table) => $table->dropIndex($index));
             }
         }
     }
 
     private function dropUserForeignKeys(): void
     {
-        if (Schema::getConnection()->getDriverName() === 'sqlite') {
-            Schema::table(self::TABLE, function (Blueprint $table): void {
-                $table->dropForeign(['user_id']);
-            });
+        if (DB::getDriverName() === 'sqlite') {
+            foreach (Schema::getForeignKeys(self::TABLE) as $foreignKey) {
+                if ($foreignKey['columns'] === ['user_id']) {
+                    Schema::table(self::TABLE, fn (Blueprint $table) => $table->dropForeign(['user_id']));
+                    break;
+                }
+            }
 
             return;
         }
-
         $foreignKeys = DB::select(
             <<<'SQL'
             SELECT DISTINCT `CONSTRAINT_NAME`
@@ -267,11 +263,10 @@ return new class extends Migration
              * strict validation before placing one in an identifier.
              */
             if (! preg_match('/^[A-Za-z0-9_$]+$/', $constraintName)) {
-                throw new \RuntimeException(
+                throw new RuntimeException(
                     'Unexpected foreign-key name on tbllog.user_id.'
                 );
             }
-            
 
             DB::statement(
                 sprintf(
@@ -301,6 +296,14 @@ return new class extends Migration
 
     private function indexExists(string $indexName): bool
     {
-        return Schema::hasIndex(self::TABLE, $indexName);
+        if (DB::getDriverName() === 'sqlite') {
+            return Schema::hasIndex(self::TABLE, $indexName);
+        }
+
+        return DB::table('information_schema.STATISTICS')
+            ->whereRaw('TABLE_SCHEMA = DATABASE()')
+            ->where('TABLE_NAME', self::TABLE)
+            ->where('INDEX_NAME', $indexName)
+            ->exists();
     }
 };

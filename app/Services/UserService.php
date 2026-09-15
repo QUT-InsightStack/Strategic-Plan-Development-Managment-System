@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class UserService
 {
@@ -59,6 +61,7 @@ class UserService
 
     public function createUser(array $data): Model
     {
+        $this->validateSubmittedPassword($data);
         $role = Role::query()->find($data['role_id'] ?? null);
 
         if (! $role) {
@@ -101,105 +104,77 @@ class UserService
 
     public function updateUser(int $id, array $data): bool
     {
-        /*
-         * This is also enforced by UpdateUserRequest.
-         * Keep this protection in the service layer as well.
-         */
-        unset($data['role_id']);
-
         $actor = Auth::guard('api')->user();
-
+    
         if (! $actor instanceof User) {
-            throw ValidationException::withMessages([
-                'user' => ['An authenticated user is required.'],
-            ]);
+            throw new AuthorizationException('Unauthenticated.');
         }
-
-        return DB::transaction(function () use (
-            $id,
-            $data,
-            $actor
-        ): bool {
-            $user = User::query()
-                ->lockForUpdate()
-                ->find($id);
-
-            if (! $user) {
-                return false;
-            }
-
-            $changedFields = array_keys($data);
-
-            $updated = $user->update($data);
-
-            if (! $updated) {
-                return false;
-            }
-
-            $this->logWriter->write('user.updated', [
-                'actor_user_id' => $actor->user_id,
-                'resource_type' => 'user',
-                'resource_id' => $user->user_id,
-                'changed_fields' => $changedFields,
-            ]);
-
-            return true;
-        });
+    
+        return $this->updateByAdministrator($id, $data, $actor) !== null;
     }
 
-    /**
-     * Update another user's account on behalf of an administrator.
-     *
-     * Returns null when the target does not exist, so the caller can respond
-     * 404. Role and status are stripped regardless of what reaches here:
-     * both have dedicated endpoints that apply safeguards this path does not.
-     *
-     * Accounts holding a protected role may only be updated by an
-     * administrator who also holds `roles.assign_protected`, matching the
-     * rule UserRoleService applies when assigning those roles.
-     */
-    public function updateByAdministrator(int $id, array $data, User $actor): ?User
-    {
+    public function updateByAdministrator(
+        int $id,
+        array $data,
+        User $actor
+    ): ?User {
+        app(PermissionAuthorizationService::class)
+            ->ensureHasPermission('users.update', $actor);
+    
+        foreach (['role_id', 'status', 'auth_version'] as $field) {
+            if (array_key_exists($field, $data)) {
+                throw ValidationException::withMessages([
+                    $field => ['This field cannot be changed through this operation.'],
+                ]);
+            }
+        }
+    
+        $this->validateSubmittedPassword($data);
+    
         return DB::transaction(function () use ($id, $data, $actor): ?User {
             $user = User::query()
                 ->with('role')
                 ->lockForUpdate()
                 ->find($id);
-
+    
             if (! $user) {
                 return null;
             }
-
-            if ($user->role?->is_protected && ! $this->actorMayManageProtectedAccounts($actor)) {
+    
+            if (
+                $user->role?->is_protected
+                && ! $this->actorMayManageProtectedAccounts($actor)
+            ) {
                 throw new AuthorizationException(
                     'You are not authorized to update this account.'
                 );
             }
-
-            unset($data['role_id'], $data['status'], $data['auth_version']);
-
+    
             $user->fill($data);
-
+    
             $changed = array_keys($user->getDirty());
-
+    
             if ($changed === []) {
                 return $user->fresh(['role']);
             }
-
-            $user->save();
-
-            // Field names only — never the submitted values, which may
-            // include a password.
-            Log::create([
-                'user_id' => $actor->user_id,
-                'operation' => json_encode([
-                    'event' => 'user.account_updated',
-                    'target_user_id' => $user->user_id,
-                    'fields' => $changed,
-                ], JSON_UNESCAPED_SLASHES),
-                'states' => 'success',
+    
+            $passwordChanged = $user->isDirty('password');
+    
+            if ($passwordChanged) {
+                $user->auth_version = (int) $user->auth_version + 1;
+                $user->setRememberToken(Str::random(60));
+            }
+    
+            $user->saveOrFail();
+    
+            $this->logWriter->write('user.updated', [
+                'actor_user_id' => $actor->user_id,
+                'resource_type' => 'user',
+                'resource_id' => $user->user_id,
+                'changed_fields' => $changed,
+                'sessions_invalidated' => $passwordChanged,
             ]);
-
+    
             return $user->fresh(['role']);
         });
     }
@@ -211,6 +186,21 @@ class UserService
             ->where('code', 'roles.assign_protected')
             ->exists();
     }
+
+    private function validateSubmittedPassword(array $data): void
+    {
+        if (! array_key_exists('password', $data)) {
+            return;
+        }
+    
+        Validator::make(
+            ['password' => $data['password']],
+            [
+                'password' => app(PasswordPolicyService::class)->rules(),
+            ]
+        )->validate();
+    }
+
 
     public function updateStatus(
         int $userId,

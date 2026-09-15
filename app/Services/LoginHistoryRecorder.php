@@ -26,19 +26,15 @@ class LoginHistoryRecorder
 
     public function recordFailedLogin(
         string $email,
-        Request $request
+        Request $request,
+        string $reason = 'invalid_credentials'
     ): LoginHistory {
         $normalizedEmail = mb_strtolower(trim($email));
-
-        /*
-         * Associate the attempt with an existing account when one exists.
-         * This information is stored only in the protected administrative
-         * history
-         */
+    
         $user = User::query()
             ->where('email', $normalizedEmail)
             ->first();
-
+    
         return LoginHistory::query()->create([
             'user_id' => $user?->user_id,
             'user_name' => $user
@@ -48,7 +44,7 @@ class LoginHistoryRecorder
             'ip_address' => $this->ipAddress($request),
             'user_agent' => $this->userAgent($request),
             'status' => 'failed',
-            'failure_reason' => 'invalid_credentials',
+            'failure_reason' => $reason,
             'attempted_at' => now(),
         ]);
     }
