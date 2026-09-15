@@ -265,6 +265,11 @@ Route::middleware(['auth:api','auth.version',])->group(function () {
     )->whereNumber('planId');
 
     // Strategic objectives, including plan-filtered listing
+    Route::post(
+        'strategic-objectives/{id}/alignments',
+        [StrategicObjectiveController::class, 'storeAlignments']
+    )->whereNumber('id');
+
     Route::get(
         'strategic-plans/{planId}/objectives',
         [StrategicObjectiveController::class, 'byPlan']

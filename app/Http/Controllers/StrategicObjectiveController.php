@@ -3,16 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Contracts\StrategicLogWriter;
+use App\Http\Requests\StoreStrategicObjectiveAlignmentRequest;
 use App\Http\Requests\StoreStrategicObjectiveRequest;
 use App\Http\Requests\UpdateStrategicObjectiveRequest;
 use App\Models\Strategic;
 use App\Models\StrategicObjective;
 use App\Services\PermissionAuthorizationService;
+use App\Services\StrategicObjectiveAlignmentService;
 use App\Services\StrategicPlanAuthorizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -248,6 +251,55 @@ class StrategicObjectiveController extends Controller
             'message' => 'Updated',
             'data' => $objective->fresh(self::RESPONSE_RELATIONS),
         ], 200);
+    }
+
+    public function storeAlignments(
+        StoreStrategicObjectiveAlignmentRequest $request,
+        int $id,
+        StrategicObjectiveAlignmentService $alignmentService
+    ): JsonResponse {
+        $data = $request->validated();
+        $user = Auth::guard('api')->user();
+        $planId = StrategicObjective::where('status', '!=', 'deleted')
+            ->whereKey($id)->value('strategic_plan_id');
+        abort_if($planId === null, 404, 'Strategic objective not found.');
+
+        $objective = DB::transaction(function () use ($data, $user, $id, $planId, $alignmentService): StrategicObjective {
+            // Lock the parent first, matching the plan lifecycle's parent-to-child writes.
+            $plan = Strategic::with('creator')->where('status', '!=', 'deleted')
+                ->lockForUpdate()->findOrFail($planId);
+            $objective = StrategicObjective::where('status', '!=', 'deleted')
+                ->where('strategic_plan_id', $planId)
+                ->lockForUpdate()->findOrFail($id);
+            $objective->setRelation('strategicPlan', $plan);
+
+            $this->authorizationService->ensurePlanIsWithinAuthorizedScope(
+                $plan,
+                $user,
+                'You are not authorized to create alignments for this strategic objective.'
+            );
+            $this->ensureObjectiveCanBeChanged($objective);
+
+            $alignmentService->create($objective, $data);
+            $objective->update(['updated_by' => $user->user_id]);
+
+            $this->logWriter->write('strategic_objective.alignments_created', [
+                'actor_user_id' => $user->user_id,
+                'resource_type' => 'strategic_objective',
+                'resource_id' => $objective->objective_id,
+                'record_id' => $plan->record_id,
+                'pdp_chapter_ids' => $data['pdp_chapter_ids'] ?? [],
+                'presidential_agenda_item_ids' => $data['presidential_agenda_item_ids'] ?? [],
+            ]);
+
+            return $objective->load(self::RESPONSE_RELATIONS);
+        }, 3);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Strategic alignment mappings created successfully.',
+            'data' => $objective,
+        ], 201);
     }
 
     public function destroy(int $id): JsonResponse
