@@ -362,9 +362,6 @@ class StrategicObjectiveController extends Controller
                 'updater',
             ]),
         ]);
-            'message' => 'Updated',
-            'data' => $objective->fresh(self::RESPONSE_RELATIONS),
-        ], 200);
     }
 
     $restoredStatus = $objective->status_before_archive ?? 'draft';

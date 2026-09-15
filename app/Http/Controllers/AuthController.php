@@ -21,6 +21,7 @@ use App\Contracts\StrategicLogWriter;
 use App\Services\AccessTokenCookieService;
 use App\Services\AuthenticationLoginService;
 use App\Services\AuthenticationSessionService;
+use App\Services\LoginHistoryRecorder;
 use App\Models\Log as LogModel;
 use App\Services\ProfilePhotoService;
 use Illuminate\Auth\Events\PasswordReset;
@@ -39,7 +40,7 @@ class AuthController extends Controller
         private readonly AuthenticationSessionService $sessionService,
         private readonly AccessTokenCookieService $accessCookies,
         private readonly StrategicLogWriter $auditWriter,
-        private readonly ProfilePhotoService $profilePhotos
+        private readonly ProfilePhotoService $profilePhotos,
         private readonly LoginHistoryRecorder $loginHistoryRecorder,
         private readonly SecuritySettingsService $securitySettings
     ) {
