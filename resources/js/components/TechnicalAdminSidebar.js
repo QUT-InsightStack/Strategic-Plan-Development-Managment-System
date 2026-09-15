@@ -11,7 +11,7 @@ const accessItems = [
     { label: 'User Account Management', icon: 'bi-people-fill', href: '/user-management', permission: PERMISSIONS.USERS_VIEW },
     { label: 'Role Management', icon: 'bi-person-gear', href: '/role-management', permission: PERMISSIONS.ROLES_MANAGE },
     { label: 'Access Permission Management', icon: 'bi-shield-lock-fill', href: '/role-management?section=permissions', permission: PERMISSIONS.PERMISSIONS_MANAGE },
-    { label: 'Settings', icon: 'bi-gear-fill', href: '/role-management?section=security', permission: PERMISSIONS.SETTINGS_MANAGE },
+    { label: 'Settings', icon: 'bi-gear-fill', href: '/settings', permission: PERMISSIONS.SETTINGS_MANAGE },
     {
     label: 'Workflow Configuration',
     icon: 'bi-diagram-3-fill',
@@ -90,9 +90,8 @@ export function TechnicalAdminSidebar({ onNotice = () => {} }) {
     function renderSubitem(item) {
         if (item.permission && !can(item.permission, accessSession)) return null;
         const isPermissionPage = item.label === 'Access Permission Management';
-        const isSettingsPage = item.label === 'Settings';
         const isActive = item.href && currentPath === item.href.split('?')[0]
-            && (currentPath !== '/role-management' || (isPermissionPage ? currentSection === 'permissions' : isSettingsPage ? currentSection === 'security' : currentSection !== 'permissions' && currentSection !== 'security'));
+            && (currentPath !== '/role-management' || (isPermissionPage ? currentSection === 'permissions' : currentSection !== 'permissions'));
 
         return item.href
             ? React.createElement('a', { key: item.label, href: item.href, className: `app-sidebar__subitem${isActive ? ' active' : ''}`, 'aria-current': isActive ? 'page' : undefined }, React.createElement('i', { className: `bi ${item.icon}`, 'aria-hidden': 'true' }), React.createElement('span', null, item.label))

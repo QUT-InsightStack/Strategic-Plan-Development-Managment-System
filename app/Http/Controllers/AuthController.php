@@ -10,22 +10,21 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log as SystemLog;
 use Illuminate\Support\Facades\Password;
 use Tymon\JWTAuth\Exceptions\JWTException;
-use Tymon\JWTAuth\Exceptions\TokenBlacklistedException;
-use Tymon\JWTAuth\Exceptions\TokenExpiredException;
-use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
-use App\Services\LoginHistoryRecorder;
 use App\Services\SecuritySettingsService;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\UploadProfilePhotoRequest;
 use App\Http\Resources\UserResource;
+use App\Contracts\StrategicLogWriter;
+use App\Services\AccessTokenCookieService;
+use App\Services\AuthenticationLoginService;
+use App\Services\AuthenticationSessionService;
 use App\Models\Log as LogModel;
 use App\Services\ProfilePhotoService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -33,273 +32,109 @@ use Symfony\Component\HttpFoundation\Cookie;
 
 class AuthController extends Controller
 {
-    // ─── Login ───────────────────────────────────────────────────────
+   
 
     public function __construct(
+        private readonly AuthenticationLoginService $loginService,
+        private readonly AuthenticationSessionService $sessionService,
+        private readonly AccessTokenCookieService $accessCookies,
+        private readonly StrategicLogWriter $auditWriter,
+        private readonly ProfilePhotoService $profilePhotos
         private readonly LoginHistoryRecorder $loginHistoryRecorder,
-        private ProfilePhotoService $profilePhotos,
         private readonly SecuritySettingsService $securitySettings
     ) {
     }
+    
 
     public function login(LoginRequest $request): JsonResponse
     {
-        $credentials = [
-            ...$request->only('email', 'password'),
-            'status' => 'active',
-        ];
+        $result = $this->loginService->login(
+            (string) $request->validated('email'),
+            (string) $request->validated('password'),
+            $request
+        );
 
-        $existingUser = User::query()->where('email', $request->validated('email'))->first();
-        if ($existingUser?->locked_until?->isFuture()) {
-            $minutes = max(1, now()->diffInMinutes($existingUser->locked_until, false));
+        if ($result['status'] === 'locked') {
             return response()->json([
                 'success' => false,
-                'message' => "This account is locked. Try again in " . round($minutes, 2) . " minute(s).",
-                'locked_until' => $existingUser->locked_until->toIso8601String(),
-            ], 423);
+                'message' => 'Too many failed login attempts. Please try again later.',
+            ], 429, [
+                'Retry-After' => (string) $result['retry_after'],
+            ]);
         }
 
-        if ($existingUser?->locked_until?->isPast()) {
-            $existingUser->forceFill(['failed_login_attempts' => 0, 'locked_until' => null])->save();
-        }
-
-        $token = Auth::guard('api')->attempt($credentials);
-
-        if (! $token) {
-            if ($existingUser) {
-                DB::transaction(function () use ($existingUser): void {
-                    $user = User::query()->lockForUpdate()->find($existingUser->user_id);
-                    if (! $user || $user->locked_until?->isFuture()) return;
-                    $user->failed_login_attempts++;
-                    if ($user->failed_login_attempts >= $this->securitySettings->get('max_failed_login_attempts')) {
-                        $user->locked_until = now()->addMinutes($this->securitySettings->get('lockout_duration_minutes'));
-                    }
-                    $user->save();
-                });
-
-                $existingUser->refresh();
-                if ($existingUser->locked_until?->isFuture()) {
-                    $minutes = max(1, now()->diffInMinutes($existingUser->locked_until, false));
-
-                    $this->loginHistoryRecorder->recordFailedLogin(
-                        (string) $request->validated('email'),
-                        $request
-                    );
-
-                    return response()->json([
-                        'success' => false,
-                        'message' => "This account is now locked. Try again in " . round($minutes, 2) . " minute(s).",
-                        'locked_until' => $existingUser->locked_until->toIso8601String(),
-                    ], 423);
-                }
-            }
-            $this->loginHistoryRecorder->recordFailedLogin(
-                (string) $request->validated('email'),
-                $request
-            );
-
-            /*
-            * Keep the response generic. Never reveal whether the submitted
-            * email belongs to an existing account.
-            */
+        if ($result['status'] === 'invalid') {
             return response()->json([
                 'success' => false,
                 'message' => 'The provided credentials are incorrect.',
             ], 401);
         }
 
-        $user = Auth::guard('api')->user();
-
-        if (! $user instanceof User) {
-            /*
-            * this should not ordinarily happen after a successful attempt.
-            * Invalidate the newly generated token if authentication state
-            * cannot be resolved.
-            */
-            Auth::guard('api')->logout();
-
+        if ($result['status'] === 'maintenance') {
             return response()->json([
                 'success' => false,
-                'message' => 'Unable to complete authentication.',
-            ], 401)->withCookie($this->forgetAccessCookie());
+                'message' => 'The system is temporarily unavailable for maintenance.',
+            ], 503, [
+                'Retry-After' => '60',
+            ]);
         }
-
-        $this->loginHistoryRecorder->recordSuccessfulLogin(
-            $user,
-            $request
-        );
-
-        $user->forceFill(['failed_login_attempts' => 0, 'locked_until' => null, 'last_activity_at' => now()])->save();
 
         return response()->json([
             'success' => true,
             'message' => 'Logged in successfully.',
-            'token' => $token,
-        ])->withCookie($this->makeAccessCookie($token));
+        ])->withCookie($this->makeAccessCookie($result['token']));
     }
 
-    // ─── Logout ──────────────────────────────────────────────────────
-
-    /**
-     * Terminate the session.
-     *
-     * Deliberately idempotent: logging out twice, or with a missing or
-     * already-blacklisted token, still returns 200 and still clears the
-     * cookie. A caller asking to be logged out should never be told the
-     * request failed, and any error here would leave the cookie in place.
-     */
     public function logout(): JsonResponse
     {
         try {
-            // Resolve the user before invalidating, so the audit row can
-            // attribute the event. Fails silently if the token is bad.
-            $user = Auth::guard('api')->user();
-
-            if ($user) {
-                LogModel::create([
-                    'user_id'   => $user->user_id,
-                    'operation' => 'logout',
-                    'states'    => 'success',
-                ]);
-            }
-
-            Auth::guard('api')->logout();   // blacklists current token
-        } catch (\Throwable $e) {
-            // Token was absent, malformed or already blacklisted. The
-            // desired end state — no valid session — already holds.
+            $this->sessionService->logout();
+        } catch (\Throwable $exception) {
+            report($exception);
+    
+            return response()->json([
+                'success' => false,
+                'message' => 'The cookie was cleared, but server-side logout could not be confirmed.',
+            ], 503)->withCookie($this->forgetAccessCookie());
         }
-
+    
         return response()->json([
             'success' => true,
             'message' => 'Logged out successfully.',
         ])->withCookie($this->forgetAccessCookie());
     }
-
-    // ─── Refresh ─────────────────────────────────────────────────────
-
-    /**
- * Rotate an access token within the configured refresh window.
- *
- * This route accepts expired access tokens, so it cannot use auth:api.
- * The token is decoded in refresh mode before rotation so auth_version
- * can be compared with the current user record.
- */
+  
     public function refresh(): JsonResponse
     {
         try {
-            $jwt = JWTAuth::parseToken();
-            $manager = $jwt->manager();
-
-
-            try {
-                // Refresh flow permits an expired access token when it is
-                // still within JWT_REFRESH_TTL.
-                $manager->setRefreshFlow(true);
-
-
-                $payload = $manager->decode(
-                    $jwt->getToken()
-                );
-            } finally {
-                // Do not leave the shared manager in refresh mode.
-                $manager->setRefreshFlow(false);
+            $result = $this->sessionService->refresh();
+    
+            if ($result['status'] === 'maintenance') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The system is temporarily unavailable for maintenance.',
+                ], 503, [
+                    'Retry-After' => '60',
+                ]);
             }
-
-
-            $userId = (int) $payload->get('sub');
-            $tokenVersion = (int) $payload->get('auth_version');
-
-
-            if ($userId < 1 || $tokenVersion < 1) {
+    
+            if ($result['status'] !== 'success') {
                 return $this->invalidatedSessionResponse();
             }
-
-
-            /*
-            * UserRoleService uses lockForUpdate() while changing roles.
-            * Taking the same lock here prevents a role change from occurring
-            * between the version comparison and token rotation.
-            */
-            $newToken = DB::transaction(function () use (
-                $userId,
-                $tokenVersion
-            ): ?string {
-                $user = User::query()
-                    ->lockForUpdate()
-                    ->find($userId);
-
-
-                if (
-                    ! $user
-                    || $tokenVersion !== (int) $user->auth_version
-                ) {
-                    return null;
-                }
-
-
-                return Auth::guard('api')->refresh();
-            });
-
-
-            if (! $newToken) {
-                return $this->invalidatedSessionResponse();
-            }
-
-
+    
             return response()->json([
                 'success' => true,
                 'message' => 'Token refreshed successfully.',
-            ])->withCookie($this->makeAccessCookie($newToken));
-        } catch (TokenBlacklistedException $e) {
-            SystemLog::notice('Rejected refresh using a blacklisted JWT.', [
-                'exception' => $e,
-            ]);
-
-
+            ])->withCookie($this->makeAccessCookie($result['token']));
+        } catch (JWTException $exception) {
+            return $this->invalidatedSessionResponse();
+        } catch (\Throwable $exception) {
+            report($exception);
+    
             return response()->json([
                 'success' => false,
-                'message' => 'Authentication session expired.',
-            ], 401)->withCookie($this->forgetAccessCookie());
-        } catch (TokenExpiredException $e) {
-            SystemLog::notice('Rejected JWT outside the refresh window.', [
-                'exception' => $e,
-            ]);
-
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Token has expired and cannot be refreshed.',
-            ], 401)->withCookie($this->forgetAccessCookie());
-        } catch (TokenInvalidException $e) {
-            SystemLog::notice('Rejected invalid JWT refresh request.', [
-                'exception' => $e,
-            ]);
-
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Token is invalid.',
-            ], 401)->withCookie($this->forgetAccessCookie());
-        } catch (JWTException $e) {
-            SystemLog::warning('Unable to refresh JWT.', [
-                'exception' => $e,
-            ]);
-
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Unable to refresh token.',
-            ], 401)->withCookie($this->forgetAccessCookie());
-        } catch (\Throwable $e) {
-            SystemLog::error('Unexpected JWT refresh failure.', [
-                'exception' => $e,
-            ]);
-
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Unable to refresh token.',
-            ], 500)->withCookie($this->forgetAccessCookie());
+                'message' => 'Unable to refresh the authentication session.',
+            ], 503);
         }
     }
 
@@ -335,7 +170,7 @@ class AuthController extends Controller
      * - HttpOnly = true  → JavaScript cannot read it (XSS protection)
      * - Secure   = env   → true in production (HTTPS only), false for local HTTP
      * - SameSite = Lax   → blocks cross-site POST (CSRF protection)
-     * - TTL      = jwt   → cookie expires when the JWT expires
+     * - TTL      = refresh window → cookie remains available for token refresh
      */
     protected function makeAccessCookie(string $token): Cookie
 {
@@ -457,12 +292,10 @@ class AuthController extends Controller
             $lockedUser->setRememberToken(Str::random(60));
             $lockedUser->save();
 
-            LogModel::create([
-                'user_id' => $lockedUser->user_id,
-                'operation' => json_encode([
-                    'event' => 'auth.password_changed',
-                ], JSON_UNESCAPED_SLASHES),
-                'states' => 'success',
+            $this->auditWriter->write('auth.password_changed', [
+                'actor_user_id' => $lockedUser->user_id,
+                'resource_type' => 'user',
+                'resource_id' => $lockedUser->user_id,
             ]);
         });
 
@@ -513,20 +346,26 @@ class AuthController extends Controller
                         ->lockForUpdate()
                         ->findOrFail($user->user_id);
 
+                    if ($lockedUser->status !== 'active') {
+                        throw ValidationException::withMessages([
+                            'token' => ['This password reset request cannot be completed.'],
+                        ]);
+                    }
+
                     $lockedUser->password = $password;
                     $lockedUser->auth_version++;
                     $lockedUser->setRememberToken(Str::random(60));
                     $lockedUser->save();
 
-                    LogModel::create([
-                        'user_id' => $lockedUser->user_id,
-                        'operation' => json_encode([
-                            'event' => 'auth.password_reset',
-                        ], JSON_UNESCAPED_SLASHES),
-                        'states' => 'success',
+                    $this->auditWriter->write('auth.password_reset', [
+                        'actor_user_id' => $lockedUser->user_id,
+                        'resource_type' => 'user',
+                        'resource_id' => $lockedUser->user_id,
                     ]);
 
-                    event(new PasswordReset($lockedUser));
+                    DB::afterCommit(
+                        fn () => event(new PasswordReset($lockedUser))
+                    );
                 });
             }
         );

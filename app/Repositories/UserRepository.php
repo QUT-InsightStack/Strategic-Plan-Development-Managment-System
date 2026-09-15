@@ -101,6 +101,15 @@ class UserRepository
         return $record ? $record->delete() : false;
     }
 
+    public function findByEmailLocked(string $email): ?User
+    {
+        return $this->model
+            ->newQuery()
+            ->where('email', $email)
+            ->lockForUpdate()
+            ->first();
+    }
+
     public function search(array $filters): LengthAwarePaginator
     {
         $search = $filters['search'] ?? null;

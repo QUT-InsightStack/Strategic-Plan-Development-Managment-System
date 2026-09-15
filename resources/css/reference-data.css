@@ -4,6 +4,7 @@
 @import './components/cards.css';
 @import './components/tables.css';
 @import './components/badges.css';
+@import './components/dialog.css';
 @import './components/feedback.css';
 @import './components/pagination.css';
 @import './layouts/app-shell.css';

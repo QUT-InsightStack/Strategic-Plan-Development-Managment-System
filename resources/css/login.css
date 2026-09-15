@@ -322,6 +322,42 @@ button {
     outline-offset: 2px;
 }
 
+.login-lockout {
+    padding: var(--space-4, 16px);
+    border: 1px solid var(--danger);
+    border-radius: 10px;
+    background: rgba(212, 53, 28, 0.06);
+    text-align: center;
+}
+
+.login-lockout h2 {
+    margin: 0 0 6px;
+    color: var(--danger);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+}
+
+.login-lockout p {
+    margin: 0 0 6px;
+    color: var(--color-gray-700);
+    font-size: var(--font-size-xs);
+    line-height: var(--line-height-body);
+}
+
+.login-lockout__countdown {
+    font-variant-numeric: tabular-nums;
+}
+
+.login-lockout__countdown strong {
+    color: var(--danger);
+    font-size: var(--font-size-sm);
+}
+
+.login-lockout__help {
+    margin-bottom: 0 !important;
+    color: var(--color-gray-600);
+}
+
 .form-status {
     min-height: 14px;
     margin: -4px 0 0;

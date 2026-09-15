@@ -23,6 +23,7 @@
 .pdp-table__title a { color: var(--color-primary); text-decoration: none; }
 .pdp-table__title a:hover { text-decoration: underline; }
 .pdp-table__description { min-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pdp-table__actions { display: flex; gap: var(--space-2, 8px); flex-wrap: wrap; }
 .pdp-table__select { width: 64px; text-align: center !important; }
 .pdp-table__select input { width: 17px; height: 17px; accent-color: var(--color-primary); }
 .pdp-table__empty { padding: var(--space-8) !important; text-align: center; }
