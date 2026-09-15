@@ -9,14 +9,14 @@
 @import './components/security-settings.css';
 @import './components/badges.css';
 
-body { background: var(--color-primary-soft); }
+body { background: var(--color-background); }
 .role-page { color: var(--color-text); }
 .role-page__header { margin-bottom: var(--space-5); }
 .role-page__header-copy { max-width: 760px; }
 .role-page__notice { margin-bottom: var(--space-4); }
 .role-workspace { display: grid; grid-template-columns: minmax(250px, .8fr) minmax(340px, 1fr) minmax(320px, 1fr); gap: var(--space-5); align-items: stretch; }
 .role-panel { min-width: 0; overflow: hidden; }
-.role-panel__header { padding: var(--space-5); border-bottom: 1px solid var(--color-border-subtle); background: linear-gradient(90deg, var(--color-surface) 0%, #f5fbfe 100%); }
+.role-panel__header { padding: var(--space-5); border-bottom: 1px solid var(--color-border-subtle); background: var(--color-section-header-background); }
 .role-panel__header h2 { margin: 0 0 var(--space-1); color: var(--color-primary); font-size: var(--font-size-xl); }
 .role-panel__header p { margin: 0; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
 .role-panel__body { padding: var(--space-4); }

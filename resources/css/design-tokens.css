@@ -24,9 +24,11 @@
     --color-info: #1769aa;
 
     /* Semantic interface colors */
-    --color-background: var(--color-gray-50);
+    --color-background: #f4f7fb;
     --color-surface: var(--color-brand-white);
     --color-surface-muted: var(--color-gray-100);
+    --color-surface-header: #eef5fb;
+    --color-section-header-background: linear-gradient(90deg, var(--color-surface) 0%, #f5fbfe 100%);
     --color-text: var(--color-gray-950);
     --color-text-secondary: var(--color-gray-600);
     --color-text-disabled: var(--color-gray-400);

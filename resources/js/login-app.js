@@ -369,11 +369,15 @@ function LoginForm({ status, setStatus }) {
     'Forgot Password?'
 )
             ),
+<<<<<<< HEAD
+            React.createElement('button', { className: 'ui-button ui-button--primary signin-button', type: 'submit', disabled: isSubmitting }, isSubmitting ? 'Signing in...' : 'Sign in'),
+=======
             React.createElement(
                 'button',
                 { className: 'signin-button', type: 'submit', disabled: isSubmitting || isLocked },
                 isLocked ? `Locked - ${formatLockCountdown(lockSecondsLeft)}` : isSubmitting ? 'Signing in...' : 'Sign in'
             ),
+>>>>>>> origin/develop
             React.createElement('p', { className: `form-status is-${status.type}`, role: 'status', 'aria-live': 'polite' }, status.message),
             React.createElement('p', { className: 'access-note' }, "Access is granted based on the user's assigned role and permissions.")
         )

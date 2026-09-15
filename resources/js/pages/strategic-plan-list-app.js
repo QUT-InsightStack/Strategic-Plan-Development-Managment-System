@@ -9,13 +9,12 @@ import { can } from '../access/access-session.js';
 
 enforcePageAccess();
 const canCreatePlans = can(PERMISSIONS.PLANS_CREATE);
-const canReviewPlans = can(PERMISSIONS.PLANS_VIEW);
 const canUpdatePlans = can(PERMISSIONS.PLANS_UPDATE);
 const canSubmitPlans = can(PERMISSIONS.PLANS_UPDATE);
 const canArchivePlans = can(PERMISSIONS.PLANS_ARCHIVE);
 const canDeletePlans = can(PERMISSIONS.PLANS_DELETE);
 const canSelectPlans = canCreatePlans || canDeletePlans;
-const hasPlanActions = canReviewPlans || canUpdatePlans || canSubmitPlans || canArchivePlans || canDeletePlans;
+const hasPlanActions = canUpdatePlans || canArchivePlans || canDeletePlans;
 
 const { useEffect, useState } = React;
 const currentYear = new Date().getFullYear();
@@ -317,8 +316,8 @@ function confirmSubmission() {
                         React.createElement('td', null, creatorName(plan)), React.createElement('td', null, plan.creator?.department || 'Pending DB field'),
                         React.createElement('td', null, plan.updated_at ? new Date(plan.updated_at).toLocaleDateString() : '—'),
                         React.createElement('td', { className: 'plans-actions-cell' }, hasPlanActions ? React.createElement('div', { className: 'ui-table__actions' },
-                            canReviewPlans ? React.createElement('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: `/strategic-plans/${plan.record_id}/objectives`, 'aria-label': `Review ${plan.title}` }, React.createElement('i', { className: 'bi bi-eye' }), 'Review') : null,
-                            canUpdatePlans && plan.status !== 'archived'
+                            canUpdatePlans && ['draft', 'finished'].includes(plan.status) ? React.createElement('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: `/strategic-plans/${plan.record_id}/finalize`, 'aria-label': `Finalize ${plan.title}` }, React.createElement('i', { className: 'bi bi-clipboard-check' }), plan.status === 'finished' ? 'Finalized View' : 'Finalize') : null,
+                            canUpdatePlans && plan.status === 'draft'
     ? React.createElement(
         'a',
         {
@@ -326,20 +325,12 @@ function confirmSubmission() {
                 'ui-button ui-button--secondary ui-button--sm',
             href:
                 `/strategic-plans/${plan.record_id}/edit`,
-            'aria-label':
-                plan.status === 'draft'
-                    ? `Continue ${plan.title}`
-                    : `Update ${plan.title}`,
+            'aria-label': `Update ${plan.title}`,
         },
         React.createElement('i', {
-            className:
-                plan.status === 'draft'
-                    ? 'bi bi-arrow-right-circle'
-                    : 'bi bi-pencil',
+            className: 'bi bi-pencil',
         }),
-        plan.status === 'draft'
-            ? 'Continue Plan'
-            : 'Update'
+        'Update'
     )
     : null,
         canSubmitPlans &&
