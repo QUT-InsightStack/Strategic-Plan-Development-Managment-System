@@ -271,6 +271,14 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
     )->whereNumber('planId');
 
     // Strategic objectives, including plan-filtered listing
+    Route::put(
+        'strategic-objectives/{id}/alignments',
+        [StrategicObjectiveController::class, 'updateAlignments']
+    )->whereNumber('id');
+    Route::post(
+        'strategic-objectives/{id}/alignments',
+        [StrategicObjectiveController::class, 'storeAlignments']
+    )->whereNumber('id');
     Route::get('responsible-units', [ResponsibleUnitController::class, 'index']);
     Route::put('strategic-objectives/responsible-unit', [ResponsibleUnitController::class, 'assign']);
     Route::put('strategic-objectives/{id}/responsible-unit', [ResponsibleUnitController::class, 'assign'])->whereNumber('id');
@@ -372,7 +380,6 @@ Route::middleware([
     Route::patch('', [SystemSettingsController::class, 'update'])
         ->middleware('permission:settings.manage');
 });
-
 
 
 
