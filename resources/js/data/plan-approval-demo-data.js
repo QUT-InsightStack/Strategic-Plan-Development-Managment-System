@@ -49,6 +49,101 @@ export function getPlanSubmission(planId) {
 
     return submissions[String(planId)] || null;
 }
+export function getPlanSubmissions() {
+    return Object.values(
+        readStorage(SUBMISSION_STORAGE_KEY, {})
+    );
+}
+
+function normalizeReviewerValue(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s*\/\s*/g, '/')
+        .replace(/\s+/g, ' ');
+}
+
+function reviewerCandidates(session, approverType) {
+    if (!session) {
+        return [];
+    }
+
+    switch (approverType) {
+        case 'role':
+            return [
+                session.roleName,
+                session.roleLabel,
+            ];
+
+        case 'office':
+            return [
+                session.office,
+                session.department,
+            ];
+
+        case 'unit':
+            return [
+                session.unit,
+            ];
+
+        case 'user':
+            return [
+                session.name,
+                session.email,
+                session.userId,
+            ];
+
+        default:
+            return [];
+    }
+}
+
+export function isSubmissionAssignedToReviewer(
+    submission,
+    session
+) {
+    const currentStage = submission?.currentStage;
+
+    if (
+        !currentStage ||
+        currentStage.status !== 'pending' ||
+        !currentStage.approverType ||
+        !currentStage.approver
+    ) {
+        return false;
+    }
+
+    const expectedReviewer = normalizeReviewerValue(
+        currentStage.approver
+    );
+
+    return reviewerCandidates(
+        session,
+        currentStage.approverType
+    ).some(
+        (candidate) =>
+            normalizeReviewerValue(candidate) ===
+            expectedReviewer
+    );
+}
+
+export function listAssignedPlanSubmissions(session) {
+    return getPlanSubmissions()
+        .filter(
+            (submission) =>
+                submission.status ===
+                    'under_approval' &&
+                isSubmissionAssignedToReviewer(
+                    submission,
+                    session
+                )
+        )
+        .sort(
+            (first, second) =>
+                new Date(second.submittedAt) -
+                new Date(first.submittedAt)
+        );
+}
 
 export function applySubmissionToPlan(plan) {
     const submission = getPlanSubmission(

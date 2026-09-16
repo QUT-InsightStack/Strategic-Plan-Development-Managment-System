@@ -15,9 +15,11 @@ const items = [
         icon: 'bi-clipboard2-check',
         permission: PERMISSIONS.PLANS_VIEW,
         children: [
+
             { label: 'Consolidate Inputs', href: '/consolidate-inputs', permission: PERMISSIONS.PLANS_UPDATE },
             { label: 'Create Plans', href: '/strategic-plans/create', permission: PERMISSIONS.PLANS_CREATE },
             { label: 'Manage Plans', href: '/strategic-plans', permission: PERMISSIONS.PLANS_VIEW },
+            { label: 'Plan Reviews', href: '/strategic-plan-reviews', permission: PERMISSIONS.PLANS_VIEW },
             { label: 'Strategic Objectives', href: '/strategic-objectives', permission: PERMISSIONS.OBJECTIVES_VIEW },
             { label: 'PDP Chapters', href: '/pdp-chapters', permission: PERMISSIONS.PLANS_VIEW },
             { label: 'Monitor Plans', permission: PERMISSIONS.MONITORING_VIEW },

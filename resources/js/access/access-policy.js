@@ -153,7 +153,15 @@ export const routeRules = [
     { test: /^\/audit-logs(?:\/|$)/, permission: PERMISSIONS.LOGS_VIEW },
     { test: /^\/login-history(?:\/|$)/, permission: PERMISSIONS.LOGS_VIEW },
     { test: /^\/manual-backup(?:\/|$)/, permission: PERMISSIONS.BACKUPS_VIEW },
-    { test: /^\/strategic-plans\/create(?:\/|$)/, permission: PERMISSIONS.PLANS_CREATE },
-    { test: /^\/strategic-plans\/\d+\/edit(?:\/|$)/, permission: PERMISSIONS.PLANS_UPDATE },
-    { test: /^\/strategic-(?:plans|objectives)(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
+
+// A user must at least be allowed to view strategic plans before the
+// reviewer-assignment validation in the review application is performed.
+{
+    test: /^\/strategic-plan-reviews(?:\/|$)/,
+    permission: PERMISSIONS.PLANS_VIEW,
+},
+
+{ test: /^\/strategic-plans\/create(?:\/|$)/, permission: PERMISSIONS.PLANS_CREATE },
+{ test: /^\/strategic-plans\/\d+\/edit(?:\/|$)/, permission: PERMISSIONS.PLANS_UPDATE },
+{ test: /^\/strategic-(?:plans|objectives)(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
 ];
