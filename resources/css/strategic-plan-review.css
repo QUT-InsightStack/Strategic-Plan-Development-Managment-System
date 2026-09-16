@@ -755,7 +755,121 @@
     color: var(--color-text-secondary);
     line-height: var(--line-height-body);
 }
+.plan-review-decision-card {
+    overflow: hidden;
+}
 
+.plan-review-decision-body {
+    padding: var(--space-4);
+}
+
+.plan-review-decision-guidance {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    color: var(--color-primary);
+    background: var(--color-primary-soft);
+}
+
+.plan-review-decision-guidance i {
+    flex: 0 0 auto;
+    margin-top: 2px;
+    color: var(--color-brand-cyan);
+}
+
+.plan-review-decision-guidance p {
+    margin: 0;
+    font-size: var(--font-size-xs);
+    line-height: var(--line-height-body);
+}
+
+.plan-review-decision-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+}
+
+.plan-review-decision-actions .ui-button {
+    width: 100%;
+}
+
+.plan-review-decision-complete {
+    display: grid;
+    justify-items: center;
+    padding: var(--space-3);
+    text-align: center;
+}
+
+.plan-review-decision-complete > i {
+    margin-bottom: var(--space-2);
+    color: var(--color-success);
+    font-size: 32px;
+}
+
+.plan-review-decision-complete > .bi-x-circle-fill {
+    color: var(--color-danger);
+}
+
+.plan-review-decision-complete strong {
+    color: var(--color-primary);
+    font-size: var(--font-size-sm);
+}
+
+.plan-review-decision-complete p {
+    margin: var(--space-2) 0 0;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    line-height: var(--line-height-body);
+}
+
+.plan-decision-dialog {
+    width: min(92vw, 560px);
+    text-align: left;
+}
+
+.plan-decision-dialog > h2,
+.plan-decision-dialog > p {
+    text-align: center;
+}
+
+.plan-decision-comment {
+    width: 100%;
+    margin-top: var(--space-4);
+}
+
+.plan-decision-comment .ui-textarea {
+    width: 100%;
+    min-height: 120px;
+    resize: vertical;
+}
+
+.plan-decision-character-count {
+    display: block;
+    margin-top: var(--space-1);
+    color: var(--color-text-secondary);
+    font-size: 10px;
+    text-align: right;
+}
+
+.plan-decision-error {
+    width: 100%;
+    margin-top: var(--space-3);
+}
+
+.plan-decision-dialog-actions {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+}
+
+.plan-decision-dialog-actions .ui-button {
+    width: 100%;
+    min-width: 0;
+}
 @media (max-width: 1100px) {
     .plan-review-detail-layout {
         grid-template-columns: 1fr;
@@ -813,4 +927,8 @@
     .plan-review-objective__body {
         padding: var(--space-3);
     }
+    .plan-review-decision-actions,
+    .plan-decision-dialog-actions {
+    grid-template-columns: 1fr;
+}
 }

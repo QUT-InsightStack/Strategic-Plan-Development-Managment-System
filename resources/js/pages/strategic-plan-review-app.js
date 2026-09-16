@@ -12,6 +12,7 @@ import { getAccessSession } from '../access/access-session.js';
 import {
     getPlanSubmission,
     isSubmissionAssignedToReviewer,
+    processPlanDecision,
 } from '../data/plan-approval-demo-data.js';
 
 enforcePageAccess();
@@ -197,6 +198,185 @@ async function loadCommentsForObjectives(objectives) {
     return Object.fromEntries(results);
 }
 
+function DecisionDialog({
+    dialog,
+    processing,
+    error,
+    onCommentChange,
+    onCancel,
+    onConfirm,
+}) {
+    if (!dialog.open) {
+        return null;
+    }
+
+    const rejecting =
+        dialog.decision === 'reject';
+
+    const title = rejecting
+        ? 'Reject Strategic Plan?'
+        : 'Approve Strategic Plan?';
+
+    const description = rejecting
+        ? 'Provide a reason for rejecting this Strategic Plan. The current approval cycle will stop and the plan will require correction and resubmission.'
+        : 'Confirm that you have reviewed the Strategic Plan and want to approve it at the current workflow stage.';
+
+    return h(
+        'div',
+        {
+            className:
+                'ui-dialog-backdrop',
+            role: 'presentation',
+        },
+
+        h(
+            'section',
+            {
+                className:
+                    `ui-dialog plan-decision-dialog ` +
+                    `${rejecting ? 'ui-dialog--error' : ''}`,
+                role: 'dialog',
+                'aria-modal': 'true',
+                'aria-labelledby':
+                    'plan-decision-dialog-title',
+                'aria-describedby':
+                    'plan-decision-dialog-description',
+            },
+
+            h(
+                'div',
+                {
+                    className:
+                        'ui-dialog__icon',
+                    'aria-hidden': 'true',
+                },
+                h('i', {
+                    className:
+                        rejecting
+                            ? 'bi bi-x-lg'
+                            : 'bi bi-check-lg',
+                })
+            ),
+
+            h(
+                'h2',
+                {
+                    id:
+                        'plan-decision-dialog-title',
+                },
+                title
+            ),
+
+            h(
+                'p',
+                {
+                    id:
+                        'plan-decision-dialog-description',
+                },
+                description
+            ),
+
+            h(
+                'label',
+                {
+                    className:
+                        'ui-field plan-decision-comment',
+                },
+
+                h(
+                    'span',
+                    {
+                        className: 'ui-label',
+                    },
+                    rejecting
+                        ? 'Reason for rejection *'
+                        : 'Approval comment (optional)'
+                ),
+
+                h('textarea', {
+                    className: 'ui-textarea',
+                    rows: 5,
+                    maxLength: 2000,
+                    required: rejecting,
+                    disabled: processing,
+                    value: dialog.comment,
+                    placeholder: rejecting
+                        ? 'Explain what must be corrected before resubmission'
+                        : 'Add an optional comment about this approval',
+                    onChange: (event) =>
+                        onCommentChange(
+                            event.target.value
+                        ),
+                }),
+
+                h(
+                    'small',
+                    {
+                        className:
+                            'plan-decision-character-count',
+                    },
+                    `${dialog.comment.length}/2000`
+                )
+            ),
+
+            error
+                ? h(
+                    'div',
+                    {
+                        className:
+                            'ui-status ui-status--error plan-decision-error',
+                        role: 'alert',
+                    },
+                    error
+                )
+                : null,
+
+            h(
+                'div',
+                {
+                    className:
+                        'ui-dialog__actions plan-decision-dialog-actions',
+                },
+
+                h(
+                    'button',
+                    {
+                        className:
+                            'ui-button ui-button--secondary',
+                        type: 'button',
+                        disabled: processing,
+                        onClick: onCancel,
+                    },
+                    'Cancel'
+                ),
+
+                h(
+                    'button',
+                    {
+                        className:
+                            rejecting
+                                ? 'ui-button ui-button--danger-solid'
+                                : 'ui-button ui-button--primary',
+                        type: 'button',
+                        disabled:
+                            processing ||
+                            (
+                                rejecting &&
+                                !dialog.comment.trim()
+                            ),
+                        onClick: onConfirm,
+                    },
+                    processing
+                        ? 'Processing…'
+                        : rejecting
+                            ? 'Confirm Rejection'
+                            : 'Confirm Approval'
+                )
+            )
+        )
+    );
+}
+
 function StrategicPlanReviewApp() {
     const session = getAccessSession();
 
@@ -207,6 +387,21 @@ function StrategicPlanReviewApp() {
     const [commentsByObjective, setCommentsByObjective] =
         useState({});
     const [loading, setLoading] = useState(true);
+    const [processingDecision, setProcessingDecision] =
+    useState(false);
+
+const [decisionProcessed, setDecisionProcessed] =
+    useState(false);
+
+const [decisionError, setDecisionError] =
+    useState('');
+
+const [decisionDialog, setDecisionDialog] =
+    useState({
+        open: false,
+        decision: '',
+        comment: '',
+    });
     const [accessDenied, setAccessDenied] = useState(false);
     const [notice, setNotice] = useState({
         type: '',
@@ -340,6 +535,130 @@ function StrategicPlanReviewApp() {
             [section]: !current[section],
         }));
     }
+    function openDecisionDialog(decision) {
+    if (
+        processingDecision ||
+        decisionProcessed ||
+        submission?.status !==
+            'under_approval'
+    ) {
+        return;
+    }
+
+    setDecisionError('');
+
+    setDecisionDialog({
+        open: true,
+        decision,
+        comment: '',
+    });
+}
+
+function closeDecisionDialog() {
+    if (processingDecision) {
+        return;
+    }
+
+    setDecisionError('');
+
+    setDecisionDialog({
+        open: false,
+        decision: '',
+        comment: '',
+    });
+}
+
+function updateDecisionComment(comment) {
+    setDecisionError('');
+
+    setDecisionDialog((current) => ({
+        ...current,
+        comment,
+    }));
+}
+
+function confirmDecision() {
+    if (
+        !decisionDialog.open ||
+        processingDecision
+    ) {
+        return;
+    }
+
+    const decision =
+        decisionDialog.decision;
+
+    const comment =
+        decisionDialog.comment.trim();
+
+    if (
+        decision === 'reject' &&
+        !comment
+    ) {
+        setDecisionError(
+            'Enter a reason before rejecting the Strategic Plan.'
+        );
+        return;
+    }
+
+    setProcessingDecision(true);
+    setDecisionError('');
+
+    try {
+        const updatedSubmission =
+            processPlanDecision({
+                planId,
+                decision,
+                comment,
+                session,
+            });
+
+        setSubmission(updatedSubmission);
+        setDecisionProcessed(true);
+
+        setDecisionDialog({
+            open: false,
+            decision: '',
+            comment: '',
+        });
+
+        if (decision === 'reject') {
+            setNotice({
+                type: 'success',
+                message:
+                    'The Strategic Plan was rejected. The current approval cycle has ended and the rejection reason was recorded.',
+            });
+
+            return;
+        }
+
+        if (
+            updatedSubmission.status ===
+            'approved'
+        ) {
+            setNotice({
+                type: 'success',
+                message:
+                    'The Strategic Plan received final approval. The decision was recorded in the workflow history.',
+            });
+
+            return;
+        }
+
+        setNotice({
+            type: 'success',
+            message:
+                `The Strategic Plan was approved at this stage and advanced to “${updatedSubmission.currentStage.name}”, assigned to ${updatedSubmission.currentStage.approver}.`,
+        });
+    } catch (error) {
+        setDecisionError(
+            error.message ||
+            'The approval decision could not be processed.'
+        );
+    } finally {
+        setProcessingDecision(false);
+    }
+}
 
     const mission =
         plan?.missionFoundation ||
@@ -723,15 +1042,25 @@ function StrategicPlanReviewApp() {
         null,
 
         h(AppSidebar, {
-            onNotice: (message) =>
-                setNotice({
-                    type: 'info',
-                    message,
-                }),
+    onNotice: (message) =>
+        setNotice({
+            type: 'info',
+            message,
         }),
+}),
 
-        h(
-            'main',
+h(DecisionDialog, {
+    dialog: decisionDialog,
+    processing: processingDecision,
+    error: decisionError,
+    onCommentChange:
+        updateDecisionComment,
+    onCancel: closeDecisionDialog,
+    onConfirm: confirmDecision,
+}),
+
+h(
+    'main',
             {
                 className:
                     'app-shell-main plan-reviews-page',
@@ -1391,6 +1720,168 @@ function StrategicPlanReviewApp() {
                                     )
                                 ),
 
+                                h(
+    'section',
+    {
+        className:
+            'ui-card plan-review-decision-card',
+        'aria-labelledby':
+            'plan-decision-title',
+    },
+
+    h(
+        'div',
+        {
+            className:
+                'plan-review-section-heading',
+        },
+
+        h(
+            'div',
+            null,
+            h(
+                'h2',
+                {
+                    id:
+                        'plan-decision-title',
+                },
+                'Review Decision'
+            ),
+            h(
+                'p',
+                null,
+                'Record your decision for the current workflow stage.'
+            )
+        )
+    ),
+
+    h(
+        'div',
+        {
+            className:
+                'plan-review-decision-body',
+        },
+
+        decisionProcessed ||
+        submission?.status !==
+            'under_approval'
+            ? h(
+                'div',
+                {
+                    className:
+                        'plan-review-decision-complete',
+                    role: 'status',
+                },
+
+                h('i', {
+                    className:
+                        submission?.status ===
+                        'rejected'
+                            ? 'bi bi-x-circle-fill'
+                            : 'bi bi-check-circle-fill',
+                    'aria-hidden': 'true',
+                }),
+
+                h(
+                    'strong',
+                    null,
+                    submission?.status ===
+                    'rejected'
+                        ? 'Plan rejected'
+                        : submission?.status ===
+                            'approved'
+                            ? 'Final approval completed'
+                            : 'Decision recorded'
+                ),
+
+                h(
+                    'p',
+                    null,
+                    submission?.status ===
+                    'rejected'
+                        ? 'This approval cycle has ended. The plan must be corrected and resubmitted before review can continue.'
+                        : submission?.status ===
+                            'approved'
+                            ? 'The Strategic Plan has completed every configured approval stage.'
+                            : 'The plan has advanced to the next configured workflow stage.'
+                )
+            )
+            : h(
+                React.Fragment,
+                null,
+
+                h(
+                    'div',
+                    {
+                        className:
+                            'plan-review-decision-guidance',
+                    },
+
+                    h('i', {
+                        className:
+                            'bi bi-info-circle-fill',
+                        'aria-hidden': 'true',
+                    }),
+
+                    h(
+                        'p',
+                        null,
+                        'Approval advances the plan to the next stage. Rejection ends the current approval cycle and requires a reason.'
+                    )
+                ),
+
+                h(
+                    'div',
+                    {
+                        className:
+                            'plan-review-decision-actions',
+                    },
+
+                    h(
+                        'button',
+                        {
+                            className:
+                                'ui-button ui-button--danger',
+                            type: 'button',
+                            disabled:
+                                processingDecision,
+                            onClick: () =>
+                                openDecisionDialog(
+                                    'reject'
+                                ),
+                        },
+                        h('i', {
+                            className:
+                                'bi bi-x-lg',
+                            'aria-hidden': 'true',
+                        }),
+                        'Reject'
+                    ),
+
+                    h(
+                        'button',
+                        {
+                            className:
+                                'ui-button ui-button--primary',
+                            type: 'button',
+                            disabled:
+                                processingDecision,
+                            onClick: () =>
+                                openDecisionDialog(
+                                    'approve'
+                                ),
+                        },
+                        h('i', {
+                            className:
+                                'bi bi-check-lg',
+                            'aria-hidden': 'true',
+                        }),
+                        'Approve'
+                    )
+                )
+            )
+    )
+),
                                 h(
                                     Accordion,
                                     {

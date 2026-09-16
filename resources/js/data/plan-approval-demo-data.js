@@ -247,3 +247,247 @@ export function submitPlanForApproval(plan) {
 
     return submission;
 }
+
+function reviewerDisplayName(session) {
+    return (
+        session?.name ||
+        session?.email ||
+        session?.roleLabel ||
+        session?.roleName ||
+        'Authorised approver'
+    );
+}
+
+function createDecisionHistoryEntry({
+    decision,
+    comment,
+    submission,
+    session,
+}) {
+    const currentStage = submission.currentStage;
+
+    return {
+        action:
+            decision === 'approve'
+                ? 'approved'
+                : 'rejected',
+
+        decision,
+        comment: comment || '',
+
+        stageSequence:
+            currentStage.sequence,
+
+        stageId:
+            currentStage.stageId,
+
+        stageName:
+            currentStage.name,
+
+        assignedApprover:
+            currentStage.approver,
+
+        decidedByUserId:
+            session?.userId || null,
+
+        decidedBy:
+            reviewerDisplayName(session),
+
+        decidedByRole:
+            session?.roleName || '',
+
+        occurredAt:
+            new Date().toISOString(),
+    };
+}
+
+export function processPlanDecision({
+    planId,
+    decision,
+    comment = '',
+    session,
+}) {
+    const normalizedDecision =
+        String(decision || '')
+            .trim()
+            .toLowerCase();
+
+    const normalizedComment =
+        String(comment || '').trim();
+
+    if (
+        !['approve', 'reject'].includes(
+            normalizedDecision
+        )
+    ) {
+        throw new Error(
+            'Select either Approve or Reject.'
+        );
+    }
+
+    if (
+        normalizedDecision === 'reject' &&
+        !normalizedComment
+    ) {
+        throw new Error(
+            'A reason is required when rejecting a Strategic Plan.'
+        );
+    }
+
+    const submissions = readStorage(
+        SUBMISSION_STORAGE_KEY,
+        {}
+    );
+
+    const submission =
+        submissions[String(planId)];
+
+    if (!submission) {
+        throw new Error(
+            'This Strategic Plan has not been submitted for approval.'
+        );
+    }
+
+    if (
+        submission.status !==
+        'under_approval'
+    ) {
+        throw new Error(
+            'A decision has already been processed for this approval cycle.'
+        );
+    }
+
+    if (
+        submission.currentStage?.status !==
+        'pending'
+    ) {
+        throw new Error(
+            'The current workflow stage is no longer awaiting a decision.'
+        );
+    }
+
+    if (
+        !isSubmissionAssignedToReviewer(
+            submission,
+            session
+        )
+    ) {
+        throw new Error(
+            'You are not assigned to process the current workflow stage.'
+        );
+    }
+
+    const updatedSubmission =
+        structuredClone(submission);
+
+    const decisionHistory =
+        createDecisionHistoryEntry({
+            decision: normalizedDecision,
+            comment: normalizedComment,
+            submission: updatedSubmission,
+            session,
+        });
+
+    updatedSubmission.history = [
+        ...(updatedSubmission.history || []),
+        decisionHistory,
+    ];
+
+    if (normalizedDecision === 'reject') {
+        updatedSubmission.status =
+            'rejected';
+
+        updatedSubmission.rejectedAt =
+            decisionHistory.occurredAt;
+
+        updatedSubmission.completedAt =
+            decisionHistory.occurredAt;
+
+        updatedSubmission.currentStage = {
+            ...updatedSubmission.currentStage,
+            status: 'rejected',
+            decision: 'rejected',
+            comment: normalizedComment,
+            decidedBy:
+                decisionHistory.decidedBy,
+            decidedAt:
+                decisionHistory.occurredAt,
+        };
+
+        submissions[String(planId)] =
+            updatedSubmission;
+
+        writeSubmissions(submissions);
+
+        return updatedSubmission;
+    }
+
+    const stages =
+        updatedSubmission.workflowSnapshot
+            ?.stages || [];
+
+    const currentStageIndex =
+        Number(
+            updatedSubmission.currentStageIndex
+        );
+
+    const nextStageIndex =
+        currentStageIndex + 1;
+
+    const nextStage =
+        stages[nextStageIndex];
+
+    if (nextStage) {
+        updatedSubmission.currentStageIndex =
+            nextStageIndex;
+
+        updatedSubmission.currentStage = {
+            sequence: nextStageIndex + 1,
+            stageId: nextStage.id,
+            name: nextStage.name,
+            approverType:
+                nextStage.approverType,
+            approver: nextStage.approver,
+            status: 'pending',
+        };
+
+        updatedSubmission.history.push({
+            action: 'advanced',
+            stageSequence:
+                nextStageIndex + 1,
+            stageId: nextStage.id,
+            stageName: nextStage.name,
+            assignedApprover:
+                nextStage.approver,
+            occurredAt:
+                decisionHistory.occurredAt,
+        });
+    } else {
+        updatedSubmission.status =
+            'approved';
+
+        updatedSubmission.approvedAt =
+            decisionHistory.occurredAt;
+
+        updatedSubmission.completedAt =
+            decisionHistory.occurredAt;
+
+        updatedSubmission.currentStage = {
+            ...updatedSubmission.currentStage,
+            status: 'approved',
+            decision: 'approved',
+            comment: normalizedComment,
+            decidedBy:
+                decisionHistory.decidedBy,
+            decidedAt:
+                decisionHistory.occurredAt,
+        };
+    }
+
+    submissions[String(planId)] =
+        updatedSubmission;
+
+    writeSubmissions(submissions);
+
+    return updatedSubmission;
+}
