@@ -40,14 +40,19 @@ export function createAccessSession(user) {
     const permissions = permissionsFromUser(user, policy.permissions);
 
     return {
-        userId: user?.user_id,
-        office: user?.office || '',
-        name: user?.name || `${user?.first_name || ''} ${user?.last_name || ''}`.trim(),
-        roleName,
-        roleLabel: displayRoleName(roleName, ''),
-        permissions,
-        home: resolveSessionHome(roleName, permissions),
-    };
+    userId: user?.user_id,
+    name:
+        user?.name ||
+        `${user?.first_name || ''} ${user?.last_name || ''}`.trim(),
+    email: user?.email || '',
+    department: user?.department || '',
+    unit: user?.unit || '',
+    office: user?.office || '',
+    roleName,
+    roleLabel: displayRoleName(roleName, ''),
+    permissions,
+    home: resolveSessionHome(roleName, permissions),
+};
 }
 
 export function saveAccessSession(session) {
