@@ -261,6 +261,26 @@ function confirmSubmission() {
         return [creator.first_name, creator.last_name].filter(Boolean).join(' ');
     }
 
+    function approvalStatusLabel(status) {
+    const labels = {
+        under_approval: 'Under Approval',
+        approved: 'Approved',
+        rejected: 'Rejected',
+    };
+
+    return labels[status] || 'Not submitted';
+}
+
+function approvalStatusClass(status) {
+    const classes = {
+        under_approval: 'is-pending',
+        approved: 'is-approved',
+        rejected: 'is-rejected',
+    };
+
+    return classes[status] || '';
+}
+
     return React.createElement(React.Fragment, null,
         React.createElement(AppSidebar, { onNotice: (message) => setStatus({ type: 'info', message }) }),
         React.createElement('main', { className: 'app-shell-main manage-plans-page' }, React.createElement('div', { className: 'app-shell-container' },
@@ -309,7 +329,30 @@ function confirmSubmission() {
                         React.createElement('td', null, React.createElement('span', { className: 'plans-id' }, String(plan.record_id).padStart(4, '0'))),
                         React.createElement('td', null, React.createElement('strong', null, plan.title)),
                         React.createElement('td', null, React.createElement('span', { className: `ui-badge ui-badge--${plan.status || 'draft'}` }, (plan.status || 'draft').replace(/^./, (letter) => letter.toUpperCase()))),
-                        React.createElement('td', null,plan.approval_status? React.createElement( 'span',{className:'ui-badge plan-approval-badge',},'Under Approval'): React.createElement('span',{className:'plan-approval-not-submitted',},'Not submitted' )),
+                        React.createElement(
+    'td',
+    null,
+    plan.approval_status
+        ? React.createElement(
+            'span',
+            {
+                className:
+                    `ui-badge plan-approval-badge ` +
+                    `${approvalStatusClass(plan.approval_status)}`,
+            },
+            approvalStatusLabel(
+                plan.approval_status
+            )
+        )
+        : React.createElement(
+            'span',
+            {
+                className:
+                    'plan-approval-not-submitted',
+            },
+            'Not submitted'
+        )
+),
                         React.createElement('td',null,plan.approval_stage? React.createElement('div',{className:'plan-current-stage',},
                         React.createElement('strong',null,plan.approval_stage.name),
                         React.createElement('small',null,`Assigned to: ${plan.approval_stage.approver}`)): React.createElement('span',{className: 'ui-help', },'—')),
