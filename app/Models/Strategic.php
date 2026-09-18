@@ -19,6 +19,8 @@ class Strategic extends Model
         'level',
         'title',
         'description',
+        'planning_start_date',
+        'planning_end_date',
         'status',
         'archived_at',
         'archived_by',
@@ -32,6 +34,8 @@ class Strategic extends Model
     protected function casts(): array
     {
         return [
+            'planning_start_date' => 'date:Y-m-d',
+            'planning_end_date' => 'date:Y-m-d',
             'archived_at' => 'datetime',
             'deleted_at' => 'datetime',
         ];

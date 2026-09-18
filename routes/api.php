@@ -140,6 +140,9 @@ Route::middleware(['auth:api','auth.version','auth.session','system.available',]
     Route::get('pdp-chapters', [PdpChapterController::class, 'index']);
     Route::get('pdp-chapters/{chapter}', [PdpChapterController::class, 'show'])
         ->whereNumber('chapter');
+    Route::post('pdp-chapters/{chapter}/archive', [PdpChapterController::class, 'archive'])
+        ->whereNumber('chapter')
+        ->middleware('permission:pdp_chapters.manage');
     Route::post('pdp-chapters', [PdpChapterController::class, 'store'])
         ->middleware('permission:pdp_chapters.manage');
     Route::put('pdp-chapters/{chapter}', [PdpChapterController::class, 'update'])
@@ -349,6 +352,11 @@ Route::middleware([
     'system.available',
 ])->group(function () {
     Route::get(
+        'login-history/me',
+        [LoginHistoryController::class, 'me']
+    );
+
+    Route::get(
         'login-history',
         [LoginHistoryController::class, 'index']
     )->middleware('permission:login_history.view');
@@ -380,7 +388,6 @@ Route::middleware([
     Route::patch('', [SystemSettingsController::class, 'update'])
         ->middleware('permission:settings.manage');
 });
-
 
 
 

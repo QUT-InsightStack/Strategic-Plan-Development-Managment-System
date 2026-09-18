@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SearchLoginHistoryRequest;
 use App\Http\Resources\LoginHistoryResource;
+use App\Models\LoginHistory;
 use App\Services\LoginHistoryService;
 use App\Services\PermissionAuthorizationService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class LoginHistoryController extends Controller
@@ -52,6 +54,30 @@ class LoginHistoryController extends Controller
                 'next' => $history->nextPageUrl(),
             ],
         ], 200);
+    }
+
+    public function me(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'limit' => ['nullable', 'integer', 'min:1', 'max:25'],
+        ]);
+        $userId = (int) Auth::guard('api')->id();
+        $history = $this->loginHistoryService->search([
+            'user_id' => $userId,
+            'per_page' => (int) ($validated['limit'] ?? 10),
+        ]);
+
+        return response()->json([
+            'message' => 'Your login history was retrieved successfully.',
+            'data' => LoginHistoryResource::collection(collect($history->items()))->resolve($request),
+            'meta' => [
+                'recent_failures' => LoginHistory::query()
+                    ->where('user_id', $userId)
+                    ->where('status', 'failed')
+                    ->where('attempted_at', '>=', now()->subDays(30))
+                    ->count(),
+            ],
+        ]);
     }
 
     public function show(int $loginHistory): JsonResponse

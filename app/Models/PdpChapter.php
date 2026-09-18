@@ -15,7 +15,13 @@ class PdpChapter extends Model
         'chapter_description',
         'created_by',
         'updated_by',
+        'archived_at',
     ];
+
+    protected function casts(): array
+    {
+        return ['archived_at' => 'datetime'];
+    }
 
     public function strategicObjectives(): BelongsToMany
     {

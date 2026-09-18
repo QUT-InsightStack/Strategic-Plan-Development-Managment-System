@@ -1,7 +1,6 @@
 import { displayRoleName } from './access/role-labels.js';
 
 (function () {
-    const loginUrl = '/login';
 
     const messages = {
         help: 'Help resources are not connected yet.',
@@ -406,36 +405,6 @@ import { displayRoleName } from './access/role-labels.js';
         return prefix ? prefix.slice(0, -3) : JSON.stringify(record);
     }
 
-    async function requestJson(url, options = {}) {
-        const headers = {
-            Accept: 'application/json',
-            ...(options.headers || {}),
-        };
-
-        const response = await fetch(url, {
-            credentials: 'include',
-            ...options,
-            headers,
-        });
-
-        if (response.status === 401 || response.status === 403) {
-            window.location.href = loginUrl;
-            throw new Error('Authentication is required.');
-        }
-
-        const contentType = response.headers.get('content-type') || '';
-        const body = contentType.includes('application/json') ? await response.json() : null;
-
-        if (!response.ok) {
-            const error = new Error(body?.message || 'Request failed.');
-            error.status = response.status;
-            error.body = body;
-            throw error;
-        }
-
-        return body;
-    }
-
     window.ResourceCrud = {
         messages,
         resourceSchemas,
@@ -445,6 +414,5 @@ import { displayRoleName } from './access/role-labels.js';
         extractData,
         getSchema,
         resolveId,
-        requestJson,
     };
 })();

@@ -19,7 +19,7 @@
 
     @vite([
         'resources/css/strategic-plan-review.css',
-        'resources/js/pages/strategic-plan-reviews-app.js'
+        'resources/js/pages/management/strategic-plan-reviews-app.js'
     ])
 </head>
 

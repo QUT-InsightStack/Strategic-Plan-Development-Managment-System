@@ -1,3 +1,6 @@
+import { clearAccessSession } from './access/access-session.js';
+import { logoutUser } from './api/auth-api.js';
+
 /**
  * Shared session termination for authenticated pages.
  *
@@ -7,7 +10,6 @@
  */
 
 const loginUrl = '/login';
-const logoutApiUrl = '/api/auth/logout';
 
 /**
  * Keys written by the sign in flow. Removed on logout so no authentication
@@ -103,11 +105,7 @@ export async function logout({ onStart, onError } = {}) {
     }
 
     try {
-        await fetch(logoutApiUrl, {
-            method: 'POST',
-            credentials: 'include',
-            headers: { Accept: 'application/json' },
-        });
+        await logoutUser();
     } catch (error) {
         // Network failure. The token may still be live server-side, but
         // there is nothing the client can do about that; clearing local
@@ -123,4 +121,3 @@ export async function logout({ onStart, onError } = {}) {
 
     window.location.replace(loginUrl);
 }
-import { clearAccessSession } from './access/access-session.js';

@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
     <!-- Custom CSS -->
-    @vite(['resources/css/office.css', 'resources/css/strategic-plan.css', 'resources/js/strategic-plan-app.js'])
+    @vite(['resources/css/office.css', 'resources/css/strategic-plan.css', 'resources/js/pages/planner/strategic-plan-app.js'])
 </head>
 
 <body>

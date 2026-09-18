@@ -19,6 +19,7 @@ class PdpChapterController extends Controller
         ]);
 
         $chapters = PdpChapter::query()
+            ->whereNull('archived_at')
             ->when($filters['search'] ?? null, function ($query, string $search): void {
                 $query->where(function ($builder) use ($search): void {
                     $builder->where('chapter_title', 'like', "%{$search}%")
@@ -79,6 +80,24 @@ class PdpChapterController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'PDP Chapter deleted successfully.',
+        ]);
+    }
+
+    public function archive(PdpChapter $chapter): JsonResponse
+    {
+        if ($chapter->archived_at !== null) {
+            return response()->json(['message' => 'PDP Chapter is already archived.'], 409);
+        }
+
+        $chapter->update([
+            'archived_at' => now(),
+            'updated_by' => Auth::guard('api')->id(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'PDP Chapter archived successfully.',
+            'data' => $chapter->fresh(),
         ]);
     }
 }

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create User Account | Strategic Planning Management System</title>
-    @vite(['resources/css/create-user.css', 'resources/js/create-user-app.js'])
+    @vite(['resources/css/create-user.css', 'resources/js/pages/technical-admin/create-user-app.js'])
 </head>
 <body>
     <div id="root"></div>
