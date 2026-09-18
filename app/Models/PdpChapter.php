@@ -14,7 +14,17 @@ class PdpChapter extends Model
         'chapter_description',
         'created_by',
         'updated_by',
+        // status/archived_at/archived_by intentionally excluded from
+        // mass assignment — they must only change via updateStatus(),
+        // same principle as rejecting role_id on generic user updates.
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'archived_at' => 'datetime',
+        ];
+    }
 
     public function creator()
     {
@@ -24,5 +34,20 @@ class PdpChapter extends Model
     public function updater()
     {
         return $this->belongsTo(User::class, 'updated_by', 'user_id');
+    }
+
+    public function archiver()
+    {
+        return $this->belongsTo(User::class, 'archived_by', 'user_id');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    public function scopeArchived($query)
+    {
+        return $query->where('status', 'archived');
     }
 }
