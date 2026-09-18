@@ -23,6 +23,7 @@ class PdpChapter extends Model
     {
         return [
             'archived_at' => 'datetime',
+            'deleted_at' => 'datetime',
         ];
     }
 
@@ -35,6 +36,12 @@ class PdpChapter extends Model
     {
         return $this->belongsTo(User::class, 'updated_by', 'user_id');
     }
+
+    public function deleter()
+    {
+        return $this->belongsTo(User::class, 'deleted_by', 'user_id');
+    }
+
 
     public function archiver()
     {
@@ -50,4 +57,10 @@ class PdpChapter extends Model
     {
         return $query->where('status', 'archived');
     }
+
+    public function scopeNotDeleted($query)
+    {
+        return $query->where('status', '!=', 'deleted');
+    }
+
 }

@@ -31,6 +31,7 @@ class PdpChapterController extends Controller
         $status = $filters['status'] ?? 'active';
 
         $chapters = PdpChapter::query()
+            ->notDeleted()
             ->when($status !== 'all', fn ($query) => $query->where('status', $status))
             ->when($filters['search'] ?? null, function ($query, string $search): void {
                 $query->where(function ($builder) use ($search): void {
@@ -139,13 +140,41 @@ class PdpChapterController extends Controller
 
     public function destroy(PdpChapter $chapter): JsonResponse
     {
-        DB::transaction(function () use ($chapter): void {
-            $chapter->delete();
+        $chapter = DB::transaction(function () use ($chapter): PdpChapter {
+            $locked = PdpChapter::query()
+                ->lockForUpdate()
+                ->findOrFail($chapter->chapter_id);
+
+            if ($locked->status === 'deleted') {
+                throw ValidationException::withMessages([
+                    'status' => ['This chapter has already been deleted.'],
+                ]);
+            }
+
+            if ($locked->status !== 'archived') {
+                throw ValidationException::withMessages([
+                    'status' => ['Only archived chapters can be permanently deleted.'],
+                ]);
+            }
+
+            $locked->status = 'deleted';
+            $locked->deleted_at = now();
+            $locked->deleted_by = Auth::guard('api')->id();
+            $locked->save();
+
+            $this->auditWriter->write('pdp_chapter.deleted', [
+                'actor_user_id' => Auth::guard('api')->id(),
+                'resource_type' => 'pdp_chapter',
+                'resource_id' => $locked->chapter_id,
+            ]);
+
+            return $locked->fresh();
         });
 
         return response()->json([
             'success' => true,
             'message' => 'PDP Chapter deleted successfully.',
+            'data' => $chapter,
         ]);
     }
 }

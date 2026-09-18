@@ -152,7 +152,7 @@ Route::middleware(['auth:api','auth.version','auth.session','system.available',]
 
     Route::delete('pdp-chapters/{chapter}', [PdpChapterController::class, 'destroy'])
         ->whereNumber('chapter')
-        ->middleware('permission:pdp_chapters.manage');
+        ->middleware('permission:pdp_chapters.delete');
 
     // Roles
     Route::get('roles', [RoleController::class, 'index'])

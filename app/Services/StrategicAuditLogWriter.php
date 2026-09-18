@@ -94,6 +94,9 @@ class StrategicAuditLogWriter implements StrategicLogWriter
             str_starts_with($event, 'strategic_record.') =>
                 'strategic_record',
 
+            str_starts_with($event, 'pdp_chapter.') =>
+            'pdp_chapter',
+    
             str_starts_with($event, 'user.') =>
                 'user',
 
