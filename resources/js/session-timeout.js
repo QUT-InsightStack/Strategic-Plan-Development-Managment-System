@@ -1,3 +1,6 @@
+import { getCurrentUser } from './api/auth-api.js';
+import { getSecuritySettings } from './api/security-settings-api.js';
+
 /**
  * Idle session timeout.
  *
@@ -97,14 +100,7 @@ function recordActivity() {
  */
 async function resolveTimeoutMinutes() {
     try {
-        const response = await fetch('/api/security-settings', {
-            credentials: 'include',
-            headers: { Accept: 'application/json' },
-        });
-
-        if (!response.ok) return DEFAULT_TIMEOUT_MINUTES;
-
-        const payload = await response.json();
+        const payload = await getSecuritySettings();
         const minutes = Number(payload?.data?.session_timeout_minutes);
 
         return Number.isInteger(minutes) && minutes > 0 ? minutes : DEFAULT_TIMEOUT_MINUTES;
@@ -223,7 +219,7 @@ function buildWarning() {
     stay.addEventListener('click', () => {
         // Touch an authenticated endpoint so the server-side token is exercised
         // at the same moment the client clock is reset.
-        fetch('/api/auth/me', { credentials: 'include', headers: { Accept: 'application/json' } }).catch(() => {});
+        getCurrentUser().catch(() => {});
         lastActivityWrite = 0;
         recordActivity();
         hideWarning();

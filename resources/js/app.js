@@ -1,3 +1,5 @@
+import { login } from './api/auth-api.js';
+
 const loginPage = document.querySelector('[data-login-page]');
 
 if (loginPage) {
@@ -82,22 +84,9 @@ if (loginPage) {
         submitButton.textContent = 'Signing in...';
         setStatus('Checking your sign in details...', 'info');
 
-        fetch('/api/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify({
+        login({
                 email: userAccount,
                 password: password,
-            }),
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Invalid credentials');
-            }
-            return response.json();
         })
         .then(data => {
             if (data.token) {

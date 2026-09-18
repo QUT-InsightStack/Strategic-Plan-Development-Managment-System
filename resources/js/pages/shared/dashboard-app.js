@@ -1,0 +1,246 @@
+import { BrandLogo } from '../../brand-logo.js';
+import { logout, guardAgainstBackNavigation } from '../../auth-session.js';
+import { enforcePageAccess } from '../../access/access-guard.js';
+import { can, clearAccessSession } from '../../access/access-session.js';
+import { PERMISSIONS } from '../../access/access-policy.js';
+import { LogoutButton } from '../../components/LogoutButton.js';
+import { PasswordAssistancePanel } from '../../components/PasswordAssistancePanel.js';
+import { getDashboardModule } from '../../api/dashboard-api.js';
+
+enforcePageAccess();
+
+const { useState, useEffect } = React;
+const rootElement = document.getElementById('root');
+const dashboardUrl = '/dashboard';
+const profileUrl = '/profile';
+const resourceUrl = '/resource';
+const loginUrl = '/login';
+const strategicPlanUrl = '/strategic-plan';
+const createUserUrl = '/create-user';
+const userManagementUrl = '/user-management';
+const referenceDataUrl = '/administrative-admin/reference-data';
+const templateManagementUrl = '/administrative-admin/templates';
+const pdpManagementUrl = '/pdp-chapters/manage';
+const loginHistoryUrl = '/login-history';
+const systemMaintenanceUrl = '/manual-backup';
+
+const modules = [
+    { id: 'users', title: 'Users', description: 'Manage user accounts and active employees.', permission: PERMISSIONS.USERS_VIEW },
+    { id: 'roles', title: 'Roles', description: 'Create and assign role definitions.', permission: PERMISSIONS.ROLES_VIEW },
+    { id: 'permissions', title: 'Permissions', description: 'Control module access and privileges.', permission: PERMISSIONS.PERMISSIONS_VIEW },
+    { id: 'strategic-foundations', title: 'Strategic Foundations', description: 'Manage your strategic goals and values.', permission: PERMISSIONS.FOUNDATIONS_VIEW },
+    { id: 'strategic-records', title: 'Strategic Records', description: 'Review and maintain strategic plan records.', permission: PERMISSIONS.PLANS_VIEW },
+    { id: 'relations', title: 'Relations', description: 'Manage relationships between strategic items.', permission: PERMISSIONS.MAPPINGS_MANAGE },
+    { id: 'logs', title: 'Activity Logs', description: 'Inspect audit and event history.', permission: PERMISSIONS.LOGS_VIEW },
+    { id: 'role-premissions', title: 'Role Permissions', description: 'Sync permissions for each role.', permission: PERMISSIONS.PERMISSIONS_VIEW },
+    { id: 'plan-core-values', title: 'Plan Core Values', description: 'Link plans with core values.', permission: PERMISSIONS.FOUNDATIONS_VIEW },
+];
+
+const staticModules = [
+    { id: 'reference-data', title: 'Reference Data Management', description: 'Maintain the planning reference data used for mapping, filtering, and reporting.', href: referenceDataUrl, permission: PERMISSIONS.REFERENCE_DATA_MANAGE },
+    { id: 'template-management', title: 'Template Management', description: 'Maintain reusable planning and reporting templates.', href: templateManagementUrl, permission: PERMISSIONS.TEMPLATES_MANAGE },
+    { id: 'pdp-management', title: 'PDP Chapters Management', description: 'Create and maintain PDP chapter reference records.', href: pdpManagementUrl, permission: PERMISSIONS.PDP_CHAPTERS_MANAGE },
+    { id: 'login-history', title: 'Login History', description: 'Review successful and unsuccessful account sign-in attempts.', href: loginHistoryUrl, permission: PERMISSIONS.LOGS_VIEW },
+    { id: 'system-maintenance', title: 'System Maintenance', description: 'Create and download protected database backups.', href: systemMaintenanceUrl, permission: PERMISSIONS.BACKUPS_VIEW },
+    { id: 'strategic-plan', title: 'Strategic Plan', description: 'Manage Mission, Vision, and Core Values for your organisation.', href: strategicPlanUrl, permission: PERMISSIONS.PLANS_VIEW },
+];
+
+const visibleModules = modules.filter((module) => can(module.permission));
+const visibleStaticModules = staticModules.filter((module) => can(module.permission));
+const canManagePasswordAssistance = can(PERMISSIONS.USERS_MANAGE);
+
+const messages = {
+    help: 'Help resources are not connected yet.',
+    contact: 'Contact details will be provided by the system administrator.',
+    support: 'Support access is available for assigned users.',
+    privacy: 'Privacy Notice content is not connected yet.',
+    terms: 'Terms of Use content is not connected yet.',
+    accessibility: 'Accessibility information is not connected yet.',
+};
+
+function Brand() {
+    return React.createElement(
+        'a',
+        { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic Planning Management System home' },
+        React.createElement(BrandLogo),
+        React.createElement('span', { className: 'brand-name' }, 'Strategic Planning Management System')
+    );
+}
+
+function Header({ onMessage, onLogout, loggingOut }) {
+    return React.createElement(
+        'header',
+        { className: 'app-header', 'aria-label': 'Application header' },
+        React.createElement(Brand),
+        React.createElement(
+            'nav',
+            { className: 'top-nav', 'aria-label': 'Primary navigation' },
+            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => window.location.href = profileUrl }, 'Profile'),
+            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.help) }, 'Help'),
+            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.contact) }, 'Contact'),
+            React.createElement('button', { className: 'nav-link', type: 'button', onClick: () => onMessage(messages.support) }, 'Support'),
+            React.createElement(LogoutButton)
+        )
+    );
+}
+
+function ModuleCard({ module, count }) {
+    const primaryUrl = module.id === 'users'
+        ? userManagementUrl
+        : `${resourceUrl}?resource=${module.id}`;
+
+    return React.createElement(
+        'article',
+        { className: 'dashboard-card' },
+        React.createElement('h3', null, module.title),
+        React.createElement('p', null, module.description),
+        React.createElement('p', { className: 'dashboard-count' }, count !== null ? `${count} records` : 'Loading...'),
+        React.createElement(
+            'div',
+            { className: 'dashboard-actions' },
+            React.createElement(
+                'a',
+                { className: 'action-button primary', href: primaryUrl },
+                'Open'
+            ),
+            module.id === 'users'
+                ? React.createElement(
+                      React.Fragment,
+                      null,
+                      React.createElement(
+                          'a',
+                          { className: 'action-button secondary', href: userManagementUrl },
+                          'Search Users'
+                      ),
+                      React.createElement(
+                          'a',
+                          { className: 'action-button secondary', href: createUserUrl },
+                          'Create User'
+                      )
+                  )
+                : React.createElement(
+                      'a',
+                      { className: 'action-button secondary', href: `${resourceUrl}?resource=${module.id}` },
+                      'Explore'
+                  )
+        )
+    );
+}
+
+function StaticModuleCard({ module }) {
+    return React.createElement(
+        'article',
+        { className: 'dashboard-card' },
+        React.createElement('h3', null, module.title),
+        React.createElement('p', null, module.description),
+        React.createElement(
+            'div',
+            { className: 'dashboard-actions', style: { marginTop: 'auto' } },
+            React.createElement(
+                'a',
+                { className: 'action-button primary', href: module.href },
+                'Open'
+            )
+        )
+    );
+}
+
+function DashboardApp() {
+    const [counts, setCounts] = useState({});
+    const [status, setStatus] = useState({ message: '', type: 'info' });
+    const [loggingOut, setLoggingOut] = useState(false);
+
+    useEffect(() => {
+        guardAgainstBackNavigation();
+        refreshCounts();
+    }, []);
+
+    function setStatusMessage(message, type = 'info') {
+        setStatus({ message, type });
+    }
+
+    function refreshCounts() {
+        setStatusMessage('Refreshing counts...', 'info');
+
+        Promise.all(
+            visibleModules.map((module) =>
+                getDashboardModule(module.id)
+                    .then((data) => {
+                        const payload = data?.data ?? data;
+                        if (Array.isArray(payload)) {
+                            return { id: module.id, count: payload.length };
+                        }
+                        return { id: module.id, count: null };
+                    })
+                    .catch(() => ({ id: module.id, count: null }))
+            )
+        ).then((results) => {
+            const nextCounts = results.reduce((acc, next) => ({ ...acc, [next.id]: next.count }), {});
+            setCounts(nextCounts);
+            setStatusMessage('Dashboard ready.', 'success');
+        });
+    }
+
+    function handleLogout() {
+        clearAccessSession();
+        logout({
+            onStart: () => {
+                setLoggingOut(true);
+                setStatusMessage('Signing you out...', 'info');
+            },
+            onError: (message) => setStatusMessage(message, 'error'),
+        });
+    }
+
+    return React.createElement(
+        'div',
+        { className: 'profile-shell' },
+        React.createElement(Header, { onMessage: setStatusMessage, onLogout: handleLogout, loggingOut }),
+        React.createElement(
+            'main',
+            { className: 'profile-main' },
+            React.createElement(
+                'div',
+                { className: 'page-inner' },
+                React.createElement(
+                    'div',
+                    { className: 'page-title' },
+                    React.createElement('h1', null, 'Application Dashboard'),
+                    React.createElement('p', null, 'Access protected resources, review available modules, and manage your profile.')
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'dashboard-actions-bar' },
+                    React.createElement(
+                        'button',
+                        { className: 'action-button primary', type: 'button', onClick: refreshCounts },
+                        'Refresh Counts'
+                    ),
+                    React.createElement(
+                        'a',
+                        { className: 'action-button secondary', href: profileUrl },
+                        'Open Profile'
+                    )
+                ),
+                canManagePasswordAssistance
+                    ? React.createElement(PasswordAssistancePanel, {
+                    onNotice: setStatusMessage,
+                })
+                    : null,
+                React.createElement(
+                    'div',
+                    { className: 'dashboard-grid' },
+                    visibleStaticModules.map((module) => React.createElement(StaticModuleCard, { key: module.id, module })),
+                    visibleModules.map((module) => React.createElement(ModuleCard, { key: module.id, module, count: counts[module.id] ?? null }))
+                ),
+                React.createElement(
+                    'p',
+                    { className: `form-status is-${status.type}` },
+                    status.message
+                )
+            )
+        )
+    );
+}
+
+ReactDOM.createRoot(rootElement).render(React.createElement(DashboardApp));
