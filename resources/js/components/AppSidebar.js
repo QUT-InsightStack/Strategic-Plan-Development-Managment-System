@@ -69,7 +69,7 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
     function isCurrentChild(child) {
         if (child.href?.startsWith('/office')) {
             const view = new URLSearchParams(window.location.search).get('view');
-            return currentPath === '/office' && (child.href === '/office' ? !view || view === 'review' : child.href === `/office?view=${view}`);
+            return currentPath === '/office' && (child.href === '/office' ? !view || ['review', 'comments'].includes(view) : child.href === `/office?view=${view}`);
         }
         return child.href === currentPath
             || (child.href === '/strategic-plans/finalize' && /^\/strategic-plans\/\d+\/finalize\/?$/.test(currentPath))
