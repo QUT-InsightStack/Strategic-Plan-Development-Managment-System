@@ -39,7 +39,7 @@ class AuthController extends Controller
         private readonly AuthenticationSessionService $sessionService,
         private readonly AccessTokenCookieService $accessCookies,
         private readonly StrategicLogWriter $auditWriter,
-        private readonly ProfilePhotoService $profilePhotos
+        private readonly ProfilePhotoService $profilePhotos,
         private readonly LoginHistoryRecorder $loginHistoryRecorder,
         private readonly SecuritySettingsService $securitySettings
     ) {
