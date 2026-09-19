@@ -13,9 +13,10 @@ import { createAccessSession, saveAccessSession } from '../../access/access-sess
 const h = React.createElement;
 const { useState, useEffect } = React;
 const detailId = new URLSearchParams(location.search).get('plan');
-const requestedView = new URLSearchParams(location.search).get('view') || 'review';
+const requestedView = new URLSearchParams(location.search).get('view') || 'comments';
 const view = ['review', 'comments', 'inputs', 'edit', 'progress', 'mapping', 'alignment'].includes(requestedView) ? requestedView : 'review';
-const entry = officeItems.flatMap(item => item.children).find(item => item.href === '/office?view=' + view);
+const entryHref = ['review', 'comments'].includes(view) ? '/office' : '/office?view=' + view;
+const entry = officeItems.flatMap(item => item.children).find(item => item.href === entryHref);
 const planLink = id => '/office?plan=' + encodeURIComponent(id) + (view === 'inputs' ? '&view=inputs' : view === 'comments' ? '#office-comments' : '');
 const titles = { review: 'Plan List', comments: 'Plan Comments', edit: 'Edit Assigned Draft Objectives', inputs: 'Submit Input / Objective', proposal: 'Submit Proposal', progress: 'Update Assigned Progress', mapping: 'Agency Mapping', alignment: 'View Alignment' };
 function OfficeApp() {
@@ -25,6 +26,7 @@ function OfficeApp() {
  const [loading, setLoading] = useState(true);
  const [error, setError] = useState('');
  const [notice, setNotice] = useState('');
+ const [inputPlanId, setInputPlanId] = useState('');
  const empty = { search: '', office: '', level: '', year: '' };
  const [filters, setFilters] = useState(empty);
  const [query, setQuery] = useState({ page: 1 });
@@ -35,9 +37,24 @@ function OfficeApp() {
    .catch(err => { if (active) { setError(err.message); setPlans([]); setMeta({}); } }).finally(() => { if (active) setLoading(false); });
   return () => { active = false; };
  }, [query]);
+ useEffect(() => {
+  if (view !== 'inputs' || inputPlanId || !plans.length) return;
+  const firstDraft = plans.find(plan => plan.status === 'draft');
+  if (firstDraft) setInputPlanId(String(firstDraft.record_id));
+ }, [plans, inputPlanId]);
  const field = (name, label, options) => h('label', { className: 'office-filter', key: name }, label,
   options ? h('select', { value: filters[name], onChange: e => setFilters({ ...filters, [name]: e.target.value }) }, h('option', { value: '' }, `All ${label.toLowerCase()}`), options.map(option => h('option', { key: option.value ?? option, value: option.value ?? option }, option.label ?? option)))
    : h('input', { type: name === 'year' ? 'number' : 'search', placeholder: name === 'search' ? 'Search plans...' : 'YYYY', value: filters[name], onChange: e => setFilters({ ...filters, [name]: e.target.value }) }));
+
+ if (view === 'inputs') {
+  const draftPlans = plans.filter(plan => plan.status === 'draft');
+  return h('div', { className: 'office-workspace' },
+   h(AppSidebar, { active: 'Planning Module', onNotice: setNotice }),
+   loading ? h('main', { className: 'office-content' }, h('p', { role: 'status' }, 'Loading available draft plans…'))
+    : error ? h('main', { className: 'office-content' }, h('div', { className: 'office-panel', role: 'alert' }, error, ' ', h('button', { onClick: () => setQuery({ ...query }) }, 'Retry')))
+    : !draftPlans.length ? h('main', { className: 'office-content' }, h('div', { className: 'office-panel' }, h('h1', null, 'Submit Planning Inputs'), h('p', null, 'No draft plans are currently available for input.')))
+    : h(OfficePlanInput, { planId: inputPlanId || String(draftPlans[0].record_id), planOptions: draftPlans, onPlanChange: setInputPlanId }));
+ }
 
  return h('div', { className: 'office-workspace' },
   h(AppSidebar, { active: ['mapping', 'alignment'].includes(view) ? 'Mapping Module' : 'Planning Module', onNotice: setNotice }),
@@ -67,6 +84,5 @@ apiRequest('/api/auth/me').then(payload => {
  saveAccessSession(createAccessSession(payload.data));
  if (enforcePageAccess()) root.render(detailId ? h('div', { className: 'office-workspace' }, h(AppSidebar), new URLSearchParams(location.search).get('view') === 'inputs' ? h(OfficePlanInput, { planId: detailId }) : h(OfficePlanDetail, { planId: detailId })) : h(OfficeApp));
 }).catch(error => root.render(h('p', { role: 'alert' }, error.message)));
-
 
 
