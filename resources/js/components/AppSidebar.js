@@ -19,9 +19,9 @@ const items = [
             { label: 'Create Plans', href: '/strategic-plans/create', permission: PERMISSIONS.PLANS_CREATE },
             { label: 'Manage Plans', href: '/strategic-plans', permission: PERMISSIONS.PLANS_VIEW },
             { label: 'Strategic Objectives', href: '/strategic-objectives', permission: PERMISSIONS.OBJECTIVES_VIEW },
+            { label: 'Consolidate Inputs', href: '/consolidate-inputs', permission: PERMISSIONS.PLANS_UPDATE },
+            { label: 'Plan Reviews', href: '/strategic-plan-reviews', permission: PERMISSIONS.PLANS_VIEW },
             { label: 'PDP Chapters', href: '/pdp-chapters', permission: PERMISSIONS.PLANS_VIEW },
-            { label: 'Monitor Plans', permission: PERMISSIONS.MONITORING_VIEW },
-            { label: 'Finalize Plans', href: '/strategic-plans/finalize', permission: PERMISSIONS.PLANS_UPDATE },
         ],
     },
     {
@@ -32,12 +32,16 @@ const items = [
             { label: 'Create / Review Mapping', href: '/mappings', permission: PERMISSIONS.MAPPINGS_MANAGE },
         ],
     },
+    { label: 'Finalize Plans', icon: 'bi-clipboard-check-fill', href: '/strategic-plans/finalize', permission: PERMISSIONS.PLANS_UPDATE },
+    { label: 'Monitor Plans', icon: 'bi-speedometer2', permission: PERMISSIONS.MONITORING_VIEW },
     { label: 'FAQ', icon: 'bi-info-square-fill' },
     { label: 'Report', icon: 'bi-file-earmark-bar-graph', permission: PERMISSIONS.REPORTS_VIEW },
 ];
 
 export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) {
     const currentPath = window.location.pathname;
+    const isFinalizePage = currentPath === '/strategic-plans/finalize'
+        || /^\/strategic-plans\/\d+\/finalize\/?$/.test(currentPath);
     const isObjectivePage = currentPath === '/strategic-objectives'
         || /^\/strategic-plans\/\d+\/objectives\/?$/.test(currentPath);
     const [accessSession, setAccessSession] = useState(null);
@@ -55,7 +59,7 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
         return () => { active = false; };
     }, [accessAttempt]);
     const [openMenus, setOpenMenus] = useState({
-        'Planning Module': (currentPath === '/office' && !['mapping', 'alignment'].includes(new URLSearchParams(window.location.search).get('view'))) || currentPath === '/consolidate-inputs' || currentPath.startsWith('/strategic-plan') || currentPath.startsWith('/strategic-objectives') || currentPath.startsWith('/pdp-chapters'),
+        'Planning Module': (currentPath === '/office' && !['mapping', 'alignment'].includes(new URLSearchParams(window.location.search).get('view'))) || currentPath === '/consolidate-inputs' || (currentPath.startsWith('/strategic-plan') && !isFinalizePage) || currentPath.startsWith('/strategic-objectives') || currentPath.startsWith('/pdp-chapters'),
         'Mapping Module': currentPath === '/mappings' || (currentPath === '/office' && ['mapping', 'alignment'].includes(new URLSearchParams(window.location.search).get('view'))),
     });
 
@@ -66,7 +70,7 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
     function isCurrentChild(child) {
         if (child.href?.startsWith('/office')) {
             const view = new URLSearchParams(window.location.search).get('view');
-            return currentPath === '/office' && (child.href === '/office' ? !view || view === 'review' : child.href === `/office?view=${view}`);
+            return currentPath === '/office' && (child.href === '/office' ? !view || ['review', 'comments'].includes(view) : child.href === `/office?view=${view}`);
         }
         return child.href === currentPath
             || (child.href === '/strategic-plans/finalize' && /^\/strategic-plans\/\d+\/finalize\/?$/.test(currentPath))
@@ -126,8 +130,11 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
             );
         }
 
+        const isCurrent = item.href === currentPath
+            || (item.href === '/strategic-plans/finalize' && isFinalizePage);
+
         return item.href
-            ? React.createElement('a', { key: item.label, href: item.href, className: `app-sidebar__item${item.href === currentPath ? ' active' : ''}`, 'aria-current': item.href === currentPath ? 'page' : undefined }, React.createElement('i', { className: `bi ${item.icon}` }), React.createElement('span', null, item.label))
+            ? React.createElement('a', { key: item.label, href: item.href, className: `app-sidebar__item${isCurrent ? ' active' : ''}`, 'aria-current': isCurrent ? 'page' : undefined }, React.createElement('i', { className: `bi ${item.icon}` }), React.createElement('span', null, item.label))
             : React.createElement('button', { key: item.label, type: 'button', className: `app-sidebar__item${active === item.label ? ' active' : ''}`, onClick: () => onNotice(`${item.label} is reserved for a later module.`) }, React.createElement('i', { className: `bi ${item.icon}` }), React.createElement('span', null, item.label));
     }
 

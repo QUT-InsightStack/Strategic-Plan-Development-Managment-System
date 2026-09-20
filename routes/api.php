@@ -21,7 +21,20 @@ use App\Http\Controllers\ImplementationInputScopeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\SecuritySettingsController;
+use App\Http\Controllers\StrategicDocumentController;
 use Illuminate\Support\Facades\Route;
+
+Route::middleware(['auth:api', 'auth.version', 'permission:system_monitoring.view'])
+    ->prefix('system-monitoring')->group(function (): void {
+        Route::get('events', [\App\Http\Controllers\SystemMonitoringController::class, 'events']);
+        Route::get('events/{id}', [\App\Http\Controllers\SystemMonitoringController::class, 'event'])->whereNumber('id');
+        Route::get('alerts', [\App\Http\Controllers\SystemMonitoringController::class, 'alerts']);
+        Route::get('trends', [\App\Http\Controllers\SystemMonitoringController::class, 'trends']);
+        Route::get('summary', [\App\Http\Controllers\SystemMonitoringController::class, 'summary']);
+        Route::get('requests', [\App\Http\Controllers\SystemMonitoringController::class, 'requests']);
+        Route::get('health', [\App\Http\Controllers\SystemMonitoringController::class, 'health']);
+        Route::get('checks', [\App\Http\Controllers\SystemMonitoringController::class, 'checks']);
+    });
 
 /*
 |--------------------------------------------------------------------------
@@ -141,6 +154,9 @@ Route::middleware(['auth:api','auth.version','auth.session','system.available',]
     Route::get('pdp-chapters', [PdpChapterController::class, 'index']);
     Route::get('pdp-chapters/{chapter}', [PdpChapterController::class, 'show'])
         ->whereNumber('chapter');
+    Route::post('pdp-chapters/{chapter}/archive', [PdpChapterController::class, 'archive'])
+        ->whereNumber('chapter')
+        ->middleware('permission:pdp_chapters.manage');
     Route::post('pdp-chapters', [PdpChapterController::class, 'store'])
         ->middleware('permission:pdp_chapters.manage');
     Route::put('pdp-chapters/{chapter}', [PdpChapterController::class, 'update'])
@@ -235,6 +251,17 @@ Route::middleware(['auth:api','auth.version','auth.session','system.available',]
 */
 
 Route::middleware(['auth:api', 'auth.version','auth.session','system.available',])->group(function () {
+    Route::get('strategic-plans/{plan}/documents', [StrategicDocumentController::class, 'planIndex'])
+        ->whereNumber('plan')->middleware('permission:strategic_documents.view');
+    Route::post('strategic-plans/{plan}/documents', [StrategicDocumentController::class, 'storeForPlan'])
+        ->whereNumber('plan')->middleware('permission:strategic_documents.upload');
+    Route::get('strategic-objectives/{objective}/documents', [StrategicDocumentController::class, 'objectiveIndex'])
+        ->whereNumber('objective')->middleware('permission:strategic_documents.view');
+    Route::post('strategic-objectives/{objective}/documents', [StrategicDocumentController::class, 'storeForObjective'])
+        ->whereNumber('objective')->middleware('permission:strategic_documents.upload');
+    Route::get('strategic-documents/{document}/download', [StrategicDocumentController::class, 'download'])
+        ->whereNumber('document')->middleware('permission:strategic_documents.download');
+
     // Strategic plan management
     Route::get('strategic-plans', [PlanCreationController::class, 'index']);
     Route::post('strategic-plans', [PlanCreationController::class, 'store']);
@@ -354,6 +381,11 @@ Route::middleware([
     'auth.session',
     'system.available',
 ])->group(function () {
+    Route::get(
+        'login-history/me',
+        [LoginHistoryController::class, 'me']
+    );
+
     Route::get(
         'login-history',
         [LoginHistoryController::class, 'index']

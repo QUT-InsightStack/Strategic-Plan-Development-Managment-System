@@ -42,7 +42,9 @@ class AuthController extends Controller
         private readonly StrategicLogWriter $auditWriter,
         private readonly ProfilePhotoService $profilePhotos,
         private readonly LoginHistoryRecorder $loginHistoryRecorder,
-        private readonly SecuritySettingsService $securitySettings
+        private ProfilePhotoService $profilePhotos,
+        private readonly SecuritySettingsService $securitySettings,
+        private readonly \App\Contracts\StrategicLogWriter $logWriter
     ) {
     }
     
@@ -55,7 +57,12 @@ class AuthController extends Controller
             $request
         );
 
-        if ($result['status'] === 'locked') {
+        $existingUser = User::query()->where('email', $request->validated('email'))->first();
+        if ($existingUser?->locked_until?->isFuture()) {
+            $this->loginHistoryRecorder->recordFailedLogin(
+                (string) $request->validated('email'), $request, 'account_locked'
+            );
+            $minutes = max(1, now()->diffInMinutes($existingUser->locked_until, false));
             return response()->json([
                 'success' => false,
                 'message' => 'Too many failed login attempts. Please try again later.',
@@ -64,6 +71,51 @@ class AuthController extends Controller
             ]);
         }
 
+        if ($existingUser?->locked_until?->isPast()) {
+            $existingUser->forceFill(['failed_login_attempts' => 0, 'locked_until' => null])->save();
+        }
+
+        $token = Auth::guard('api')->attempt($credentials);
+
+        if (! $token) {
+            if ($existingUser) {
+                DB::transaction(function () use ($existingUser): void {
+                    $user = User::query()->lockForUpdate()->find($existingUser->user_id);
+                    if (! $user || $user->locked_until?->isFuture()) return;
+                    $user->failed_login_attempts++;
+                    if ($user->failed_login_attempts >= $this->securitySettings->get('max_failed_login_attempts')) {
+                        $user->locked_until = now()->addMinutes($this->securitySettings->get('lockout_duration_minutes'));
+                    }
+                    $user->save();
+                });
+
+                $existingUser->refresh();
+                if ($existingUser->locked_until?->isFuture()) {
+                    $minutes = max(1, now()->diffInMinutes($existingUser->locked_until, false));
+
+                    $this->loginHistoryRecorder->recordFailedLogin(
+                        (string) $request->validated('email'),
+                        $request,
+                        'account_locked'
+                    );
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => "This account is now locked. Try again in " . round($minutes, 2) . " minute(s).",
+                        'locked_until' => $existingUser->locked_until->toIso8601String(),
+                    ], 423);
+                }
+            }
+            $this->loginHistoryRecorder->recordFailedLogin(
+                (string) $request->validated('email'),
+                $request,
+                ! $existingUser ? 'unknown_email' : ($existingUser->status !== 'active' ? 'inactive_account' : 'invalid_credentials')
+            );
+
+            /*
+            * Keep the response generic. Never reveal whether the submitted
+            * email belongs to an existing account.
+            */
         if ($result['status'] === 'invalid') {
             return response()->json([
                 'success' => false,
@@ -89,8 +141,28 @@ class AuthController extends Controller
     public function logout(): JsonResponse
     {
         try {
-            $this->sessionService->logout();
+            // Resolve the user before invalidating, so the audit row can
+            // attribute the event. Fails silently if the token is bad.
+            $user = Auth::guard('api')->user();
+
+            if ($user) {
+                // Session invalidation must complete even if audit persistence fails.
+                Auth::guard('api')->logout();
+                $this->logWriter->write('auth.logout', [
+                    'actor_user_id' => $user->user_id,
+                    'resource_type' => 'user', 'resource_id' => $user->user_id,
+                    'states'    => 'success',
+                ]);
+            }
+
+            if (! $user) {
+                Auth::guard('api')->logout();
+            }
+                 $this->sessionService->logout();   
+           
         } catch (\Throwable $exception) {
+         // Token was absent, malformed or already blacklisted. The
+            // desired end state — no valid session — already holds.
             report($exception);
     
             return response()->json([
@@ -134,8 +206,49 @@ class AuthController extends Controller
     
             return response()->json([
                 'success' => false,
-                'message' => 'Unable to refresh the authentication session.',
-            ], 503);
+                'message' => 'Authentication session expired.',
+            ], 401)->withCookie($this->forgetAccessCookie());
+        } catch (TokenExpiredException $e) {
+            SystemLog::notice('Rejected JWT outside the refresh window.', [
+                'exception' => $e,
+            ]);
+
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Token has expired and cannot be refreshed.',
+            ], 401)->withCookie($this->forgetAccessCookie());
+        } catch (TokenInvalidException $e) {
+            SystemLog::notice('Rejected invalid JWT refresh request.', [
+                'exception' => $e,
+            ]);
+
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Token is invalid.',
+            ], 401)->withCookie($this->forgetAccessCookie());
+        } catch (JWTException $e) {
+            SystemLog::warning('Unable to refresh JWT.', [
+                'exception' => $e,
+            ]);
+
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to refresh token.',
+            ], 401)->withCookie($this->forgetAccessCookie());
+        } catch (\Throwable $e) {
+            SystemLog::error('Unexpected JWT refresh failure.', [
+                'exception' => $e,
+            ]);
+            app(\App\Services\SystemEventRecorder::class)->record('auth.refresh_failed', 'auth', 'error', 'failure', ['exception_type' => $e::class]);
+
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to refresh token.',
+            ], 500)->withCookie($this->forgetAccessCookie());
         }
     }
 
@@ -253,7 +366,6 @@ class AuthController extends Controller
         }
 
         $user->save();
-
         LogModel::create([
             'user_id'   => $user->user_id,
             'operation' => 'Profile updated: ' . implode(', ', $changed),
@@ -319,6 +431,7 @@ class AuthController extends Controller
             try {
                 Password::broker()->sendResetLink(['email' => $email]);
             } catch (\Throwable $e) {
+                app(\App\Services\SystemEventRecorder::class)->record('auth.password_reset_delivery_failed', 'auth', 'error', 'failure', ['exception_type' => $e::class]);
                 SystemLog::error('Unable to send password reset link.', [
                     'email' => $email,
                     'exception' => $e,

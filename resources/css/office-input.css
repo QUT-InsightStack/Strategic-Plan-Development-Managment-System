@@ -3,9 +3,8 @@
 .office-input-page > header { margin-bottom: var(--space-5); }
 .office-input-page > header h1 { font-size: var(--font-size-2xl); margin: var(--space-3) 0; color: var(--color-primary); }
 .office-input-page > header p { color: var(--color-text-secondary); }
-.office-input-tabs { display: flex; gap: var(--space-2); margin-bottom: var(--space-6); border-bottom: 1px solid var(--color-border-subtle); }
-.office-input-page .office-input-tabs button { border: 0; border-radius: 0; background: transparent; padding: var(--space-3) var(--space-4); border-bottom: 3px solid transparent; color: var(--color-text-secondary); }
-.office-input-page .office-input-tabs button[aria-pressed=true] { border-bottom-color: var(--color-primary); color: var(--color-primary); font-weight: var(--font-weight-semibold); }
+.office-input-plan-picker { display: grid; grid-template-columns: auto minmax(240px, 420px); align-items: center; gap: var(--space-3); max-width: 600px; margin-top: var(--space-4); color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+.office-input-plan-picker select { width: 100%; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3); color: var(--color-text); background: var(--color-surface); }
 .office-input-page .office-panel { border-color: var(--color-border-subtle); border-radius: var(--radius-lg); box-shadow: var(--shadow-xs); }
 .office-input-page [hidden] { display: none !important; }
 .office-reference-category { padding: var(--space-5) var(--space-6); margin-bottom: var(--space-5); }
@@ -52,7 +51,6 @@
 .office-materials-actions > span { margin-right: auto; font-size: var(--font-size-xs); color: var(--color-text-secondary); }
 .office-input-page button.office-materials-submit { background: var(--color-primary); color: var(--color-brand-white); border-color: var(--color-primary); }
 .office-input-page button.office-materials-submit:hover:not(:disabled) { background: var(--color-primary-hover); }
-.office-input-page .office-saved-inputs { margin-top: var(--space-6); }
 @media (max-width: 1100px) { .office-reference-fields { grid-template-columns: 1fr 1fr; } .office-materials-grid { gap: var(--space-4); grid-template-columns: minmax(0, 1.4fr) minmax(240px, 1fr); } }
 @media (max-width: 850px) { .office-materials-grid { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 560px) { .office-reference-fields { grid-template-columns: minmax(0, 1fr); } .office-materials-actions { flex-wrap: wrap; } .office-materials-actions > span { flex-basis: 100%; } .office-input-tabs button { flex: 1; } }
+@media (max-width: 560px) { .office-input-plan-picker { grid-template-columns: minmax(0, 1fr); } .office-reference-fields { grid-template-columns: minmax(0, 1fr); } .office-materials-actions { flex-wrap: wrap; } .office-materials-actions > span { flex-basis: 100%; } }

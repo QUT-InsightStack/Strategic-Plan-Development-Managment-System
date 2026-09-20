@@ -77,6 +77,30 @@ Route::view(
     '/workflow-configuration',
     'pages.workflow-configuration'
 )->name('workflow-configuration.index');
+
+/*
+|--------------------------------------------------------------------------
+| Strategic Plan Reviews
+|--------------------------------------------------------------------------
+|
+| These routes render the reviewer-facing pages. The frontend application
+| retrieves and verifies the assigned approval submission.
+|
+*/
+
+Route::view(
+    '/strategic-plan-reviews',
+    'pages.strategic-plans.reviews'
+)->name('strategic-plan-reviews.index');
+
+Route::get('/strategic-plan-reviews/{id}', function (int $id) {
+    return view('pages.strategic-plans.review', [
+        'planId' => $id,
+    ]);
+})
+    ->whereNumber('id')
+    ->name('strategic-plan-reviews.show');
+
 Route::view('/access-denied', 'pages.access-denied')->name('access-denied');
 
 Route::redirect('/login.html', '/login');

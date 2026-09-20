@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Backup;
-use App\Models\Log;
+use App\Contracts\StrategicLogWriter;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +22,8 @@ use RuntimeException;
  */
 class BackupService
 {
+    public function __construct(private readonly StrategicLogWriter $logWriter) {}
+
     /** Seconds before a dump is abandoned. */
     private const TIMEOUT = 600;
 
@@ -50,10 +52,11 @@ class BackupService
         $driver = config("database.connections.{$connection}.driver");
 
         $filename = $this->generateFilename($driver);
-        $directory = $this->backupDirectory();
-        $path = $directory . DIRECTORY_SEPARATOR . $filename;
+        $path = null;
 
         try {
+            $directory = $this->backupDirectory();
+            $path = $directory . DIRECTORY_SEPARATOR . $filename;
             match ($driver) {
                 'mysql', 'mariadb' => $this->dumpMysql($connection, $path),
                 'sqlite' => $this->dumpSqlite($connection, $path),
@@ -61,9 +64,9 @@ class BackupService
                     "Backups are not supported for the {$driver} database driver."
                 ),
             };
-        } catch (RuntimeException $exception) {
+        } catch (\Throwable $exception) {
             // A partial file is worse than none: it looks restorable.
-            if (is_file($path)) {
+            if ($path !== null && is_file($path)) {
                 @unlink($path);
             }
 
@@ -351,8 +354,8 @@ class BackupService
     {
         $directory = storage_path('app/backups');
 
-        if (! is_dir($directory)) {
-            mkdir($directory, 0750, true);
+        if (! is_dir($directory) && ! @mkdir($directory, 0750, true) && ! is_dir($directory)) {
+            throw new RuntimeException('The backup directory could not be created.');
         }
 
         return $directory;
@@ -375,13 +378,13 @@ class BackupService
 
     private function audit(User $actor, string $event, Backup $backup, string $state): void
     {
-        Log::create([
-            'user_id' => $actor->user_id,
-            'operation' => json_encode([
-                'event' => $event,
-                'backup_id' => $backup->backup_id,
-                'filename' => $backup->filename,
-            ], JSON_UNESCAPED_SLASHES),
+        $this->logWriter->write($event, [
+            'actor_user_id' => $actor->user_id,
+            'resource_type' => 'backup',
+            'resource_id' => $backup->backup_id,
+            'outcome' => $state === 'failed' ? 'failure' : 'success',
+            'backup_id' => $backup->backup_id,
+            'filename' => $backup->filename,
             'states' => $state,
         ]);
     }

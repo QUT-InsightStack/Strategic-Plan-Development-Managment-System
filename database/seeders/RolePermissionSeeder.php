@@ -22,12 +22,14 @@ class RolePermissionSeeder extends Seeder
             'strategic_foundations.update',
             'strategic_objectives.view', 'strategic_objectives.create',
             'strategic_objectives.update',
+            'strategic_documents.view', 'strategic_documents.upload', 'strategic_documents.download',
             'relations.view', 'relations.manage', 'relations.create', 'relations.update',
             'plan_core_values.view', 'plan_core_values.manage', 'plan_core_values.create',
             'plan_core_values.update',
         ];
 
-        $permissionCodes = [
+        $technicalPermissions = [
+            'dashboard.view',
             'users.view',
             'users.create',
             'users.update',
@@ -40,16 +42,31 @@ class RolePermissionSeeder extends Seeder
             'permissions.manage',
             'logs.view',
             'login_history.view',
+<<<<<<< HEAD
+            'system_monitoring.view',
+            'backups.view',
+            'backups.create',
+            'backups.download',
+            'backups.restore',
+=======
+>>>>>>> origin/develop
         ];
 
         $viewOnlyPermissions = [
             'dashboard.view',
             'strategic_records.view', 'strategic_foundations.view', 'strategic_objectives.view',
+<<<<<<< HEAD
+=======
+            'strategic_documents.view', 'strategic_documents.download',
+>>>>>>> origin/develop
             'relations.view', 'plan_core_values.view',
         ];
 
         $assignments = [
             'Administrator' => $permissionsByCode->keys()->all(),
+            'Technical Administrator' => $technicalPermissions,
+            'Technical Admin' => $technicalPermissions,
+            'test' => $technicalPermissions,
             'Planning Officer' => $planningPermissions,
             'Division Head' => $viewOnlyPermissions,
             'Viewer' => $viewOnlyPermissions,
@@ -94,6 +111,15 @@ class RolePermissionSeeder extends Seeder
         Role::query()
             ->whereIn('role_name', $restrictedRoleNames)
             ->each(fn (Role $role) => $role->permissions()->detach($deletePermissionIds));
+
+        $documentPermissionIds = $permissionsByCode
+            ->filter(fn (Permission $permission) => str_starts_with($permission->code, 'strategic_documents.'))
+            ->pluck('permission_id')
+            ->all();
+
+        Role::query()
+            ->whereIn('role_name', $restrictedRoleNames)
+            ->each(fn (Role $role) => $role->permissions()->syncWithoutDetaching($documentPermissionIds));
 
         $this->call(ObjectiveCollaborationPermissionSeeder::class);
     }

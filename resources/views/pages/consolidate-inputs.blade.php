@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Submitted Office/Agency Inputs | SPDMS</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    @vite(['resources/css/consolidate-inputs.css', 'resources/js/pages/consolidate-inputs-app.js'])
+    @vite(['resources/css/consolidate-inputs.css', 'resources/js/pages/planner/consolidate-inputs-app.js'])
 </head>
 <body>
     <div id="root"></div>
