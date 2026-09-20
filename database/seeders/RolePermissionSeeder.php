@@ -22,6 +22,7 @@ class RolePermissionSeeder extends Seeder
             'strategic_foundations.update',
             'strategic_objectives.view', 'strategic_objectives.create',
             'strategic_objectives.update',
+            'strategic_documents.view', 'strategic_documents.upload', 'strategic_documents.download',
             'relations.view', 'relations.manage', 'relations.create', 'relations.update',
             'plan_core_values.view', 'plan_core_values.manage', 'plan_core_values.create',
             'plan_core_values.update',
@@ -45,6 +46,7 @@ class RolePermissionSeeder extends Seeder
         $viewOnlyPermissions = [
             'dashboard.view',
             'strategic_records.view', 'strategic_foundations.view', 'strategic_objectives.view',
+            'strategic_documents.view', 'strategic_documents.download',
             'relations.view', 'plan_core_values.view',
         ];
 
@@ -94,6 +96,15 @@ class RolePermissionSeeder extends Seeder
         Role::query()
             ->whereIn('role_name', $restrictedRoleNames)
             ->each(fn (Role $role) => $role->permissions()->detach($deletePermissionIds));
+
+        $documentPermissionIds = $permissionsByCode
+            ->filter(fn (Permission $permission) => str_starts_with($permission->code, 'strategic_documents.'))
+            ->pluck('permission_id')
+            ->all();
+
+        Role::query()
+            ->whereIn('role_name', $restrictedRoleNames)
+            ->each(fn (Role $role) => $role->permissions()->syncWithoutDetaching($documentPermissionIds));
 
         $this->call(ObjectiveCollaborationPermissionSeeder::class);
     }

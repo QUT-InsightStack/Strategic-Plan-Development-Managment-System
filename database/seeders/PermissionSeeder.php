@@ -171,6 +171,24 @@ class PermissionSeeder extends Seeder
                 'module' => 'strategic_objectives',
             ],
             [
+                'permission_name' => 'View Strategic Documents',
+                'description' => 'Allows viewing document metadata attached to plans and objectives.',
+                'code' => 'strategic_documents.view',
+                'module' => 'strategic_documents',
+            ],
+            [
+                'permission_name' => 'Upload Strategic Documents',
+                'description' => 'Allows uploading supporting documents to plans and objectives.',
+                'code' => 'strategic_documents.upload',
+                'module' => 'strategic_documents',
+            ],
+            [
+                'permission_name' => 'Download Strategic Documents',
+                'description' => 'Allows downloading supporting documents attached to plans and objectives.',
+                'code' => 'strategic_documents.download',
+                'module' => 'strategic_documents',
+            ],
+            [
                 'permission_name' => 'Create Strategic Objectives',
                 'description' => 'Allows creating strategic objectives.',
                 'code' => 'strategic_objectives.create',
