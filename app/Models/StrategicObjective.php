@@ -84,6 +84,11 @@ class StrategicObjective extends Model
         return $this->hasMany(ImplementationInput::class, 'objective_id', 'objective_id');
     }
 
+    public function documents()
+    {
+        return $this->hasMany(StrategicDocument::class, 'objective_id', 'objective_id');
+    }
+
     public function updater()
     {
         return $this->belongsTo(User::class, 'updated_by', 'user_id');

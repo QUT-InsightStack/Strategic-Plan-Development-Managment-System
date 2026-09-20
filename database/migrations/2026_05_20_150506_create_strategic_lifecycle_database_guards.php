@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    // Cross-table triggers are initialized after all five strategic tables exist.
     public function up(): void
     {
         if (! $this->isMySql()) {

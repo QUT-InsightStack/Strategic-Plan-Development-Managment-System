@@ -20,6 +20,7 @@ export const PERMISSIONS = Object.freeze({
     PLANS_ARCHIVE: 'strategic_records.archive',
     OBJECTIVES_ARCHIVE: 'strategic_objectives.archive',
     OBJECTIVES_VIEW: 'strategic_objectives.view',
+    INPUTS_VIEW: 'implementation_inputs.view',
     OBJECTIVES_CREATE: 'strategic_objectives.create',
     OBJECTIVES_UPDATE: 'strategic_objectives.update',
     OBJECTIVES_DELETE: 'strategic_objectives.delete',
@@ -28,6 +29,8 @@ export const PERMISSIONS = Object.freeze({
     MAPPINGS_MANAGE: 'relations.manage',
     REPORTS_VIEW: 'reports.view',
     LOGS_VIEW: 'logs.view',
+    LOGIN_HISTORY_VIEW: 'login_history.view',
+    SYSTEM_MONITORING_VIEW: 'system_monitoring.view',
     SETTINGS_MANAGE: 'settings.manage',
     DASHBOARD_VIEW: 'dashboard.view',
     PDP_CHAPTERS_MANAGE: 'pdp_chapters.manage',
@@ -79,6 +82,8 @@ const technicalAdminPermissions = [
     PERMISSIONS.PERMISSIONS_VIEW,
     PERMISSIONS.PERMISSIONS_MANAGE,
     PERMISSIONS.LOGS_VIEW,
+    PERMISSIONS.LOGIN_HISTORY_VIEW,
+    PERMISSIONS.SYSTEM_MONITORING_VIEW,
     PERMISSIONS.SETTINGS_MANAGE,
     PERMISSIONS.BACKUPS_VIEW,
     PERMISSIONS.BACKUPS_CREATE,
@@ -137,7 +142,7 @@ export function hasRolePolicy(roleName) {
 }
 
 export const routeRules = [
-    { test: /^\/consolidate-inputs(?:\/|$)/, permission: PERMISSIONS.PLANS_UPDATE },
+    { test: /^\/consolidate-inputs(?:\/|$)/, permission: PERMISSIONS.INPUTS_VIEW },
     { test: /^\/office(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
     {
     test: /^\/workflow-configuration(?:\/|$)/,
@@ -150,8 +155,12 @@ export const routeRules = [
     { test: /^\/role-management(?:\/|$)/, permission: PERMISSIONS.ROLES_MANAGE },
     { test: /^\/user-management(?:\/|$)/, permission: PERMISSIONS.USERS_VIEW },
     { test: /^\/pdp-chapters\/manage(?:\/|$)/, permission: PERMISSIONS.PDP_CHAPTERS_MANAGE },
+<<<<<<< HEAD
+    { test: /^\/login-history(?:\/|$)/, permission: PERMISSIONS.LOGIN_HISTORY_VIEW },
+=======
     { test: /^\/audit-logs(?:\/|$)/, permission: PERMISSIONS.LOGS_VIEW },
     { test: /^\/login-history(?:\/|$)/, permission: PERMISSIONS.LOGS_VIEW },
+>>>>>>> origin/develop
     { test: /^\/manual-backup(?:\/|$)/, permission: PERMISSIONS.BACKUPS_VIEW },
 
 // A user must at least be allowed to view strategic plans before the

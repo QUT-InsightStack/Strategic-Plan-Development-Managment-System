@@ -15,6 +15,7 @@ const items = [
         icon: 'bi-clipboard2-check',
         permission: PERMISSIONS.PLANS_VIEW,
         children: [
+            { label: 'Submitted Inputs', href: '/consolidate-inputs', permission: PERMISSIONS.INPUTS_VIEW },
             { label: 'Create Plans', href: '/strategic-plans/create', permission: PERMISSIONS.PLANS_CREATE },
             { label: 'Manage Plans', href: '/strategic-plans', permission: PERMISSIONS.PLANS_VIEW },
             { label: 'Strategic Objectives', href: '/strategic-objectives', permission: PERMISSIONS.OBJECTIVES_VIEW },

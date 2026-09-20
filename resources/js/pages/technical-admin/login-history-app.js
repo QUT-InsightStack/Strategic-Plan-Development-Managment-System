@@ -10,14 +10,16 @@ enforcePageAccess();
 
 const { useEffect, useState } = React;
 
-const initialFilters = { user_id: '', outcome: '', search: '', from: '', to: '' };
+const initialFilters = { user_id: '', status: '', search: '', date_from: '', date_to: '' };
 
 // Recorded against a failed attempt, and shown only to administrators. The
 // person signing in always gets the same generic message.
 const REASON_LABELS = {
-    invalid_credentials: 'Wrong password',
+    invalid_credentials: 'Invalid credentials',
     unknown_email: 'No such account',
     inactive_account: 'Account not active',
+    account_locked: 'Account locked',
+    rate_limited: 'Too many attempts',
 };
 
 function formatTimestamp(value) {
@@ -127,39 +129,39 @@ function LoginHistoryApp() {
                                 React.createElement('select', {
                                     id: 'history-outcome',
                                     className: 'ui-select',
-                                    value: filters.outcome,
-                                    onChange: (event) => setFilters((current) => ({ ...current, outcome: event.target.value })),
+                                    value: filters.status,
+                                    onChange: (event) => setFilters((current) => ({ ...current, status: event.target.value })),
                                 },
                                     React.createElement('option', { value: '' }, 'All outcomes'),
                                     React.createElement('option', { value: 'success' }, 'Successful'),
                                     React.createElement('option', { value: 'failed' }, 'Failed')
                                 )
                             ),
-                            React.createElement('div', { className: `ui-field${errors.from ? ' is-invalid' : ''}` },
+                            React.createElement('div', { className: `ui-field${errors.date_from ? ' is-invalid' : ''}` },
                                 React.createElement('label', { className: 'ui-label', htmlFor: 'history-from' }, 'From'),
                                 React.createElement('input', {
                                     id: 'history-from',
                                     className: 'ui-input',
                                     type: 'date',
-                                    value: filters.from,
-                                    'aria-invalid': errors.from ? 'true' : undefined,
-                                    'aria-describedby': errors.from ? 'history-from-error' : undefined,
-                                    onChange: (event) => setFilters((current) => ({ ...current, from: event.target.value })),
+                                    value: filters.date_from,
+                                    'aria-invalid': errors.date_from ? 'true' : undefined,
+                                    'aria-describedby': errors.date_from ? 'history-from-error' : undefined,
+                                    onChange: (event) => setFilters((current) => ({ ...current, date_from: event.target.value })),
                                 }),
-                                errors.from ? React.createElement('p', { id: 'history-from-error', className: 'ui-error' }, errors.from[0]) : null
+                                errors.date_from ? React.createElement('p', { id: 'history-from-error', className: 'ui-error' }, errors.date_from[0]) : null
                             ),
-                            React.createElement('div', { className: `ui-field${errors.to ? ' is-invalid' : ''}` },
+                            React.createElement('div', { className: `ui-field${errors.date_to ? ' is-invalid' : ''}` },
                                 React.createElement('label', { className: 'ui-label', htmlFor: 'history-to' }, 'To'),
                                 React.createElement('input', {
                                     id: 'history-to',
                                     className: 'ui-input',
                                     type: 'date',
-                                    value: filters.to,
-                                    'aria-invalid': errors.to ? 'true' : undefined,
-                                    'aria-describedby': errors.to ? 'history-to-error' : undefined,
-                                    onChange: (event) => setFilters((current) => ({ ...current, to: event.target.value })),
+                                    value: filters.date_to,
+                                    'aria-invalid': errors.date_to ? 'true' : undefined,
+                                    'aria-describedby': errors.date_to ? 'history-to-error' : undefined,
+                                    onChange: (event) => setFilters((current) => ({ ...current, date_to: event.target.value })),
                                 }),
-                                errors.to ? React.createElement('p', { id: 'history-to-error', className: 'ui-error' }, errors.to[0]) : null
+                                errors.date_to ? React.createElement('p', { id: 'history-to-error', className: 'ui-error' }, errors.date_to[0]) : null
                             ),
                             React.createElement('div', { className: 'login-history-filter-actions' },
                                 React.createElement('button', { className: 'ui-button ui-button--primary', type: 'submit', disabled: loading }, React.createElement('i', { className: 'bi bi-search' }), 'Search'),
@@ -196,22 +198,21 @@ function LoginHistoryApp() {
                                         ),
                                         React.createElement('tbody', null,
                                             entries.map((entry) => React.createElement('tr', { key: entry.login_history_id },
-                                                React.createElement('td', null, formatTimestamp(entry.created_at)),
+                                                React.createElement('td', null, formatTimestamp(entry.attempted_at)),
                                                 React.createElement('td', null,
                                                     // An attempt on an address with no account has no user
                                                     // to name, which is exactly what makes it worth seeing.
-                                                    React.createElement('strong', null, entry.user?.name || 'Unknown account'),
+                                                    React.createElement('strong', null, entry.user_name || entry.user?.name || 'Unknown account'),
                                                     React.createElement('span', { className: 'login-history-email' }, entry.email)
                                                 ),
                                                 React.createElement('td', { className: 'login-history-ip' }, entry.ip_address || '—'),
                                                 React.createElement('td', null,
-                                                    entry.device_label || 'Unknown',
-                                                    entry.user_agent ? React.createElement('span', { className: 'login-history-agent', title: entry.user_agent }, entry.user_agent) : null
+                                                    entry.user_agent ? React.createElement('span', { className: 'login-history-agent', title: entry.user_agent }, entry.user_agent) : 'Unknown'
                                                 ),
                                                 React.createElement('td', null,
-                                                    React.createElement('span', { className: `ui-badge ui-badge--${entry.outcome === 'success' ? 'success' : 'danger'}` }, entry.outcome === 'success' ? 'Successful' : 'Failed'),
-                                                    entry.outcome !== 'success' && entry.reason
-                                                        ? React.createElement('span', { className: 'login-history-reason' }, REASON_LABELS[entry.reason] || entry.reason)
+                                                    React.createElement('span', { className: `ui-badge ui-badge--${entry.status === 'success' ? 'success' : 'danger'}` }, entry.status === 'success' ? 'Successful' : 'Failed'),
+                                                    entry.status !== 'success' && entry.failure_reason
+                                                        ? React.createElement('span', { className: 'login-history-reason' }, REASON_LABELS[entry.failure_reason] || entry.failure_reason)
                                                         : null
                                                 )
                                             ))

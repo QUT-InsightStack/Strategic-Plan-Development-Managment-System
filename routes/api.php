@@ -17,10 +17,24 @@ use App\Http\Controllers\StrategicObjectiveController;
 use App\Http\Controllers\ResponsibleUnitController;
 use App\Http\Controllers\ObjectiveCommentController;
 use App\Http\Controllers\ImplementationInputController;
+use App\Http\Controllers\ImplementationInputScopeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\SecuritySettingsController;
+use App\Http\Controllers\StrategicDocumentController;
 use Illuminate\Support\Facades\Route;
+
+Route::middleware(['auth:api', 'auth.version', 'permission:system_monitoring.view'])
+    ->prefix('system-monitoring')->group(function (): void {
+        Route::get('events', [\App\Http\Controllers\SystemMonitoringController::class, 'events']);
+        Route::get('events/{id}', [\App\Http\Controllers\SystemMonitoringController::class, 'event'])->whereNumber('id');
+        Route::get('alerts', [\App\Http\Controllers\SystemMonitoringController::class, 'alerts']);
+        Route::get('trends', [\App\Http\Controllers\SystemMonitoringController::class, 'trends']);
+        Route::get('summary', [\App\Http\Controllers\SystemMonitoringController::class, 'summary']);
+        Route::get('requests', [\App\Http\Controllers\SystemMonitoringController::class, 'requests']);
+        Route::get('health', [\App\Http\Controllers\SystemMonitoringController::class, 'health']);
+        Route::get('checks', [\App\Http\Controllers\SystemMonitoringController::class, 'checks']);
+    });
 
 /*
 |--------------------------------------------------------------------------
@@ -248,6 +262,17 @@ Route::middleware(['auth:api','auth.version','auth.session','system.available',]
 */
 
 Route::middleware(['auth:api', 'auth.version','auth.session','system.available',])->group(function () {
+    Route::get('strategic-plans/{plan}/documents', [StrategicDocumentController::class, 'planIndex'])
+        ->whereNumber('plan')->middleware('permission:strategic_documents.view');
+    Route::post('strategic-plans/{plan}/documents', [StrategicDocumentController::class, 'storeForPlan'])
+        ->whereNumber('plan')->middleware('permission:strategic_documents.upload');
+    Route::get('strategic-objectives/{objective}/documents', [StrategicDocumentController::class, 'objectiveIndex'])
+        ->whereNumber('objective')->middleware('permission:strategic_documents.view');
+    Route::post('strategic-objectives/{objective}/documents', [StrategicDocumentController::class, 'storeForObjective'])
+        ->whereNumber('objective')->middleware('permission:strategic_documents.upload');
+    Route::get('strategic-documents/{document}/download', [StrategicDocumentController::class, 'download'])
+        ->whereNumber('document')->middleware('permission:strategic_documents.download');
+
     // Strategic plan management
     Route::get('strategic-plans', [PlanCreationController::class, 'index']);
     Route::post('strategic-plans', [PlanCreationController::class, 'store']);
@@ -298,9 +323,14 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
     Route::put('strategic-objectives/{id}/responsible-unit', [ResponsibleUnitController::class, 'assign'])->whereNumber('id');
     Route::get('strategic-objectives/{objectiveId}/comments', [ObjectiveCommentController::class, 'index'])->whereNumber('objectiveId');
     Route::post('strategic-objectives/{objectiveId}/comments', [ObjectiveCommentController::class, 'store'])->whereNumber('objectiveId');
-    Route::get('strategic-objectives/{objectiveId}/inputs', [ImplementationInputController::class, 'index'])->whereNumber('objectiveId');
+    Route::get('implementation-inputs', [ImplementationInputController::class, 'index'])->defaults('read_only', true);
+    Route::get('implementation-inputs/{inputId}', [ImplementationInputController::class, 'show'])->whereNumber('inputId')->defaults('read_only', true);
+    Route::post('implementation-inputs/{inputId}/review', [ImplementationInputController::class, 'review'])->whereNumber('inputId');
+    Route::get('strategic-plans/{planId}/input-scope', [ImplementationInputScopeController::class, 'show'])->whereNumber('planId')->defaults('read_only', true);
+    Route::put('strategic-plans/{planId}/input-scope', [ImplementationInputScopeController::class, 'update'])->whereNumber('planId');
+    Route::get('strategic-objectives/{objectiveId}/inputs', [ImplementationInputController::class, 'index'])->whereNumber('objectiveId')->defaults('read_only', true);
     Route::post('strategic-objectives/{objectiveId}/inputs', [ImplementationInputController::class, 'store'])->whereNumber('objectiveId');
-    Route::get('strategic-plans/{planId}/inputs', [ImplementationInputController::class, 'index'])->whereNumber('planId');
+    Route::get('strategic-plans/{planId}/inputs', [ImplementationInputController::class, 'index'])->whereNumber('planId')->defaults('read_only', true);
     Route::post('strategic-plans/{planId}/inputs', [ImplementationInputController::class, 'store'])->whereNumber('planId');
 
     Route::get(

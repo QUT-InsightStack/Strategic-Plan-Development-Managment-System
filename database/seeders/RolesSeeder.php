@@ -40,6 +40,12 @@ class RolesSeeder extends Seeder
                 'is_assignable' => true,
                 'is_protected' => false,
             ],
+            [
+                'role_name' => 'Technical Administrator',
+                'description' => 'Manages accounts, security, backups, and system activity monitoring.',
+                'is_assignable' => true,
+                'is_protected' => true,
+            ],
         ];
 
         foreach ($roles as $role) {

@@ -61,7 +61,9 @@ class ValidateAuthVersion
             ], 401);
         }
 
-        $user->forceFill(['last_activity_at' => now()])->saveQuietly();
+        if (! $request->route('read_only', false)) {
+            $user->forceFill(['last_activity_at' => now()])->saveQuietly();
+        }
 
         return $next($request);
     }
