@@ -83,116 +83,82 @@ class PdpChapterController extends Controller
         ]);
     }
 
-    public function updateStatus(UpdatePdpChapterStatusRequest $request, PdpChapter $chapter): JsonResponse
+   
+    public function archive(PdpChapter $chapter): JsonResponse
     {
-        $status = $request->validated('status');
-
-        $chapter = DB::transaction(function () use ($status, $chapter): PdpChapter {
-            $locked = PdpChapter::query()
-                ->lockForUpdate()
-                ->findOrFail($chapter->chapter_id);
-
-            if ($status === 'archived') {
-                if ($locked->status === 'archived') {
-                    throw ValidationException::withMessages([
-                        'status' => ['This chapter is already archived.'],
-                    ]);
-                }
-
-                $locked->status = 'archived';
-                $locked->archived_at = now();
-                $locked->archived_by = Auth::guard('api')->id();
-            } else {
-                if ($locked->status !== 'archived') {
-                    throw ValidationException::withMessages([
-                        'status' => ['Only archived chapters can be restored.'],
-                    ]);
-                }
-
-                $locked->status = 'active';
-                $locked->archived_at = null;
-                $locked->archived_by = null;
+        $chapter = DB::transaction(function () use ($chapter): PdpChapter {
+            $locked = PdpChapter::query()->lockForUpdate()->findOrFail($chapter->chapter_id);
+    
+            if ($locked->status === 'archived') {
+                throw ValidationException::withMessages([
+                    'status' => ['PDP Chapter is already archived.'],
+                ]);
             }
-
+    
+            if ($locked->status === 'deleted') {
+                throw ValidationException::withMessages([
+                    'status' => ['A deleted PDP Chapter cannot be archived.'],
+                ]);
+            }
+    
+            $locked->status = 'archived';
+            $locked->archived_at = now();
+            $locked->archived_by = Auth::guard('api')->id();
             $locked->updated_by = Auth::guard('api')->id();
             $locked->save();
-
-            $this->auditWriter->write(
-                $status === 'archived' ? 'pdp_chapter.archived' : 'pdp_chapter.restored',
-                [
-                    'actor_user_id' => Auth::guard('api')->id(),
-                    'resource_type' => 'pdp_chapter',
-                    'resource_id' => $locked->chapter_id,
-                ]
-            );
-
+    
+            $this->auditWriter->write('pdp_chapter.archived', [
+                'actor_user_id' => Auth::guard('api')->id(),
+                'resource_type' => 'pdp_chapter',
+                'resource_id' => $locked->chapter_id,
+            ]);
+    
             return $locked->fresh();
         });
-
+    
         return response()->json([
             'success' => true,
-            'message' => $status === 'archived'
-                ? 'PDP Chapter archived successfully.'
-                : 'PDP Chapter restored successfully.',
+            'message' => 'PDP Chapter archived successfully.',
             'data' => $chapter,
         ]);
     }
-
-    public function destroy(PdpChapter $chapter): JsonResponse
+    
+    public function delete(PdpChapter $chapter): JsonResponse
     {
         $chapter = DB::transaction(function () use ($chapter): PdpChapter {
-            $locked = PdpChapter::query()
-                ->lockForUpdate()
-                ->findOrFail($chapter->chapter_id);
+            $locked = PdpChapter::query()->lockForUpdate()->findOrFail($chapter->chapter_id);
 
             if ($locked->status === 'deleted') {
                 throw ValidationException::withMessages([
-                    'status' => ['This chapter has already been deleted.'],
+                    'status' => ['This PDP Chapter has already been deleted.'],
                 ]);
             }
-
+    
+    
             if ($locked->status !== 'archived') {
                 throw ValidationException::withMessages([
-                    'status' => ['Only archived chapters can be permanently deleted.'],
+                    'status' => ['Only archived PDP Chapters can be deleted.'],
                 ]);
             }
-
+    
             $locked->status = 'deleted';
             $locked->deleted_at = now();
             $locked->deleted_by = Auth::guard('api')->id();
             $locked->save();
-
+    
             $this->auditWriter->write('pdp_chapter.deleted', [
                 'actor_user_id' => Auth::guard('api')->id(),
                 'resource_type' => 'pdp_chapter',
                 'resource_id' => $locked->chapter_id,
             ]);
-
+    
             return $locked->fresh();
         });
-
+    
         return response()->json([
             'success' => true,
             'message' => 'PDP Chapter deleted successfully.',
             'data' => $chapter,
-        ]);
-    }
-
-    public function archive(PdpChapter $chapter): JsonResponse
-    {
-        if ($chapter->archived_at !== null) {
-            return response()->json(['message' => 'PDP Chapter is already archived.'], 409);
-        }
-
-        $chapter->update([
-            'archived_at' => now(),
-            'updated_by' => Auth::guard('api')->id(),
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'PDP Chapter archived successfully.',
-            'data' => $chapter->fresh(),
         ]);
     }
 }

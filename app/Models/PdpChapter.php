@@ -15,9 +15,11 @@ class PdpChapter extends Model
         'chapter_description',
         'created_by',
         'updated_by',
-        // status/archived_at/archived_by intentionally excluded from
-        // mass assignment — they must only change via updateStatus(),
-        // same principle as rejecting role_id on generic user updates.
+        // status/archived_at/archived_by/deleted_at/deleted_by intentionally
+        // excluded — they change only through archive()/delete(), never via
+        // generic create/update, same principle as rejecting role_id on
+        // generic user updates.
+
     ];
 
     protected function casts(): array

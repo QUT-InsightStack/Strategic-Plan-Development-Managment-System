@@ -141,9 +141,12 @@ Route::middleware(['auth:api','auth.version','auth.session','system.available',]
     
     Route::get('pdp-chapters/{chapter}', [PdpChapterController::class, 'show'])
         ->whereNumber('chapter');
-    Route::post('pdp-chapters/{chapter}/archive', [PdpChapterController::class, 'archive'])
+
+    Route::patch('pdp-chapters/{chapter}/archive', [PdpChapterController::class, 'archive'])
         ->whereNumber('chapter')
-        ->middleware('permission:pdp_chapters.manage');
+        ->middleware('permission:pdp_chapters.archive');
+    
+
     Route::post('pdp-chapters', [PdpChapterController::class, 'store'])
         ->middleware('permission:pdp_chapters.manage');
 
@@ -155,9 +158,10 @@ Route::middleware(['auth:api','auth.version','auth.session','system.available',]
         ->whereNumber('chapter')
         ->middleware('permission:pdp_chapters.archive');
 
-    Route::delete('pdp-chapters/{chapter}', [PdpChapterController::class, 'destroy'])
+    Route::delete('pdp-chapters/{chapter}', [PdpChapterController::class, 'delete'])
         ->whereNumber('chapter')
         ->middleware('permission:pdp_chapters.delete');
+
 
     // Roles
     Route::get('roles', [RoleController::class, 'index'])
