@@ -24,7 +24,7 @@ class Role extends Model
      * Roles that grant administrative privilege. Assigning one is treated as
      * privilege escalation and is restricted accordingly.
      */
-    public const PRIVILEGED_ROLES = ['Administrator'];
+    public const PRIVILEGED_ROLES = ['Administrator', 'Technical Administrator', 'Technical Admin'];
 
     protected $fillable = [
         'role_name',

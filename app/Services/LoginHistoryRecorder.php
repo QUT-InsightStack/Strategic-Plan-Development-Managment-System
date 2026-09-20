@@ -12,7 +12,7 @@ class LoginHistoryRecorder
         User $user,
         Request $request
     ): LoginHistory {
-        return LoginHistory::query()->create([
+        $history = LoginHistory::query()->create([
             'user_id' => $user->user_id,
             'user_name' => $this->userName($user),
             'email' => mb_strtolower(trim($user->email)),
@@ -22,6 +22,10 @@ class LoginHistoryRecorder
             'failure_reason' => null,
             'attempted_at' => now(),
         ]);
+        app(SystemEventRecorder::class)->record('auth.login_succeeded', 'auth', 'info', 'success', [
+            'actor_user_id' => $user->user_id, 'login_history_id' => $history->login_history_id,
+        ]);
+        return $history;
     }
 
     public function recordFailedLogin(
@@ -29,7 +33,16 @@ class LoginHistoryRecorder
         Request $request,
         string $reason = 'invalid_credentials'
     ): LoginHistory {
-        $normalizedEmail = mb_strtolower(trim($email));
+        $normalizedEmail = mb_substr(mb_strtolower(trim($email)), 0, 255);
+        if (! in_array($reason, ['invalid_credentials', 'unknown_email', 'inactive_account', 'account_locked', 'rate_limited'], true)) {
+            throw new \InvalidArgumentException('Unknown login failure reason.');
+        }
+
+        /*
+         * Associate the attempt with an existing account when one exists.
+         * This information is stored only in the protected administrative
+         * history
+         */
     
         $user = User::query()
             ->where('email', $normalizedEmail)
@@ -47,6 +60,14 @@ class LoginHistoryRecorder
             'failure_reason' => $reason,
             'attempted_at' => now(),
         ]);
+        app(SystemEventRecorder::class)->record(match ($reason) {
+            'account_locked' => 'auth.account_locked', 'rate_limited' => 'auth.rate_limited',
+            default => 'auth.login_failed',
+        }, 'auth', 'warning', 'failure', [
+            'actor_user_id' => $user?->user_id, 'reason' => $reason,
+            'login_history_id' => $history->login_history_id,
+        ]);
+        return $history;
     }
 
     private function userName(User $user): string

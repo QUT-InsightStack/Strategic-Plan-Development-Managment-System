@@ -28,7 +28,8 @@ class RolePermissionSeeder extends Seeder
             'plan_core_values.update',
         ];
 
-        $permissionCodes = [
+        $technicalPermissions = [
+            'dashboard.view',
             'users.view',
             'users.create',
             'users.update',
@@ -41,17 +42,31 @@ class RolePermissionSeeder extends Seeder
             'permissions.manage',
             'logs.view',
             'login_history.view',
+<<<<<<< HEAD
+            'system_monitoring.view',
+            'backups.view',
+            'backups.create',
+            'backups.download',
+            'backups.restore',
+=======
+>>>>>>> origin/develop
         ];
 
         $viewOnlyPermissions = [
             'dashboard.view',
             'strategic_records.view', 'strategic_foundations.view', 'strategic_objectives.view',
+<<<<<<< HEAD
+=======
             'strategic_documents.view', 'strategic_documents.download',
+>>>>>>> origin/develop
             'relations.view', 'plan_core_values.view',
         ];
 
         $assignments = [
             'Administrator' => $permissionsByCode->keys()->all(),
+            'Technical Administrator' => $technicalPermissions,
+            'Technical Admin' => $technicalPermissions,
+            'test' => $technicalPermissions,
             'Planning Officer' => $planningPermissions,
             'Division Head' => $viewOnlyPermissions,
             'Viewer' => $viewOnlyPermissions,
