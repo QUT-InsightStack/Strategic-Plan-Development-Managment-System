@@ -21,6 +21,7 @@ use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\UploadProfilePhotoRequest;
 use App\Http\Resources\UserResource;
+use App\Models\Log as LogModel;
 use App\Services\ProfilePhotoService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
@@ -427,11 +428,9 @@ class AuthController extends Controller
         }
 
         $user->save();
-
-        $this->logWriter->write('user.profile_updated', [
-            'actor_user_id' => $user->user_id,
-            'resource_type' => 'user', 'resource_id' => $user->user_id,
-            'fields' => $changed,
+        LogModel::create([
+            'user_id'   => $user->user_id,
+            'operation' => 'Profile updated: ' . implode(', ', $changed),
             'states'    => 'success',
         ]);
 
@@ -468,9 +467,11 @@ class AuthController extends Controller
             $lockedUser->setRememberToken(Str::random(60));
             $lockedUser->save();
 
-            $this->logWriter->write('auth.password_changed', [
-                'actor_user_id' => $lockedUser->user_id,
-                'resource_type' => 'user', 'resource_id' => $lockedUser->user_id,
+            LogModel::create([
+                'user_id' => $lockedUser->user_id,
+                'operation' => json_encode([
+                    'event' => 'auth.password_changed',
+                ], JSON_UNESCAPED_SLASHES),
                 'states' => 'success',
             ]);
         });
@@ -528,9 +529,11 @@ class AuthController extends Controller
                     $lockedUser->setRememberToken(Str::random(60));
                     $lockedUser->save();
 
-                    $this->logWriter->write('auth.password_reset', [
-                        'actor_user_id' => $lockedUser->user_id,
-                        'resource_type' => 'user', 'resource_id' => $lockedUser->user_id,
+                    LogModel::create([
+                        'user_id' => $lockedUser->user_id,
+                        'operation' => json_encode([
+                            'event' => 'auth.password_reset',
+                        ], JSON_UNESCAPED_SLASHES),
                         'states' => 'success',
                     ]);
 
