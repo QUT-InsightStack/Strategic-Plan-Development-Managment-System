@@ -13,9 +13,9 @@ class RolePermissionSeeder extends Seeder
     {
         $permissionsByCode = Permission::query()->get()->keyBy('code');
 
-       $planningPermissions = [
-    'dashboard.view',
-    'users.assign_roles',
+        $planningPermissions = [
+            'dashboard.view',
+            'users.assign_roles',
             'strategic_records.view', 'strategic_records.manage', 'strategic_records.create',
             'strategic_records.update', 'strategic_records.archive',
             'strategic_foundations.view', 'strategic_foundations.manage', 'strategic_foundations.create',
@@ -63,7 +63,7 @@ class RolePermissionSeeder extends Seeder
 
             $missing = array_values(array_diff($codes, $permissionsByCode->keys()->all()));
             if ($missing !== []) {
-                throw new RuntimeException("Missing {$roleName} permissions: " . implode(', ', $missing));
+                throw new RuntimeException("Missing {$roleName} permissions: ".implode(', ', $missing));
             }
 
             $role->permissions()->syncWithoutDetaching(
@@ -94,5 +94,7 @@ class RolePermissionSeeder extends Seeder
         Role::query()
             ->whereIn('role_name', $restrictedRoleNames)
             ->each(fn (Role $role) => $role->permissions()->detach($deletePermissionIds));
+
+        $this->call(ObjectiveCollaborationPermissionSeeder::class);
     }
 }

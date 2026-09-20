@@ -177,4 +177,22 @@ class PdpChapterController extends Controller
             'data' => $chapter,
         ]);
     }
+
+    public function archive(PdpChapter $chapter): JsonResponse
+    {
+        if ($chapter->archived_at !== null) {
+            return response()->json(['message' => 'PDP Chapter is already archived.'], 409);
+        }
+
+        $chapter->update([
+            'archived_at' => now(),
+            'updated_by' => Auth::guard('api')->id(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'PDP Chapter archived successfully.',
+            'data' => $chapter->fresh(),
+        ]);
+    }
 }

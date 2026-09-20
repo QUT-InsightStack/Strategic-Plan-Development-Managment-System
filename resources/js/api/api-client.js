@@ -1,16 +1,21 @@
 export async function apiRequest(url, options = {}) {
+    const {
+        redirectOnUnauthorized = true,
+        ...requestOptions
+    } = options;
+    const isFormData = typeof FormData !== 'undefined' && requestOptions.body instanceof FormData;
     const response = await fetch(url, {
         credentials: 'include',
-        ...options,
+        ...requestOptions,
         headers: {
             Accept: 'application/json',
-            ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-            ...(options.headers || {}),
+            ...(requestOptions.body && !isFormData ? { 'Content-Type': 'application/json' } : {}),
+            ...(requestOptions.headers || {}),
         },
     });
 
     const payload = await response.json().catch(() => ({}));
-    if (response.status === 401) {
+    if (response.status === 401 && redirectOnUnauthorized) {
         window.location.href = '/login';
         throw new Error('Unauthenticated.');
     }
@@ -18,6 +23,7 @@ export async function apiRequest(url, options = {}) {
         const error = new Error(payload.message || 'The request could not be completed.');
         error.status = response.status;
         error.errors = payload.errors || {};
+        error.retryAfter = Number(response.headers.get('Retry-After')) || null;
         throw error;
     }
     return payload;

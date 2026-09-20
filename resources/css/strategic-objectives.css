@@ -8,8 +8,9 @@
 @import './components/dialog.css';
 @import './layouts/app-shell.css';
 @import './layouts/sidebar.css';
+@import './components/objective-dialog.css';
 
-.objectives-page { background: var(--color-primary-soft); }
+.objectives-page { background: var(--color-background); }
 .objectives-header { max-width: none; }
 .plan-summary { margin-bottom: var(--space-4); }
 .plan-summary .ui-card__header { padding-bottom: var(--space-3); }
@@ -20,7 +21,7 @@
 .plan-summary-item strong {display: grid;gap: 2px;color: var(--color-gray-800);font-size: var(--font-size-xs);font-weight: var(--font-weight-semibold);}
 .plan-summary-item strong small {color: var(--color-text-secondary);font-size: 10px;font-weight: var(--font-weight-normal);}
 .objectives-card { overflow: visible; }
-.objectives-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--color-border-subtle); background: linear-gradient(90deg, var(--color-surface) 0%, #f5fbfe 100%); }
+.objectives-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--color-border-subtle); background: var(--color-section-header-background); }
 .objectives-heading h2 { margin: 0; color: var(--color-primary); font-size: var(--font-size-lg); }
 .objectives-card .ui-card__body { padding: 0; }
 .objectives-table th, .objectives-table td { padding: 12px 10px; font-size: var(--font-size-xs); }
@@ -30,13 +31,6 @@
 .objectives-pagination { display: flex; align-items: center;gap: var(--space-2);}
 .objectives-pagination .ui-button {min-width: 34px;padding-inline: var(--space-2);}
 .objectives-page-actions { display: flex; justify-content: space-between; gap: var(--space-4); padding: var(--space-5) var(--space-2) 0; }
-.objective-modal-backdrop { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: var(--page-gutter); background: rgba(17,24,39,.58); overflow-y: auto; }
-.objective-modal { width: min(100%, 720px); max-height: calc(100vh - 40px); overflow-y: auto; }
-.objective-modal__header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-5); border-bottom: 1px solid var(--color-border-subtle); }
-.objective-modal__header h2 { margin: 0; color: var(--color-primary); font-size: var(--font-size-xl); }
-.objective-modal__header button { border: 0; color: var(--color-text-secondary); background: transparent; font-size: 28px; line-height: 1; }
-.objective-modal__body { padding: var(--space-5); }
-.objective-modal__actions { display: flex; justify-content: flex-end; gap: var(--space-3); padding: var(--space-4) var(--space-5); border-top: 1px solid var(--color-border-subtle); }
 @media (max-width: 900px) { .plan-summary-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
 @media (max-width: 560px) {
     .plan-summary-grid {
@@ -49,13 +43,11 @@
         gap: var(--space-3);
     }
 
-    .objectives-page-actions,
-    .objective-modal__actions {
+    .objectives-page-actions {
         flex-direction: column;
     }
 
-    .objectives-page-actions .ui-button,
-    .objective-modal__actions .ui-button {
+    .objectives-page-actions .ui-button {
         width: 100%;
     }
 }

@@ -1,0 +1,58 @@
+@import './base.css';
+@import './components/buttons.css';
+@import './components/forms.css';
+@import './components/cards.css';
+@import './components/tables.css';
+@import './components/feedback.css';
+@import './layouts/app-shell.css';
+@import './layouts/sidebar.css';
+
+.mapping-page { background: var(--color-background); }
+.mapping-container { max-width: 1440px; }
+.mapping-header h1 { margin: 0; color: var(--color-primary); font-size: var(--font-size-3xl); }
+.mapping-header p { margin: var(--space-1) 0 var(--space-5); color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+.mapping-context { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); padding: var(--space-4); margin-bottom: var(--space-4); }
+.mapping-step { margin-bottom: var(--space-4); overflow: hidden; }
+.mapping-hierarchy-step { padding-bottom: var(--space-3); }
+.mapping-step__heading { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border-subtle); color: var(--color-primary); background: var(--color-section-header-background); }
+.mapping-step__heading span { display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; color: white; background: var(--color-primary); font-size: var(--font-size-xs); font-weight: 700; }
+.mapping-step__heading h2 { margin: 0; font-size: var(--font-size-md); }
+.mapping-levels { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: var(--space-3); align-items: center; padding: var(--space-4); }
+.mapping-level { align-self: stretch; padding: var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-md); }
+.mapping-level h3 { display: flex; gap: var(--space-2); margin: 0 0 var(--space-3); color: var(--color-primary); font-size: var(--font-size-sm); }
+.mapping-options { display: grid; gap: var(--space-2); max-height: 210px; overflow: auto; }
+.mapping-option { display: flex; gap: var(--space-2); align-items: flex-start; padding: var(--space-2); border: 1px solid #d7e3ef; border-radius: var(--radius-sm); background: #f7fbff; font-size: var(--font-size-xs); }
+.mapping-arrow { color: #397bc1; font-size: 25px; }
+.mapping-hierarchy-action { display: flex; justify-content: center; margin-top: calc(var(--space-3) * -1); }
+.mapping-preview-card { margin-bottom: var(--space-4); overflow: hidden; }
+.mapping-preview-card > h2 { margin: 0; padding: var(--space-3) var(--space-4); color: var(--color-primary); border-bottom: 1px solid var(--color-border-subtle); font-size: var(--font-size-md); font-weight: 600; }
+.mapping-preview { padding: var(--space-3) var(--space-4) 0; overflow-x: auto; }
+.mapping-preview table { min-width: 760px; }
+.mapping-preview td, .mapping-preview th { font-size: var(--font-size-xs); }
+.mapping-preview .ui-button { padding: 5px 9px; }
+.mapping-remove { display: inline-flex; gap: 4px; align-items: center; border: 0; color: #075bc4; background: transparent; font-size: var(--font-size-xs); cursor: pointer; }
+.mapping-count { margin: var(--space-2) var(--space-4) var(--space-3); color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+.mapping-reference-step { margin-bottom: var(--space-5); overflow: hidden; }
+.mapping-reference-layout { display: grid; grid-template-columns: minmax(240px, .72fr) minmax(420px, 1.28fr); gap: var(--space-4); padding: var(--space-4); }
+.mapping-selected-panel, .mapping-reference-form { padding: var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-md); }
+.mapping-selected-panel h3, .mapping-reference-form h3 { margin: 0 0 var(--space-1); color: var(--color-primary); font-size: var(--font-size-sm); }
+.mapping-selected-panel > small { display: block; margin-bottom: var(--space-2); color: var(--color-text-secondary); }
+.mapping-search-select { position: relative; display: block; }
+.mapping-search-select i { position: absolute; z-index: 1; top: 50%; left: 11px; transform: translateY(-50%); font-size: 12px; }
+.mapping-search-select select { width: 100%; min-height: 38px; padding: 7px 30px; border: 1px solid var(--color-border-subtle); border-radius: var(--radius-sm); background: white; font-size: var(--font-size-xs); }
+.mapping-selected-chain { display: grid; gap: var(--space-2); margin-top: var(--space-3); }
+.mapping-selected-chain article { display: flex; gap: var(--space-3); align-items: center; min-height: 58px; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); background: #eef4ff; }
+.mapping-selected-chain article.is-dost { background: #eaf8f0; }
+.mapping-selected-chain article.is-agency { background: #f2effc; }
+.mapping-selected-chain i { color: #075bc4; font-size: 18px; }
+.mapping-selected-chain small, .mapping-selected-chain strong { display: block; }
+.mapping-selected-chain small { color: var(--color-text-secondary); font-size: 10px; }
+.mapping-selected-chain strong { margin-top: 2px; color: var(--color-text-primary); font-size: var(--font-size-xs); font-weight: 500; }
+.mapping-reference-form { display: grid; gap: var(--space-3); align-content: start; }
+.mapping-reference-submit { justify-self: center; min-width: 190px; margin-top: var(--space-1); }
+.mapping-agency-chain { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2); padding: var(--space-4); }
+.mapping-agency-chain div { padding: var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-sm); background: #f7fbff; font-size: var(--font-size-xs); }
+.mapping-agency-chain strong { display: block; margin-bottom: var(--space-1); color: var(--color-primary); }
+.mapping-empty { padding: var(--space-6); color: var(--color-text-secondary); text-align: center; }
+@media (max-width: 950px) { .mapping-levels { grid-template-columns: 1fr; } .mapping-arrow { transform: rotate(90deg); justify-self: center; } .mapping-agency-chain, .mapping-reference-layout { grid-template-columns: 1fr; } }
+@media (max-width: 680px) { .mapping-context, .mapping-agency-chain { grid-template-columns: 1fr; } .mapping-reference-submit { width: 100%; } }

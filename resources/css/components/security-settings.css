@@ -1,0 +1,12 @@
+.security-settings { max-width: 920px; }
+.security-settings__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+.security-settings__field:first-child { grid-column: 1 / -1; }
+.security-settings__field { display: grid; gap: var(--space-2); align-content: start; color: var(--color-gray-800); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
+.security-settings__hint { color: var(--color-text-secondary); font-size: 11px; font-weight: var(--font-weight-normal); }
+.security-settings__control { display: flex; align-items: center; gap: var(--space-2); }
+.security-settings__control .ui-input { flex: 1 1 auto; min-width: 0; }
+.security-settings__unit { color: var(--color-text-secondary); font-size: 11px; font-weight: var(--font-weight-normal); white-space: nowrap; }
+.security-settings__field.is-invalid .ui-input { border-color: var(--color-danger); }
+.security-settings__loading { color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+.security-settings__actions { grid-column: 1 / -1; display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.security-settings__form > .ui-status { grid-column: 1 / -1; justify-self: start; }

@@ -14,6 +14,9 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RolePremissionController;
 use App\Http\Controllers\StrategicController;
 use App\Http\Controllers\StrategicObjectiveController;
+use App\Http\Controllers\ResponsibleUnitController;
+use App\Http\Controllers\ObjectiveCommentController;
+use App\Http\Controllers\ImplementationInputController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\SecuritySettingsController;
@@ -138,7 +141,9 @@ Route::middleware(['auth:api','auth.version','auth.session','system.available',]
     
     Route::get('pdp-chapters/{chapter}', [PdpChapterController::class, 'show'])
         ->whereNumber('chapter');
-
+    Route::post('pdp-chapters/{chapter}/archive', [PdpChapterController::class, 'archive'])
+        ->whereNumber('chapter')
+        ->middleware('permission:pdp_chapters.manage');
     Route::post('pdp-chapters', [PdpChapterController::class, 'store'])
         ->middleware('permission:pdp_chapters.manage');
 
@@ -276,6 +281,24 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
     )->whereNumber('planId');
 
     // Strategic objectives, including plan-filtered listing
+    Route::put(
+        'strategic-objectives/{id}/alignments',
+        [StrategicObjectiveController::class, 'updateAlignments']
+    )->whereNumber('id');
+    Route::post(
+        'strategic-objectives/{id}/alignments',
+        [StrategicObjectiveController::class, 'storeAlignments']
+    )->whereNumber('id');
+    Route::get('responsible-units', [ResponsibleUnitController::class, 'index']);
+    Route::put('strategic-objectives/responsible-unit', [ResponsibleUnitController::class, 'assign']);
+    Route::put('strategic-objectives/{id}/responsible-unit', [ResponsibleUnitController::class, 'assign'])->whereNumber('id');
+    Route::get('strategic-objectives/{objectiveId}/comments', [ObjectiveCommentController::class, 'index'])->whereNumber('objectiveId');
+    Route::post('strategic-objectives/{objectiveId}/comments', [ObjectiveCommentController::class, 'store'])->whereNumber('objectiveId');
+    Route::get('strategic-objectives/{objectiveId}/inputs', [ImplementationInputController::class, 'index'])->whereNumber('objectiveId');
+    Route::post('strategic-objectives/{objectiveId}/inputs', [ImplementationInputController::class, 'store'])->whereNumber('objectiveId');
+    Route::get('strategic-plans/{planId}/inputs', [ImplementationInputController::class, 'index'])->whereNumber('planId');
+    Route::post('strategic-plans/{planId}/inputs', [ImplementationInputController::class, 'store'])->whereNumber('planId');
+
     Route::get(
         'strategic-plans/{planId}/objectives',
         [StrategicObjectiveController::class, 'byPlan']
@@ -336,6 +359,11 @@ Route::middleware([
     'system.available',
 ])->group(function () {
     Route::get(
+        'login-history/me',
+        [LoginHistoryController::class, 'me']
+    );
+
+    Route::get(
         'login-history',
         [LoginHistoryController::class, 'index']
     )->middleware('permission:login_history.view');
@@ -367,8 +395,6 @@ Route::middleware([
     Route::patch('', [SystemSettingsController::class, 'update'])
         ->middleware('permission:settings.manage');
 });
-
-
 
 
 

@@ -19,10 +19,10 @@ class StrategicObjectiveApiTest extends TestCase
 
     public function test_authorized_user_can_create_an_objective_and_backend_sets_created_by(): void
     {
-        $actor = $this->createUserWithPermissions(['strategic_objectives.create']);
+        $actor = $this->createUserWithPermissions(['strategic_objectives.create', 'strategic_objectives.assign_responsible_unit']);
         $plan = $this->createPlan($actor, ['status' => 'finished']);
 
-        $this->actingAs($actor, 'api');
+        $this->authenticateApiUser($actor);
 
         $response = $this->withoutMiddleware(ValidateAuthVersion::class)
             ->postJson('/api/strategic-objectives', [
@@ -55,7 +55,7 @@ class StrategicObjectiveApiTest extends TestCase
         $actor = $this->createUserWithPermissions(['strategic_objectives.create']);
         $plan = $this->createPlan($actor, ['status' => 'finished']);
 
-        $this->actingAs($actor, 'api');
+        $this->authenticateApiUser($actor);
 
         $this->withoutMiddleware(ValidateAuthVersion::class)
             ->postJson('/api/strategic-objectives', [
@@ -91,7 +91,7 @@ class StrategicObjectiveApiTest extends TestCase
             'deleted_at' => now(),
         ]);
 
-        $this->actingAs($actor, 'api');
+        $this->authenticateApiUser($actor);
 
         $response = $this->withoutMiddleware(ValidateAuthVersion::class)
             ->getJson('/api/strategic-objectives?per_page=1');
@@ -134,7 +134,7 @@ class StrategicObjectiveApiTest extends TestCase
             'status' => 'published',
         ]);
 
-        $this->actingAs($actor, 'api');
+        $this->authenticateApiUser($actor);
         $this->withoutMiddleware(ValidateAuthVersion::class)
     ->patchJson("/api/strategic-objectives/{$archivedObjective->objective_id}/status", [
         'status' => 'archived',
@@ -175,7 +175,7 @@ class StrategicObjectiveApiTest extends TestCase
             'objective_title' => 'Visible objective details',
         ]);
 
-        $this->actingAs($actor, 'api');
+        $this->authenticateApiUser($actor);
 
         $this->withoutMiddleware(ValidateAuthVersion::class)
             ->getJson("/api/strategic-objectives/{$objective->objective_id}")
@@ -189,14 +189,14 @@ class StrategicObjectiveApiTest extends TestCase
     public function test_authorized_user_can_update_an_objective_without_changing_creation_or_relationship_metadata(): void
     {
         $creator = $this->createUser();
-        $actor = $this->createUserWithPermissions(['strategic_objectives.update']);
+        $actor = $this->createUserWithPermissions(['strategic_objectives.update', 'strategic_objectives.assign_responsible_unit']);
         $plan = $this->createPlan($creator, ['status' => 'finished']);
         $objective = $this->createObjective($plan, $creator, [
             'objective_title' => 'Original objective',
             'responsible_office_agency' => 'Planning Office',
         ]);
 
-        $this->actingAs($actor, 'api');
+        $this->authenticateApiUser($actor);
 
         $this->withoutMiddleware(ValidateAuthVersion::class)
             ->putJson("/api/strategic-objectives/{$objective->objective_id}", [
@@ -226,7 +226,7 @@ class StrategicObjectiveApiTest extends TestCase
         $otherPlan = $this->createPlan($actor, ['status' => 'finished']);
         $objective = $this->createObjective($plan, $actor);
 
-        $this->actingAs($actor, 'api');
+        $this->authenticateApiUser($actor);
 
         $this->withoutMiddleware(ValidateAuthVersion::class)
             ->putJson("/api/strategic-objectives/{$objective->objective_id}", [
@@ -248,7 +248,7 @@ class StrategicObjectiveApiTest extends TestCase
         $plan = $this->createPlan($viewer, ['status' => 'finished']);
         $objective = $this->createObjective($plan, $viewer);
 
-        $this->actingAs($viewer, 'api');
+        $this->authenticateApiUser($viewer);
 
         $this->withoutMiddleware(ValidateAuthVersion::class)
             ->putJson("/api/strategic-objectives/{$objective->objective_id}", [
@@ -272,7 +272,7 @@ class StrategicObjectiveApiTest extends TestCase
         'objective_title' => 'Objective to archive',
     ]);
 
-    $this->actingAs($actor, 'api');
+    $this->authenticateApiUser($actor);
 
     $this->withoutMiddleware(ValidateAuthVersion::class)
         ->patchJson("/api/strategic-objectives/{$objective->objective_id}/status", [
@@ -326,7 +326,7 @@ public function test_user_without_archive_permission_cannot_archive_an_objective
         'status' => 'draft',
     ]);
 
-    $this->actingAs($viewer, 'api');
+    $this->authenticateApiUser($viewer);
 
     $this->withoutMiddleware(ValidateAuthVersion::class)
         ->patchJson("/api/strategic-objectives/{$objective->objective_id}/status", [
@@ -356,7 +356,7 @@ public function test_repeated_archive_request_is_handled_safely(): void
         'status' => 'draft',
     ]);
 
-    $this->actingAs($actor, 'api');
+    $this->authenticateApiUser($actor);
 
     $this->withoutMiddleware(ValidateAuthVersion::class)
         ->patchJson("/api/strategic-objectives/{$objective->objective_id}/status", [
@@ -400,7 +400,7 @@ public function test_repeated_archive_request_is_handled_safely(): void
             'status' => 'published',
         ]);
 
-        $this->actingAs($actor, 'api');
+        $this->authenticateApiUser($actor);
         $this->withoutMiddleware(ValidateAuthVersion::class)
          ->patchJson("/api/strategic-objectives/{$objective->objective_id}/status", [
         'status' => 'archived',
@@ -440,7 +440,7 @@ public function test_repeated_archive_request_is_handled_safely(): void
         'status' => 'published',
     ]);
 
-    $this->actingAs($actor, 'api');
+    $this->authenticateApiUser($actor);
 
     $this->withoutMiddleware(ValidateAuthVersion::class)
         ->patchJson("/api/strategic-plans/{$plan->record_id}/status", [
@@ -477,7 +477,7 @@ public function test_repeated_archive_request_is_handled_safely(): void
         $plan = $this->createPlan($actor, ['status' => 'draft']);
         $objective = $this->createObjective($plan, $actor, ['status' => 'draft']);
 
-        $this->actingAs($actor, 'api');
+        $this->authenticateApiUser($actor);
 
         $this->withoutMiddleware(ValidateAuthVersion::class)
             ->patchJson("/api/strategic-plans/{$plan->record_id}/status", [

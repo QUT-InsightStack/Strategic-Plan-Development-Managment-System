@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login History | Strategic Planning Management System</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    @vite(['resources/css/login-history.css', 'resources/js/pages/login-history-app.js'])
+    @vite(['resources/css/login-history.css', 'resources/js/pages/technical-admin/login-history-app.js'])
 </head>
 <body>
     <div id="root"></div>

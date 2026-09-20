@@ -12,8 +12,8 @@
     --plan-primary-hover: var(--color-primary-hover);
     --plan-line: var(--color-gray-300);
     --plan-muted: var(--color-gray-600);
-    --plan-panel: var(--color-brand-white);
-    --plan-bg: #eaf4fb;
+    --plan-panel: var(--color-surface);
+    --plan-bg: var(--color-background);
     --plan-shadow: none;
 }
 
@@ -55,7 +55,6 @@ button, input, select, textarea { font: inherit; }
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.planner-brand-logo { width: 34px; height: 34px; flex: 0 0 auto; }
 .planner-brand span { display: grid; line-height: 1.15; }
 .planner-brand strong { font-size: var(--font-size-sm); }
 .planner-brand small { margin-top: 3px; font-size: 9px; opacity: 0.85; }
