@@ -20,6 +20,7 @@ export const PERMISSIONS = Object.freeze({
     PLANS_ARCHIVE: 'strategic_records.archive',
     OBJECTIVES_ARCHIVE: 'strategic_objectives.archive',
     OBJECTIVES_VIEW: 'strategic_objectives.view',
+    INPUTS_VIEW: 'implementation_inputs.view',
     OBJECTIVES_CREATE: 'strategic_objectives.create',
     OBJECTIVES_UPDATE: 'strategic_objectives.update',
     OBJECTIVES_DELETE: 'strategic_objectives.delete',
@@ -141,7 +142,7 @@ export function hasRolePolicy(roleName) {
 }
 
 export const routeRules = [
-    { test: /^\/consolidate-inputs(?:\/|$)/, permission: PERMISSIONS.PLANS_UPDATE },
+    { test: /^\/consolidate-inputs(?:\/|$)/, permission: PERMISSIONS.INPUTS_VIEW },
     { test: /^\/office(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
     {
     test: /^\/workflow-configuration(?:\/|$)/,

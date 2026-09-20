@@ -17,6 +17,7 @@ use App\Http\Controllers\StrategicObjectiveController;
 use App\Http\Controllers\ResponsibleUnitController;
 use App\Http\Controllers\ObjectiveCommentController;
 use App\Http\Controllers\ImplementationInputController;
+use App\Http\Controllers\ImplementationInputScopeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\SecuritySettingsController;
@@ -311,9 +312,14 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
     Route::put('strategic-objectives/{id}/responsible-unit', [ResponsibleUnitController::class, 'assign'])->whereNumber('id');
     Route::get('strategic-objectives/{objectiveId}/comments', [ObjectiveCommentController::class, 'index'])->whereNumber('objectiveId');
     Route::post('strategic-objectives/{objectiveId}/comments', [ObjectiveCommentController::class, 'store'])->whereNumber('objectiveId');
-    Route::get('strategic-objectives/{objectiveId}/inputs', [ImplementationInputController::class, 'index'])->whereNumber('objectiveId');
+    Route::get('implementation-inputs', [ImplementationInputController::class, 'index'])->defaults('read_only', true);
+    Route::get('implementation-inputs/{inputId}', [ImplementationInputController::class, 'show'])->whereNumber('inputId')->defaults('read_only', true);
+    Route::post('implementation-inputs/{inputId}/review', [ImplementationInputController::class, 'review'])->whereNumber('inputId');
+    Route::get('strategic-plans/{planId}/input-scope', [ImplementationInputScopeController::class, 'show'])->whereNumber('planId')->defaults('read_only', true);
+    Route::put('strategic-plans/{planId}/input-scope', [ImplementationInputScopeController::class, 'update'])->whereNumber('planId');
+    Route::get('strategic-objectives/{objectiveId}/inputs', [ImplementationInputController::class, 'index'])->whereNumber('objectiveId')->defaults('read_only', true);
     Route::post('strategic-objectives/{objectiveId}/inputs', [ImplementationInputController::class, 'store'])->whereNumber('objectiveId');
-    Route::get('strategic-plans/{planId}/inputs', [ImplementationInputController::class, 'index'])->whereNumber('planId');
+    Route::get('strategic-plans/{planId}/inputs', [ImplementationInputController::class, 'index'])->whereNumber('planId')->defaults('read_only', true);
     Route::post('strategic-plans/{planId}/inputs', [ImplementationInputController::class, 'store'])->whereNumber('planId');
 
     Route::get(
@@ -412,5 +418,7 @@ Route::middleware([
     Route::patch('', [SystemSettingsController::class, 'update'])
         ->middleware('permission:settings.manage');
 });
+
+
 
 

@@ -19,7 +19,9 @@ User membership is determined from the existing administrator-maintained `tbluse
 | Add comments | `objective_comments.create` | User's office must currently be assigned to the objective |
 | Submit inputs | `implementation_inputs.create` | Same office rule; plan-only inputs require an assigned active objective in that plan |
 | Read all objective comments | `objective_comments.view_all` | Existing plan scope |
-| Read all implementation inputs | `implementation_inputs.view_all` | Existing plan scope |
+| Read all implementation inputs | `implementation_inputs.view_all` or Planning Officer with `implementation_inputs.view` | Explicit submitted-input plan grants |
+
+Submitted-input listing, filters, summaries, review and planning grants are documented in [Submitted Office/Agency inputs](submitted-implementation-inputs.md). Apply the additional `2026_09_16` migration for these endpoints. Office history can also be read with `implementation_inputs.view` without submission permission.
 
 Planning Officers receive assignment and both read-all permissions. Responsible Unit Users and existing Office Representative / Office/Agency / Offices / Agencies roles receive comment/input submission permissions and plan/objective view permissions. Administrators retain the existing permission bypass, but **submitting feedback still requires an assigned office** so its provenance is meaningful. Custom roles can receive these permissions through the existing role-management API.
 
