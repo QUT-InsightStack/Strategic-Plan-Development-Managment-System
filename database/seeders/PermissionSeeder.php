@@ -45,6 +45,18 @@ class PermissionSeeder extends Seeder
                 'module' => 'users',
             ],
             [
+                'permission_name' => 'View System Settings',
+                'description' => 'Allows viewing centralized system configuration.',
+                'code' => 'settings.view',
+                'module' => 'settings',
+            ],
+            [
+                'permission_name' => 'Manage System Settings',
+                'description' => 'Allows changing centralized system configuration and accessing the system during maintenance.',
+                'code' => 'settings.manage',
+                'module' => 'settings',
+            ],
+            [
                 'permission_name' => 'View Roles',
                 'description' => 'Allows viewing roles and their details.',
                 'code' => 'roles.view',
@@ -157,6 +169,24 @@ class PermissionSeeder extends Seeder
                 'description' => 'Allows viewing strategic objectives.',
                 'code' => 'strategic_objectives.view',
                 'module' => 'strategic_objectives',
+            ],
+            [
+                'permission_name' => 'View Strategic Documents',
+                'description' => 'Allows viewing document metadata attached to plans and objectives.',
+                'code' => 'strategic_documents.view',
+                'module' => 'strategic_documents',
+            ],
+            [
+                'permission_name' => 'Upload Strategic Documents',
+                'description' => 'Allows uploading supporting documents to plans and objectives.',
+                'code' => 'strategic_documents.upload',
+                'module' => 'strategic_documents',
+            ],
+            [
+                'permission_name' => 'Download Strategic Documents',
+                'description' => 'Allows downloading supporting documents attached to plans and objectives.',
+                'code' => 'strategic_documents.download',
+                'module' => 'strategic_documents',
             ],
             [
                 'permission_name' => 'Create Strategic Objectives',

@@ -1,23 +1,24 @@
-.code-logo.code-logo {
+.code-logo {
     position: relative;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
     flex-shrink: 0;
     overflow: visible;
-    width: var(--brand-logo-size, 36px);
-    height: var(--brand-logo-size, 36px);
+    width: var(--brand-logo-size);
+    height: var(--brand-logo-size);
     filter:
-        drop-shadow(1px 0 0 #ffffff)
-        drop-shadow(-1px 0 0 #ffffff)
-        drop-shadow(0 1px 0 #ffffff)
-        drop-shadow(0 -1px 0 #ffffff);
+        drop-shadow(1px 0 0 var(--color-brand-white))
+        drop-shadow(-1px 0 0 var(--color-brand-white))
+        drop-shadow(0 1px 0 var(--color-brand-white))
+        drop-shadow(0 -1px 0 var(--color-brand-white));
 }
 
 .code-logo::before {
     position: absolute;
     z-index: 0;
     inset: 25%;
-    background: #000000;
+    background: var(--color-brand-black);
     content: '';
 }
 
@@ -31,17 +32,17 @@
 }
 
 .code-logo .logo-top-left {
-    background: conic-gradient(#231f20 0deg 90deg, #ffffff 90deg 180deg, #08a9e0 180deg 270deg, #231f20 270deg 360deg);
+    background: conic-gradient(var(--color-brand-black) 0deg 90deg, var(--color-brand-white) 90deg 180deg, var(--color-brand-cyan) 180deg 270deg, var(--color-brand-black) 270deg 360deg);
 }
 
 .code-logo .logo-top-right {
-    background: conic-gradient(#231f20 0deg 180deg, #ffffff 180deg 270deg, #08a9e0 270deg 360deg);
+    background: conic-gradient(var(--color-brand-black) 0deg 180deg, var(--color-brand-white) 180deg 270deg, var(--color-brand-cyan) 270deg 360deg);
 }
 
 .code-logo .logo-bottom-left {
-    background: conic-gradient(#ffffff 0deg 90deg, #08a9e0 90deg 180deg, #231f20 180deg 360deg);
+    background: conic-gradient(var(--color-brand-white) 0deg 90deg, var(--color-brand-cyan) 90deg 180deg, var(--color-brand-black) 180deg 360deg);
 }
 
 .code-logo .logo-bottom-right {
-    background: conic-gradient(#08a9e0 0deg 90deg, #231f20 90deg 270deg, #ffffff 270deg 360deg);
+    background: conic-gradient(var(--color-brand-cyan) 0deg 90deg, var(--color-brand-black) 90deg 270deg, var(--color-brand-white) 270deg 360deg);
 }

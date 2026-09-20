@@ -34,8 +34,11 @@ class StrategicAuditLogWriter implements StrategicLogWriter
         $actor = $authenticatedUser;
 
         if (
-            ! $actor instanceof User
-            && $actorUserId !== null
+            $actorUserId !== null
+            && (
+                ! $actor instanceof User
+                || (int) $actor->user_id !== (int) $actorUserId
+            )
         ) {
             $actor = User::query()->find($actorUserId);
         }
@@ -122,7 +125,13 @@ class StrategicAuditLogWriter implements StrategicLogWriter
             str_starts_with($event, 'permission.') =>
                 'permission',
 
-            default => explode('.', $event, 2)[0],
+            str_starts_with($event, 'system_settings.') =>
+            'system_settings',
+            
+            str_starts_with($event, 'auth.') =>
+                'user',
+
+            default => null,
         };
     }
 }

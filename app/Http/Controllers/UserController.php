@@ -50,7 +50,12 @@ class UserController extends BaseCrudController
     public function store(StoreUserRequest $request): JsonResponse
     {
         $record = $this->getService()->create($request->validated());
-        return response()->json(['message' => 'Created', 'data' => $record], 201);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User created successfully.',
+            'data' => new UserResource($record),
+        ], 201);
     }
 
     /**
@@ -79,6 +84,11 @@ class UserController extends BaseCrudController
             'success' => true,
             'message' => 'User updated successfully.',
             'data'    => new UserResource($user),
+            'reauthentication_required' => array_key_exists(
+                'password',
+                $request->validated()
+            ),
+
         ], 200);
     }
 

@@ -20,7 +20,20 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(\App\Http\Middleware\MonitorSystemActivity::class);
         $middleware->redirectGuestsTo(fn (Request $request) => null);
 
+        $middleware->encryptCookies(except: [
+            'access_token',
+        ]);
+
+        $middleware->trimStrings(except: [
+            'password',
+            'password_confirmation',
+            'current_password',
+            'new_password',
+            'new_password_confirmation',
+        ]);
+    
         $middleware->api(prepend: [
+            \App\Http\Middleware\EnsureTrustedApiOrigin::class,
             \App\Http\Middleware\JwtCookieMiddleware::class,
         ]);
 
@@ -29,7 +42,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'jwt.refresh' => \Tymon\JWTAuth\Middleware\RefreshToken::class,
             'permission'  => \App\Http\Middleware\PermissionMiddleware::class,
             'auth.version' => \App\Http\Middleware\ValidateAuthVersion::class,
+            'auth.session' => \App\Http\Middleware\ValidateAuthSession::class,
+            'system.available' => \App\Http\Middleware\EnsureSystemAvailable::class,
         ]);
+
+        
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->report(function (\Throwable $exception): void {

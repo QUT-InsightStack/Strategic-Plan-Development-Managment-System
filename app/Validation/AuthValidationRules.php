@@ -2,7 +2,7 @@
 
 namespace App\Validation;
 
-use Illuminate\Validation\Rules\Password;
+use App\Services\PasswordPolicyService;
 
 class AuthValidationRules
 {
@@ -13,6 +13,9 @@ class AuthValidationRules
 
     public static function loginPassword(): array
     {
+        /*
+         * do not apply today's password policy to existing credentials.
+         */
         return ['required', 'string'];
     }
 
@@ -23,16 +26,10 @@ class AuthValidationRules
 
     public static function newPassword(): array
     {
-        return [
-            'required',
-            'string',
-            'confirmed',
-            'different:current_password',
-            Password::min(8)
-                ->letters()
-                ->mixedCase()
-                ->numbers()
-                ->symbols(),
-        ];
+        return app(PasswordPolicyService::class)->rules(
+            required: true,
+            confirmed: true,
+            differentFromCurrent: true
+        );
     }
 }

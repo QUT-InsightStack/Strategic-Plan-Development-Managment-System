@@ -6,7 +6,6 @@ use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Services\SecuritySettingsService;
 use Symfony\Component\HttpFoundation\Response;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -37,14 +36,6 @@ class ValidateAuthVersion
             return new JsonResponse([
                 'success' => false,
                 'message' => 'This account is locked until ' . $user->locked_until->toIso8601String() . '.',
-            ], 401);
-        }
-
-        $timeout = app(SecuritySettingsService::class)->get('session_timeout_minutes');
-        if ($user->last_activity_at && $user->last_activity_at->addMinutes($timeout)->isPast()) {
-            return new JsonResponse([
-                'success' => false,
-                'message' => 'Your session expired due to inactivity.',
             ], 401);
         }
 

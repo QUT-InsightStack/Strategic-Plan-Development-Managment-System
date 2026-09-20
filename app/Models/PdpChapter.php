@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class PdpChapter extends Model
 {
@@ -14,7 +15,23 @@ class PdpChapter extends Model
         'chapter_description',
         'created_by',
         'updated_by',
+        'archived_at',
     ];
+
+    protected function casts(): array
+    {
+        return ['archived_at' => 'datetime'];
+    }
+
+    public function strategicObjectives(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            StrategicObjective::class,
+            'tblobjective_pdp_chapter',
+            'chapter_id',
+            'objective_id'
+        )->withTimestamps();
+    }
 
     public function creator()
     {

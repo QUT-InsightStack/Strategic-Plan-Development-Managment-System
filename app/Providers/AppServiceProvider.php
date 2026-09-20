@@ -53,13 +53,29 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        RateLimiter::for('login', function (Request $request) {
-            $input = $request->input('email', '');
-            $email = is_string($input) ? trim($input) : '';
-
-            return Limit::perMinute(5)->by(
-                mb_strtolower($email) . '|' . $request->ip()
-            );
+        RateLimiter::for('login', function (Request $request): array {
+            $input = $request->input('email');
+        
+            $email = is_string($input)
+                ? mb_strtolower(trim($input))
+                : '';
+        
+            return [
+                /*
+                 * Additional IP-wide protection prevents bypassing the per-identifier
+                 * limit by submitting many different email addresses.
+                 */
+                Limit::perMinute(30)->by(
+                    'login-ip:' . $request->ip()
+                ),
+        
+                Limit::perMinute(5)->by(
+                    'login-identifier-ip:'
+                    . hash('sha256', $email)
+                    . '|'
+                    . $request->ip()
+                ),
+            ];
         });
     }
 }

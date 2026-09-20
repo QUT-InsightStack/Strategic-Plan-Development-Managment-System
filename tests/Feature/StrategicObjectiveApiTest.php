@@ -19,10 +19,10 @@ class StrategicObjectiveApiTest extends TestCase
 
     public function test_authorized_user_can_create_an_objective_and_backend_sets_created_by(): void
     {
-        $actor = $this->createUserWithPermissions(['strategic_objectives.create']);
+        $actor = $this->createUserWithPermissions(['strategic_objectives.create', 'strategic_objectives.assign_responsible_unit']);
         $plan = $this->createPlan($actor, ['status' => 'finished']);
 
-        $this->actingAs($actor, 'api');
+        $this->authenticateApiUser($actor);
 
         $response = $this->withoutMiddleware(ValidateAuthVersion::class)
             ->postJson('/api/strategic-objectives', [
@@ -55,7 +55,7 @@ class StrategicObjectiveApiTest extends TestCase
         $actor = $this->createUserWithPermissions(['strategic_objectives.create']);
         $plan = $this->createPlan($actor, ['status' => 'finished']);
 
-        $this->actingAs($actor, 'api');
+        $this->authenticateApiUser($actor);
 
         $this->withoutMiddleware(ValidateAuthVersion::class)
             ->postJson('/api/strategic-objectives', [
@@ -91,7 +91,7 @@ class StrategicObjectiveApiTest extends TestCase
             'deleted_at' => now(),
         ]);
 
-        $this->actingAs($actor, 'api');
+        $this->authenticateApiUser($actor);
 
         $response = $this->withoutMiddleware(ValidateAuthVersion::class)
             ->getJson('/api/strategic-objectives?per_page=1');
@@ -110,7 +110,7 @@ class StrategicObjectiveApiTest extends TestCase
     {
         $actor = $this->createUserWithPermissions([
             'strategic_objectives.view',
-            'strategic_records.archive',
+            'strategic_objectives.archive',
         ]);
         $activePlan = $this->createPlan($actor, ['status' => 'finished']);
         $archivablePlan = $this->createPlan($actor, [
@@ -134,12 +134,13 @@ class StrategicObjectiveApiTest extends TestCase
             'status' => 'published',
         ]);
 
-        $this->actingAs($actor, 'api');
+        $this->authenticateApiUser($actor);
         $this->withoutMiddleware(ValidateAuthVersion::class)
-            ->patchJson("/api/strategic-plans/{$archivablePlan->record_id}/status", [
-                'status' => 'archived',
-            ])
-            ->assertOk();
+    ->patchJson("/api/strategic-objectives/{$archivedObjective->objective_id}/status", [
+        'status' => 'archived',
+    ])
+    ->assertOk()
+    ->assertJsonPath('data.status', 'archived');
 
         StrategicObjective::whereKey($archivedObjective->objective_id)->update([
             'updated_at' => now()->subYear(),
@@ -174,7 +175,7 @@ class StrategicObjectiveApiTest extends TestCase
             'objective_title' => 'Visible objective details',
         ]);
 
-        $this->actingAs($actor, 'api');
+        $this->authenticateApiUser($actor);
 
         $this->withoutMiddleware(ValidateAuthVersion::class)
             ->getJson("/api/strategic-objectives/{$objective->objective_id}")
@@ -188,14 +189,14 @@ class StrategicObjectiveApiTest extends TestCase
     public function test_authorized_user_can_update_an_objective_without_changing_creation_or_relationship_metadata(): void
     {
         $creator = $this->createUser();
-        $actor = $this->createUserWithPermissions(['strategic_objectives.update']);
+        $actor = $this->createUserWithPermissions(['strategic_objectives.update', 'strategic_objectives.assign_responsible_unit']);
         $plan = $this->createPlan($creator, ['status' => 'finished']);
         $objective = $this->createObjective($plan, $creator, [
             'objective_title' => 'Original objective',
             'responsible_office_agency' => 'Planning Office',
         ]);
 
-        $this->actingAs($actor, 'api');
+        $this->authenticateApiUser($actor);
 
         $this->withoutMiddleware(ValidateAuthVersion::class)
             ->putJson("/api/strategic-objectives/{$objective->objective_id}", [
@@ -225,7 +226,7 @@ class StrategicObjectiveApiTest extends TestCase
         $otherPlan = $this->createPlan($actor, ['status' => 'finished']);
         $objective = $this->createObjective($plan, $actor);
 
-        $this->actingAs($actor, 'api');
+        $this->authenticateApiUser($actor);
 
         $this->withoutMiddleware(ValidateAuthVersion::class)
             ->putJson("/api/strategic-objectives/{$objective->objective_id}", [
@@ -247,7 +248,7 @@ class StrategicObjectiveApiTest extends TestCase
         $plan = $this->createPlan($viewer, ['status' => 'finished']);
         $objective = $this->createObjective($plan, $viewer);
 
-        $this->actingAs($viewer, 'api');
+        $this->authenticateApiUser($viewer);
 
         $this->withoutMiddleware(ValidateAuthVersion::class)
             ->putJson("/api/strategic-objectives/{$objective->objective_id}", [
@@ -256,11 +257,142 @@ class StrategicObjectiveApiTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_authorized_user_can_archive_and_restore_an_objective(): void
+{
+    $actor = $this->createUserWithPermissions([
+        'strategic_objectives.archive',
+    ]);
+
+    $plan = $this->createPlan($actor, [
+        'status' => 'finished',
+    ]);
+
+    $objective = $this->createObjective($plan, $actor, [
+        'status' => 'published',
+        'objective_title' => 'Objective to archive',
+    ]);
+
+    $this->authenticateApiUser($actor);
+
+    $this->withoutMiddleware(ValidateAuthVersion::class)
+        ->patchJson("/api/strategic-objectives/{$objective->objective_id}/status", [
+            'status' => 'archived',
+        ])
+
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.status', 'archived')
+        ->assertJsonPath('data.status_before_archive', 'published')
+        ->assertJsonPath('data.archived_by', $actor->user_id);
+
+    $objective->refresh();
+
+    $this->assertSame('archived', $objective->status);
+    $this->assertSame('published', $objective->status_before_archive);
+    $this->assertNotNull($objective->archived_at);
+    $this->assertSame($actor->user_id, $objective->archived_by);
+
+    $this->withoutMiddleware(ValidateAuthVersion::class)
+        ->patchJson("/api/strategic-objectives/{$objective->objective_id}/status", [
+            'status' => 'restored',
+        ])
+        ->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.status', 'published')
+        ->assertJsonPath('data.status_before_archive', null)
+        ->assertJsonPath('data.archived_at', null)
+        ->assertJsonPath('data.archived_by', null);
+
+    $objective->refresh();
+
+    $this->assertSame('published', $objective->status);
+    $this->assertNull($objective->status_before_archive);
+    $this->assertNull($objective->archived_at);
+    $this->assertNull($objective->archived_by);
+    $this->assertSame($plan->record_id, $objective->strategic_plan_id);
+}
+
+public function test_user_without_archive_permission_cannot_archive_an_objective(): void
+{
+    $viewer = $this->createUserWithPermissions([
+        'strategic_objectives.view',
+    ]);
+
+    $plan = $this->createPlan($viewer, [
+        'status' => 'finished',
+    ]);
+
+    $objective = $this->createObjective($plan, $viewer, [
+        'status' => 'draft',
+    ]);
+
+    $this->authenticateApiUser($viewer);
+
+    $this->withoutMiddleware(ValidateAuthVersion::class)
+        ->patchJson("/api/strategic-objectives/{$objective->objective_id}/status", [
+            'status' => 'archived',
+        ])
+        ->assertForbidden();
+
+    $objective->refresh();
+
+    $this->assertSame('draft', $objective->status);
+    $this->assertNull($objective->status_before_archive);
+    $this->assertNull($objective->archived_at);
+    $this->assertNull($objective->archived_by);
+}
+
+public function test_repeated_archive_request_is_handled_safely(): void
+{
+    $actor = $this->createUserWithPermissions([
+        'strategic_objectives.archive',
+    ]);
+
+    $plan = $this->createPlan($actor, [
+        'status' => 'finished',
+    ]);
+
+    $objective = $this->createObjective($plan, $actor, [
+        'status' => 'draft',
+    ]);
+
+    $this->authenticateApiUser($actor);
+
+    $this->withoutMiddleware(ValidateAuthVersion::class)
+        ->patchJson("/api/strategic-objectives/{$objective->objective_id}/status", [
+            'status' => 'archived',
+        ])
+        ->assertOk();
+
+    $objective->refresh();
+
+    $originalArchivedAt = $objective->archived_at?->toISOString();
+
+    $this->withoutMiddleware(ValidateAuthVersion::class)
+        ->patchJson("/api/strategic-objectives/{$objective->objective_id}/status", [
+            'status' => 'archived',
+        ])
+        ->assertOk()
+        ->assertJsonPath(
+
+            'message',
+            'Strategic objective is already archived.'
+        );
+
+    $objective->refresh();
+
+    $this->assertSame('archived', $objective->status);
+    $this->assertSame('draft', $objective->status_before_archive);
+    $this->assertSame(
+        $originalArchivedAt,
+        $objective->archived_at?->toISOString()
+    );
+}
     public function test_archived_objective_updates_are_rejected(): void
     {
         $actor = $this->createUserWithPermissions([
             'strategic_objectives.update',
-            'strategic_records.archive',
+            'strategic_objectives.archive',
         ]);
         $plan = $this->createPlan($actor, ['status' => 'finished']);
         $objective = $this->createObjective($plan, $actor, [
@@ -268,12 +400,13 @@ class StrategicObjectiveApiTest extends TestCase
             'status' => 'published',
         ]);
 
-        $this->actingAs($actor, 'api');
+        $this->authenticateApiUser($actor);
         $this->withoutMiddleware(ValidateAuthVersion::class)
-            ->patchJson("/api/strategic-plans/{$plan->record_id}/status", [
-                'status' => 'archived',
-            ])
-            ->assertOk();
+         ->patchJson("/api/strategic-objectives/{$objective->objective_id}/status", [
+        'status' => 'archived',
+        ])
+            ->assertOk()
+             ->assertJsonPath('data.status', 'archived');
 
         $this->withoutMiddleware(ValidateAuthVersion::class)
             ->putJson("/api/strategic-objectives/{$objective->objective_id}", [
@@ -287,41 +420,56 @@ class StrategicObjectiveApiTest extends TestCase
         $this->assertSame('archived', $objective->status);
     }
 
-    public function test_archiving_a_finished_plan_cascades_to_its_objectives_without_changing_relationships(): void
-    {
-        $actor = $this->createUserWithPermissions(['strategic_records.archive']);
-        $plan = $this->createPlan($actor, ['status' => 'finished']);
-        $draftObjective = $this->createObjective($plan, $actor, [
-            'status' => 'draft',
-        ]);
-        $publishedObjective = $this->createObjective($plan, $actor, [
-            'status' => 'published',
-        ]);
 
-        $this->actingAs($actor, 'api');
 
-        $this->withoutMiddleware(ValidateAuthVersion::class)
-            ->patchJson("/api/strategic-plans/{$plan->record_id}/status", [
-                'status' => 'archived',
-            ])
-            ->assertOk()
-            ->assertJsonPath('data.status', 'archived');
+    public function test_archiving_a_finished_plan_does_not_archive_its_objectives(): void
+{
+    $actor = $this->createUserWithPermissions([
+        'strategic_records.archive',
+    ]);
 
-        $draftObjective->refresh();
-        $publishedObjective->refresh();
+    $plan = $this->createPlan($actor, [
+        'status' => 'finished',
+    ]);
 
-        $this->assertSame('archived', $draftObjective->status);
-        $this->assertSame('draft', $draftObjective->status_before_archive);
-        $this->assertNotNull($draftObjective->archived_at);
-        $this->assertSame($actor->user_id, $draftObjective->archived_by);
-        $this->assertSame($plan->record_id, $draftObjective->strategic_plan_id);
+    $draftObjective = $this->createObjective($plan, $actor, [
+        'status' => 'draft',
+    ]);
 
-        $this->assertSame('archived', $publishedObjective->status);
-        $this->assertSame('published', $publishedObjective->status_before_archive);
-        $this->assertNotNull($publishedObjective->archived_at);
-        $this->assertSame($actor->user_id, $publishedObjective->archived_by);
-        $this->assertSame($plan->record_id, $publishedObjective->strategic_plan_id);
-    }
+    $publishedObjective = $this->createObjective($plan, $actor, [
+        'status' => 'published',
+    ]);
+
+    $this->authenticateApiUser($actor);
+
+    $this->withoutMiddleware(ValidateAuthVersion::class)
+        ->patchJson("/api/strategic-plans/{$plan->record_id}/status", [
+            'status' => 'archived',
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.status', 'archived');
+
+    $draftObjective->refresh();
+    $publishedObjective->refresh();
+
+    $this->assertSame('draft', $draftObjective->status);
+    $this->assertNull($draftObjective->status_before_archive);
+    $this->assertNull($draftObjective->archived_at);
+    $this->assertNull($draftObjective->archived_by);
+    $this->assertSame(
+        $plan->record_id,
+        $draftObjective->strategic_plan_id
+    );
+
+    $this->assertSame('published', $publishedObjective->status);
+    $this->assertNull($publishedObjective->status_before_archive);
+    $this->assertNull($publishedObjective->archived_at);
+    $this->assertNull($publishedObjective->archived_by);
+    $this->assertSame(
+        $plan->record_id,
+        $publishedObjective->strategic_plan_id
+    );
+}
 
     public function test_archiving_is_rejected_when_the_parent_plan_is_not_finished(): void
     {
@@ -329,7 +477,7 @@ class StrategicObjectiveApiTest extends TestCase
         $plan = $this->createPlan($actor, ['status' => 'draft']);
         $objective = $this->createObjective($plan, $actor, ['status' => 'draft']);
 
-        $this->actingAs($actor, 'api');
+        $this->authenticateApiUser($actor);
 
         $this->withoutMiddleware(ValidateAuthVersion::class)
             ->patchJson("/api/strategic-plans/{$plan->record_id}/status", [

@@ -13,13 +13,7 @@
     <div class="login-shell" data-login-page>
         <header class="app-header" aria-label="Application header">
             <a class="brand" href="/" aria-label="Strategic Planning Management System home">
-               <span class="brand-logo code-logo" role="img"
-                    aria-label="Strategic Planning Management System logo">
-                    <span class="logo-circle logo-top-left"></span>
-                    <span class="logo-circle logo-top-right"></span>
-                    <span class="logo-circle logo-bottom-left"></span>
-                    <span class="logo-circle logo-bottom-right"></span>
-               </span>
+                <x-brand-logo class="brand-logo" />
                 <span class="brand-name">Strategic Planning Management System</span>
             </a>
 
@@ -91,7 +85,7 @@
                         <button class="text-button" type="button" data-forgot-password>Forgot Password?</button>
                     </div>
 
-                    <button class="signin-button" type="submit" data-submit-button>Sign in</button>
+                    <button class="ui-button ui-button--primary signin-button" type="submit" data-submit-button>Sign in</button>
 
                     <p class="form-status" role="status" aria-live="polite" data-form-status></p>
 

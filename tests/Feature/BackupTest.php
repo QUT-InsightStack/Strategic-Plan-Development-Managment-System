@@ -163,9 +163,14 @@ class BackupTest extends TestCase
 
     public function test_a_failed_backup_is_recorded_and_reported(): void
     {
+<<<<<<< HEAD
         // The test database is :memory:, so there is no file to copy and the
         // dump fails — which is the case being exercised here.
         $actor = $this->createUserWithPermissions(['backups.view', 'backups.create', 'logs.view']);
+=======
+        $actor = $this->createUserWithPermissions(['backups.view', 'backups.create']);
+        Process::fake(['*' => Process::result(errorOutput: 'Simulated dump failure', exitCode: 1)]);
+>>>>>>> origin/develop
 
         $this->actingAs($actor, 'api');
         $this->withoutMiddleware(ValidateAuthVersion::class)
@@ -266,7 +271,7 @@ class BackupTest extends TestCase
     {
         $actor = $this->createUserWithPermissions(['backups.restore']);
         $backup = $this->completedBackup($actor);
-        $backup->forceFill(['driver' => 'mysql'])->save();
+        $backup->forceFill(['driver' => 'sqlite'])->save();
 
         $this->actingAs($actor, 'api');
         $this->withoutMiddleware(ValidateAuthVersion::class)
@@ -291,15 +296,15 @@ class BackupTest extends TestCase
 
         Process::fake();
 
-        // The connection is already resolved by the queries above, so Eloquent
-        // keeps using SQLite while the service reads the new driver from config.
+        // Keep the already-resolved test PDO; override only the export adapter's
+        // configuration. Process::fake prevents an actual database export.
         config([
-            'database.connections.sqlite.driver' => 'mysql',
-            'database.connections.sqlite.database' => 'db_spdms_test',
-            'database.connections.sqlite.username' => 'spdms_user',
-            'database.connections.sqlite.password' => 'sup3r-s3cret-pw',
-            'database.connections.sqlite.host' => '127.0.0.1',
-            'database.connections.sqlite.port' => 3306,
+            'database.connections.mysql_testing.driver' => 'mysql',
+            'database.connections.mysql_testing.database' => 'db_spdms_test',
+            'database.connections.mysql_testing.username' => 'spdms_user',
+            'database.connections.mysql_testing.password' => 'sup3r-s3cret-pw',
+            'database.connections.mysql_testing.host' => '127.0.0.1',
+            'database.connections.mysql_testing.port' => 3306,
         ]);
 
         $this->actingAs($actor, 'api');
@@ -339,9 +344,9 @@ class BackupTest extends TestCase
         Process::fake();
 
         config([
-            'database.connections.sqlite.driver' => 'mysql',
-            'database.connections.sqlite.database' => 'db_spdms_test',
-            'database.connections.sqlite.password' => 'sup3r-s3cret-pw',
+            'database.connections.mysql_testing.driver' => 'mysql',
+            'database.connections.mysql_testing.database' => 'db_spdms_test',
+            'database.connections.mysql_testing.password' => 'sup3r-s3cret-pw',
         ]);
 
         $this->actingAs($actor, 'api');
@@ -416,9 +421,8 @@ class BackupTest extends TestCase
     // ─── Helpers ─────────────────────────────────────────────────────
 
     /**
-     * Point the SQLite connection at a real file so a dump has something to
-     * copy. Safe to call after users exist, because the connection Eloquent
-     * is already using has been resolved by then.
+     * Exercise the SQLite file-copy adapter without changing the resolved MySQL
+     * test PDO used for model records. No SQLite extension is needed.
      */
     private function useSqliteFileDatabase(): void
     {
@@ -426,7 +430,10 @@ class BackupTest extends TestCase
         file_put_contents($path, 'SQLite format 3');
         $this->temporaryFiles[] = $path;
 
-        config(['database.connections.sqlite.database' => $path]);
+        config([
+            'database.connections.mysql_testing.driver' => 'sqlite',
+            'database.connections.mysql_testing.database' => $path,
+        ]);
     }
 
     private function completedBackup(User $actor, ?string $filename = null): Backup
@@ -443,7 +450,7 @@ class BackupTest extends TestCase
         return Backup::create([
             'filename' => $filename,
             'size_bytes' => 7,
-            'driver' => 'sqlite',
+            'driver' => config('database.connections.mysql_testing.driver'),
             'status' => 'completed',
             'error_message' => null,
             'created_by' => $actor->user_id,

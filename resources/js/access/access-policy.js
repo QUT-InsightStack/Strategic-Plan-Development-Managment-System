@@ -39,6 +39,7 @@ export const PERMISSIONS = Object.freeze({
     BACKUPS_VIEW: 'backups.view',
     BACKUPS_CREATE: 'backups.create',
     BACKUPS_DOWNLOAD: 'backups.download',
+    BACKUPS_RESTORE: 'backups.restore',
 });
 
 const fullPlanningPermissions = [
@@ -86,6 +87,7 @@ const technicalAdminPermissions = [
     PERMISSIONS.BACKUPS_VIEW,
     PERMISSIONS.BACKUPS_CREATE,
     PERMISSIONS.BACKUPS_DOWNLOAD,
+    PERMISSIONS.BACKUPS_RESTORE,
 ];
 
 const administrativeAdminPermissions = [
@@ -98,6 +100,10 @@ const administrativeAdminPermissions = [
     PERMISSIONS.LOGS_VIEW,
 ];
 
+const officePermissions = [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW,
+    PERMISSIONS.OBJECTIVES_VIEW, PERMISSIONS.OBJECTIVES_CREATE, PERMISSIONS.OBJECTIVES_UPDATE,
+    PERMISSIONS.FOUNDATIONS_VIEW, 'relations.view', 'relations.create', PERMISSIONS.REPORTS_VIEW];
+
 const rolePolicies = {
     Administrator: { home: '/role-management', permissions: ['*'] },
     'Administrative Admin': { home: '/dashboard', permissions: administrativeAdminPermissions },
@@ -107,9 +113,10 @@ const rolePolicies = {
     test: { home: '/dashboard', permissions: technicalAdminPermissions },
     'Planning Officer': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
     'Planner/Encoder': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
-    'Office Representative': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
-    'Office/Agency': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
-    'Offices / Agencies': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
+    'Office Representative': { home: '/office', permissions: officePermissions },
+    'Office/Agency': { home: '/office', permissions: officePermissions },
+    'Offices / Agencies': { home: '/office', permissions: officePermissions },
+    'Responsible Unit User': { home: '/office', permissions: officePermissions },
     'Division Head': { home: '/strategic-plans', permissions: fullPlanningPermissions },
     Management: { home: '/strategic-plans', permissions: fullPlanningPermissions },
     Executive: { home: '/strategic-plans', permissions: fullPlanningPermissions },
@@ -134,15 +141,35 @@ export function hasRolePolicy(roleName) {
 }
 
 export const routeRules = [
+    { test: /^\/consolidate-inputs(?:\/|$)/, permission: PERMISSIONS.PLANS_UPDATE },
+    { test: /^\/office(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
+    {
+    test: /^\/workflow-configuration(?:\/|$)/,
+    permission: PERMISSIONS.SETTINGS_MANAGE,
+},
     { test: /^\/administrative-admin\/reference-data(?:\/|$)/, permission: PERMISSIONS.REFERENCE_DATA_MANAGE },
     { test: /^\/administrative-admin\/templates(?:\/|$)/, permission: PERMISSIONS.TEMPLATES_MANAGE },
     { test: /^\/dashboard(?:\/|$)/, permission: PERMISSIONS.DASHBOARD_VIEW },
+    { test: /^\/settings(?:\/|$)/, permission: PERMISSIONS.SETTINGS_MANAGE },
     { test: /^\/role-management(?:\/|$)/, permission: PERMISSIONS.ROLES_MANAGE },
     { test: /^\/user-management(?:\/|$)/, permission: PERMISSIONS.USERS_VIEW },
     { test: /^\/pdp-chapters\/manage(?:\/|$)/, permission: PERMISSIONS.PDP_CHAPTERS_MANAGE },
+<<<<<<< HEAD
     { test: /^\/login-history(?:\/|$)/, permission: PERMISSIONS.LOGIN_HISTORY_VIEW },
+=======
+    { test: /^\/audit-logs(?:\/|$)/, permission: PERMISSIONS.LOGS_VIEW },
+    { test: /^\/login-history(?:\/|$)/, permission: PERMISSIONS.LOGS_VIEW },
+>>>>>>> origin/develop
     { test: /^\/manual-backup(?:\/|$)/, permission: PERMISSIONS.BACKUPS_VIEW },
-    { test: /^\/strategic-plans\/create(?:\/|$)/, permission: PERMISSIONS.PLANS_CREATE },
-    { test: /^\/strategic-plans\/\d+\/edit(?:\/|$)/, permission: PERMISSIONS.PLANS_UPDATE },
-    { test: /^\/strategic-(?:plans|objectives)(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
+
+// A user must at least be allowed to view strategic plans before the
+// reviewer-assignment validation in the review application is performed.
+{
+    test: /^\/strategic-plan-reviews(?:\/|$)/,
+    permission: PERMISSIONS.PLANS_VIEW,
+},
+
+{ test: /^\/strategic-plans\/create(?:\/|$)/, permission: PERMISSIONS.PLANS_CREATE },
+{ test: /^\/strategic-plans\/\d+\/edit(?:\/|$)/, permission: PERMISSIONS.PLANS_UPDATE },
+{ test: /^\/strategic-(?:plans|objectives)(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
 ];

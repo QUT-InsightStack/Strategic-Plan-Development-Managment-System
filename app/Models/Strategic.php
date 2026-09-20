@@ -10,6 +10,7 @@ class Strategic extends Model
     use HasFactory;
 
     protected $table = 'tblstrategic_record';
+
     protected $primaryKey = 'record_id';
 
     protected $fillable = [
@@ -18,6 +19,8 @@ class Strategic extends Model
         'level',
         'title',
         'description',
+        'planning_start_date',
+        'planning_end_date',
         'status',
         'archived_at',
         'archived_by',
@@ -31,6 +34,8 @@ class Strategic extends Model
     protected function casts(): array
     {
         return [
+            'planning_start_date' => 'date:Y-m-d',
+            'planning_end_date' => 'date:Y-m-d',
             'archived_at' => 'datetime',
             'deleted_at' => 'datetime',
         ];
@@ -111,5 +116,15 @@ class Strategic extends Model
     {
         return $this->hasMany(StrategicObjective::class, 'strategic_plan_id', 'record_id')
             ->where('status', '!=', 'deleted');
+    }
+
+    public function inputs()
+    {
+        return $this->hasMany(ImplementationInput::class, 'strategic_plan_id', 'record_id');
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(StrategicDocument::class, 'strategic_plan_id', 'record_id');
     }
 }

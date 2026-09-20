@@ -103,6 +103,8 @@ class PlanCreationService
                 'level' => $data['level'],
                 'title' => $data['title'] !== '' ? $data['title'] : 'Untitled Strategic Plan',
                 'description' => $data['description'],
+                'planning_start_date' => $data['planning_start_date'],
+                'planning_end_date' => $data['planning_end_date'],
                 'status' => 'draft',
                 'archived_at' => null,
                 'archived_by' => null,
@@ -208,6 +210,8 @@ class PlanCreationService
             'title' => Str::limit($source->title . ' (Copy)', 255, ''),
             'level' => $source->level,
             'description' => $source->description,
+            'planning_start_date' => $source->planning_start_date?->format('Y-m-d'),
+            'planning_end_date' => $source->planning_end_date?->format('Y-m-d'),
             'mission' => $source->missionFoundation?->content ?? '',
             'vision' => $source->visionFoundation?->content ?? '',
             'core_values' => $source->coreValues->pluck('content')->all(),
@@ -258,6 +262,8 @@ class PlanCreationService
             'title' => trim((string) ($data['title'] ?? '')),
             'level' => $data['level'],
             'description' => $this->normalizeNullableString($data['description'] ?? null),
+            'planning_start_date' => $data['planning_start_date'] ?? null,
+            'planning_end_date' => $data['planning_end_date'] ?? null,
             'mission' => trim((string) ($data['mission'] ?? '')),
             'vision' => trim((string) ($data['vision'] ?? '')),
             'core_values' => $coreValues,
@@ -369,7 +375,7 @@ class PlanCreationService
             'deleted_at' => null,
         ]);
 
-        $this->archiveObjectives($planId, $userId);
+
         $this->archiveLinks($planId, $userId);
         $this->syncRelationsForPlan($planId, $userId);
         $this->syncPlanFoundationsLifecycle($planId, $userId);
@@ -387,7 +393,7 @@ class PlanCreationService
             'deleted_at' => null,
         ]);
 
-        $this->restoreObjectives($planId, $userId);
+
         $this->restoreLinks($planId, $userId);
         $this->syncRelationsForPlan($planId, $userId);
         $this->syncPlanFoundationsLifecycle($planId, $userId);
@@ -400,6 +406,8 @@ class PlanCreationService
             'level' => $data['level'],
             'title' => $data['title'] !== '' ? $data['title'] : 'Untitled Strategic Plan',
             'description' => $data['description'],
+            'planning_start_date' => $data['planning_start_date'],
+            'planning_end_date' => $data['planning_end_date'],
             'status' => $status,
             'archived_at' => null,
             'archived_by' => null,
@@ -741,6 +749,8 @@ class PlanCreationService
             'title' => $plan->title,
             'level' => $plan->level,
             'description' => $plan->description,
+            'planning_start_date' => $plan->planning_start_date?->format('Y-m-d'),
+            'planning_end_date' => $plan->planning_end_date?->format('Y-m-d'),
             'status' => $plan->status,
             'mission' => $plan->missionFoundation?->content,
             'vision' => $plan->visionFoundation?->content,

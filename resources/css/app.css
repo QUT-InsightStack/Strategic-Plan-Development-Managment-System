@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import './brand-logo.css';
 @import './design-tokens.css';
+@import './components/buttons.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -12,14 +13,14 @@
 }
 
 :root {
-    --page-bg: #dceaf7;
-    --primary: #1f4fa5;
-    --primary-dark: #16428e;
-    --header-bg: #204f9e;
-    --header-border: #0789ff;
+    --page-bg: var(--color-background);
+    --primary: var(--color-primary);
+    --primary-dark: var(--color-primary-hover);
+    --header-bg: var(--color-primary);
+    --header-border: var(--color-brand-cyan);
     --text: #11254a;
     --muted: #7b8ca8;
-    --panel: #ffffff;
+    --panel: var(--color-surface);
     --danger: #b42318;
     --success: #157347;
     --shadow: 0 2px 8px rgba(17, 37, 74, 0.18);
@@ -36,7 +37,7 @@ body {
     font-family: var(--font-sans);
     font-size: var(--font-size-md);
     line-height: var(--line-height-body);
-    background: #eef5fc;
+    background: var(--color-background);
 }
 
 button,
@@ -77,54 +78,6 @@ button {
     gap: 12px;
     color: inherit;
     text-decoration: none;
-}
-
-.brand-logo {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    width: var(--brand-logo-size);
-    height: var(--brand-logo-size);
-    object-fit: contain;
-}
-
-.logo-circle {
-    display: block;
-    width: 17px;
-    height: 17px;
-    border-radius: 50%;
-}
-
-.logo-top-left {
-    background: conic-gradient(
-        #231f20 0deg 90deg,
-        #ffffff 90deg 180deg,
-        #08a9e0 180deg 270deg,
-        #231f20 270deg 360deg
-    );
-}
-
-.logo-top-right {
-    background: conic-gradient(
-        #231f20 0deg 180deg,
-        #ffffff 180deg 270deg,
-        #08a9e0 270deg 360deg
-    );
-}
-
-.logo-bottom-left {
-    background: conic-gradient(
-        #ffffff 0deg 90deg,
-        #08a9e0 90deg 180deg,
-        #231f20 180deg 360deg
-    );
-}
-
-.logo-bottom-right {
-    background: conic-gradient(
-        #08a9e0 0deg 90deg,
-        #231f20 90deg 270deg,
-        #ffffff 270deg 360deg
-    );
 }
 
 .brand-name {
@@ -271,7 +224,7 @@ button {
     border-radius: 6px;
     padding: 0 42px 0 40px;
     color: var(--text);
-    background: #ffffff;
+    background: var(--color-surface);
     box-shadow: var(--shadow);
     font-size: 12px;
 }
@@ -365,28 +318,7 @@ button {
 .signin-button {
     justify-self: center;
     width: 180px;
-    min-height: 48px;
-    border: 0;
-    border-radius: 6px;
-    color: #ffffff;
-    background: var(--primary);
-    font-size: 13px;
-    font-weight: 700;
-    box-shadow: 0 2px 6px rgba(31, 79, 165, 0.32);
-    transition: background 160ms ease, transform 160ms ease;
-}
-
-.signin-button:hover,
-.signin-button:focus-visible {
-    background: var(--primary-dark);
-    outline: none;
-    transform: translateY(-1px);
-}
-
-.signin-button:disabled {
-    cursor: wait;
-    opacity: 0.72;
-    transform: none;
+    font-size: var(--font-size-sm);
 }
 
 .form-status {

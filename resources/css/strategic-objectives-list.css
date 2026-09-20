@@ -1,44 +1,37 @@
 @import './strategic-plans-list.css';
+@import './components/objective-dialog.css';
 
-.plans-card {
-    overflow: hidden;
+/* Reuse the Plan Management layout, with one fewer filter field. */
+.strategic-objectives-page {
+    --plans-filter-columns: 3;
 }
 
-.objective-list-table-wrap {
-    max-width: 100%;
-    overflow-x: auto;
-}
-
-.objective-list-table {
-    min-width: 1280px;
-    table-layout: fixed;
-}
-
-.objective-list-table th,
-.objective-list-table td {
-    vertical-align: middle;
+/* Long objective text can wrap without changing the standard table sizing. */
+.objective-list-table th {
     white-space: normal;
 }
 
-.objective-list-table th:nth-child(1) { width: 110px; }
-.objective-list-table th:nth-child(2) { width: 180px; }
-.objective-list-table th:nth-child(3) { width: 240px; }
-.objective-list-table th:nth-child(4) { width: 210px; }
-.objective-list-table th:nth-child(5) { width: 180px; }
-.objective-list-table th:nth-child(6) { width: 105px; }
-.objective-list-table th:nth-child(7) { width: 145px; }
-.objective-list-table th:nth-child(8) { width: 180px; }
-
-.objective-list-actions .ui-table__actions {
-    flex-wrap: nowrap;
+.objective-cell-summary,
+.objective-plan-summary,
+.objective-updated-summary,
+.objective-measurement {
+    overflow-wrap: anywhere;
 }
 
+.objective-plan-link,
 .objective-plan-link {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
     color: #005ea8;
     font-weight: var(--font-weight-semibold);
     text-decoration: none;
 }
 
+.objective-plan-link:hover,
 .objective-plan-link:hover {
     text-decoration: underline;
 }
@@ -47,7 +40,7 @@
 .objective-plan-summary,
 .objective-updated-summary {
     display: grid;
-    gap: 4px;
+    gap: var(--space-1);
 }
 
 .objective-cell-summary small,
@@ -59,7 +52,7 @@
 
 .objective-measurement {
     display: grid;
-    gap: 6px;
+    gap: var(--space-1);
 }
 
 .objective-measurement span {

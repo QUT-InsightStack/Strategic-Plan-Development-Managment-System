@@ -14,8 +14,13 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RolePremissionController;
 use App\Http\Controllers\StrategicController;
 use App\Http\Controllers\StrategicObjectiveController;
+use App\Http\Controllers\ResponsibleUnitController;
+use App\Http\Controllers\ObjectiveCommentController;
+use App\Http\Controllers\ImplementationInputController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\SecuritySettingsController;
+use App\Http\Controllers\StrategicDocumentController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:api', 'auth.version', 'permission:system_monitoring.view'])
@@ -59,7 +64,7 @@ Route::post('reset-password', [AuthController::class, 'resetPassword'])
 Route::post('auth/logout', [AuthController::class, 'logout']);
 
 // Requires a valid, non-expired token
-Route::middleware(['auth:api', 'auth.version'])->group(function () {
+Route::middleware(['auth:api','auth.version', 'auth.session', 'system.available',])->group(function () {
     Route::get('auth/me',     [AuthController::class, 'me']);
     Route::put('auth/profile',       [AuthController::class, 'updateProfile']);
     Route::put('change-password', [AuthController::class, 'changePassword']);
@@ -75,7 +80,7 @@ Route::middleware(['auth:api', 'auth.version'])->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth:api','auth.version',])->prefix('users')->group(function () {
+Route::middleware(['auth:api','auth.version','auth.session','system.available',])->prefix('users')->group(function () {
     Route::get('/search', [UserController::class, 'search'])
     ->middleware('permission:users.view');
 
@@ -119,7 +124,7 @@ Route::middleware(['auth:api','auth.version',])->prefix('users')->group(function
 | permissions. Downloads are audited by BackupService.
 |
 */
-Route::middleware(['auth:api', 'auth.version'])->prefix('backups')->group(function () {
+Route::middleware(['auth:api','auth.version', 'auth.session','system.available',])->prefix('backups')->group(function () {
     Route::get('', [BackupController::class, 'index'])
         ->middleware('permission:backups.view');
 
@@ -141,13 +146,16 @@ Route::middleware(['auth:api', 'auth.version'])->prefix('backups')->group(functi
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth:api','auth.version',])->group(function () {
+Route::middleware(['auth:api','auth.version','auth.session','system.available',])->group(function () {
     Route::get('security-settings', [SecuritySettingsController::class, 'show']);
     Route::put('security-settings', [SecuritySettingsController::class, 'update']);
 
     Route::get('pdp-chapters', [PdpChapterController::class, 'index']);
     Route::get('pdp-chapters/{chapter}', [PdpChapterController::class, 'show'])
         ->whereNumber('chapter');
+    Route::post('pdp-chapters/{chapter}/archive', [PdpChapterController::class, 'archive'])
+        ->whereNumber('chapter')
+        ->middleware('permission:pdp_chapters.manage');
     Route::post('pdp-chapters', [PdpChapterController::class, 'store'])
         ->middleware('permission:pdp_chapters.manage');
     Route::put('pdp-chapters/{chapter}', [PdpChapterController::class, 'update'])
@@ -220,7 +228,9 @@ Route::middleware(['auth:api','auth.version',])->group(function () {
         ->whereNumber('permission')
         ->middleware('permission:permissions.manage');
 
-    // Legacy direct role-permission pivot endpoints
+
+
+        // Legacy direct role-permission pivot endpoints
     Route::apiResource(
         'role-premissions',
         RolePremissionController::class
@@ -239,7 +249,18 @@ Route::middleware(['auth:api','auth.version',])->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth:api','auth.version',])->group(function () {
+Route::middleware(['auth:api', 'auth.version','auth.session','system.available',])->group(function () {
+    Route::get('strategic-plans/{plan}/documents', [StrategicDocumentController::class, 'planIndex'])
+        ->whereNumber('plan')->middleware('permission:strategic_documents.view');
+    Route::post('strategic-plans/{plan}/documents', [StrategicDocumentController::class, 'storeForPlan'])
+        ->whereNumber('plan')->middleware('permission:strategic_documents.upload');
+    Route::get('strategic-objectives/{objective}/documents', [StrategicDocumentController::class, 'objectiveIndex'])
+        ->whereNumber('objective')->middleware('permission:strategic_documents.view');
+    Route::post('strategic-objectives/{objective}/documents', [StrategicDocumentController::class, 'storeForObjective'])
+        ->whereNumber('objective')->middleware('permission:strategic_documents.upload');
+    Route::get('strategic-documents/{document}/download', [StrategicDocumentController::class, 'download'])
+        ->whereNumber('document')->middleware('permission:strategic_documents.download');
+
     // Strategic plan management
     Route::get('strategic-plans', [PlanCreationController::class, 'index']);
     Route::post('strategic-plans', [PlanCreationController::class, 'store']);
@@ -277,6 +298,24 @@ Route::middleware(['auth:api','auth.version',])->group(function () {
     )->whereNumber('planId');
 
     // Strategic objectives, including plan-filtered listing
+    Route::put(
+        'strategic-objectives/{id}/alignments',
+        [StrategicObjectiveController::class, 'updateAlignments']
+    )->whereNumber('id');
+    Route::post(
+        'strategic-objectives/{id}/alignments',
+        [StrategicObjectiveController::class, 'storeAlignments']
+    )->whereNumber('id');
+    Route::get('responsible-units', [ResponsibleUnitController::class, 'index']);
+    Route::put('strategic-objectives/responsible-unit', [ResponsibleUnitController::class, 'assign']);
+    Route::put('strategic-objectives/{id}/responsible-unit', [ResponsibleUnitController::class, 'assign'])->whereNumber('id');
+    Route::get('strategic-objectives/{objectiveId}/comments', [ObjectiveCommentController::class, 'index'])->whereNumber('objectiveId');
+    Route::post('strategic-objectives/{objectiveId}/comments', [ObjectiveCommentController::class, 'store'])->whereNumber('objectiveId');
+    Route::get('strategic-objectives/{objectiveId}/inputs', [ImplementationInputController::class, 'index'])->whereNumber('objectiveId');
+    Route::post('strategic-objectives/{objectiveId}/inputs', [ImplementationInputController::class, 'store'])->whereNumber('objectiveId');
+    Route::get('strategic-plans/{planId}/inputs', [ImplementationInputController::class, 'index'])->whereNumber('planId');
+    Route::post('strategic-plans/{planId}/inputs', [ImplementationInputController::class, 'store'])->whereNumber('planId');
+
     Route::get(
         'strategic-plans/{planId}/objectives',
         [StrategicObjectiveController::class, 'byPlan']
@@ -291,6 +330,10 @@ Route::middleware(['auth:api','auth.version',])->group(function () {
         'strategic-records',
         StrategicController::class
     );
+   Route::patch(
+        'strategic-objectives/{id}/status',
+        [StrategicObjectiveController::class, 'updateStatus']
+    )->whereNumber('id');
 
     Route::apiResource(
         'strategic-objectives',
@@ -329,7 +372,14 @@ Route::middleware(['auth:api','auth.version',])->group(function () {
 Route::middleware([
     'auth:api',
     'auth.version',
+    'auth.session',
+    'system.available',
 ])->group(function () {
+    Route::get(
+        'login-history/me',
+        [LoginHistoryController::class, 'me']
+    );
+
     Route::get(
         'login-history',
         [LoginHistoryController::class, 'index']
@@ -344,11 +394,23 @@ Route::middleware([
 });
 
 
+/*
+|--------------------------------------------------------------------------
+| System Settings
+|--------------------------------------------------------------------------
+*/
 
+Route::middleware([
+    'auth:api',
+    'auth.version',
+    'auth.session',
+    'system.available',
+])->prefix('settings')->group(function (): void {
+    Route::get('', [SystemSettingsController::class, 'show'])
+        ->middleware('permission:settings.view');
 
-
-
-
-
+    Route::patch('', [SystemSettingsController::class, 'update'])
+        ->middleware('permission:settings.manage');
+});
 
 

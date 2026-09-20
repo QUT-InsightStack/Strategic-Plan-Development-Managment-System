@@ -2,16 +2,16 @@
 @import './design-tokens.css';
 
 :root {
-    --page-bg: #f3f6fb;
-    --primary: #1f4fa5;
-    --primary-dark: #143b7f;
-    --primary-soft: #e8f0ff;
+    --page-bg: var(--color-background);
+    --primary: var(--color-primary);
+    --primary-dark: var(--color-primary-hover);
+    --primary-soft: var(--color-primary-soft);
     --accent: #0f766e;
-    --header-bg: #204f9e;
+    --header-bg: var(--color-primary);
     --text: #0d1d38;
     --muted: #5f6470;
     --muted-light: #7a8494;
-    --panel: #ffffff;
+    --panel: var(--color-surface);
     --line: #d8dfeb;
     --danger: #b42318;
     --danger-soft: #fff1f0;
@@ -33,7 +33,7 @@ body {
     font-family: Arial, Helvetica, sans-serif;
     font-size: var(--font-size-md);
     line-height: var(--line-height-body);
-    background: var(--page-bg);
+    background: var(--color-background);
 }
 
 button,
@@ -78,14 +78,6 @@ button {
     gap: 12px;
     color: inherit;
     text-decoration: none;
-}
-
-.brand-logo {
-    display: block;
-    width: var(--brand-logo-size);
-    height: var(--brand-logo-size);
-    object-fit: contain;
-    flex-shrink: 0;
 }
 
 .brand-name {
@@ -192,7 +184,7 @@ button {
     border-radius: 50%;
     object-fit: cover;
     padding: 2px;
-    background: #ffffff;
+    background: var(--color-surface);
 }
 
 .upload-row {
@@ -211,7 +203,7 @@ button {
     border: 0;
     border-radius: 50%;
     color: #ffffff;
-    background: #26338a;
+    background: var(--color-primary);
     font-size: 20px;
     line-height: 1;
 }
@@ -249,8 +241,8 @@ button {
 .profile-card-header {
     min-height: auto;
     padding: 22px 28px 18px;
-    background: var(--primary);
-    color: #ffffff;
+    background: var(--color-section-header-background);
+    color: var(--color-primary);
 }
 
 .profile-card-header h2 {
@@ -261,7 +253,7 @@ button {
 
 .profile-card-header p {
     margin: 0;
-    color: rgba(255, 255, 255, 0.86);
+    color: var(--color-text-secondary);
     font-size: 13px;
 }
 
@@ -345,7 +337,7 @@ button {
     border-radius: 6px;
     padding: 10px 12px;
     color: var(--text);
-    background: #ffffff;
+    background: var(--color-surface);
     font-size: 14px;
     transition: border-color 160ms ease, box-shadow 160ms ease;
 }
@@ -357,7 +349,7 @@ button {
 
 .field-input:disabled {
     color: var(--muted-light);
-    background: #f7f9fc;
+    background: var(--color-surface-muted);
     cursor: not-allowed;
 }
 
@@ -420,7 +412,7 @@ button {
 .action-button.secondary {
     border-color: var(--line);
     color: var(--primary);
-    background: #ffffff;
+    background: var(--color-surface);
 }
 
 .action-button.secondary:hover,
@@ -470,7 +462,7 @@ button {
 .page-inner > .form-status:not(:empty) {
     border: 1px solid var(--line);
     padding: 10px 14px;
-    background: #ffffff;
+    background: var(--color-surface);
 }
 
 .modern-status.is-success:not(:empty),
@@ -549,6 +541,152 @@ button {
     margin-top: 16px;
 }
 
+.password-assistance-panel {
+    margin-bottom: 24px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    box-shadow: var(--shadow-soft);
+    overflow: hidden;
+}
+
+.password-assistance-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    border-bottom: 1px solid var(--line);
+    padding: 20px;
+}
+
+.password-assistance-header h2 {
+    margin: 0 0 6px;
+    color: var(--text);
+    font-size: 21px;
+}
+
+.password-assistance-header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.password-assistance-count {
+    flex: 0 0 auto;
+    border-radius: 999px;
+    padding: 6px 11px;
+    color: #7a5200;
+    background: #fff8df;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.password-assistance-filters {
+    display: flex;
+    gap: 8px;
+    padding: 16px 20px 0;
+}
+
+.password-assistance-filter {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 8px 14px;
+    color: var(--accent);
+    background: var(--color-surface);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.password-assistance-filter:hover,
+.password-assistance-filter:focus-visible {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.password-assistance-filter.is-active {
+    border-color: var(--accent);
+    color: #ffffff;
+    background: var(--accent);
+}
+
+.password-assistance-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    padding-top: 16px;
+}
+
+.password-assistance-table {
+    width: 100%;
+    min-width: 850px;
+    border-collapse: collapse;
+}
+
+.password-assistance-table th,
+.password-assistance-table td {
+    border-top: 1px solid var(--line);
+    padding: 14px 20px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.password-assistance-table th {
+    color: var(--accent);
+    background: var(--color-surface-header);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.password-assistance-table td {
+    color: var(--text);
+    font-size: 13px;
+}
+
+.password-assistance-table td strong,
+.password-assistance-table td small {
+    display: block;
+}
+
+.password-assistance-table td small {
+    margin-top: 4px;
+    color: var(--muted);
+}
+
+.password-assistance-status {
+    display: inline-flex;
+    border-radius: 999px;
+    padding: 5px 9px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.password-assistance-status.is-pending {
+    color: #7a5200;
+    background: #fff8df;
+}
+
+.password-assistance-status.is-resolved {
+    color: #005a30;
+    background: var(--success-soft);
+}
+
+.password-assistance-resolve {
+    white-space: nowrap;
+}
+
+.password-assistance-complete {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.password-assistance-empty {
+    margin: 0;
+    padding: 28px 20px;
+    color: var(--muted);
+    text-align: center;
+}
+
 .dashboard-actions .action-button {
     min-width: 92px;
 }
@@ -594,14 +732,14 @@ button {
 
 .resource-table th {
     color: #334155;
-    background: #f8fafc;
+    background: var(--color-surface-header);
     font-size: 12px;
     font-weight: 800;
     text-transform: uppercase;
 }
 
 .resource-table tbody tr:hover {
-    background: #f8fbff;
+    background: var(--color-primary-soft);
 }
 
 .resource-table tbody tr:last-child td {
@@ -666,7 +804,7 @@ button {
     border-radius: 6px;
     padding: 12px;
     color: var(--text);
-    background: #fbfdff;
+    background: var(--color-surface-muted);
     font-family: Consolas, 'Courier New', monospace;
     font-size: 13px;
     line-height: 1.5;
@@ -747,7 +885,7 @@ button {
     border-radius: 6px;
     padding: 10px 12px;
     color: var(--text);
-    background: #ffffff;
+    background: var(--color-surface);
     font-size: 14px;
     transition: border-color 160ms ease, box-shadow 160ms ease;
 }
@@ -902,6 +1040,7 @@ select.crud-input[multiple] {
     .resource-header-actions {
         justify-content: stretch;
     }
+    
 
     .dashboard-grid {
         grid-template-columns: 1fr;
@@ -1121,4 +1260,19 @@ select.crud-input[multiple] {
     color: var(--muted);
     font-size: 12px;
     text-align: right;
+}
+
+@media (max-width: 640px) {
+    .password-assistance-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .password-assistance-count {
+        width: fit-content;
+    }
+
+    .password-assistance-filters {
+        flex-wrap: wrap;
+    }
 }

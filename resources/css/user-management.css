@@ -10,7 +10,7 @@
 @import './components/tables.css';
 @import './components/pagination.css';
 
-body { background: var(--color-primary-soft); }
+body { background: var(--color-background); }
 .user-page { color: var(--color-text); }
 .user-page__header { margin-bottom: var(--space-5); }
 .user-filter-card { margin-bottom: var(--space-5); }

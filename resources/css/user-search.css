@@ -2,12 +2,12 @@
 @import './design-tokens.css';
 
 :root {
-    --page-bg: var(--color-gray-50);
+    --page-bg: var(--color-background);
     --primary: var(--color-primary);
     --header-bg: var(--color-primary);
     --text: var(--color-gray-950);
     --muted: var(--color-gray-600);
-    --panel: var(--color-brand-white);
+    --panel: var(--color-surface);
     --line: var(--color-gray-200);
     --danger: var(--color-danger);
     --success: var(--color-success);
@@ -24,7 +24,7 @@ body {
     font-family: var(--font-family-sans);
     font-size: var(--font-size-md);
     line-height: var(--line-height-body);
-    background: var(--page-bg);
+    background: var(--color-background);
 }
 
 button,
@@ -64,14 +64,6 @@ button {
     gap: 12px;
     color: inherit;
     text-decoration: none;
-}
-
-.brand-logo {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    width: 34px;
-    height: 34px;
-    flex-shrink: 0;
 }
 
 .brand-name {
@@ -217,7 +209,7 @@ button {
     border-radius: 4px;
     padding: 0 12px;
     color: var(--text);
-    background: var(--color-brand-white);
+    background: var(--color-surface);
     font-size: var(--font-size-sm);
 }
 
@@ -397,7 +389,7 @@ button {
 .action-button.secondary {
     color: var(--primary);
     border-color: var(--color-gray-300);
-    background: var(--color-brand-white);
+    background: var(--color-surface);
 }
 
 .action-button.secondary:hover:not(:disabled),
@@ -441,7 +433,7 @@ button {
 
 .results-table th {
     color: var(--primary);
-    background: var(--color-gray-100);
+    background: var(--color-surface-header);
     font-weight: var(--font-weight-semibold);
     font-size: var(--font-size-xs);
     text-transform: uppercase;

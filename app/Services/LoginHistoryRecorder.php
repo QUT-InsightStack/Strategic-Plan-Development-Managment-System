@@ -43,11 +43,12 @@ class LoginHistoryRecorder
          * This information is stored only in the protected administrative
          * history
          */
+    
         $user = User::query()
             ->where('email', $normalizedEmail)
             ->first();
-
-        $history = LoginHistory::query()->create([
+    
+        return LoginHistory::query()->create([
             'user_id' => $user?->user_id,
             'user_name' => $user
                 ? $this->userName($user)
