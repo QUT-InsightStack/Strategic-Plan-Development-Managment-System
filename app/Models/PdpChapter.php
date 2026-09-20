@@ -15,12 +15,19 @@ class PdpChapter extends Model
         'chapter_description',
         'created_by',
         'updated_by',
-        'archived_at',
+        // status/archived_at/archived_by/deleted_at/deleted_by intentionally
+        // excluded — they change only through archive()/delete(), never via
+        // generic create/update, same principle as rejecting role_id on
+        // generic user updates.
+
     ];
 
     protected function casts(): array
     {
-        return ['archived_at' => 'datetime'];
+        return [
+            'archived_at' => 'datetime',
+            'deleted_at' => 'datetime',
+    ];
     }
 
     public function strategicObjectives(): BelongsToMany
@@ -42,4 +49,31 @@ class PdpChapter extends Model
     {
         return $this->belongsTo(User::class, 'updated_by', 'user_id');
     }
+
+    public function deleter()
+    {
+        return $this->belongsTo(User::class, 'deleted_by', 'user_id');
+    }
+
+
+    public function archiver()
+    {
+        return $this->belongsTo(User::class, 'archived_by', 'user_id');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    public function scopeArchived($query)
+    {
+        return $query->where('status', 'archived');
+    }
+
+    public function scopeNotDeleted($query)
+    {
+        return $query->where('status', '!=', 'deleted');
+    }
+
 }

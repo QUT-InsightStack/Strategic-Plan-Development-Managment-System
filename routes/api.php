@@ -152,19 +152,30 @@ Route::middleware(['auth:api','auth.version','auth.session','system.available',]
     Route::put('security-settings', [SecuritySettingsController::class, 'update']);
 
     Route::get('pdp-chapters', [PdpChapterController::class, 'index']);
+    
     Route::get('pdp-chapters/{chapter}', [PdpChapterController::class, 'show'])
         ->whereNumber('chapter');
-    Route::post('pdp-chapters/{chapter}/archive', [PdpChapterController::class, 'archive'])
+
+    Route::patch('pdp-chapters/{chapter}/archive', [PdpChapterController::class, 'archive'])
         ->whereNumber('chapter')
-        ->middleware('permission:pdp_chapters.manage');
+        ->middleware('permission:pdp_chapters.archive');
+    
+
     Route::post('pdp-chapters', [PdpChapterController::class, 'store'])
         ->middleware('permission:pdp_chapters.manage');
+
     Route::put('pdp-chapters/{chapter}', [PdpChapterController::class, 'update'])
         ->whereNumber('chapter')
         ->middleware('permission:pdp_chapters.manage');
-    Route::delete('pdp-chapters/{chapter}', [PdpChapterController::class, 'destroy'])
+
+    Route::patch('pdp-chapters/{chapter}/status', [PdpChapterController::class, 'updateStatus'])
         ->whereNumber('chapter')
-        ->middleware('permission:pdp_chapters.manage');
+        ->middleware('permission:pdp_chapters.archive');
+
+    Route::delete('pdp-chapters/{chapter}', [PdpChapterController::class, 'delete'])
+        ->whereNumber('chapter')
+        ->middleware('permission:pdp_chapters.delete');
+
 
     // Roles
     Route::get('roles', [RoleController::class, 'index'])
