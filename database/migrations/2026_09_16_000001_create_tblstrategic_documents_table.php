@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -29,8 +30,8 @@ return new class extends Migration
                 ->on('tblusers')->cascadeOnDelete();
             $table->index(['strategic_plan_id', 'created_at']);
             $table->index(['objective_id', 'created_at']);
-            $table->check('(strategic_plan_id IS NOT NULL AND objective_id IS NULL) OR (strategic_plan_id IS NULL AND objective_id IS NOT NULL)');
         });
+        DB::statement('ALTER TABLE tblstrategic_documents ADD CONSTRAINT strategic_document_single_parent CHECK ((strategic_plan_id IS NOT NULL AND objective_id IS NULL) OR (strategic_plan_id IS NULL AND objective_id IS NOT NULL))');
     }
 
     public function down(): void

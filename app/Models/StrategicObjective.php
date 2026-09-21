@@ -34,6 +34,8 @@ class StrategicObjective extends Model
     protected function casts(): array
     {
         return [
+            'progress_percentage' => 'integer',
+            'progress_updated_at' => 'datetime',
             'archived_at' => 'datetime',
             'deleted_at' => 'datetime',
         ];
@@ -92,5 +94,15 @@ class StrategicObjective extends Model
     public function updater()
     {
         return $this->belongsTo(User::class, 'updated_by', 'user_id');
+    }
+
+    public function progressUpdater()
+    {
+        return $this->belongsTo(User::class, 'progress_updated_by', 'user_id');
+    }
+
+    public function progressUpdates()
+    {
+        return $this->hasMany(ObjectiveProgressUpdate::class, 'objective_id', 'objective_id');
     }
 }

@@ -42,23 +42,17 @@ class RolePermissionSeeder extends Seeder
             'permissions.manage',
             'logs.view',
             'login_history.view',
-<<<<<<< HEAD
             'system_monitoring.view',
             'backups.view',
             'backups.create',
             'backups.download',
             'backups.restore',
-=======
->>>>>>> origin/develop
         ];
 
         $viewOnlyPermissions = [
             'dashboard.view',
             'strategic_records.view', 'strategic_foundations.view', 'strategic_objectives.view',
-<<<<<<< HEAD
-=======
             'strategic_documents.view', 'strategic_documents.download',
->>>>>>> origin/develop
             'relations.view', 'plan_core_values.view',
         ];
 
@@ -122,5 +116,6 @@ class RolePermissionSeeder extends Seeder
             ->each(fn (Role $role) => $role->permissions()->syncWithoutDetaching($documentPermissionIds));
 
         $this->call(ObjectiveCollaborationPermissionSeeder::class);
+        $this->call(ObjectiveProgressPermissionSeeder::class);
     }
 }

@@ -5,7 +5,7 @@ export const officeItems = [
   { label: 'Plan Comments', href: '/office', permission: P.OBJECTIVES_UPDATE },
   { label: 'Submit Input / Objective', href: '/office?view=inputs', permission: P.OBJECTIVES_CREATE },
   { label: 'Edit Assigned Draft Objectives', href: '/office?view=edit', permission: P.OBJECTIVES_UPDATE },
-  { label: 'Update Assigned Progress', href: '/office?view=progress', permission: P.OBJECTIVES_UPDATE }
+  { label: 'Update Assigned Progress', href: '/office?view=progress', permission: P.OBJECTIVES_UPDATE_PROGRESS }
  ] },
  { label: 'Mapping Module', icon: 'bi-map', permission: P.PLANS_VIEW, children: [
   { label: 'Map Agency Inputs', href: '/mappings', permission: 'relations.create' },

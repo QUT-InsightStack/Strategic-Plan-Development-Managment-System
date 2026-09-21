@@ -11,6 +11,7 @@ import {
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { AppDialog } from '../../components/AppDialog.js';
 import { PageHeader } from '../../components/PageHeader.js';
+import { ObjectiveProgressPanel } from '../../strategic-objectives/ObjectiveProgressPanel.js';
 import { ObjectiveFormDialog } from '../../strategic-objectives/ObjectiveFormDialog.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
 import { PERMISSIONS } from '../../access/access-policy.js';
@@ -290,6 +291,9 @@ useEffect(() => {
         React.createElement(AppSidebar, { onNotice: (message) => setStatus({ type: 'info', message }) }),
         React.createElement('main', { className: 'app-shell-main objectives-page' }, React.createElement('div', { className: 'app-shell-container' },
             React.createElement(PageHeader, { className: 'objectives-header', section: 'Strategic Planning', title: 'Manage Objectives', subtitle: 'Create strategic objectives and assign responsible offices and agencies.' }),
+            can(PERMISSIONS.OBJECTIVES_VIEW_PROGRESS) && React.createElement('details', null,
+                React.createElement('summary', null, 'Monitor and update progress'),
+                React.createElement(ObjectiveProgressPanel, { planId })),
             status.message ? React.createElement('div', { className: `ui-status ui-status--${status.type}`, role: 'status' }, status.message) : null,
             archived ? React.createElement('div', { className: 'ui-status ui-status--error' }, 'This Strategic Plan is archived. Restore it before changing its objectives.') : null,
             React.createElement('section', { className: 'ui-card plan-summary', 'aria-labelledby': 'plan-summary-title' }, React.createElement('div', { className: 'ui-card__header' }, React.createElement('h2', { className: 'ui-card__title', id: 'plan-summary-title' }, 'Plan Summary')), React.createElement('div', { className: 'ui-card__body plan-summary-grid' },

@@ -35,7 +35,7 @@ function page(entries) {
             return { data: entries, meta: { total: entries.length, current_page: 1, last_page: 1 } };
         },
     });
-    const source = readFileSync(new URL('../../resources/js/pages/login-history-app.js', import.meta.url), 'utf8');
+    const source = readFileSync(new URL('../../resources/js/pages/technical-admin/login-history-app.js', import.meta.url), 'utf8');
     vm.runInContext(source.replace(/^import .*;\r?$/gm, ''), context);
     return {
         render() { cursor = 0; return root.type(); },
