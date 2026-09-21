@@ -23,6 +23,9 @@ export const PERMISSIONS = Object.freeze({
     INPUTS_VIEW: 'implementation_inputs.view',
     OBJECTIVES_CREATE: 'strategic_objectives.create',
     OBJECTIVES_UPDATE: 'strategic_objectives.update',
+    OBJECTIVES_VIEW_PROGRESS: 'strategic_objectives.view_progress',
+    OBJECTIVES_UPDATE_PROGRESS: 'strategic_objectives.update_progress',
+    OBJECTIVES_CORRECT_PROGRESS: 'strategic_objectives.correct_progress',
     OBJECTIVES_DELETE: 'strategic_objectives.delete',
     FOUNDATIONS_VIEW: 'strategic_foundations.view',
     FOUNDATIONS_MANAGE: 'strategic_foundations.manage',
@@ -155,12 +158,8 @@ export const routeRules = [
     { test: /^\/role-management(?:\/|$)/, permission: PERMISSIONS.ROLES_MANAGE },
     { test: /^\/user-management(?:\/|$)/, permission: PERMISSIONS.USERS_VIEW },
     { test: /^\/pdp-chapters\/manage(?:\/|$)/, permission: PERMISSIONS.PDP_CHAPTERS_MANAGE },
-<<<<<<< HEAD
     { test: /^\/login-history(?:\/|$)/, permission: PERMISSIONS.LOGIN_HISTORY_VIEW },
-=======
     { test: /^\/audit-logs(?:\/|$)/, permission: PERMISSIONS.LOGS_VIEW },
-    { test: /^\/login-history(?:\/|$)/, permission: PERMISSIONS.LOGS_VIEW },
->>>>>>> origin/develop
     { test: /^\/manual-backup(?:\/|$)/, permission: PERMISSIONS.BACKUPS_VIEW },
 
 // A user must at least be allowed to view strategic plans before the
