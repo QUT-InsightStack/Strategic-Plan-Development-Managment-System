@@ -1,11 +1,9 @@
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { PageHeader } from '../../components/PageHeader.js';
-import { getStrategicPlan } from '../../api/strategic-plans-api.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
-import { getAccessSession } from '../../access/access-session.js';
 import {
     listAssignedPlanSubmissions,
-} from '../../data/plan-approval-demo-data.js';
+} from '../../api/plan-approval-api.js';
 
 enforcePageAccess();
 
@@ -58,7 +56,6 @@ function stageOptions(reviews) {
 }
 
 function StrategicPlanReviewsApp() {
-    const session = getAccessSession();
 
     const [reviews, setReviews] = useState([]);
     const [search, setSearch] = useState('');
@@ -80,33 +77,8 @@ function StrategicPlanReviewsApp() {
             });
 
             try {
-                const submissions =
-                    listAssignedPlanSubmissions(session);
-
-                const reviewResults = await Promise.all(
-                    submissions.map(async (submission) => {
-                        try {
-                            const planPayload =
-                                await getStrategicPlan(
-                                    submission.planId
-                                );
-
-                            return {
-                                submission,
-                                plan: planPayload.data,
-                                error: '',
-                            };
-                        } catch (error) {
-                            return {
-                                submission,
-                                plan: null,
-                                error:
-                                    error.message ||
-                                    'The Strategic Plan could not be loaded.',
-                            };
-                        }
-                    })
-                );
+                const submissions = await listAssignedPlanSubmissions();
+                const reviewResults = submissions.map(submission => ({ submission, plan: submission.plan_snapshot, error: '' }));
 
                 if (!active) {
                     return;
@@ -600,9 +572,7 @@ function StrategicPlanReviewsApp() {
                                                     h(
                                                         'td',
                                                         null,
-                                                        creatorName(
-                                                            plan?.creator
-                                                        )
+                                                        submission.submittedBy
                                                     ),
 
                                                     h(

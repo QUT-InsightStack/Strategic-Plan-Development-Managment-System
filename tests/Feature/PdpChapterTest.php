@@ -48,6 +48,7 @@ class PdpChapterTest extends TestCase
             'chapter_description' => 'Planning context.',
         ])->assertForbidden();
         $this->deleteJson('/api/pdp-chapters/'.$chapter->chapter_id)->assertForbidden();
+
     }
 
     public function test_administrator_can_create_update_and_delete_a_chapter(): void

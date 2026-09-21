@@ -149,7 +149,7 @@ export const routeRules = [
     { test: /^\/office(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
     {
     test: /^\/workflow-configuration(?:\/|$)/,
-    permission: PERMISSIONS.SETTINGS_MANAGE,
+    roles: ['Administrator', 'Technical Administrator', 'Technical Admin'],
 },
     { test: /^\/administrative-admin\/reference-data(?:\/|$)/, permission: PERMISSIONS.REFERENCE_DATA_MANAGE },
     { test: /^\/administrative-admin\/templates(?:\/|$)/, permission: PERMISSIONS.TEMPLATES_MANAGE },
@@ -160,13 +160,12 @@ export const routeRules = [
     { test: /^\/pdp-chapters\/manage(?:\/|$)/, permission: PERMISSIONS.PDP_CHAPTERS_MANAGE },
     { test: /^\/login-history(?:\/|$)/, permission: PERMISSIONS.LOGIN_HISTORY_VIEW },
     { test: /^\/audit-logs(?:\/|$)/, permission: PERMISSIONS.LOGS_VIEW },
+
     { test: /^\/manual-backup(?:\/|$)/, permission: PERMISSIONS.BACKUPS_VIEW },
 
-// A user must at least be allowed to view strategic plans before the
-// reviewer-assignment validation in the review application is performed.
+// Review access is checked against recorded workflow participants by the API.
 {
     test: /^\/strategic-plan-reviews(?:\/|$)/,
-    permission: PERMISSIONS.PLANS_VIEW,
 },
 
 { test: /^\/strategic-plans\/create(?:\/|$)/, permission: PERMISSIONS.PLANS_CREATE },

@@ -262,6 +262,15 @@ Route::middleware(['auth:api','auth.version','auth.session','system.available',]
 */
 
 Route::middleware(['auth:api', 'auth.version','auth.session','system.available',])->group(function () {
+    Route::get('approval-workflow', [\App\Http\Controllers\ApprovalWorkflowController::class, 'show']);
+    Route::put('approval-workflow', [\App\Http\Controllers\ApprovalWorkflowController::class, 'update']);
+    Route::get('plan-reviews', [\App\Http\Controllers\PlanApprovalController::class, 'index']);
+    Route::post('strategic-plans/{plan}/submit', [\App\Http\Controllers\PlanApprovalController::class, 'submit'])->whereNumber('plan');
+    Route::get('strategic-plans/{plan}/approval-preparation', [\App\Http\Controllers\PlanApprovalController::class, 'preparation'])->whereNumber('plan');
+    Route::get('strategic-plans/{plan}/approval', [\App\Http\Controllers\PlanApprovalController::class, 'show'])->whereNumber('plan');
+    Route::post('strategic-plans/{plan}/approval/decision', [\App\Http\Controllers\PlanApprovalController::class, 'decide'])->whereNumber('plan');
+    Route::get('plan-submissions/{submission}/documents/{document}', [\App\Http\Controllers\PlanApprovalController::class, 'document'])
+        ->whereNumber('submission')->whereNumber('document');
     Route::get('strategic-plans/{plan}/documents', [StrategicDocumentController::class, 'planIndex'])
         ->whereNumber('plan')->middleware('permission:strategic_documents.view');
     Route::post('strategic-plans/{plan}/documents', [StrategicDocumentController::class, 'storeForPlan'])
@@ -432,6 +441,5 @@ Route::middleware([
     Route::patch('', [SystemSettingsController::class, 'update'])
         ->middleware('permission:settings.manage');
 });
-
 
 

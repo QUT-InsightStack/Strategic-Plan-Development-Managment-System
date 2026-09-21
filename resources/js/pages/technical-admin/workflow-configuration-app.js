@@ -2,39 +2,37 @@ import { TechnicalAdminSidebar } from '../../components/TechnicalAdminSidebar.js
 import { AppDialog } from '../../components/AppDialog.js';
 import { PageHeader } from '../../components/PageHeader.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
-import {
-    approverOptions,
-    demoWorkflow,
-} from '../../data/workflow-configuration-demo-data.js';
+import { apiRequest } from '../../api/api-client.js';
 
 enforcePageAccess();
-
-const { useMemo, useState } = React;
-const STORAGE_KEY = 'spdms.workflow-configuration-demo';
-
-function getInitialWorkflow() {
-    try {
-        const savedWorkflow = JSON.parse(
-            localStorage.getItem(STORAGE_KEY)
-        );
-
-        if (savedWorkflow?.stages) {
-            return savedWorkflow;
-        }
-    } catch {
-        // Use demo workflow when saved data is invalid.
-    }
-
-    return structuredClone(demoWorkflow);
+const { useEffect, useMemo, useState } = React;
+const blankWorkflow = { name: 'Strategic Plan Approval', description: '', status: 'draft', version: 0, stages: [] };
+function fromServer(data) {
+    return { ...data, stages: data.stages.map(stage => ({ ...stage,
+        approverType: stage.user_id ? 'user' : 'role', approver: String(stage.user_id || stage.role_id),
+    })) };
 }
-
 function WorkflowConfigurationApp() {
-    const [workflow, setWorkflow] = useState(getInitialWorkflow);
+    const [workflow, setWorkflow] = useState(blankWorkflow);
     const [errors, setErrors] = useState({});
     const [notice, setNotice] = useState(null);
     const [dialog, setDialog] = useState({
         open: false,
     });
+
+    const [approverOptions, setApproverOptions] = useState({ role: [], user: [] });
+    const [busy, setBusy] = useState(true);
+    const [loaded, setLoaded] = useState(false);
+    useEffect(() => {
+        apiRequest('/api/approval-workflow').then(payload => {
+            setWorkflow(fromServer(payload.data));
+            setApproverOptions({
+                role: payload.options.roles.map(role => ({ id: String(role.role_id), label: role.role_name })),
+                user: payload.options.users.map(user => ({ id: String(user.user_id), label: [user.first_name, user.last_name].filter(Boolean).join(' ') })),
+            });
+            setLoaded(true);
+        }).catch(error => setNotice({ type: 'error', message: error.message })).finally(() => setBusy(false));
+    }, []);
 
     const isActive = workflow.status === 'active';
     const hasStages = workflow.stages.length > 0;
@@ -220,30 +218,28 @@ function WorkflowConfigurationApp() {
         return true;
     }
 
-    function saveDraft() {
-        if (!validateWorkflow()) {
-            return;
-        }
-
-        const savedWorkflow = {
-            ...workflow,
-            status: 'draft',
-            updatedAt: new Date().toISOString(),
-        };
-
-        localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify(savedWorkflow)
-        );
-
-        setWorkflow(savedWorkflow);
-
-        setNotice({
-            type: 'success',
-            message:
-                'Workflow configuration saved as a draft.',
-        });
+    async function persist(status) {
+        if (busy || !loaded || !validateWorkflow()) return;
+        setBusy(true);
+        try {
+            const response = await apiRequest('/api/approval-workflow', {
+                method: 'PUT', body: JSON.stringify({
+                    name: workflow.name, description: workflow.description, version: workflow.version, status,
+                    stages: workflow.stages.map((stage, index) => ({
+                        name: stage.name, sequence: index + 1,
+                        user_id: stage.approverType === 'user' ? Number(stage.approver) : null,
+                        role_id: stage.approverType === 'role' ? Number(stage.approver) : null,
+                    })),
+                }),
+            });
+            setWorkflow(fromServer(response.data));
+            setNotice({ type: 'success', message: `Workflow saved (${status}).` });
+        } catch (error) {
+            setNotice({ type: 'error', message: Object.values(error.errors || {}).flat().join(' ') || error.message });
+        } finally { setBusy(false); setDialog({ open: false }); }
     }
+
+    function saveDraft() { return persist('draft'); }
 
     function requestStatusChange() {
         if (!isActive && !validateWorkflow()) {
@@ -263,33 +259,7 @@ function WorkflowConfigurationApp() {
         });
     }
 
-    function changeWorkflowStatus() {
-        const newStatus = isActive ? 'inactive' : 'active';
-
-        const savedWorkflow = {
-            ...workflow,
-            status: newStatus,
-            updatedAt: new Date().toISOString(),
-        };
-
-        localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify(savedWorkflow)
-        );
-
-        setWorkflow(savedWorkflow);
-        setDialog({ open: false });
-
-        setNotice({
-            type: 'success',
-            message:
-                `Workflow ${
-                    newStatus === 'active'
-                        ? 'activated'
-                        : 'deactivated'
-                } successfully.`,
-        });
-    }
+    function changeWorkflowStatus() { return persist(isActive ? 'inactive' : 'active'); }
 
     function renderStage(stage, index) {
         const nameError =
@@ -434,10 +404,10 @@ function WorkflowConfigurationApp() {
                             React.createElement(
                                 'option',
                                 {
-                                    key: option,
-                                    value: option,
+                                    key: option.id,
+                                    value: option.id,
                                 },
-                                option
+                                option.label
                             )
                         )
                     ),
@@ -827,6 +797,7 @@ function WorkflowConfigurationApp() {
                                 'ui-button ui-button--secondary',
                             type: 'button',
                             onClick: saveDraft,
+                            disabled: busy || !loaded,
                         },
                         'Save as Draft'
                     ),
@@ -843,6 +814,7 @@ function WorkflowConfigurationApp() {
                             type: 'button',
                             onClick:
                                 requestStatusChange,
+                            disabled: busy || !loaded,
                         },
 
                         React.createElement('i', {

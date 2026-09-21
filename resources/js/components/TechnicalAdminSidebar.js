@@ -16,7 +16,6 @@ const accessItems = [
     label: 'Workflow Configuration',
     icon: 'bi-diagram-3-fill',
     href: '/workflow-configuration',
-    permission: PERMISSIONS.SETTINGS_MANAGE,
 },
 ];
 const planningItems = [
