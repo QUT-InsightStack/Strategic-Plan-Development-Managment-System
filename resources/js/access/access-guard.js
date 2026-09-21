@@ -16,7 +16,7 @@ function recoverAccessSession(pathname) {
             const session = saveAccessSession(createAccessSession(payload.data));
             const rule = routeRules.find((candidate) => candidate.test.test(pathname));
 
-            if (rule && !can(rule.permission, session)) {
+            if (rule && ((rule.roles && !rule.roles.includes(session.roleName)) || (rule.permission && !can(rule.permission, session)))) {
                 window.location.replace('/access-denied');
                 return;
             }
@@ -33,7 +33,7 @@ export function enforcePageAccess(pathname = window.location.pathname) {
         return false;
     }
     const rule = routeRules.find((candidate) => candidate.test.test(pathname));
-    if (rule && !can(rule.permission, session)) {
+    if (rule && ((rule.roles && !rule.roles.includes(session.roleName)) || (rule.permission && !can(rule.permission, session)))) {
         window.location.replace('/access-denied');
         return false;
     }

@@ -1,9 +1,9 @@
-import { AppSidebar } from '../components/AppSidebar.js';
-import { useDialogBehaviour } from '../components/use-dialog-behaviour.js';
-import { apiRequest } from '../api/api-client.js';
-import { listSubmittedInputs, getSubmittedInput, reviewSubmittedInput } from '../api/implementation-inputs-api.js';
-import { createAccessSession, saveAccessSession } from '../access/access-session.js';
-import { enforcePageAccess } from '../access/access-guard.js';
+import { AppSidebar } from '../../components/AppSidebar.js';
+import { useDialogBehaviour } from '../../components/use-dialog-behaviour.js';
+import { apiRequest } from '../../api/api-client.js';
+import { listSubmittedInputs, getSubmittedInput, reviewSubmittedInput } from '../../api/implementation-inputs-api.js';
+import { createAccessSession, saveAccessSession } from '../../access/access-session.js';
+import { enforcePageAccess } from '../../access/access-guard.js';
 
 const h = React.createElement;
 const { useState, useEffect } = React;

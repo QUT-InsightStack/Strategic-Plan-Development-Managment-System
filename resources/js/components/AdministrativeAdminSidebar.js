@@ -1,13 +1,9 @@
 import { BrandLogo } from '../brand-logo.js';
 import { can, getAccessSession } from '../access/access-session.js';
-<<<<<<< HEAD
-import { PERMISSIONS } from '../access/access-policy.js';
-import { displayRoleName } from '../access/role-labels.js';
-=======
 import { PERMISSIONS as P } from '../access/access-policy.js';
 import { adminRoleKind, displayRoleName } from '../access/role-labels.js';
 import { TechnicalAdminSidebar } from './TechnicalAdminSidebar.js';
->>>>>>> origin/develop
+
 import { LogoutButton } from './LogoutButton.js';
 
 const { useState } = React;
