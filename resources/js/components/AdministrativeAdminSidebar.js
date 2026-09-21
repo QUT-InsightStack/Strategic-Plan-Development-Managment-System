@@ -61,7 +61,7 @@ export function AdministrativeAdminSidebar({ active = 'Reference Data', onNotice
                 openMenus.monitoring ? React.createElement('div', { className: 'app-sidebar__submenu app-sidebar__submenu--icons', id: 'administrative-monitoring' },
                     noticeItem('Monitoring Dashboard', 'bi-bar-chart-line-fill', 'Monitoring Dashboard is reserved for its implementation page.'),
                     noticeItem('Reports', 'bi-file-earmark-bar-graph-fill', 'Reports is reserved for its implementation page.'),
-                    can(PERMISSIONS.LOGIN_HISTORY_VIEW, accessSession) ? subitem('System Logs', '/login-history', 'bi-list-check') : null
+                    can(P.LOGIN_HISTORY_VIEW, accessSession) ? subitem('System Logs', '/login-history', 'bi-list-check') : null
                 ) : null
             )
         ),
