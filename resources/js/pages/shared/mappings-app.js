@@ -6,7 +6,7 @@ import { listPdpChapters } from '../../api/pdp-chapters-api.js';
 import { createAccessSession, saveAccessSession, can } from '../../access/access-session.js';
 import { isOfficeRole } from '../../access/office-navigation.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
-import { agendaCatalog, listLocalMappings, removeLocalMapping, saveLocalMappings, updateLocalMappingReference } from '../../mappings/mapping-storage.js';
+import { agendaCatalog, listLocalMappings, listPlannerMappings, removeLocalMapping, saveLocalMappings, updateLocalMappingReference } from '../../mappings/mapping-storage.js';
 import { listLocalAgencyInputs } from '../../data/office-demo-storage.js';
 import { objectivesAssignedToOffice } from '../../objective-assignment-storage.js';
 
@@ -25,9 +25,9 @@ function ChoiceLevel({ title, icon, items, selected, onToggle, valueKey, labelKe
         }) : h('p', { className: 'mapping-empty' }, `No ${title.toLowerCase()} available.`)));
 }
 
-function MappingPreview({ mappings, officeMode, canRemove, busy, remove }) {
+function MappingPreview({ mappings, officeMode, canRemove, busy, remove, title = '' }) {
     return h('section', { className: 'ui-card mapping-preview-card' },
-        h('h2', null, officeMode ? 'Four-level Mapping Preview' : 'Three-level Mapping Preview'),
+        h('h2', null, title || (officeMode ? 'Four-level Mapping Preview' : 'Three-level Mapping Preview')),
         h('div', { className: 'mapping-preview' }, h('table', { className: 'ui-table' },
             h('thead', null, h('tr', null, ['Agenda', 'PDP Element', 'DOST Objective', 'Agency Plan', ...(canRemove ? ['Action'] : [])].map(label => h('th', { key: label }, label)))),
             h('tbody', null, mappings.length ? mappings.map(item => h('tr', { key: item.id },
@@ -36,6 +36,29 @@ function MappingPreview({ mappings, officeMode, canRemove, busy, remove }) {
                 canRemove && h('td', null, h('button', { className: 'mapping-remove', type: 'button', disabled: busy, onClick: () => remove(item.id) }, h('i', { className: 'bi bi-trash-fill' }), 'Remove'))
             )) : h('tr', null, h('td', { className: 'mapping-empty', colSpan: canRemove ? 5 : 4 }, 'No hierarchical mappings added yet.'))))),
         h('p', { className: 'mapping-count' }, `Showing ${mappings.length} mapping${mappings.length === 1 ? '' : 's'}`));
+}
+
+function OfficeMappingStep({ mappings, selectedId, selectMapping, agencyItem, busy, disabled, save }) {
+    const selected = mappings.find(item => String(item.id) === String(selectedId));
+    const options = mappings.map((item, index) => h('option', { value: item.id, key: item.id },
+        `Mapping ${index + 1}: ${item.agenda_title} → ${item.pdp_chapter?.chapter_title || 'PDP'} → ${item.dost_objective?.objective_title || 'DOST'}`));
+    return h('form', { className: 'ui-card mapping-reference-step', onSubmit: save },
+        h('div', { className: 'mapping-step__heading' }, h('span', null, '2'), h('h2', null, 'Step 2. Link Your Agency Item to a Planning Officer Mapping')),
+        h('div', { className: 'mapping-reference-layout' },
+            h('div', { className: 'mapping-selected-panel' },
+                h('h3', null, 'Planning Officer Mapping'),
+                h('small', null, 'Select one approved three-level mapping'),
+                h('label', { className: 'mapping-search-select' }, h('i', { className: 'bi bi-search' }),
+                    h('select', { required: true, value: selectedId, disabled: busy || disabled, onChange: event => selectMapping(event.target.value) },
+                        h('option', { value: '' }, 'Select a planner mapping'), options)),
+                selected && h('div', { className: 'mapping-selected-chain' },
+                    h('article', { className: 'is-agenda' }, h('i', { className: 'bi bi-bank2' }), h('div', null, h('small', null, 'Agenda'), h('strong', null, selected.agenda_title))),
+                    h('article', { className: 'is-pdp' }, h('i', { className: 'bi bi-file-earmark-text-fill' }), h('div', null, h('small', null, 'PDP Element'), h('strong', null, selected.pdp_chapter?.chapter_title || '—'))),
+                    h('article', { className: 'is-dost' }, h('i', { className: 'bi bi-bullseye' }), h('div', null, h('small', null, 'DOST Objective'), h('strong', null, selected.dost_objective?.objective_title || '—'))))),
+            h('div', { className: 'mapping-reference-form' },
+                h('h3', null, 'Agency Mapping'),
+                h('p', null, 'The selected Agency Input or assigned Objective will be added as the fourth level of this mapping.'),
+                h('button', { className: 'ui-button ui-button--primary mapping-reference-submit', type: 'submit', disabled: busy || disabled || !selected || !agencyItem }, busy ? 'Saving…' : '+ Add Agency Mapping'))));
 }
 
 function PlannerReferenceStep({ mappings, selectedId, selectMapping, details, setDetails, busy, saveReference }) {
@@ -74,8 +97,9 @@ function MappingApp({ session }) {
     const canCreate = !viewOnly && (canManage || can('relations.create', session));
     const [plans, setPlans] = useState([]), [planId, setPlanId] = useState('');
     const [catalog, setCatalog] = useState({ agendas: [], pdp_chapters: [], dost_objectives: [], agency_inputs: [], agency_objectives: [] });
-    const [mappings, setMappings] = useState([]), [selected, setSelected] = useState({ agendas: [], pdp: [], dost: [] });
+    const [mappings, setMappings] = useState([]), [plannerMappings, setPlannerMappings] = useState([]), [selected, setSelected] = useState({ agendas: [], pdp: [], dost: [] });
     const [agencyItem, setAgencyItem] = useState(''), [details, setDetails] = useState(blankDetails), [selectedMappingId, setSelectedMappingId] = useState('');
+    const [selectedPlannerMappingId, setSelectedPlannerMappingId] = useState('');
     const [loading, setLoading] = useState(true), [busy, setBusy] = useState(false), [message, setMessage] = useState({ type: '', text: '' });
 
     useEffect(() => { listStrategicPlans({ per_page: 100 }).then(result => { const available = (result.data || []).filter(plan => !['archived', 'deleted'].includes(plan.status)); setPlans(available); if (available.length) setPlanId(String(available[0].record_id)); else setLoading(false); }).catch(error => { setMessage({ type: 'error', text: errorText(error) }); setLoading(false); }); }, []);
@@ -86,7 +110,10 @@ function MappingApp({ session }) {
             if (!active) return;
             const objectives = (objectiveResult.data || []).filter(item => !['archived', 'deleted'].includes(item.status));
             setCatalog({ agendas: agendaCatalog, pdp_chapters: pdpResult.data || [], dost_objectives: objectives, agency_inputs: inputResult.data || [], agency_objectives: officeMode ? objectivesAssignedToOffice(objectives, session.office) : [] });
-            setMappings(listLocalMappings(planId, officeMode ? session.office : '')); setSelected({ agendas: [], pdp: [], dost: [] }); setAgencyItem(''); setSelectedMappingId(''); setDetails(blankDetails);
+            const availablePlannerMappings = listPlannerMappings(planId);
+            setPlannerMappings(availablePlannerMappings);
+            setMappings(officeMode ? listLocalMappings(planId, session.office) : availablePlannerMappings);
+            setSelected({ agendas: [], pdp: [], dost: [] }); setAgencyItem(''); setSelectedMappingId(''); setSelectedPlannerMappingId(''); setDetails(blankDetails);
         }).catch(error => { if (active) setMessage({ type: 'error', text: errorText(error) }); }).finally(() => { if (active) setLoading(false); });
         return () => { active = false; };
     }, [planId]);
@@ -94,10 +121,29 @@ function MappingApp({ session }) {
     const toggle = (group, value) => setSelected(current => ({ ...current, [group]: current[group].includes(value) ? current[group].filter(item => item !== value) : [...current[group], value] }));
     const selectedPlan = plans.find(plan => String(plan.record_id) === planId);
     const agencyOptions = [...(catalog.agency_objectives || []).map(item => ({ value: `objective:${item.objective_id}`, label: `Assigned objective · ${item.objective_title}` })), ...(catalog.agency_inputs || []).map(item => ({ value: `input:${item.id}`, label: `Submitted ${item.type.replace('_', ' ')} · ${item.payload.objective_title || item.payload.content}` }))];
-    const refreshMappings = () => setMappings(listLocalMappings(planId, officeMode ? session.office : ''));
+    const refreshMappings = () => {
+        const availablePlannerMappings = listPlannerMappings(planId);
+        setPlannerMappings(availablePlannerMappings);
+        setMappings(officeMode ? listLocalMappings(planId, session.office) : availablePlannerMappings);
+    };
 
     async function addHierarchy(event) {
         event.preventDefault(); if (!canCreate || busy) return;
+        if (officeMode) {
+            const plannerMapping = plannerMappings.find(item => String(item.id) === String(selectedPlannerMappingId));
+            if (!plannerMapping || !agencyItem) { setMessage({ type: 'error', text: 'Select a Planning Officer mapping and an Agency Input or assigned Objective.' }); return; }
+            const [agencyType, agencyId] = agencyItem.split(':'); setBusy(true);
+            try {
+                saveLocalMappings({
+                    plan_id: Number(planId), agenda_codes: [plannerMapping.agenda_code], pdp_chapter_ids: [Number(plannerMapping.pdp_chapter_id)],
+                    dost_objective_ids: [Number(plannerMapping.dost_objective_id)], agency_input_id: agencyType === 'input' ? Number(agencyId) : null,
+                    agency_objective_id: agencyType === 'objective' ? Number(agencyId) : null, agency_office: session.office,
+                    parent_mapping_id: plannerMapping.id, ...blankDetails,
+                }, catalog, session);
+                refreshMappings(); setSelectedPlannerMappingId(''); setAgencyItem(''); setMessage({ type: 'success', text: 'Agency item linked to the Planning Officer mapping.' });
+            } catch (error) { setMessage({ type: 'error', text: errorText(error) }); } finally { setBusy(false); }
+            return;
+        }
         if (!selected.agendas.length || !selected.pdp.length || !selected.dost.length || (officeMode && !agencyItem)) { setMessage({ type: 'error', text: `Select at least one Agenda, PDP Element, DOST Objective${officeMode ? ', and Agency item' : ''}.` }); return; }
         const [agencyType, agencyId] = agencyItem.split(':'); setBusy(true);
         try { const count = saveLocalMappings({ plan_id: Number(planId), agenda_codes: selected.agendas, pdp_chapter_ids: selected.pdp.map(Number), dost_objective_ids: selected.dost.map(Number), agency_input_id: agencyType === 'input' ? Number(agencyId) : null, agency_objective_id: agencyType === 'objective' ? Number(agencyId) : null, agency_office: officeMode ? session.office : null, ...blankDetails }, catalog, session); refreshMappings(); setSelected({ agendas: [], pdp: [], dost: [] }); setAgencyItem(''); setMessage({ type: 'success', text: `${count} hierarchical mapping${count === 1 ? '' : 's'} added.` }); }
@@ -114,13 +160,17 @@ function MappingApp({ session }) {
     async function remove(id) { setBusy(true); try { removeLocalMapping(id); refreshMappings(); if (String(id) === String(selectedMappingId)) selectReferenceMapping(''); setMessage({ type: 'success', text: 'Mapping removed.' }); } catch (error) { setMessage({ type: 'error', text: errorText(error) }); } finally { setBusy(false); } }
 
     return h(React.Fragment, null, h(AppSidebar, { active: 'Mapping Module', onNotice: text => setMessage({ type: 'info', text }) }), h('main', { className: 'app-shell-main mapping-page' }, h('div', { className: 'app-shell-container mapping-container' },
-        h('header', { className: 'mapping-header' }, h('h1', null, officeMode ? 'View/Add Mapping' : 'Create Reference Mapping'), h('p', null, officeMode ? 'Map your Agency inputs across Presidential Agenda, PDP, and DOST levels.' : 'Create three-level mappings across Presidential Agenda, PDP, and DOST objectives, then link them to uploaded reference sections.')),
+        h('header', { className: 'mapping-header' }, h('h1', null, officeMode ? 'Agency Mapping' : 'Create Reference Mapping'), h('p', null, officeMode ? 'Use the Planning Officer mapping, then add your assigned Objective or Agency Input as the fourth level.' : 'Create three-level mappings across Presidential Agenda, PDP, and DOST objectives, then link them to uploaded reference sections.')),
         message.text && h('div', { className: `ui-status ui-status--${message.type}`, role: message.type === 'error' ? 'alert' : 'status' }, message.text),
         h('section', { className: 'ui-card mapping-context' }, h('label', { className: 'ui-field' }, h('span', { className: 'ui-label' }, 'Strategic Plan'), h('select', { className: 'ui-select', value: planId, onChange: event => setPlanId(event.target.value) }, plans.map(plan => h('option', { value: plan.record_id, key: plan.record_id }, plan.title)))), officeMode && h('label', { className: 'ui-field' }, h('span', { className: 'ui-label' }, 'Agency Input / Objective'), h('select', { className: 'ui-select', value: agencyItem, disabled: viewOnly, onChange: event => setAgencyItem(event.target.value) }, h('option', { value: '' }, 'Select an item assigned to your office'), agencyOptions.map(item => h('option', { value: item.value, key: item.value }, item.label))))),
-        loading ? h('section', { className: 'ui-card mapping-empty' }, 'Loading mapping data…') : h(React.Fragment, null,
-            canCreate && h('form', { className: 'ui-card mapping-step mapping-hierarchy-step', onSubmit: addHierarchy }, h('div', { className: 'mapping-step__heading' }, h('span', null, '1'), h('h2', null, officeMode ? 'Step 1. Map Agency Input Across Levels' : 'Step 1. Create Three-Level Mapping')), h('div', { className: 'mapping-levels' }, h(ChoiceLevel, { title: 'Agenda', icon: 'bi-bank2', items: catalog.agendas, selected: selected.agendas, onToggle: value => toggle('agendas', value), valueKey: 'code', labelKey: 'title' }), h('i', { className: 'bi bi-arrow-right mapping-arrow' }), h(ChoiceLevel, { title: 'PDP Elements', icon: 'bi-file-earmark-text-fill', items: catalog.pdp_chapters, selected: selected.pdp, onToggle: value => toggle('pdp', value), valueKey: 'chapter_id', labelKey: 'chapter_title' }), h('i', { className: 'bi bi-arrow-right mapping-arrow' }), h(ChoiceLevel, { title: 'DOST Objectives', icon: 'bi-bullseye', items: catalog.dost_objectives, selected: selected.dost, onToggle: value => toggle('dost', value), valueKey: 'objective_id', labelKey: 'objective_title' })), h('div', { className: 'mapping-hierarchy-action' }, h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'submit', disabled: busy || selectedPlan?.status !== 'draft' }, busy ? 'Adding…' : '+ Add Hierarchical Mapping'))),
-            h(MappingPreview, { mappings, officeMode, canRemove: canManage && selectedPlan?.status === 'draft', busy, remove }),
-            !officeMode && canManage && h(PlannerReferenceStep, { mappings, selectedId: selectedMappingId, selectMapping: selectReferenceMapping, details, setDetails, busy, saveReference: addReference })
+        loading ? h('section', { className: 'ui-card mapping-empty' }, 'Loading mapping data…') : officeMode ? h(React.Fragment, null,
+            h(MappingPreview, { mappings: plannerMappings, officeMode: false, canRemove: false, busy, remove, title: 'Step 1. Planning Officer Three-Level Mappings' }),
+            canCreate && h(OfficeMappingStep, { mappings: plannerMappings, selectedId: selectedPlannerMappingId, selectMapping: setSelectedPlannerMappingId, agencyItem, busy, disabled: selectedPlan?.status !== 'draft', save: addHierarchy }),
+            h(MappingPreview, { mappings, officeMode: true, canRemove: canCreate && selectedPlan?.status === 'draft', busy, remove, title: 'Your Four-Level Agency Mappings' })
+        ) : h(React.Fragment, null,
+            canCreate && h('form', { className: 'ui-card mapping-step mapping-hierarchy-step', onSubmit: addHierarchy }, h('div', { className: 'mapping-step__heading' }, h('span', null, '1'), h('h2', null, 'Step 1. Create Three-Level Mapping')), h('div', { className: 'mapping-levels' }, h(ChoiceLevel, { title: 'Agenda', icon: 'bi-bank2', items: catalog.agendas, selected: selected.agendas, onToggle: value => toggle('agendas', value), valueKey: 'code', labelKey: 'title' }), h('i', { className: 'bi bi-arrow-right mapping-arrow' }), h(ChoiceLevel, { title: 'PDP Elements', icon: 'bi-file-earmark-text-fill', items: catalog.pdp_chapters, selected: selected.pdp, onToggle: value => toggle('pdp', value), valueKey: 'chapter_id', labelKey: 'chapter_title' }), h('i', { className: 'bi bi-arrow-right mapping-arrow' }), h(ChoiceLevel, { title: 'DOST Objectives', icon: 'bi-bullseye', items: catalog.dost_objectives, selected: selected.dost, onToggle: value => toggle('dost', value), valueKey: 'objective_id', labelKey: 'objective_title' })), h('div', { className: 'mapping-hierarchy-action' }, h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'submit', disabled: busy || selectedPlan?.status !== 'draft' }, busy ? 'Adding…' : '+ Add Hierarchical Mapping'))),
+            h(MappingPreview, { mappings, officeMode: false, canRemove: canManage && selectedPlan?.status === 'draft', busy, remove }),
+            canManage && h(PlannerReferenceStep, { mappings, selectedId: selectedMappingId, selectMapping: selectReferenceMapping, details, setDetails, busy, saveReference: addReference })
         )
     )));
 }

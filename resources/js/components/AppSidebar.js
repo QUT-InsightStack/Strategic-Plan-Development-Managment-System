@@ -31,9 +31,16 @@ const items = [
             { label: 'Create / Review Mapping', href: '/mappings', permission: PERMISSIONS.MAPPINGS_MANAGE },
         ],
     },
+    {
+        label: 'Monitor Module',
+        icon: 'bi-speedometer2',
+        permission: PERMISSIONS.OBJECTIVES_VIEW_PROGRESS,
+        children: [
+            { label: 'Progress Monitoring', href: '/progress-monitoring', permission: PERMISSIONS.OBJECTIVES_VIEW_PROGRESS },
+        ],
+    },
     { label: 'Plan Reviews', icon: 'bi-clipboard-check', href: '/strategic-plan-reviews' },
     { label: 'Finalize Plans', icon: 'bi-clipboard-check-fill', href: '/strategic-plans/finalize', permission: PERMISSIONS.PLANS_UPDATE },
-    { label: 'Monitor Plans', icon: 'bi-speedometer2', permission: PERMISSIONS.MONITORING_VIEW },
     { label: 'FAQ', icon: 'bi-info-square-fill' },
     { label: 'Report', icon: 'bi-file-earmark-bar-graph', permission: PERMISSIONS.REPORTS_VIEW },
 ];
@@ -61,6 +68,7 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
     const [openMenus, setOpenMenus] = useState({
         'Planning Module': (currentPath === '/office' && !['mapping', 'alignment'].includes(new URLSearchParams(window.location.search).get('view'))) || currentPath === '/consolidate-inputs' || (currentPath.startsWith('/strategic-plan') && !isFinalizePage) || currentPath.startsWith('/strategic-objectives') || currentPath.startsWith('/pdp-chapters'),
         'Mapping Module': currentPath === '/mappings' || (currentPath === '/office' && ['mapping', 'alignment'].includes(new URLSearchParams(window.location.search).get('view'))),
+        'Monitor Module': currentPath === '/progress-monitoring',
     });
 
     function toggleMenu(label) {
@@ -70,7 +78,7 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
     function isCurrentChild(child) {
         if (child.href?.startsWith('/office')) {
             const view = new URLSearchParams(window.location.search).get('view');
-            return currentPath === '/office' && (child.href === '/office' ? !view || ['review', 'comments'].includes(view) : child.href === `/office?view=${view}`);
+            return currentPath === '/office' && child.href === `/office?view=${!view || view === 'assigned' ? 'progress' : view}`;
         }
         return child.href === currentPath
             || (child.href === '/strategic-plans/finalize' && /^\/strategic-plans\/\d+\/finalize\/?$/.test(currentPath))
@@ -109,6 +117,8 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
 
     function renderItem(item) {
         if (item.permission && !can(item.permission, accessSession)) return null;
+        const isManagement = ['Management', 'Executive', 'Management / Executive'].includes(accessSession?.roleName);
+        const resolvedHref = item.label === 'Home' && isManagement ? '/management-dashboard' : item.href;
         if (item.children) {
             if (!item.children.some(child => !child.permission || can(child.permission, accessSession))) return null;
             const expanded = Boolean(openMenus[item.label]);
@@ -130,11 +140,11 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
             );
         }
 
-        const isCurrent = item.href === currentPath
-            || (item.href === '/strategic-plans/finalize' && isFinalizePage);
+        const isCurrent = resolvedHref === currentPath
+            || (resolvedHref === '/strategic-plans/finalize' && isFinalizePage);
 
-        return item.href
-            ? React.createElement('a', { key: item.label, href: item.href, className: `app-sidebar__item${isCurrent ? ' active' : ''}`, 'aria-current': isCurrent ? 'page' : undefined }, React.createElement('i', { className: `bi ${item.icon}` }), React.createElement('span', null, item.label))
+        return resolvedHref
+            ? React.createElement('a', { key: item.label, href: resolvedHref, className: `app-sidebar__item${isCurrent ? ' active' : ''}`, 'aria-current': isCurrent ? 'page' : undefined }, React.createElement('i', { className: `bi ${item.icon}` }), React.createElement('span', null, item.label))
             : React.createElement('button', { key: item.label, type: 'button', className: `app-sidebar__item${active === item.label ? ' active' : ''}`, onClick: () => onNotice(`${item.label} is reserved for a later module.`) }, React.createElement('i', { className: `bi ${item.icon}` }), React.createElement('span', null, item.label));
     }
 

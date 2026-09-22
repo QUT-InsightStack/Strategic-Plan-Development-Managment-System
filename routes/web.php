@@ -64,6 +64,7 @@ Route::get('/strategic-plans/{id}/objectives', function (Request $request, int $
 })->whereNumber('id')->name('strategic-plans.objectives');
 Route::redirect('/strategic-plan', '/strategic-plans/create')->name('strategic-plan');
 Route::view('/strategic-objectives', 'pages.strategic-objectives.index')->name('strategic-objectives.index');
+Route::view('/progress-monitoring', 'pages.progress-monitoring')->name('strategic-objectives.progress');
 Route::view('/pdp-chapters', 'pages.pdp-chapters', ['mode' => 'view'])->name('pdp-chapters.index');
 Route::view('/pdp-chapters/manage', 'pages.pdp-chapters', ['mode' => 'manage'])->name('pdp-chapters.manage');
 Route::view('/pdp-chapters/{chapter}', 'pages.pdp-chapters', ['mode' => 'detail'])
@@ -80,6 +81,9 @@ Route::view(
     '/workflow-configuration',
     'pages.workflow-configuration'
 )->name('workflow-configuration.index');
+
+Route::view('/management-dashboard', 'pages.management-dashboard')
+    ->name('management.dashboard');
 
 /*
 |--------------------------------------------------------------------------

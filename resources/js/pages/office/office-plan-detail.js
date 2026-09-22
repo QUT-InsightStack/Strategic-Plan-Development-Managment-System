@@ -1,8 +1,7 @@
-import { can, getAccessSession } from '../../access/access-session.js';
+import { can } from '../../access/access-session.js';
 import { OfficeComments } from './office-comments.js';
 import { getStrategicPlan } from '../../api/strategic-plans-api.js';
-import { listStrategicObjectives } from '../../api/strategic-objectives-api.js';
-import { objectivesAssignedToOffice } from '../../objective-assignment-storage.js';
+import { listObjectiveProgress } from '../../api/objective-progress-api.js';
 const h = React.createElement;
 const { useEffect, useState } = React;
 const dateLabel = value => {
@@ -32,8 +31,17 @@ export function OfficePlanDetail({ planId }) {
                 if (!active) return;
                 setPlan(payload.data);
                 try {
-                    const result = await listStrategicObjectives(planId);
-                    if (active) setObjectives(objectivesAssignedToOffice(result.data || [], getAccessSession()?.office));
+                    const assigned = [];
+                    let currentPage = 1;
+                    let lastPage = 1;
+                    do {
+                        const result = await listObjectiveProgress({ plan_id: planId, page: currentPage, per_page: 100 });
+                        if (!active) return;
+                        assigned.push(...result.data);
+                        lastPage = result.meta.last_page;
+                        currentPage++;
+                    } while (currentPage <= lastPage);
+                    if (active) setObjectives(assigned);
                 } catch (err) { if (active) setObjectiveError(err.message); }
             } catch (err) { if (active) setError(err.message); }
             finally { if (active) setLoading(false); }
@@ -78,4 +86,3 @@ export function OfficePlanDetail({ planId }) {
                         h('button', { 'aria-label': 'Next objectives page', disabled: page >= pageCount, onClick: () => setPage(page + 1) }, '›')))),
             h(OfficeComments, { plan })));
 }
-

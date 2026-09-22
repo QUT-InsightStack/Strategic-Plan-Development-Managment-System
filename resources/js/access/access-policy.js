@@ -122,9 +122,9 @@ const rolePolicies = {
     'Offices / Agencies': { home: '/office', permissions: officePermissions },
     'Responsible Unit User': { home: '/office', permissions: officePermissions },
     'Division Head': { home: '/strategic-plans', permissions: fullPlanningPermissions },
-    Management: { home: '/strategic-plans', permissions: fullPlanningPermissions },
-    Executive: { home: '/strategic-plans', permissions: fullPlanningPermissions },
-    'Management / Executive': { home: '/strategic-plans', permissions: fullPlanningPermissions },
+    Management: { home: '/management-dashboard', permissions: fullPlanningPermissions },
+    Executive: { home: '/management-dashboard', permissions: fullPlanningPermissions },
+    'Management / Executive': { home: '/management-dashboard', permissions: fullPlanningPermissions },
     Viewer: { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.REPORTS_VIEW] },
 };
 
@@ -145,9 +145,11 @@ export function hasRolePolicy(roleName) {
 }
 
 export const routeRules = [
+    { test: /^\/management-dashboard(?:\/|$)/, roles: ['Management', 'Executive', 'Management / Executive'] },
+    { test: /^\/progress-monitoring(?:\/|$)/, permission: PERMISSIONS.OBJECTIVES_VIEW_PROGRESS },
     { test: /^\/strategic-plans\/\d+\/approval-status(?:\/|$)/ },
     { test: /^\/consolidate-inputs(?:\/|$)/, permission: PERMISSIONS.INPUTS_VIEW },
-    { test: /^\/office(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
+    { test: /^\/office(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW, roles: ['Office Representative', 'Office/Agency', 'Offices / Agencies', 'Responsible Unit User'] },
     {
     test: /^\/workflow-configuration(?:\/|$)/,
     roles: ['Administrator', 'Technical Administrator', 'Technical Admin'],

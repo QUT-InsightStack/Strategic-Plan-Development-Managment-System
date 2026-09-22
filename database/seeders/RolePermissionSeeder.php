@@ -56,12 +56,20 @@ class RolePermissionSeeder extends Seeder
             'relations.view', 'plan_core_values.view',
         ];
 
+        $officeMappingPermissions = [
+            'relations.view', 'relations.create',
+        ];
+
         $assignments = [
             'Administrator' => $permissionsByCode->keys()->all(),
             'Technical Administrator' => $technicalPermissions,
             'Technical Admin' => $technicalPermissions,
             'test' => $technicalPermissions,
             'Planning Officer' => $planningPermissions,
+            'Responsible Unit User' => $officeMappingPermissions,
+            'Office Representative' => $officeMappingPermissions,
+            'Office/Agency' => $officeMappingPermissions,
+            'Offices / Agencies' => $officeMappingPermissions,
             'Division Head' => $viewOnlyPermissions,
             'Viewer' => $viewOnlyPermissions,
         ];

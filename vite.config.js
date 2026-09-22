@@ -6,6 +6,7 @@ export default defineConfig({
     plugins: [
         laravel({
             input: [
+                'resources/css/progress-monitoring.css',
                 'resources/css/app.css',
                 'resources/css/create-user.css',
                 'resources/css/login.css',
@@ -27,10 +28,12 @@ export default defineConfig({
                 'resources/css/manual-backup.css',
                 'resources/css/workflow-configuration.css',
                 'resources/css/strategic-plan-review.css',
+                'resources/css/management-dashboard.css',
                 'resources/css/access-denied.css',
                 'resources/js/app.js',
                 'resources/js/pages/technical-admin/create-user-app.js',
                 'resources/js/pages/shared/dashboard-app.js',
+                'resources/js/pages/planner/progress-monitoring-app.js',
                 'resources/js/pages/auth/login-app.js',
                 'resources/js/pages/auth/change-password-app.js',
                 'resources/js/pages/auth/forgot-password-app.js',
@@ -62,6 +65,7 @@ export default defineConfig({
                 'resources/js/pages/technical-admin/workflow-configuration-app.js',
                 'resources/js/pages/management/strategic-plan-reviews-app.js',
                 'resources/js/pages/management/strategic-plan-review-app.js',
+                'resources/js/pages/management/management-dashboard-app.js',
                 'resources/js/pages/shared/pdp-chapters-app.js',
                 'resources/js/pages/shared/access-denied-app.js',
             ],

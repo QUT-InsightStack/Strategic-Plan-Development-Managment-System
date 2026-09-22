@@ -50,6 +50,8 @@ export function ObjectiveProgressPanel({ planId = '' }) {
     async function save(event) {
         event.preventDefault();
         if (saving) return;
+        if (!calculatedProgressStatus(percentage)) { setError('Enter a whole-number percentage from 0 to 100.'); return; }
+        if (correction && !reason.trim()) { setError('Provide a reason for this change.'); return; }
         setSaving(true); setError(''); setMessage('');
         try {
             await updateObjectiveProgress(selected.objective_id, percentage, reason);
@@ -61,37 +63,47 @@ export function ObjectiveProgressPanel({ planId = '' }) {
 
     const filter = (key, value) => { setPage(1); setFilters(current => ({ ...current, [key]: value })); };
     const button = (label, onClick, disabled = false) => h('button', { type: 'button', className: 'ui-button ui-button--secondary ui-button--sm', onClick, disabled }, label);
-    return h('section', { className: 'ui-card' }, h('div', { className: 'ui-card__body' },
-        h('h2', null, correction ? 'Objective progress' : 'Assigned objective progress'),
-        h('p', null, '0%: Not Started · 1–99%: In Progress · 100%: Completed'),
+    const editable = row => mayUpdate && !['archived', 'deleted'].includes(row.status) && !['archived', 'deleted'].includes(row.strategic_plan?.status);
+    const open = row => { setSelected(row); setPercentage(String(row.progress_percentage)); setReason(''); setError(''); setMessage(''); setHistory(null); };
+    return h('section', { className: 'ui-card progress-card' }, h('div', { className: 'ui-card__body' },
         h('div', { role: 'status', 'aria-live': 'polite' }, message),
-        error && h('p', { role: 'alert', className: 'ui-status ui-status--error' }, error),
+        error && !selected && h('p', { role: 'alert', className: 'ui-status ui-status--error' }, error),
         h('div', { className: 'plans-toolbar' },
             h('label', { className: 'ui-field' }, 'Search objectives', h('input', { className: 'ui-input', value: filters.search, onChange: event => filter('search', event.target.value) })),
             h('label', { className: 'ui-field' }, 'Progress status', h('select', { className: 'ui-select', value: filters.progress_status, onChange: event => filter('progress_status', event.target.value) },
                 h('option', { value: '' }, 'All statuses'), ...['not_started', 'in_progress', 'completed'].map(status => h('option', { key: status, value: status }, progressStatusLabel(status)))))),
         loading ? h('p', { role: 'status' }, 'Loading progress…') : h(React.Fragment, null,
             h('div', { style: { overflowX: 'auto' } }, h('table', { className: 'ui-table' },
-                h('thead', null, h('tr', null, ...['Objective', 'Plan', 'Office/Unit', 'Progress', 'Last update', 'Actions'].map(label => h('th', { key: label, scope: 'col' }, label)))),
+                h('thead', null, h('tr', null, ...['Objective ID', 'Strategic Objective', 'Office/Unit', 'Status', 'Progress', 'Last Updated', 'Action'].map(label => h('th', { key: label, scope: 'col' }, label)))),
                 h('tbody', null, rows.length ? rows.map(row => h('tr', { key: row.objective_id },
-                    h('td', null, row.objective_title || 'Untitled objective'), h('td', null, row.strategic_plan?.title),
+                    h('td', null, `SO ${row.objective_id}`),
+                    h('td', null, h('button', { type: 'button', className: 'progress-objective-link', onClick: () => open(row) }, row.objective_title || 'Untitled objective')),
                     h('td', null, row.responsible_office_agency || 'Unassigned'),
-                    h('td', null, `${row.progress_percentage}% · ${progressStatusLabel(row.progress_status)}`),
+                    h('td', null, h('span', { className: `progress-status progress-status--${calculatedProgressStatus(row.progress_percentage)}` }, progressStatusLabel(calculatedProgressStatus(row.progress_percentage)))),
+                    h('td', null, h('div', { className: 'progress-meter' }, h('progress', { max: 100, value: row.progress_percentage, 'aria-label': `${row.objective_title} progress` }), `${row.progress_percentage}%`)),
                     h('td', null, date(row.progress_updated_at), row.progress_updater && h('small', { style: { display: 'block' } }, `${row.progress_updater.first_name} ${row.progress_updater.last_name}`)),
                     h('td', null,
-                        mayUpdate && !['archived', 'deleted'].includes(row.status) && !['archived', 'deleted'].includes(row.strategic_plan?.status)
-                            && button('Update progress', () => { setSelected(row); setPercentage(String(row.progress_percentage)); setReason(''); setError(''); setMessage(''); }, saving),
-                        button('History', () => { setHistory(row); setHistoryPage(1); }, saving))))
-                    : h('tr', null, h('td', { colSpan: 6 }, 'No objectives match these filters.'))))),
+                        button(editable(row) ? 'View / Update' : 'View', () => open(row), saving))))
+                    : h('tr', null, h('td', { colSpan: 7 }, 'No objectives match these filters.'))))),
             h('div', { className: 'plans-filter-actions' }, button('Previous', () => setPage(value => value - 1), page <= 1),
                 h('span', null, `Page ${page} of ${meta.last_page} · ${meta.total} objectives`), button('Next', () => setPage(value => value + 1), page >= meta.last_page))),
-        selected && h('form', { onSubmit: save }, h('fieldset', { disabled: saving },
-            h('legend', null, `Update progress: ${selected.objective_title}`),
-            h('label', { className: 'ui-field' }, 'Progress (%)', h('input', { className: 'ui-input', type: 'number', min: 0, max: 100, step: 1, required: true, value: percentage, onChange: event => setPercentage(event.target.value) })),
+        selected && h('dialog', { className: 'progress-dialog', 'aria-label': 'Objective progress', ref: node => { if (node && !node.open) node.showModal(); }, onCancel: event => { event.preventDefault(); if (!saving) setSelected(null); } },
+          h('form', { onSubmit: save, noValidate: true }, h('fieldset', { disabled: saving },
+            h('legend', null, editable(selected) ? (correction ? 'Correct Progress' : 'Update Progress') : 'Objective Progress'),
+            h('h2', null, selected.objective_title),
+            h('p', { className: 'progress-dialog-context' }, `SO ${selected.objective_id} · ${selected.responsible_office_agency || 'Unassigned'} · ${selected.strategic_plan?.title || ''}`),
+            h('dl', { className: 'progress-objective-details' },
+                ...[['Description', selected.objective_description], ['Expected outcome', selected.expected_outcome], ['Indicator', selected.indicator], ['Target', selected.target]].map(([label, value]) => h('div', { key: label }, h('dt', null, label), h('dd', null, value || 'Not provided')))),
+            h('p', null, `Current progress: ${selected.progress_percentage}% · ${progressStatusLabel(calculatedProgressStatus(selected.progress_percentage))}`),
+            error && h('p', { role: 'alert', className: 'ui-status ui-status--error' }, error),
+            h('label', { className: 'ui-field' }, 'Progress (%)', h('input', { className: 'ui-input', type: 'number', readOnly: !editable(selected), autoFocus: true, min: 0, max: 100, step: 1, required: true, value: percentage, 'aria-invalid': !calculatedProgressStatus(percentage), 'aria-describedby': 'progress-validation', onChange: event => setPercentage(event.target.value) })),
+            !calculatedProgressStatus(percentage) && h('p', { id: 'progress-validation', role: 'alert', className: 'ui-status ui-status--error' }, percentage === '' ? 'Progress is required. Enter a percentage from 0 to 100.' : 'Enter a whole-number percentage from 0 to 100.'),
             h('p', { 'aria-live': 'polite' }, `Calculated status: ${progressStatusLabel(calculatedProgressStatus(percentage)) || 'Enter a whole number from 0 to 100'}`),
-            h('label', { className: 'ui-field' }, correction ? 'Reason for correction (required)' : 'Progress notes (optional)', h('textarea', { className: 'ui-input', required: correction, maxLength: 5000, value: reason, onChange: event => setReason(event.target.value) })),
-            h('button', { type: 'submit', className: 'ui-button ui-button--primary', disabled: saving || !calculatedProgressStatus(percentage) || (correction && !reason.trim()) }, saving ? 'Saving…' : 'Save progress'),
-            button('Cancel', () => setSelected(null), saving))),
+            correction && editable(selected) && h('label', { className: 'ui-field' }, 'Reason for Change (required)', h('textarea', { className: 'ui-input', required: true, maxLength: 5000, value: reason, onChange: event => setReason(event.target.value) })),
+            h('div', { className: 'progress-dialog-actions' },
+                button('History', () => { setHistory(selected); setHistoryPage(1); setSelected(null); }, saving),
+                h('button', { type: 'button', className: 'ui-button ui-button--secondary', onClick: () => setSelected(null), disabled: saving }, 'Cancel'),
+                editable(selected) && h('button', { type: 'submit', className: 'ui-button ui-button--primary', disabled: saving }, saving ? 'Submitting…' : correction ? 'Submit Correction' : 'Submit Update'))))),
         history && h('section', null, h('h3', null, `Progress history: ${history.objective_title}`), button('Close history', () => setHistory(null)),
             historyLoading ? h('p', { role: 'status' }, 'Loading history…') : h(React.Fragment, null,
                 historyRows.length ? h('ol', null, historyRows.map(update => h('li', { key: update.progress_update_id },

@@ -13,12 +13,12 @@ import { createAccessSession, saveAccessSession } from '../../access/access-sess
 const h = React.createElement;
 const { useState, useEffect } = React;
 const detailId = new URLSearchParams(location.search).get('plan');
-const requestedView = new URLSearchParams(location.search).get('view') || 'comments';
-const view = ['review', 'comments', 'inputs', 'edit', 'progress', 'mapping', 'alignment'].includes(requestedView) ? requestedView : 'review';
-const entryHref = ['review', 'comments'].includes(view) ? '/office' : '/office?view=' + view;
+const requestedView = new URLSearchParams(location.search).get('view') || 'progress';
+const view = ['review', 'comments', 'inputs', 'edit', 'progress', 'mapping', 'alignment'].includes(requestedView) ? requestedView : 'progress';
+const entryHref = '/office?view=' + view;
 const entry = officeItems.flatMap(item => item.children).find(item => item.href === entryHref);
 const planLink = id => '/office?plan=' + encodeURIComponent(id) + (view === 'inputs' ? '&view=inputs' : view === 'comments' ? '#office-comments' : '');
-const titles = { review: 'Plan List', comments: 'Plan Comments', edit: 'Edit Assigned Draft Objectives', inputs: 'Submit Input / Objective', proposal: 'Submit Proposal', progress: 'Update Assigned Progress', mapping: 'Agency Mapping', alignment: 'View Alignment' };
+const titles = { review: 'Plan List', comments: 'Plan Comments', edit: 'Edit Assigned Draft Objectives', inputs: 'Submit Input / Objective', proposal: 'Submit Proposal', progress: 'Progress Monitoring', mapping: 'Agency Mapping', alignment: 'View Alignment' };
 function OfficeApp() {
  const [plans, setPlans] = useState([]);
  const [meta, setMeta] = useState({});
@@ -31,6 +31,7 @@ function OfficeApp() {
  const [filters, setFilters] = useState(empty);
  const [query, setQuery] = useState({ page: 1 });
  useEffect(() => {
+  if ((view === 'progress')) { setLoading(false); return; }
   let active = true;
   setLoading(true); setError('');
   listStrategicPlans(query).then(payload => { if (active) { setPlans(payload.data || []); setOffices(payload.meta?.offices || []); setMeta(payload.meta || {}); } })
@@ -58,9 +59,9 @@ function OfficeApp() {
 
  return h('div', { className: 'office-workspace' },
   h(AppSidebar, { active: ['mapping', 'alignment'].includes(view) ? 'Mapping Module' : 'Planning Module', onNotice: setNotice }),
-  h('main', { className: 'office-content' },
+  h('main', { className: `office-content${(view === 'progress') ? ' progress-monitoring-page' : ''}` },
    h('header', null, h('h1', null, titles[view] || titles.review),
-    h('p', null, 'Select a plan within your assigned scope. Comments, inputs and content edits are available during drafting; progress updates apply to assigned objectives.')),
+    h('p', null, (view === 'progress') ? 'View objectives assigned to your Office/Unit by the Planning Officer. Select an objective to view its details and update progress.' : 'Select a plan within your assigned scope. Comments, inputs and content edits are available during drafting; progress updates apply to assigned objectives.')),
    notice && h('p', { role: 'status' }, notice),
    entry && !can(entry.permission) ? h('p', { role: 'alert' }, 'You do not have permission to access this function.') : ['edit', 'progress', 'mapping', 'alignment'].includes(view) ? h(OfficeWorkflow, { view }) : h(React.Fragment, null,
    h('form', { className: 'office-panel office-filters', onSubmit: e => { e.preventDefault(); setQuery({ ...filters, page: 1 }); } },
@@ -84,5 +85,3 @@ apiRequest('/api/auth/me').then(payload => {
  saveAccessSession(createAccessSession(payload.data));
  if (enforcePageAccess()) root.render(detailId ? h('div', { className: 'office-workspace' }, h(AppSidebar), new URLSearchParams(location.search).get('view') === 'inputs' ? h(OfficePlanInput, { planId: detailId }) : h(OfficePlanDetail, { planId: detailId })) : h(OfficeApp));
 }).catch(error => root.render(h('p', { role: 'alert' }, error.message)));
-
-

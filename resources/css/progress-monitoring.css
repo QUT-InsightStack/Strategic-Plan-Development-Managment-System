@@ -1,0 +1,41 @@
+@import './strategic-plans-list.css';
+
+.progress-monitoring-page { background: #eaf4ff; min-height: 100vh; display: flex; flex-direction: column; }
+.progress-monitoring-page > .app-shell-container { width: 100%; flex: 1; }
+.progress-monitoring-page .plans-toolbar { grid-template-columns: minmax(200px, 2fr) minmax(180px, 1fr); margin-bottom: 20px; }
+.progress-monitoring-page .ui-table { width: 100%; }
+.progress-monitoring-page .ui-table td { vertical-align: middle; }
+.progress-monitoring-page .ui-table td:nth-child(2) { min-width: 220px; }
+.progress-meter { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.progress-meter progress { width: 90px; height: 8px; accent-color: #2563eb; }
+.progress-status { display: inline-block; padding: 4px 10px; border-radius: 5px; font-size: 12px; white-space: nowrap; background: #e5e7eb; color: #374151; }
+.progress-status--in_progress { background: #dbeafe; color: #1d4ed8; }
+.progress-status--completed { background: #dcfce7; color: #166534; }
+.progress-monitoring-page form { margin-top: 24px; padding: 20px; background: #f8fbff; border: 1px solid #cbd5e1; border-radius: 8px; }
+.progress-monitoring-page fieldset { border: 0; padding: 0; display: grid; gap: 16px; }
+.progress-monitoring-page legend { font-weight: 600; margin-bottom: 16px; }
+.progress-monitoring-page .plans-filter-actions { display: flex; align-items: center; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.progress-footer { padding: 24px; text-align: center; color: #64748b; font-size: 12px; }
+.progress-monitoring-page > header { margin-bottom: 32px; }
+.progress-monitoring-page > header h1 { margin-bottom: 4px; font-size: 28px; color: #214e9d; }
+.progress-monitoring-page > header p { font-size: 13px; margin-top: 0; }
+.progress-card { border: 1px solid #d5dce5; border-radius: 8px; overflow: hidden; }
+.progress-card > .ui-card__body { padding: 8px; }
+.progress-card .plans-toolbar { padding: 0 0 8px; margin: 0; }
+.progress-card .ui-table th { font-size: 11px; background: #f6f9fc; white-space: nowrap; }
+.progress-card .ui-table td { font-size: 12px; padding: 10px 8px; }
+.progress-objective-link { border: 0; padding: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.progress-objective-link:hover { color: #1d4ed8; text-decoration: underline; }
+.progress-dialog { width: min(560px, calc(100vw - 32px)); max-height: 85vh; border: 1px solid #d5dce5; border-radius: 12px; padding: 24px; color: #24364b; box-shadow: 0 20px 60px #142d4e33; }
+.progress-dialog::backdrop { background: #142d4e66; }
+.progress-monitoring-page .progress-dialog form { margin: 0; padding: 0; border: 0; background: white; }
+.progress-dialog fieldset { border: 0; display: grid; gap: 16px; padding: 0; }
+.progress-dialog legend { font-size: 22px; color: #214e9d; font-weight: 600; }
+.progress-dialog h2 { font-size: 17px; margin: 0; }
+.progress-dialog p { margin: 0; }
+.progress-dialog-context { font-size: 12px; color: #64748b; }
+.progress-objective-details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0; }
+.progress-objective-details dt { font-size: 12px; color: #64748b; }
+.progress-objective-details dd { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.progress-dialog-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 8px; }
+@media (max-width: 640px) { .progress-monitoring-page .plans-toolbar { grid-template-columns: 1fr; } }
