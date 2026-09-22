@@ -6,6 +6,7 @@ use App\Models\ApprovalWorkflow;
 use App\Models\ImplementationInput;
 use App\Models\PlanSubmission;
 use App\Models\PlanSubmissionStage;
+use App\Models\PlanWorkflowHistory;
 use App\Models\Role;
 use App\Models\Strategic;
 use App\Models\User;
@@ -14,18 +15,40 @@ use Illuminate\Validation\ValidationException;
 
 class PlanApprovalService
 {
-    public function __construct(private ApprovalWorkflowService $workflows, private StrategicPlanAuthorizationService $access) {}
+    public function __construct(
+        private ApprovalWorkflowService $workflows,
+        private StrategicPlanAuthorizationService $access,
+        private WorkflowNotificationService $notifications,
+    ) {}
 
     public function submit(int $planId, User $actor): PlanSubmission
+    {
+        return $this->startSubmission($planId, $actor);
+    }
+
+    public function resubmit(int $planId, int $previousSubmissionId, ?string $note, User $actor): PlanSubmission
+    {
+        return $this->startSubmission($planId, $actor, $previousSubmissionId, $note);
+    }
+
+    private function startSubmission(int $planId, User $actor, ?int $previousSubmissionId = null, ?string $note = null): PlanSubmission
     {
         abort_unless($actor->status === 'active' && in_array($actor->role?->role_name, ['Planning Officer', 'Administrator'], true),
             403, 'Only authorised Planning Officers may submit strategic plans.');
 
-        return DB::transaction(function () use ($planId, $actor) {
+        return DB::transaction(function () use ($planId, $actor, $previousSubmissionId, $note) {
             $workflow = ApprovalWorkflow::lockForUpdate()->findOrFail(1);
             $plan = Strategic::lockForUpdate()->findOrFail($planId);
             $this->access->ensureCanUpdatePlan($plan, $actor);
             abort_if($plan->approval_status === 'under_approval', 409, 'This plan is already under approval.');
+            $previous = PlanSubmission::where('plan_id', $planId)->latest('id')->first();
+            if ($previousSubmissionId !== null) {
+                abort_unless($plan->approval_status === 'rejected' && $previous?->status === 'rejected'
+                    && $previous->id === $previousSubmissionId, 409,
+                    'Only the latest rejected submission can be resubmitted. Reload the approval status.');
+            } elseif ($plan->approval_status === 'rejected' || $previous?->status === 'rejected') {
+                throw ValidationException::withMessages(['plan' => 'Use Resubmit for Approval for a rejected plan.']);
+            }
             if ($workflow->status !== 'active') {
                 throw ValidationException::withMessages(['workflow' => 'No active approval workflow exists. Contact a Technical Administrator before submitting.']);
             }
@@ -59,6 +82,7 @@ class PlanApprovalService
                 'workflow_snapshot' => $configuration, 'plan_snapshot' => $snapshot,
                 'submitted_by' => $actor->user_id, 'submitted_at' => now(),
                 'status' => 'under_approval', 'current_sequence' => 1,
+                'previous_submission_id' => $previousSubmissionId,
             ]);
             foreach ($workflow->stages as $stage) {
                 $reviewers = $this->workflows->reviewers($stage->toArray());
@@ -74,8 +98,9 @@ class PlanApprovalService
                 }
             }
             $first = $submission->stages()->first();
-            $this->record($submission, $first, $actor, 'submitted');
+            $event = $this->record($submission, $first, $actor, $previousSubmissionId ? 'resubmitted' : 'submitted', $note);
             $this->record($submission, $first, $actor, 'stage_started');
+            $this->notifications->recordEvent($event, $submission);
 
             return $submission->load(['stages.reviewers', 'history']);
         });
@@ -113,11 +138,65 @@ class PlanApprovalService
         return $submission->load(['stages.reviewers', 'history']);
     }
 
+    public function tracking(int $planId, User $actor): array
+    {
+        return DB::transaction(function () use ($planId, $actor) {
+            // Serialize a status read with submission/decision writes to return one coherent state.
+            $plan = Strategic::sharedLock()->findOrFail($planId);
+            $latest = PlanSubmission::where('plan_id', $planId)->latest('id')->first();
+            $manager = $this->canManageApproval($actor);
+            if ($manager) {
+                $this->access->ensureCanUpdatePlan($plan, $actor);
+            } else {
+                abort_unless($latest, 403, 'You are not authorised to track this plan.');
+                $this->authorizeParticipant($latest, $actor);
+            }
+            $cycles = PlanSubmission::where('plan_id', $planId)
+                ->when(! $manager, fn ($query) => $query->where(fn ($query) => $query
+                    ->where('submitted_by', $actor->user_id)
+                    ->orWhereHas('stages.reviewers', fn ($query) => $query->where('tblusers.user_id', $actor->user_id))))
+                ->with(['stages.reviewers', 'history'])->orderBy('id')->get();
+            $history = $cycles->flatMap(fn ($cycle) => $cycle->history->map(function ($event) use ($cycle) {
+                $stage = $cycle->stages->firstWhere('id', $event->stage_id);
+
+                return [...$event->toArray(), 'stage_name' => $stage?->name, 'approver' => $stage?->approver_label];
+            }))->sortBy('id')->values();
+            $summaries = $cycles->map(fn ($cycle) => [
+                ...$cycle->only(['id', 'previous_submission_id', 'status', 'current_sequence', 'workflow_version', 'submitted_by', 'submitted_at', 'completed_at']),
+                'workflow_name' => $cycle->workflow_snapshot['name'],
+                'stages' => $cycle->stages,
+            ]);
+            $current = $summaries->firstWhere('id', $latest?->id);
+
+            return [
+                'plan_id' => $planId, 'title' => $latest?->plan_snapshot['title'] ?? $plan->title,
+                'status' => $latest?->status ?? 'not_submitted', 'current_submission' => $current,
+                'current_stage' => $latest?->current_sequence === null ? null : $cycles->last()->stages->firstWhere('sequence', $latest->current_sequence),
+                'cycles' => $summaries, 'history' => $history,
+                'can_review' => $latest && $this->isParticipant($latest, $actor),
+                'can_resubmit' => $manager && $latest?->status === 'rejected' && $plan->approval_status === 'rejected'
+                    && in_array($plan->status, ['draft', 'finished'], true),
+            ];
+        });
+    }
+
+    private function canManageApproval(User $actor): bool
+    {
+        return $actor->status === 'active' && ($actor->role?->role_name === 'Administrator'
+            || ($actor->role?->role_name === 'Planning Officer'
+                && app(PermissionAuthorizationService::class)->userPermissionCodes($actor)->contains('strategic_records.update')));
+    }
+
     public function authorizeParticipant(PlanSubmission $submission, User $actor): void
     {
-        abort_unless($actor->status === 'active' && ($submission->submitted_by === $actor->user_id
-            || $submission->stages()->whereHas('reviewers', fn ($query) => $query->where('tblusers.user_id', $actor->user_id))->exists()),
+        abort_unless($this->isParticipant($submission, $actor),
             403, 'Only participants assigned to this approval workflow can review this submission.');
+    }
+
+    private function isParticipant(PlanSubmission $submission, User $actor): bool
+    {
+        return $actor->status === 'active' && ($submission->submitted_by === $actor->user_id
+            || $submission->stages()->whereHas('reviewers', fn ($query) => $query->where('tblusers.user_id', $actor->user_id))->exists());
     }
 
     public function decide(int $planId, array $data, User $actor): PlanSubmission
@@ -134,7 +213,7 @@ class PlanApprovalService
                 403, 'Only a reviewer assigned to the current stage can decide.');
             $approved = $data['decision'] === 'approve';
             $stage->update(['status' => $approved ? 'approved' : 'rejected']);
-            $this->record($submission, $stage, $actor, $approved ? 'approved' : 'rejected', $data['comment'] ?? null);
+            $event = $this->record($submission, $stage, $actor, $approved ? 'approved' : 'rejected', $data['comment'] ?? null);
             $next = $approved ? $submission->stages()->where('sequence', $stage->sequence + 1)->first() : null;
             if ($next) {
                 $next->update(['status' => 'current']);
@@ -145,14 +224,15 @@ class PlanApprovalService
                 $submission->update(['status' => $status, 'current_sequence' => null, 'completed_at' => now()]);
                 $plan->forceFill(['approval_status' => $status])->save();
             }
+            $this->notifications->recordEvent($event, $submission, $next);
 
             return $submission->load(['stages.reviewers', 'history']);
         });
     }
 
-    private function record(PlanSubmission $submission, PlanSubmissionStage $stage, User $actor, string $action, ?string $comment = null): void
+    private function record(PlanSubmission $submission, PlanSubmissionStage $stage, User $actor, string $action, ?string $comment = null): PlanWorkflowHistory
     {
-        $submission->history()->create([
+        return $submission->history()->create([
             'stage_id' => $stage->id, 'actor_id' => $actor->user_id, 'actor_name' => $actor->name,
             'action' => $action, 'comment' => $comment, 'created_at' => now(),
         ]);

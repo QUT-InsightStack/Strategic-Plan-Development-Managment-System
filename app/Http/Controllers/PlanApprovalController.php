@@ -21,6 +21,23 @@ class PlanApprovalController extends Controller
         return response()->json(['data' => $this->service->submit($plan, $request->user('api'))], 201);
     }
 
+    public function resubmit(Request $request, int $plan)
+    {
+        $data = $request->validate([
+            'previous_submission_id' => ['required', 'integer', 'min:1'],
+            'revision_note' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        return response()->json(['data' => $this->service->resubmit(
+            $plan, (int) $data['previous_submission_id'], $data['revision_note'] ?? null, $request->user('api'),
+        )], 201);
+    }
+
+    public function tracking(Request $request, int $plan)
+    {
+        return response()->json(['data' => $this->service->tracking($plan, $request->user('api'))]);
+    }
+
     public function preparation(Request $request, int $plan, StrategicPlanAuthorizationService $access)
     {
         $actor = $request->user('api');

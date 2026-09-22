@@ -40,6 +40,9 @@ Route::get('/resource', function (Request $request) {
 Route::view('/resource-form', 'pages.resource-form')->name('resource.form');
 Route::view('/create-user', 'pages.create-user')->name('users.create');
 Route::view('/strategic-plans', 'pages.strategic-plans.index')->name('strategic-plans.index');
+Route::get('/strategic-plans/{id}/approval-status', fn (int $id) => view('pages.strategic-plans.approval-status', ['planId' => $id]))
+    ->whereNumber('id')->name('strategic-plans.approval-status');
+Route::view('/workflow-notifications', 'pages.workflow-notifications')->name('workflow-notifications');
 Route::view('/strategic-plans/create', 'pages.strategic-plan')->name('strategic-plans.create');
 Route::get('/strategic-plans/{id}/edit', function (int $id) {
     return view('pages.strategic-plans.edit', ['planId' => $id]);

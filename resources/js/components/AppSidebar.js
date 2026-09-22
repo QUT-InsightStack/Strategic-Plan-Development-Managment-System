@@ -145,6 +145,7 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
         ),
         React.createElement('a', { className: 'app-sidebar__profile', href: '/profile', 'aria-label': 'Open user profile' }, React.createElement('i', { className: 'bi bi-person-vcard-fill' }), React.createElement('span', null, currentPath === '/office' ? 'Office/ Agencies' : displayRoleName(accessSession?.roleName, 'User'))),
         React.createElement('nav', { className: 'app-sidebar__nav' },
+            accessSession && renderItem({ label: 'Notifications', icon: 'bi-bell', href: '/workflow-notifications' }),
             accessSession ? (currentPath === '/office' || isOfficeRole(accessSession.roleName) ? officeItems : items).map(renderItem)
                 : React.createElement('p', { role: accessError ? 'alert' : 'status' }, accessError || 'Loading menu…'),
             accessError && React.createElement('button', { type: 'button', className: 'app-sidebar__item', onClick: () => setAccessAttempt(value => value + 1) }, 'Retry')),

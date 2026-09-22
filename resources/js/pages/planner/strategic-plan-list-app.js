@@ -1,5 +1,4 @@
 import { copyStrategicPlan, deleteStrategicPlan, listStrategicPlans, updateStrategicPlanStatus } from '../../api/strategic-plans-api.js';
-import { applySubmissionToPlan,getActiveApprovalWorkflow,submitPlanForApproval,} from '../../data/plan-approval-demo-data.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { AppDialog } from '../../components/AppDialog.js';
 import { PageHeader } from '../../components/PageHeader.js';
@@ -34,7 +33,7 @@ function StrategicPlanListApp() {
         try {
             const payload = await listStrategicPlans({ search: filters.search, level: filters.level, status: filters.status, year: filters.year, page: targetPage });
             setPlans(
-                (payload.data || []).map(applySubmissionToPlan)); setMeta(payload.meta || {}); setPage(targetPage); setSelectedIds([]);
+                (payload.data || [])); setMeta(payload.meta || {}); setPage(targetPage); setSelectedIds([]);
         } catch (error) { setStatus({ type: 'error', message: error.message }); }
         finally { setLoading(false); }
     }
@@ -53,7 +52,7 @@ function StrategicPlanListApp() {
         setFilters(cleared);
         setLoading(true);
         listStrategicPlans({ page: 1 }).then((payload) => { setPlans(
-    (payload.data || []).map(applySubmissionToPlan)); setMeta(payload.meta || {}); setPage(1); setSelectedIds([]); }).catch((error) => setStatus({ type: 'error', message: error.message })).finally(() => setLoading(false));
+    (payload.data || [])); setMeta(payload.meta || {}); setPage(1); setSelectedIds([]); }).catch((error) => setStatus({ type: 'error', message: error.message })).finally(() => setLoading(false));
     }
 
     function toggleSelection(id) {
@@ -104,124 +103,11 @@ function StrategicPlanListApp() {
     }
 
     function requestSubmission(plan) {
-    if (!canSubmitPlans) {
-        return;
+        if (canSubmitPlans) window.location.assign(`/strategic-plans/${plan.record_id}/finalize`);
     }
 
-    if (plan.approval_status === 'under_approval') {
-        setDialog({
-            open: true,
-            variant: 'error',
-            title: 'Plan already submitted',
-            message:
-                'This Strategic Plan is already under approval.',
-            ids: [],
-            action: '',
-        });
-
-        return;
-    }
-
-    if (plan.status !== 'finished') {
-        setDialog({
-            open: true,
-            variant: 'error',
-            title: 'Plan is not eligible',
-            message:
-                'Only a finished Strategic Plan can be submitted for approval.',
-            ids: [],
-            action: '',
-        });
-
-        return;
-    }
-
-    const activeWorkflow =
-        getActiveApprovalWorkflow();
-
-    if (!activeWorkflow) {
-        setDialog({
-            open: true,
-            variant: 'error',
-            title: 'Submission unavailable',
-            message:
-                'No active approval workflow is configured. Please contact the Technical Administrator before submitting this plan.',
-            ids: [],
-            action: '',
-        });
-
-        return;
-    }
-
-    const firstStage = activeWorkflow.stages[0];
-
-    setDialog({
-        open: true,
-        variant: 'danger',
-        title: 'Submit Strategic Plan for approval?',
-        message:
-            `“${plan.title}” will enter the ` +
-            `“${activeWorkflow.name}” workflow. ` +
-            `The first stage will be ` +
-            `“${firstStage.name}”, assigned to ` +
-            `${firstStage.approver}.`,
-        ids: [plan.record_id],
-        action: 'submit',
-        plan,
-    });
-}
-
-
-function confirmSubmission() {
-    const plan = dialog.plan;
-
-    setDialog((current) => ({
-        ...current,
-        open: false,
-    }));
-
-    try {
-        const submission =
-            submitPlanForApproval(plan);
-
-        setPlans((current) =>
-            current.map((currentPlan) =>
-                currentPlan.record_id ===
-                plan.record_id
-                    ? applySubmissionToPlan(
-                        currentPlan
-                    )
-                    : currentPlan
-            )
-        );
-
-        setDialog({
-            open: true,
-            variant: 'success',
-            title: 'Plan submitted successfully',
-            message:
-                `“${plan.title}” is now under approval. ` +
-                `Current stage: ${submission.currentStage.name}. ` +
-                `Assigned to: ${submission.currentStage.approver}.`,
-            ids: [],
-            action: '',
-        });
-    } catch (error) {
-        setDialog({
-            open: true,
-            variant: 'error',
-            title: 'Submission failed',
-            message:
-                error.message ||
-                'The Strategic Plan could not be submitted.',
-            ids: [],
-            action: '',
-        });
-    }
-}
     async function confirmDialogAction() {
         if (dialog.action === 'delete') return confirmDeletion();
-        if (dialog.action === 'submit') { return confirmSubmission();}
         if (dialog.action !== 'status') return;
 
         const id = dialog.ids[0];
@@ -353,14 +239,15 @@ function approvalStatusClass(status) {
             'Not submitted'
         )
 ),
-                        React.createElement('td',null,plan.approval_stage? React.createElement('div',{className:'plan-current-stage',},
-                        React.createElement('strong',null,plan.approval_stage.name),
-                        React.createElement('small',null,`Assigned to: ${plan.approval_stage.approver}`)): React.createElement('span',{className: 'ui-help', },'—')),
+                        React.createElement('td', null, plan.approval_status === 'under_approval'
+                            ? React.createElement('a', { href: `/strategic-plans/${plan.record_id}/approval-status` }, 'View stage and approver')
+                            : React.createElement('span', { className: 'ui-help' }, 'No pending stage')),
                         React.createElement('td', null, creatorName(plan)), React.createElement('td', null, plan.creator?.department || 'Pending DB field'),
                         React.createElement('td', null, plan.updated_at ? new Date(plan.updated_at).toLocaleDateString() : '—'),
                         React.createElement('td', { className: 'plans-actions-cell' }, hasPlanActions ? React.createElement('div', { className: 'ui-table__actions' },
+                            plan.approval_status && plan.approval_status !== 'not_submitted' && React.createElement('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: `/strategic-plans/${plan.record_id}/approval-status` }, 'Approval status'),
                             canUpdatePlans && ['draft', 'finished'].includes(plan.status) ? React.createElement('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: `/strategic-plans/${plan.record_id}/finalize`, 'aria-label': `Finalize ${plan.title}` }, React.createElement('i', { className: 'bi bi-clipboard-check' }), plan.status === 'finished' ? 'Finalized View' : 'Finalize') : null,
-                            canUpdatePlans && plan.status === 'draft'
+                            canUpdatePlans && (plan.status === 'draft' || plan.approval_status === 'rejected')
     ? React.createElement(
         'a',
         {
@@ -378,7 +265,7 @@ function approvalStatusClass(status) {
     : null,
         canSubmitPlans &&
 plan.status === 'finished' &&
-!plan.approval_status
+['not_submitted', 'rejected'].includes(plan.approval_status || 'not_submitted')
     ? React.createElement(
         'button',
         {
@@ -396,7 +283,7 @@ plan.status === 'finished' &&
                 'bi bi-send-check',
         }),
 
-        'Submit for Approval'
+        plan.approval_status === 'rejected' ? 'Resubmit for Approval' : 'Submit for Approval'
     )
     : null,
     canSubmitPlans &&
