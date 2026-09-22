@@ -163,9 +163,8 @@ class BackupTest extends TestCase
 
     public function test_a_failed_backup_is_recorded_and_reported(): void
     {
-        $actor = $this->createUserWithPermissions(['backups.view', 'backups.create']);
+        $actor = $this->createUserWithPermissions(['backups.view', 'backups.create', 'logs.view']);
         Process::fake(['*' => Process::result(errorOutput: 'Simulated dump failure', exitCode: 1)]);
-
 
         $this->actingAs($actor, 'api');
         $this->withoutMiddleware(ValidateAuthVersion::class)

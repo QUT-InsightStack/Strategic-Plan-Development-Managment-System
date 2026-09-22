@@ -116,5 +116,6 @@ class RolePermissionSeeder extends Seeder
             ->each(fn (Role $role) => $role->permissions()->syncWithoutDetaching($documentPermissionIds));
 
         $this->call(ObjectiveCollaborationPermissionSeeder::class);
+        $this->call(ObjectiveProgressPermissionSeeder::class);
     }
 }

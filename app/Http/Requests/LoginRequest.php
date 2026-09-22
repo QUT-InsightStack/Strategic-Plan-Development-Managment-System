@@ -38,14 +38,4 @@ class LoginRequest extends ApiFormRequest
         return ValidationAttributes::all();
     }
 
-    protected function prepareForValidation(): void
-{
-    $email = $this->input('email');
-
-    if (is_string($email)) {
-        $this->merge([
-            'email' => mb_strtolower(trim($email)),
-        ]);
-    }
-}
 }

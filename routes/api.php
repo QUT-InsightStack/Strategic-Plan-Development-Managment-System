@@ -323,6 +323,9 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
     )->whereNumber('planId');
 
     // Strategic objectives, including plan-filtered listing
+    Route::get('strategic-objective-progress', [\App\Http\Controllers\ObjectiveProgressController::class, 'index']);
+    Route::get('strategic-objectives/{objective}/progress-history', [\App\Http\Controllers\ObjectiveProgressController::class, 'history'])->whereNumber('objective');
+    Route::patch('strategic-objectives/{objective}/progress', [\App\Http\Controllers\ObjectiveProgressController::class, 'update'])->whereNumber('objective');
     Route::put(
         'strategic-objectives/{id}/alignments',
         [StrategicObjectiveController::class, 'updateAlignments']
