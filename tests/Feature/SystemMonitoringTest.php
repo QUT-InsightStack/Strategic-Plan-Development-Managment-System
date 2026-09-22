@@ -118,9 +118,9 @@ class SystemMonitoringTest extends TestCase
         }
         $this->seed([RolesSeeder::class, PermissionSeeder::class, RolePermissionSeeder::class]);
         $user = User::create([
-            'first_name' => 'Viewer', 'last_name' => 'Test', 'email' => 'viewer@example.com',
+            'first_name' => 'Office', 'last_name' => 'Test', 'email' => 'viewer@example.com',
             'password' => 'password', 'status' => 'active',
-            'role_id' => Role::where('role_name', 'Viewer')->value('role_id'),
+            'role_id' => Role::where('role_name', 'Office')->value('role_id'),
         ]);
         $this->actingAs($user, 'api')->withoutMiddleware(ValidateAuthVersion::class);
         foreach (['summary', 'requests', 'health', 'checks', 'events', 'events/1', 'alerts', 'trends'] as $endpoint) {

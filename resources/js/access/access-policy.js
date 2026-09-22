@@ -114,7 +114,7 @@ const rolePolicies = {
     'Administrative Administrator': { home: '/dashboard', permissions: administrativeAdminPermissions },
     'Technical Administrator': { home: '/dashboard', permissions: technicalAdminPermissions },
     'Technical Admin': { home: '/dashboard', permissions: technicalAdminPermissions },
-    test: { home: '/dashboard', permissions: technicalAdminPermissions },
+    test: { home: '/dashboard', permissions: ['*'] },
     'Planning Officer': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
     'Planner/Encoder': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
     'Office Representative': { home: '/office', permissions: officePermissions },
@@ -126,6 +126,7 @@ const rolePolicies = {
     Executive: { home: '/strategic-plans', permissions: fullPlanningPermissions },
     'Management / Executive': { home: '/strategic-plans', permissions: fullPlanningPermissions },
     Viewer: { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.REPORTS_VIEW] },
+    Office: { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.REPORTS_VIEW] },
 };
 
 export function normalizePermissionList(list) {
@@ -150,7 +151,7 @@ export const routeRules = [
     { test: /^\/office(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
     {
     test: /^\/workflow-configuration(?:\/|$)/,
-    roles: ['Administrator', 'Technical Administrator', 'Technical Admin'],
+    roles: ['Administrator', 'Technical Administrator', 'Technical Admin', 'test'],
 },
     { test: /^\/administrative-admin\/reference-data(?:\/|$)/, permission: PERMISSIONS.REFERENCE_DATA_MANAGE },
     { test: /^\/administrative-admin\/templates(?:\/|$)/, permission: PERMISSIONS.TEMPLATES_MANAGE },

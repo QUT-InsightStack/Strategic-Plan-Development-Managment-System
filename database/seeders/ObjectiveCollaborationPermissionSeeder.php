@@ -27,10 +27,8 @@ class ObjectiveCollaborationPermissionSeeder extends Seeder
             ]);
         }
 
-        Role::firstOrCreate(['role_name' => 'Responsible Unit User'], [
-            'description' => 'Submits implementation feedback for objectives assigned to their office.',
-            'is_assignable' => true, 'is_protected' => false,
-        ]);
+        // Preserve grants for existing collaboration roles without creating
+        // another default role. Office retains the former Viewer's access.
         $assignments = [
             'Administrator' => array_keys($permissions),
             'Planning Officer' => ['strategic_objectives.assign_responsible_unit', 'objective_comments.view_all', 'implementation_inputs.view_all', 'implementation_inputs.view', 'implementation_inputs.review'],

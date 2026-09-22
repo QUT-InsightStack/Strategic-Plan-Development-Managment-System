@@ -251,7 +251,7 @@ class StrategicObjectiveAlignmentWriteTest extends TestCase
     public function test_mapping_creation_requires_authentication_and_update_permission(string $actor, int $status): void
     {
         if ($actor === 'viewer') {
-            $this->officer->update(['role_id' => Role::where('role_name', 'Viewer')->firstOrFail()->role_id]);
+            $this->officer->update(['role_id' => Role::where('role_name', 'Office')->firstOrFail()->role_id]);
         } elseif ($actor === 'no-role') {
             $this->officer->update(['role_id' => null]);
         } elseif ($actor === 'no-update-permission') {

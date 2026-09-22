@@ -11,8 +11,8 @@ const { useEffect, useMemo, useState } = React;
 
 const actionPermissionIds = [7, 8, 9, 10, 11];
 const contributorActionPermissionIds = [7, 8, 9, 10];
-const fullActionRoleIds = [1, 2, 4, 6];
-const contributorActionRoleIds = [3, 5];
+const fullActionRoleIds = [1, 4];
+const contributorActionRoleIds = [3];
 
 function permissionsForRoles(permissionIds, roleIds) {
     const nonActionPermissionIds = permissionIds.filter((id) => !actionPermissionIds.includes(id));

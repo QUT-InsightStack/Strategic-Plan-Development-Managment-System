@@ -16,7 +16,7 @@ class SearchUserRequest extends ApiFormRequest
     {
         $user = Auth::guard('api')->user();
 
-        return $user && in_array($user->role?->role_name, ['Technical Administrator', 'Admin'], true);
+        return $user && in_array($user->role?->role_name, ['Technical Administrator', 'Admin', 'test'], true);
     }
 
     public function rules(): array

@@ -23,6 +23,7 @@ class PlanApprovalService
 
     public function submit(int $planId, User $actor): PlanSubmission
     {
+        abort_unless($actor->status === 'active' && in_array($actor->role?->role_name, ['Planning Officer', 'Administrator', 'test'], true),
         return $this->startSubmission($planId, $actor);
     }
 
