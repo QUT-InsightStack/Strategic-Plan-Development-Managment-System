@@ -85,7 +85,7 @@ class ObjectiveCollaborationService
 
     private function canViewAll(string $permission, User $actor): bool
     {
-        return $actor->role?->role_name === 'Administrator'
+        return $actor->role?->hasFullAccess()
             || $this->permissions->userPermissionCodes($actor)->contains($permission);
     }
 

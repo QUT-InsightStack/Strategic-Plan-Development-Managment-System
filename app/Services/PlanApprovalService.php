@@ -18,7 +18,7 @@ class PlanApprovalService
 
     public function submit(int $planId, User $actor): PlanSubmission
     {
-        abort_unless($actor->status === 'active' && in_array($actor->role?->role_name, ['Planning Officer', 'Administrator'], true),
+        abort_unless($actor->status === 'active' && in_array($actor->role?->role_name, ['Planning Officer', 'Administrator', 'test'], true),
             403, 'Only authorised Planning Officers may submit strategic plans.');
 
         return DB::transaction(function () use ($planId, $actor) {

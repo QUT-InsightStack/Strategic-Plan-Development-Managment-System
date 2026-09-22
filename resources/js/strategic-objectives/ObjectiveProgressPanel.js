@@ -23,7 +23,7 @@ export function ObjectiveProgressPanel({ planId = '' }) {
     const [historyPage, setHistoryPage] = React.useState(1);
     const [historyMeta, setHistoryMeta] = React.useState({ last_page: 1 });
     const [historyLoading, setHistoryLoading] = React.useState(false);
-    const correction = ['Administrator', 'Planning Officer', 'Planner/Encoder'].includes(getAccessSession()?.roleName);
+    const correction = ['Administrator', 'Planning Officer', 'Planner/Encoder', 'test'].includes(getAccessSession()?.roleName);
     const mayUpdate = can(correction ? P.OBJECTIVES_CORRECT_PROGRESS : P.OBJECTIVES_UPDATE_PROGRESS);
 
     React.useEffect(() => {

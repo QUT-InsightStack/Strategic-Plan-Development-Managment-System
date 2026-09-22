@@ -71,6 +71,18 @@ class PlanApprovalTest extends TestCase
         $this->assertDatabaseHas('approval_workflow_stages', ['sequence' => 1, 'user_id' => $this->reviewer->user_id]);
     }
 
+    public function test_test_role_can_configure_and_submit_but_must_be_assigned_to_decide(): void
+    {
+        $tester = $this->user('test');
+        $this->authenticateApiUser($tester);
+        $this->putJson('/api/approval-workflow', $this->configuration())->assertOk();
+        $this->getJson($this->url('approval-preparation'))->assertOk();
+        $submission = $this->postJson($this->url('submit'))->assertCreated()->json('data');
+        $this->postJson($this->url('approval/decision'), [
+            'submission_id' => $submission['id'], 'stage_id' => $submission['stages'][0]['id'], 'decision' => 'approve',
+        ])->assertForbidden();
+    }
+
     public function test_invalid_configurations_cannot_be_saved_or_activated_and_updates_are_atomic(): void
     {
         $this->configure();

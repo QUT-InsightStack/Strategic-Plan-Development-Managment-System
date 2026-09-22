@@ -235,7 +235,7 @@ class StrategicObjectiveAlignmentUpdateTest extends TestCase
     {
         $before = $this->snapshot();
         if ($actor === 'viewer') {
-            $this->officer->update(['role_id' => Role::where('role_name', 'Viewer')->sole()->role_id]);
+            $this->officer->update(['role_id' => Role::where('role_name', 'Office')->sole()->role_id]);
         } elseif ($actor === 'no-role') {
             $this->officer->update(['role_id' => null]);
         } elseif ($actor === 'no-update-permission') {

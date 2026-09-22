@@ -153,6 +153,17 @@ class ObjectiveProgressTest extends TestCase
         $this->assertDatabaseCount('tblobjective_progress_updates', 0);
     }
 
+    public function test_test_role_can_correct_progress_but_still_requires_an_audit_reason(): void
+    {
+        $tester = $this->user('test', null, []);
+        $this->authenticateApiUser($tester);
+        $this->patchJson($this->url(), ['progress_percentage' => 50])->assertUnprocessable();
+        $this->patchJson($this->url(), ['progress_percentage' => 50, 'reason' => 'Testing correction'])->assertOk();
+        $this->assertDatabaseHas('tblobjective_progress_updates', [
+            'updated_by' => $tester->user_id, 'updater_role' => 'test', 'is_correction' => true,
+        ]);
+    }
+
     public function test_invalid_percentages_and_status_overrides_are_rejected_for_both_roles(): void
     {
         foreach ([$this->office, $this->planner] as $actor) {
@@ -198,7 +209,7 @@ class ObjectiveProgressTest extends TestCase
         $this->getJson('/api/strategic-objective-progress')->assertOk()->assertJsonPath('meta.total', 1)
             ->assertJsonPath('data.0.objective_id', $this->objective->objective_id);
         $this->getJson($this->historyUrl($other))->assertNotFound();
-        $viewer = $this->user('Viewer', null, ['view', 'update']);
+        $viewer = $this->user('Office', null, ['view', 'update']);
         $this->authenticateApiUser($viewer);
         $this->getJson('/api/strategic-objective-progress')->assertForbidden();
         $this->getJson($this->historyUrl())->assertForbidden();

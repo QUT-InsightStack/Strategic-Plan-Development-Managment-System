@@ -14,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 class ObjectiveProgressService
 {
-    private const PLANNING_ROLES = ['Administrator', 'Planning Officer', 'Planner/Encoder'];
+    private const PLANNING_ROLES = ['Administrator', 'Planning Officer', 'Planner/Encoder', 'test'];
 
     private const OFFICE_ROLES = ['Responsible Unit User', 'Office Representative', 'Office/Agency', 'Offices / Agencies'];
 

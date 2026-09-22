@@ -16,6 +16,8 @@ Run `php artisan migrate` to add the progress columns, history table and permiss
 
 The existing application Administrator bypass applies. A Planning Officer cannot use the office permission to bypass correction permission or the required reason. Giving an office role correction permission does not grant access to other offices. Membership comes from the administrator-maintained user `office` field resolved to an active `tblresponsible_units` row; the assignment relationship is authoritative.
 
+The test role has full access and follows the planning correction flow, including its required reason. Legacy Office/Unit roles above are retained when present, but are not default roles. The default Office role replaces Viewer and remains read-only without progress permissions; see [default roles and upgrades](role-seeding.md).
+
 Archived plans/objectives remain readable but must be restored before progress can change. Deleted content is excluded. Draft and published objectives in draft or finished plans accept updates. This follows existing collaboration lifecycle rules.
 
 ## API
