@@ -45,6 +45,8 @@ export default defineConfig({
                 'resources/js/pages/shared/resource-form-app.js',
                 'resources/js/pages/planner/strategic-plan-app.js',
                 'resources/js/pages/planner/strategic-plan-list-app.js',
+                'resources/js/pages/planner/approval-status-app.js',
+                'resources/js/pages/shared/workflow-notifications-app.js',
                 'resources/js/pages/planner/strategic-plan-edit-app.js',
                 'resources/js/pages/planner/strategic-plan-finalize-app.js',
                 'resources/js/pages/planner/strategic-objectives-app.js',

@@ -1032,6 +1032,7 @@ h(
                     )
                 ),
 
+                h('a', { className: 'ui-button ui-button--secondary', href: `/strategic-plans/${planId}/approval-status` }, 'Approval status and history'),
                 notice.message
                     ? h(
                         'div',

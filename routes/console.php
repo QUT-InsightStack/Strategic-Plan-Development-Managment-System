@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schedule;
 
+Schedule::command('workflow:deliver-notifications')->everyMinute()->withoutOverlapping(5);
+
 Schedule::command('monitoring:check')->everyMinute()->withoutOverlapping(5)
     ->when(fn (): bool => (bool) config('monitoring.enabled'));
 Schedule::command('monitoring:prune')->daily()->withoutOverlapping(60)

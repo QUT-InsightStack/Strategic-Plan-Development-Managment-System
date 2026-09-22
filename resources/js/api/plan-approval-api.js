@@ -6,7 +6,7 @@ export function submissionView(record) {
         ...record,
         planId: record.plan_id,
         submittedAt: record.submitted_at,
-        submittedBy: record.history.find(item => item.action === 'submitted')?.actor_name || '',
+        submittedBy: record.history.find(item => ['submitted', 'resubmitted'].includes(item.action))?.actor_name || '',
         currentStageIndex: record.current_sequence == null ? stages.length : record.current_sequence - 1,
         currentStage: stages.find(stage => stage.sequence === record.current_sequence) || null,
         workflowSnapshot: { ...record.workflow_snapshot, stages },
@@ -50,4 +50,14 @@ export function isSubmissionAssignedToReviewer(submission, session) {
 
 export function submitStrategicPlan(planId) {
     return apiRequest(`/api/strategic-plans/${planId}/submit`, { method: 'POST' });
+}
+
+export function resubmitStrategicPlan(planId, previousSubmissionId, revisionNote = '') {
+    return apiRequest(`/api/strategic-plans/${planId}/resubmit`, {
+        method: 'POST', body: JSON.stringify({ previous_submission_id: previousSubmissionId, revision_note: revisionNote }),
+    });
+}
+
+export function getApprovalStatus(planId) {
+    return apiRequest(`/api/strategic-plans/${planId}/approval-status`);
 }

@@ -8,6 +8,7 @@ import { LogoutButton } from './LogoutButton.js';
 const { useState } = React;
 
 const accessItems = [
+    { label: 'Notifications', icon: 'bi-bell', href: '/workflow-notifications' },
     { label: 'User Account Management', icon: 'bi-people-fill', href: '/user-management', permission: PERMISSIONS.USERS_VIEW },
     { label: 'Role Management', icon: 'bi-person-gear', href: '/role-management', permission: PERMISSIONS.ROLES_MANAGE },
     { label: 'Access Permission Management', icon: 'bi-shield-lock-fill', href: '/role-management?section=permissions', permission: PERMISSIONS.PERMISSIONS_MANAGE },
