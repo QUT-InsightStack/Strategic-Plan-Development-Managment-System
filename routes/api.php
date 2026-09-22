@@ -265,6 +265,10 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
     Route::get('approval-workflow', [\App\Http\Controllers\ApprovalWorkflowController::class, 'show']);
     Route::put('approval-workflow', [\App\Http\Controllers\ApprovalWorkflowController::class, 'update']);
     Route::get('plan-reviews', [\App\Http\Controllers\PlanApprovalController::class, 'index']);
+    Route::get('workflow-notifications', [\App\Http\Controllers\WorkflowNotificationController::class, 'index']);
+    Route::patch('workflow-notifications/{notification}/read', [\App\Http\Controllers\WorkflowNotificationController::class, 'read'])->whereNumber('notification');
+    Route::post('strategic-plans/{plan}/resubmit', [\App\Http\Controllers\PlanApprovalController::class, 'resubmit'])->whereNumber('plan');
+    Route::get('strategic-plans/{plan}/approval-status', [\App\Http\Controllers\PlanApprovalController::class, 'tracking'])->whereNumber('plan');
     Route::post('strategic-plans/{plan}/submit', [\App\Http\Controllers\PlanApprovalController::class, 'submit'])->whereNumber('plan');
     Route::get('strategic-plans/{plan}/approval-preparation', [\App\Http\Controllers\PlanApprovalController::class, 'preparation'])->whereNumber('plan');
     Route::get('strategic-plans/{plan}/approval', [\App\Http\Controllers\PlanApprovalController::class, 'show'])->whereNumber('plan');
@@ -441,5 +445,4 @@ Route::middleware([
     Route::patch('', [SystemSettingsController::class, 'update'])
         ->middleware('permission:settings.manage');
 });
-
 
