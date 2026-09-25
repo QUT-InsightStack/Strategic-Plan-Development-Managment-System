@@ -20,7 +20,6 @@ use App\Http\Controllers\ImplementationInputController;
 use App\Http\Controllers\ImplementationInputScopeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SystemSettingsController;
-use App\Http\Controllers\SecuritySettingsController;
 use App\Http\Controllers\StrategicDocumentController;
 use App\Http\Controllers\PresidentialAgendaItemController;
 use Illuminate\Support\Facades\Route;
@@ -149,8 +148,7 @@ Route::middleware(['auth:api','auth.version', 'auth.session','system.available',
 */
 
 Route::middleware(['auth:api','auth.version','auth.session','system.available',])->group(function () {
-    Route::get('security-settings', [SecuritySettingsController::class, 'show']);
-    Route::put('security-settings', [SecuritySettingsController::class, 'update']);
+   
 
     Route::get('pdp-chapters', [PdpChapterController::class, 'index']);
     

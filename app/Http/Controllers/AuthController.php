@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Password;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
-use App\Services\SecuritySettingsService;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\UploadProfilePhotoRequest;
@@ -42,9 +41,6 @@ class AuthController extends Controller
         private readonly StrategicLogWriter $auditWriter,
         private readonly ProfilePhotoService $profilePhotos,
         private readonly LoginHistoryRecorder $loginHistoryRecorder,
-        private ProfilePhotoService $profilePhotos,
-        private readonly SecuritySettingsService $securitySettings,
-        private readonly \App\Contracts\StrategicLogWriter $logWriter
     ) {
     }
     
@@ -57,12 +53,7 @@ class AuthController extends Controller
             $request
         );
 
-        $existingUser = User::query()->where('email', $request->validated('email'))->first();
-        if ($existingUser?->locked_until?->isFuture()) {
-            $this->loginHistoryRecorder->recordFailedLogin(
-                (string) $request->validated('email'), $request, 'account_locked'
-            );
-            $minutes = max(1, now()->diffInMinutes($existingUser->locked_until, false));
+        if ($result['status'] === 'locked') {
             return response()->json([
                 'success' => false,
                 'message' => 'Too many failed login attempts. Please try again later.',
@@ -71,51 +62,6 @@ class AuthController extends Controller
             ]);
         }
 
-        if ($existingUser?->locked_until?->isPast()) {
-            $existingUser->forceFill(['failed_login_attempts' => 0, 'locked_until' => null])->save();
-        }
-
-        $token = Auth::guard('api')->attempt($credentials);
-
-        if (! $token) {
-            if ($existingUser) {
-                DB::transaction(function () use ($existingUser): void {
-                    $user = User::query()->lockForUpdate()->find($existingUser->user_id);
-                    if (! $user || $user->locked_until?->isFuture()) return;
-                    $user->failed_login_attempts++;
-                    if ($user->failed_login_attempts >= $this->securitySettings->get('max_failed_login_attempts')) {
-                        $user->locked_until = now()->addMinutes($this->securitySettings->get('lockout_duration_minutes'));
-                    }
-                    $user->save();
-                });
-
-                $existingUser->refresh();
-                if ($existingUser->locked_until?->isFuture()) {
-                    $minutes = max(1, now()->diffInMinutes($existingUser->locked_until, false));
-
-                    $this->loginHistoryRecorder->recordFailedLogin(
-                        (string) $request->validated('email'),
-                        $request,
-                        'account_locked'
-                    );
-
-                    return response()->json([
-                        'success' => false,
-                        'message' => "This account is now locked. Try again in " . round($minutes, 2) . " minute(s).",
-                        'locked_until' => $existingUser->locked_until->toIso8601String(),
-                    ], 423);
-                }
-            }
-            $this->loginHistoryRecorder->recordFailedLogin(
-                (string) $request->validated('email'),
-                $request,
-                ! $existingUser ? 'unknown_email' : ($existingUser->status !== 'active' ? 'inactive_account' : 'invalid_credentials')
-            );
-
-            /*
-            * Keep the response generic. Never reveal whether the submitted
-            * email belongs to an existing account.
-            */
         if ($result['status'] === 'invalid') {
             return response()->json([
                 'success' => false,
@@ -132,49 +78,48 @@ class AuthController extends Controller
             ]);
         }
 
+        if ($result['status'] !== 'success') {
+            throw new \LogicException('Unexpected authentication result.');
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Logged in successfully.',
-        ])->withCookie($this->makeAccessCookie($result['token']));
+        ])->withCookie($this->accessCookies->make($result['token']));
     }
 
     public function logout(): JsonResponse
     {
         try {
-            // Resolve the user before invalidating, so the audit row can
-            // attribute the event. Fails silently if the token is bad.
-            $user = Auth::guard('api')->user();
-
-            if ($user) {
-                // Session invalidation must complete even if audit persistence fails.
-                Auth::guard('api')->logout();
-                $this->logWriter->write('auth.logout', [
-                    'actor_user_id' => $user->user_id,
-                    'resource_type' => 'user', 'resource_id' => $user->user_id,
-                    'states'    => 'success',
-                ]);
-            }
-
-            if (! $user) {
-                Auth::guard('api')->logout();
-            }
-                 $this->sessionService->logout();   
-           
+            $userId = $this->sessionService->logout();
         } catch (\Throwable $exception) {
-         // Token was absent, malformed or already blacklisted. The
-            // desired end state — no valid session — already holds.
             report($exception);
-    
+
             return response()->json([
                 'success' => false,
                 'message' => 'The cookie was cleared, but server-side logout could not be confirmed.',
-            ], 503)->withCookie($this->forgetAccessCookie());
+            ], 503)->withCookie($this->accessCookies->forget());
         }
-    
+
+        if ($userId !== null) {
+            try {
+                $this->auditWriter->write('auth.logout', [
+                    'actor_user_id' => $userId,
+                    'resource_type' => 'user',
+                    'resource_id' => $userId,
+                    'states' => 'success',
+                ]);
+            } catch (\Throwable $exception) {
+                // The session is already revoked; an audit failure must not
+                // report the logout itself as failed.
+                report($exception);
+            }
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Logged out successfully.',
-        ])->withCookie($this->forgetAccessCookie());
+        ])->withCookie($this->accessCookies->forget());
     }
   
     public function refresh(): JsonResponse
