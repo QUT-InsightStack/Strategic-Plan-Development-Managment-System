@@ -22,6 +22,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\SecuritySettingsController;
 use App\Http\Controllers\StrategicDocumentController;
+use App\Http\Controllers\PresidentialAgendaItemController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:api', 'auth.version', 'permission:system_monitoring.view'])
@@ -361,6 +362,35 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
         'relations',
         RelationController::class
     );
+
+    //Presidential Agenda routes
+    Route::get('presidential-agenda', [PresidentialAgendaItemController::class, 'index'])
+    ->middleware('permission:presidential_agenda.view');
+
+    Route::post('presidential-agenda', [PresidentialAgendaItemController::class, 'store'])
+        ->middleware('permission:presidential_agenda.manage');
+
+    Route::get('presidential-agenda/{agendaItem}', [PresidentialAgendaItemController::class, 'show'])
+        ->whereNumber('agendaItem')
+        ->middleware('permission:presidential_agenda.view');
+
+    Route::put('presidential-agenda/{agendaItem}', [PresidentialAgendaItemController::class, 'update'])
+        ->whereNumber('agendaItem')
+        ->middleware('permission:presidential_agenda.manage');
+
+    Route::patch(
+        'presidential-agenda/{agendaItem}/archive',
+        [PresidentialAgendaItemController::class, 'archive']
+    )
+        ->whereNumber('agendaItem')
+        ->middleware('permission:presidential_agenda.archive');
+
+    Route::delete(
+        'presidential-agenda/{agendaItem}',
+        [PresidentialAgendaItemController::class, 'delete']
+    )
+        ->whereNumber('agendaItem')
+        ->middleware('permission:presidential_agenda.delete');
 
     Route::get(
         'logs',
