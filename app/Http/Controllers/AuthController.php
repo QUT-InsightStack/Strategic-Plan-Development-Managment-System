@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Password;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
-use App\Services\SecuritySettingsService;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\UploadProfilePhotoRequest;
@@ -42,8 +41,6 @@ class AuthController extends Controller
         private readonly StrategicLogWriter $auditWriter,
         private readonly ProfilePhotoService $profilePhotos,
         private readonly LoginHistoryRecorder $loginHistoryRecorder,
-        private readonly SecuritySettingsService $securitySettings,
-        private readonly \App\Contracts\StrategicLogWriter $logWriter
     ) {
     }
     
@@ -81,49 +78,48 @@ class AuthController extends Controller
             ]);
         }
 
+        if ($result['status'] !== 'success') {
+            throw new \LogicException('Unexpected authentication result.');
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Logged in successfully.',
-        ])->withCookie($this->makeAccessCookie($result['token']));
+        ])->withCookie($this->accessCookies->make($result['token']));
     }
 
     public function logout(): JsonResponse
     {
         try {
-            // Resolve the user before invalidating, so the audit row can
-            // attribute the event. Fails silently if the token is bad.
-            $user = Auth::guard('api')->user();
-
-            if ($user) {
-                // Session invalidation must complete even if audit persistence fails.
-                Auth::guard('api')->logout();
-                $this->logWriter->write('auth.logout', [
-                    'actor_user_id' => $user->user_id,
-                    'resource_type' => 'user', 'resource_id' => $user->user_id,
-                    'states'    => 'success',
-                ]);
-            }
-
-            if (! $user) {
-                Auth::guard('api')->logout();
-            }
-                 $this->sessionService->logout();   
-           
+            $userId = $this->sessionService->logout();
         } catch (\Throwable $exception) {
-         // Token was absent, malformed or already blacklisted. The
-            // desired end state — no valid session — already holds.
             report($exception);
-    
+
             return response()->json([
                 'success' => false,
                 'message' => 'The cookie was cleared, but server-side logout could not be confirmed.',
-            ], 503)->withCookie($this->forgetAccessCookie());
+            ], 503)->withCookie($this->accessCookies->forget());
         }
-    
+
+        if ($userId !== null) {
+            try {
+                $this->auditWriter->write('auth.logout', [
+                    'actor_user_id' => $userId,
+                    'resource_type' => 'user',
+                    'resource_id' => $userId,
+                    'states' => 'success',
+                ]);
+            } catch (\Throwable $exception) {
+                // The session is already revoked; an audit failure must not
+                // report the logout itself as failed.
+                report($exception);
+            }
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Logged out successfully.',
-        ])->withCookie($this->forgetAccessCookie());
+        ])->withCookie($this->accessCookies->forget());
     }
   
     public function refresh(): JsonResponse

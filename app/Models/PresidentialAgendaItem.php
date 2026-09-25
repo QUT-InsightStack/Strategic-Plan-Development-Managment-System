@@ -15,17 +15,19 @@ class PresidentialAgendaItem extends Model
         'code',
         'title',
         'description',
-        'status',
         'effective_date',
         'note',
         'created_by',
         'updated_by',
+        // Lifecycle fields are intentionally excluded.
     ];
 
     protected function casts(): array
     {
         return [
             'effective_date' => 'date:Y-m-d',
+            'archived_at' => 'datetime',
+            'deleted_at' => 'datetime',
         ];
     }
 
@@ -47,5 +49,30 @@ class PresidentialAgendaItem extends Model
     public function updater()
     {
         return $this->belongsTo(User::class, 'updated_by', 'user_id');
+    }
+
+    public function archiver()
+    {
+        return $this->belongsTo(User::class, 'archived_by', 'user_id');
+    }
+
+    public function deleter()
+    {
+        return $this->belongsTo(User::class, 'deleted_by', 'user_id');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    public function scopeArchived($query)
+    {
+        return $query->where('status', 'archived');
+    }
+
+    public function scopeNotDeleted($query)
+    {
+        return $query->where('status', '!=', 'deleted');
     }
 }

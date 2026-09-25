@@ -288,6 +288,31 @@ class PermissionSeeder extends Seeder
             // every user record and password hash, so being able to trigger
             // one is not the same as being allowed to take a copy off the
             // server.
+
+            [
+                'permission_name' => 'View Presidential Agenda',
+                'description' => 'Allows viewing Presidential Agenda items.',
+                'code' => 'presidential_agenda.view',
+                'module' => 'presidential_agenda',
+            ],
+            [
+                'permission_name' => 'Manage Presidential Agenda',
+                'description' => 'Allows creating and editing Presidential Agenda items.',
+                'code' => 'presidential_agenda.manage',
+                'module' => 'presidential_agenda',
+            ],
+            [
+                'permission_name' => 'Archive Presidential Agenda',
+                'description' => 'Allows archiving Presidential Agenda items.',
+                'code' => 'presidential_agenda.archive',
+                'module' => 'presidential_agenda',
+            ],
+            [
+                'permission_name' => 'Delete Presidential Agenda',
+                'description' => 'Allows logically deleting archived Presidential Agenda items.',
+                'code' => 'presidential_agenda.delete',
+                'module' => 'presidential_agenda',
+            ],
             [
                 'permission_name' => 'View Backups',
                 'description' => 'Allows viewing the list of manual database backups.',
