@@ -473,43 +473,84 @@ class StrategicObjectiveController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $user = Auth::guard('api')->user();
+
         $this->permissionAuthorizationService->ensureHasPermission(
             'strategic_objectives.delete',
             $user,
             'You are not authorized to delete strategic objectives.'
         );
-        $objective = StrategicObjective::where('status', '!=', 'deleted')->find($id);
 
-        if (! $objective) {
-            return response()->json(['message' => 'Not found'], 404);
-        }
+        return DB::transaction(function () use ($id, $user): JsonResponse {
+            $planId = StrategicObjective::query()
+                ->whereKey($id)
+                ->value('strategic_plan_id');
 
-        if (! $objective->strategicPlan || $objective->strategicPlan->status === 'deleted') {
-            return response()->json(['message' => 'Not found'], 404);
-        }
+            if ($planId === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Strategic objective not found.',
+                ], 404);
+            }
 
-        $objective->strategicPlan?->loadMissing('creator');
-        $this->authorizationService->ensurePlanIsWithinAuthorizedScope(
-            $objective->strategicPlan,
-            $user,
-            'You are not authorized to delete this strategic objective.'
-        );
-        $this->ensurePlanCanBeChanged($objective->strategicPlan);
-        $objective->update([
-            'updated_by' => Auth::guard('api')->id(),
-            'status' => 'deleted',
-            'status_before_archive' => null,
-            'archived_at' => null,
-            'archived_by' => null,
-            'deleted_at' => now(),
-        ]);
+            // Follow the parent-then-child locking order used by alignment writes.
+            $plan = Strategic::with('creator')
+                ->whereKey($planId)
+                ->lockForUpdate()
+                ->first();
 
-        $this->logWriter->write('strategic_objective.deleted', [
-            'objective_id' => $objective->objective_id,
-            'record_id' => $objective->strategic_plan_id,
-        ]);
+            $objective = StrategicObjective::query()
+                ->whereKey($id)
+                ->where('strategic_plan_id', $planId)
+                ->lockForUpdate()
+                ->first();
 
-        return response()->json(['message' => 'Deleted'], 200);
+            if (! $plan || ! $objective || $plan->status === 'deleted') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Strategic objective not found.',
+                ], 404);
+            }
+
+            $this->authorizationService->ensurePlanIsWithinAuthorizedScope(
+                $plan,
+                $user,
+                'You are not authorized to delete this strategic objective.'
+            );
+
+            if ($objective->status === 'deleted') {
+                throw ValidationException::withMessages([
+                    'status' => ['This Strategic Objective has already been deleted.'],
+                ]);
+            }
+
+            $this->ensurePlanCanBeChanged($plan);
+            $previousStatus = $objective->status;
+
+            // Do not call delete() or detach relationships: retain historical data.
+            $objective->update([
+                'updated_by' => $user->user_id,
+                'status' => 'deleted',
+                'status_before_archive' => null,
+                'archived_at' => null,
+                'archived_by' => null,
+                'deleted_at' => now(),
+            ]);
+
+            $this->logWriter->write('strategic_objective.deleted', [
+                'actor_user_id' => $user->user_id,
+                'resource_type' => 'strategic_objective',
+                'resource_id' => $objective->objective_id,
+                'objective_id' => $objective->objective_id,
+                'record_id' => $objective->strategic_plan_id,
+                'from' => $previousStatus,
+                'to' => 'deleted',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Strategic Objective deleted successfully.',
+            ], 200);
+        }, 3);
     }
 
     private function ensurePlanCanBeChanged(Strategic $plan): void
