@@ -20,7 +20,6 @@ const items = [
             { label: 'Manage Plans', href: '/strategic-plans', permission: PERMISSIONS.PLANS_VIEW },
             { label: 'Strategic Objectives', href: '/strategic-objectives', permission: PERMISSIONS.OBJECTIVES_VIEW },
             { label: 'Consolidate Inputs', href: '/consolidate-inputs', permission: PERMISSIONS.PLANS_UPDATE },
-            { label: 'Plan Reviews', href: '/strategic-plan-reviews', permission: PERMISSIONS.PLANS_VIEW },
             { label: 'PDP Chapters', href: '/pdp-chapters', permission: PERMISSIONS.PLANS_VIEW },
         ],
     },
@@ -32,6 +31,7 @@ const items = [
             { label: 'Create / Review Mapping', href: '/mappings', permission: PERMISSIONS.MAPPINGS_MANAGE },
         ],
     },
+    { label: 'Plan Reviews', icon: 'bi-clipboard-check', href: '/strategic-plan-reviews' },
     { label: 'Finalize Plans', icon: 'bi-clipboard-check-fill', href: '/strategic-plans/finalize', permission: PERMISSIONS.PLANS_UPDATE },
     { label: 'Monitor Plans', icon: 'bi-speedometer2', permission: PERMISSIONS.MONITORING_VIEW },
     { label: 'FAQ', icon: 'bi-info-square-fill' },
@@ -145,6 +145,7 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
         ),
         React.createElement('a', { className: 'app-sidebar__profile', href: '/profile', 'aria-label': 'Open user profile' }, React.createElement('i', { className: 'bi bi-person-vcard-fill' }), React.createElement('span', null, currentPath === '/office' ? 'Office/ Agencies' : displayRoleName(accessSession?.roleName, 'User'))),
         React.createElement('nav', { className: 'app-sidebar__nav' },
+            accessSession && renderItem({ label: 'Notifications', icon: 'bi-bell', href: '/workflow-notifications' }),
             accessSession ? (currentPath === '/office' || isOfficeRole(accessSession.roleName) ? officeItems : items).map(renderItem)
                 : React.createElement('p', { role: accessError ? 'alert' : 'status' }, accessError || 'Loading menu…'),
             accessError && React.createElement('button', { type: 'button', className: 'app-sidebar__item', onClick: () => setAccessAttempt(value => value + 1) }, 'Retry')),

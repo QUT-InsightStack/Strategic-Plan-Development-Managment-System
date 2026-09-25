@@ -1,19 +1,11 @@
 import { AppSidebar } from '../../components/AppSidebar.js';
-import {
-    getStrategicPlan,
-    getStrategicPlanCoreValues,
-} from '../../api/strategic-plans-api.js';
-import {
-    listObjectiveComments,
-    listStrategicObjectives,
-} from '../../api/strategic-objectives-api.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
 import { getAccessSession } from '../../access/access-session.js';
 import {
     getPlanSubmission,
     isSubmissionAssignedToReviewer,
     processPlanDecision,
-} from '../../data/plan-approval-demo-data.js';
+} from '../../api/plan-approval-api.js';
 
 enforcePageAccess();
 
@@ -160,42 +152,6 @@ function Accordion({
             )
             : null
     );
-}
-
-async function loadCommentsForObjectives(objectives) {
-    const results = await Promise.all(
-        objectives.map(async (objective) => {
-            try {
-                const payload =
-                    await listObjectiveComments(
-                        objective.objective_id,
-                        {
-                            per_page: 100,
-                        }
-                    );
-
-                return [
-                    objective.objective_id,
-                    {
-                        comments: payload.data || [],
-                        error: '',
-                    },
-                ];
-            } catch (error) {
-                return [
-                    objective.objective_id,
-                    {
-                        comments: [],
-                        error:
-                            error.message ||
-                            'Comments could not be loaded.',
-                    },
-                ];
-            }
-        })
-    );
-
-    return Object.fromEntries(results);
 }
 
 function DecisionDialog({
@@ -429,86 +385,21 @@ const [decisionDialog, setDecisionDialog] =
                 return;
             }
 
-            const storedSubmission =
-                getPlanSubmission(planId);
-
-            if (!storedSubmission) {
-                setNotice({
-                    type: 'error',
-                    message:
-                        'This Strategic Plan has not been submitted for approval.',
-                });
-                setLoading(false);
-                return;
-            }
-
-            if (
-                !isSubmissionAssignedToReviewer(
-                    storedSubmission,
-                    session
-                )
-            ) {
-                setSubmission(storedSubmission);
-                setAccessDenied(true);
-                setLoading(false);
-                return;
-            }
-
-            setSubmission(storedSubmission);
-
             try {
-                const [
-                    planPayload,
-                    objectivesPayload,
-                    coreValuesResult,
-                ] = await Promise.all([
-                    getStrategicPlan(planId),
-
-                    listStrategicObjectives(planId),
-
-                    getStrategicPlanCoreValues(planId)
-                        .catch(() => ({
-                            data: [],
-                        })),
-                ]);
-
-                if (!active) {
-                    return;
-                }
-
-                const availableObjectives =
-                    (
-                        objectivesPayload.data || []
-                    ).filter(
-                        (objective) =>
-                            ![
-                                'archived',
-                                'deleted',
-                            ].includes(objective.status)
-                    );
-
-                const objectiveComments =
-                    await loadCommentsForObjectives(
-                        availableObjectives
-                    );
-
-                if (!active) {
-                    return;
-                }
-
-                setPlan(planPayload.data);
-                setObjectives(availableObjectives);
-                setCoreValues(
-                    coreValuesResult.data || []
-                );
-                setCommentsByObjective(
-                    objectiveComments
-                );
+                const storedSubmission = await getPlanSubmission(planId);
+                if (!active) return;
+                const snapshot = storedSubmission.plan_snapshot;
+                setSubmission(storedSubmission);
+                setPlan(snapshot);
+                setObjectives(snapshot.objectives || []);
+                setCoreValues(snapshot.core_values || []);
+                setCommentsByObjective(Object.fromEntries((snapshot.objectives || []).map(objective => [objective.objective_id, { comments: objective.comments || [], error: '' }])));
             } catch (error) {
                 if (!active) {
                     return;
                 }
 
+                setAccessDenied(error.status === 403);
                 setNotice({
                     type: 'error',
                     message:
@@ -537,6 +428,7 @@ const [decisionDialog, setDecisionDialog] =
     }
     function openDecisionDialog(decision) {
     if (
+        !isSubmissionAssignedToReviewer(submission, session) ||
         processingDecision ||
         decisionProcessed ||
         submission?.status !==
@@ -577,7 +469,7 @@ function updateDecisionComment(comment) {
     }));
 }
 
-function confirmDecision() {
+async function confirmDecision() {
     if (
         !decisionDialog.open ||
         processingDecision
@@ -606,11 +498,11 @@ function confirmDecision() {
 
     try {
         const updatedSubmission =
-            processPlanDecision({
+            await processPlanDecision({
                 planId,
                 decision,
                 comment,
-                session,
+                submission,
             });
 
         setSubmission(updatedSubmission);
@@ -673,17 +565,7 @@ function confirmDecision() {
 
     const history = submission?.history || [];
 
-    const documentUrl =
-        plan?.supporting_document_url ||
-        plan?.file_url ||
-        '';
-
-    const documentPath =
-        plan?.file_path || '';
-
-    const documentName = documentPath
-        ? documentPath.split('/').pop()
-        : '';
+    const documents = [...(plan?.documents || []), ...objectives.flatMap(objective => objective.documents || [])];
 
     function renderEmpty(message) {
         return h(
@@ -946,7 +828,7 @@ function confirmDecision() {
                                                 'small',
                                                 null,
                                                 [
-                                                    creatorName(
+                                                    comment.submitter_name || creatorName(
                                                         comment.submitter ||
                                                         comment.submitted_by_user ||
                                                         comment.creator
@@ -1150,6 +1032,7 @@ h(
                     )
                 ),
 
+                h('a', { className: 'ui-button ui-button--secondary', href: `/strategic-plans/${planId}/approval-status` }, 'Approval status and history'),
                 notice.message
                     ? h(
                         'div',
@@ -1288,9 +1171,7 @@ h(
                                             ],
                                             [
                                                 'Submitted By',
-                                                creatorName(
-                                                    plan.creator
-                                                ),
+                                                submission?.submittedBy,
                                             ],
                                             [
                                                 'Department / Agency',
@@ -1497,11 +1378,7 @@ h(
                                                 'review-documents',
                                             title:
                                                 'Supporting Documents',
-                                            count:
-                                                documentPath ||
-                                                documentUrl
-                                                    ? 1
-                                                    : 0,
+                                            count: documents.length,
                                             open:
                                                 openSections.documents,
                                             onToggle: () =>
@@ -1510,69 +1387,14 @@ h(
                                                 ),
                                         },
 
-                                        documentPath ||
-                                        documentUrl
-                                            ? h(
-                                                'div',
-                                                {
-                                                    className:
-                                                        'plan-review-document',
-                                                },
-
-                                                h('i', {
-                                                    className:
-                                                        'bi bi-file-earmark-text-fill',
-                                                    'aria-hidden':
-                                                        'true',
-                                                }),
-
-                                                h(
-                                                    'div',
-                                                    null,
-                                                    h(
-                                                        'strong',
-                                                        null,
-                                                        documentName ||
-                                                        'Strategic Plan supporting document'
-                                                    ),
-                                                    h(
-                                                        'small',
-                                                        null,
-                                                        'Supporting document'
-                                                    )
-                                                ),
-
-                                                documentUrl
-                                                    ? h(
-                                                        'a',
-                                                        {
-                                                            className:
-                                                                'ui-button ui-button--secondary ui-button--sm',
-                                                            href:
-                                                                documentUrl,
-                                                            target:
-                                                                '_blank',
-                                                            rel:
-                                                                'noopener noreferrer',
-                                                        },
-                                                        h('i', {
-                                                            className:
-                                                                'bi bi-box-arrow-up-right',
-                                                        }),
-                                                        'Open'
-                                                    )
-                                                    : h(
-                                                        'span',
-                                                        {
-                                                            className:
-                                                                'ui-help',
-                                                        },
-                                                        'Document access URL pending backend integration'
-                                                    )
-                                            )
-                                            : renderEmpty(
-                                                'No supporting documents are attached to this submission.'
-                                            )
+                                        (plan?.inputs || []).map(input => h('p', { key: `input-${input.input_id}` },
+                                            `${input.submitter_name}: ${input.content} (${input.review_status})`)),
+                                        documents.length
+                                            ? h('ul', { className: 'plan-review-document-list' }, documents.map(document =>
+                                                h('li', { key: document.document_id }, h('a', {
+                                                    href: `/api/plan-submissions/${submission.id}/documents/${document.document_id}`,
+                                                }, document.original_filename))))
+                                            : renderEmpty('No supporting documents are attached to this submission.')
                                     )
                                 )
                             ),
@@ -1844,7 +1666,7 @@ h(
                                 'ui-button ui-button--danger',
                             type: 'button',
                             disabled:
-                                processingDecision,
+                                processingDecision || !isSubmissionAssignedToReviewer(submission, session),
                             onClick: () =>
                                 openDecisionDialog(
                                     'reject'
@@ -1865,7 +1687,7 @@ h(
                                 'ui-button ui-button--primary',
                             type: 'button',
                             disabled:
-                                processingDecision,
+                                processingDecision || !isSubmissionAssignedToReviewer(submission, session),
                             onClick: () =>
                                 openDecisionDialog(
                                     'approve'
@@ -2043,6 +1865,8 @@ h(
                                                                 'p',
                                                                 null,
                                                                 [
+                                                                    item.actor_name,
+                                                                    item.comment,
                                                                     item.stageName,
                                                                     item.assignedApprover
                                                                         ? `Assigned to ${item.assignedApprover}`

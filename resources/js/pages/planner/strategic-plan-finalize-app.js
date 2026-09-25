@@ -1,9 +1,9 @@
 import { AppSidebar } from '../../components/AppSidebar.js';
-import { getStrategicPlan, listStrategicPlans, updateStrategicPlan } from '../../api/strategic-plans-api.js';
+import { getStrategicPlan, listStrategicPlans } from '../../api/strategic-plans-api.js';
 import { listStrategicObjectives } from '../../api/strategic-objectives-api.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
-import { listLocalMappings } from '../../mappings/mapping-storage.js';
-import { getLocalFinalization, listLocalAgencyInputs, saveLocalFinalization } from '../../data/office-demo-storage.js';
+import { apiRequest } from '../../api/api-client.js';
+import { submitStrategicPlan, resubmitStrategicPlan, getApprovalStatus } from '../../api/plan-approval-api.js';
 
 enforcePageAccess();
 
@@ -13,10 +13,36 @@ const root = document.getElementById('root');
 const routePlanId = Number(root.dataset.planId) || null;
 
 const text = value => String(value || '').trim();
-const formatDate = value => value ? new Date(value).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
-const creatorName = creator => creator ? [creator.first_name, creator.last_name].filter(Boolean).join(' ') || creator.email : '—';
-const planStatusLabel = status => status === 'finished' ? 'Finalized' : (status || 'draft').replace(/^./, letter => letter.toUpperCase());
+const formatDate = value => value
+    ? new Date(value).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+    })
+    : '—';
 
+const formatDateTime = value => value
+    ? new Date(value).toLocaleString('en-GB', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    })
+    : '—';
+
+const creatorName = creator => creator
+    ? [creator.first_name, creator.last_name]
+        .filter(Boolean)
+        .join(' ') || creator.email
+    : '—';
+
+const planStatusLabel = status =>
+    status === 'finished'
+        ? 'Finalized'
+        : (status || 'draft').replace(/^./, letter => letter.toUpperCase());
+
+const latestRejection = tracking =>
+    [...(tracking?.history || [])]
+        .reverse()
+        .find(event => event.action === 'rejected') || null;
 function Accordion({ id, title, count, open, onToggle, children }) {
     return h('section', { className: 'finalize-accordion' },
         h('button', { className: 'finalize-accordion__toggle', type: 'button', onClick: onToggle, 'aria-expanded': open, 'aria-controls': id },
@@ -37,7 +63,7 @@ function DecisionDialog({ dialog, busy, onCancel, onConfirm }) {
             h('p', { id: 'finalize-dialog-message' }, dialog.message),
             h('div', { className: 'ui-dialog__actions' },
                 confirmation ? h('button', { className: 'ui-button ui-button--secondary', type: 'button', disabled: busy, onClick: onCancel }, 'Cancel') : null,
-                h('button', { className: `ui-button ${dialog.mode === 'error' ? 'ui-button--danger-solid' : 'ui-button--primary'}`, type: 'button', disabled: busy, onClick: confirmation ? onConfirm : onCancel }, busy ? 'Submitting…' : confirmation ? 'Submit for Approval' : 'Close')
+                h('button', { className: `ui-button ${dialog.mode === 'error' ? 'ui-button--danger-solid' : 'ui-button--primary'}`, type: 'button', disabled: busy, onClick: confirmation ? onConfirm : onCancel }, busy ? 'Submitting…' : confirmation ? (dialog.resubmission ? 'Resubmit for Approval' : 'Submit for Approval') : 'Close')
             )
         )
     );
@@ -47,6 +73,8 @@ function FinalizeStrategicPlanApp() {
     const [plans, setPlans] = useState([]);
     const [planId, setPlanId] = useState(routePlanId);
     const [plan, setPlan] = useState(null);
+    const [tracking, setTracking] = useState(null);
+    const [revisionNote, setRevisionNote] = useState('');
     const [objectives, setObjectives] = useState([]);
     const [relations, setRelations] = useState([]);
     const [inputMeta, setInputMeta] = useState(null);
@@ -74,18 +102,19 @@ function FinalizeStrategicPlanApp() {
         setLoading(true); setNotice({ type: '', message: '' });
         Promise.all([
             getStrategicPlan(planId),
+            getApprovalStatus(planId),
             listStrategicObjectives(planId),
-            Promise.resolve({ data: listLocalMappings(planId) }),
-            Promise.resolve(listLocalAgencyInputs({ plan_id: planId, per_page: 100 })),
-        ]).then(([planPayload, objectivePayload, relationPayload, inputPayload]) => {
+            apiRequest(`/api/strategic-plans/${planId}/approval-preparation`),
+        ]).then(([planPayload, trackingPayload, objectivePayload, inputPayload]) => {
             if (!active) return;
             const serverPlan = planPayload.data;
-            const localFinalization = getLocalFinalization(planId) || {};
-            setPlan({ ...serverPlan, ...localFinalization, status: serverPlan.status });
+            setPlan(serverPlan);
+            setTracking(trackingPayload.data);
+            setRevisionNote('');
             setObjectives((objectivePayload.data || []).filter(item => !['archived', 'deleted'].includes(item.status)));
-            setRelations((relationPayload.data || []).filter(item => !['archived', 'deleted'].includes(item.status)));
-            const planInputs = inputPayload.data || [];
-            setInputMeta({ summary: planInputs.reduce((summary, item) => ({ ...summary, [item.status]: Number(summary[item.status] || 0) + 1 }), {}) });
+            setRelations((objectivePayload.data || []).filter(item => !['archived', 'deleted'].includes(item.status)).flatMap(objective =>
+                (objective.pdp_chapters || []).map(chapter => ({ id: `${objective.objective_id}-${chapter.chapter_id}`, objective: objective.objective_title, chapter: chapter.chapter_title }))));
+            setInputMeta({ summary: { 'Pending Review': inputPayload.data.pending_inputs } });
         }).catch(error => { if (active) setNotice({ type: 'error', message: error.message }); })
             .finally(() => { if (active) setLoading(false); });
         return () => { active = false; };
@@ -102,7 +131,8 @@ function FinalizeStrategicPlanApp() {
     const mission = plan?.missionFoundation || plan?.mission_foundation;
     const vision = plan?.visionFoundation || plan?.vision_foundation;
     const coreValues = plan?.coreValues || plan?.core_values || [];
-    const outstandingInputs = Number(inputMeta?.summary?.pending || 0) + Number(inputMeta?.summary?.returned || 0);
+    const outstandingInputs = Number(inputMeta?.summary?.['Pending Review'] || 0);
+    const rejection = latestRejection(tracking);
     const checks = plan ? [
         { label: 'Mission and Vision completed', done: Boolean(text(mission?.content) && text(vision?.content)) },
         { label: 'Core Values reviewed', done: coreValues.length > 0 },
@@ -115,29 +145,85 @@ function FinalizeStrategicPlanApp() {
     const ready = checks.length > 0 && checks.every(item => item.done);
 
     async function submitPlan() {
-        if (!ready || !plan || plan.status !== 'draft' || submitting) return;
-        setSubmitting(true);
-        try {
-            const payload = {
-                title: plan.title || '',
-                level: plan.level || 'strategic_plan',
-                description: plan.description || '',
-                planning_start_date: plan.planning_start_date || null,
-                planning_end_date: plan.planning_end_date || null,
-                mission: mission?.content || '',
-                vision: vision?.content || '',
-                core_values: coreValues.map(value => value.content || value).filter(Boolean),
-                status: 'finished',
-            };
-            const response = await updateStrategicPlan(plan.record_id, payload);
-            const finalizedPlan = saveLocalFinalization(response.data || { ...plan, status: 'finished' });
-            setPlan(finalizedPlan);
-            setPlans(current => current.map(item => Number(item.record_id) === Number(plan.record_id) ? { ...item, ...finalizedPlan } : item));
-            setDialog({ open: true, mode: 'success', title: 'Plan submitted', message: 'The strategic plan was finalized and submitted for Management review.' });
-        } catch (error) {
-            setDialog({ open: true, mode: 'error', title: 'Submission failed', message: error.message || 'The plan could not be submitted.' });
-        } finally { setSubmitting(false); }
+    const resubmission = plan?.approval_status === 'rejected';
+
+    const missingPreviousSubmission =
+        resubmission && !tracking?.current_submission?.id;
+
+    const cannotResubmit =
+        resubmission && !tracking?.can_resubmit;
+
+    if (
+        !ready ||
+        !plan ||
+        missingPreviousSubmission ||
+        cannotResubmit ||
+        !['draft', 'finished'].includes(plan.status) ||
+        ['under_approval', 'approved'].includes(plan.approval_status) ||
+        submitting
+    ) {
+        return;
     }
+
+    setSubmitting(true);
+
+    try {
+        const response = resubmission
+            ? await resubmitStrategicPlan(
+                plan.record_id,
+                tracking.current_submission.id,
+                revisionNote.trim()
+            )
+            : await submitStrategicPlan(plan.record_id);
+
+        const finalizedPlan = {
+            ...plan,
+            status: 'finished',
+            approval_status: response.data.status,
+        };
+
+        setPlan(finalizedPlan);
+
+        setPlans(current =>
+            current.map(item =>
+                Number(item.record_id) === Number(plan.record_id)
+                    ? { ...item, ...finalizedPlan }
+                    : item
+            )
+        );
+
+        setRevisionNote('');
+
+        setDialog({
+            open: true,
+            mode: 'success',
+            title: resubmission
+                ? 'Plan resubmitted'
+                : 'Plan submitted',
+            message: resubmission
+                ? 'The revised strategic plan has started a new approval cycle. Previous approval history has been retained.'
+                : 'The strategic plan entered the configured approval workflow.',
+        });
+    } catch (error) {
+        const validationMessage = Object.values(error.errors || {})
+            .flat()
+            .join(' ');
+
+        setDialog({
+            open: true,
+            mode: 'error',
+            title: resubmission
+                ? 'Resubmission failed'
+                : 'Submission failed',
+            message:
+                validationMessage ||
+                error.message ||
+                'The plan could not be submitted.',
+        });
+    } finally {
+        setSubmitting(false);
+    }
+}
 
     const empty = message => h('p', { className: 'finalize-empty' }, message);
     return h(React.Fragment, null,
@@ -162,17 +248,183 @@ function FinalizeStrategicPlanApp() {
                         h(Accordion, { id: 'objectives-content', title: 'Strategic Objectives', count: objectives.length, open: openSections.objectives, onToggle: () => toggle('objectives') }, objectives.length ? h('ol', { className: 'finalize-content-list' }, objectives.map(item => h('li', { key: item.objective_id }, h('strong', null, item.objective_title || `Objective ${item.objective_id}`), h('p', null, item.objective_description || 'No description.')))) : empty('No strategic objectives added.')),
                         h(Accordion, { id: 'outcomes-content', title: 'Outcomes', count: objectives.filter(item => text(item.expected_outcome)).length, open: openSections.outcomes, onToggle: () => toggle('outcomes') }, objectives.length ? h('ul', { className: 'finalize-content-list' }, objectives.map(item => h('li', { key: item.objective_id }, h('strong', null, item.objective_title), h('p', null, item.expected_outcome || 'Outcome not provided.')))) : empty('No outcomes available.')),
                         h(Accordion, { id: 'indicators-content', title: 'Indicators', count: objectives.filter(item => text(item.indicator)).length, open: openSections.indicators, onToggle: () => toggle('indicators') }, objectives.length ? h('ul', { className: 'finalize-content-list' }, objectives.map(item => h('li', { key: item.objective_id }, h('strong', null, item.indicator || 'Indicator not provided'), h('p', null, `Target: ${item.target || 'Not provided'}`)))) : empty('No indicators available.')),
-                        h(Accordion, { id: 'mapping-content', title: 'Alignment Mapping', count: relations.length, open: openSections.mapping, onToggle: () => toggle('mapping') }, relations.length ? h('ul', { className: 'finalize-content-list' }, relations.map(item => h('li', { key: item.id }, h('strong', null, `${item.agenda_title} → ${item.pdp_chapter?.chapter_title || 'PDP'} → ${item.dost_objective?.objective_title || 'DOST Objective'}`), h('p', null, item.agency_office ? `Agency: ${item.agency_office}` : item.mapping_rationale || 'DOST-level mapping')))) : empty('No alignment mappings added.')),
+                        h(Accordion, { id: 'mapping-content', title: 'Alignment Mapping', count: relations.length, open: openSections.mapping, onToggle: () => toggle('mapping') }, relations.length ? h('ul', { className: 'finalize-content-list' }, relations.map(item => h('li', { key: item.id }, h('strong', null, `${item.agenda_title} → ${item.pdp_chapter?.chapter_title || 'PDP'} → ${item.dost_objective?.objective_title || 'DOST Objective'}`)))) : empty('No alignment mappings added.')),
                         h(Accordion, { id: 'description-content', title: 'Description / Notes', count: null, open: openSections.description, onToggle: () => toggle('description') }, h('p', { className: 'finalize-empty' }, plan.description || 'No description or notes provided.'))
                     )
                 ),
                 h('aside', { className: 'ui-card finalize-checklist', 'aria-labelledby': 'checklist-title' },
                     h('h2', { className: 'finalize-section-heading', id: 'checklist-title' }, 'Pre-submission Checklist'),
                     h('ul', null, checks.map(item => h('li', { className: item.done ? '' : 'is-missing', key: item.label }, h('i', { className: `bi ${item.done ? 'bi-check-circle' : 'bi-exclamation-circle'}`, 'aria-hidden': 'true' }), h('span', null, item.label)))),
-                    h('div', { className: 'finalize-warning' }, h('i', { className: 'bi bi-exclamation-triangle-fill', 'aria-hidden': 'true' }), h('span', null, plan.status === 'finished' ? 'This plan has been finalized and submitted for Management review.' : ready ? 'Once submitted, the strategic plan and MVC become read-only for Offices and Agencies.' : 'Complete every checklist item before submitting the plan.')),
+                    h('div', { className: 'finalize-warning' }, h('i', { className: 'bi bi-exclamation-triangle-fill', 'aria-hidden': 'true' }), h('span', null, plan.approval_status === 'under_approval' ? 'This plan is under approval in the configured workflow.' : ready ? 'A snapshot of this plan and its supporting information will be sent for approval.' : 'Complete every checklist item before submitting the plan.')),
+                    plan.approval_status === 'rejected' && h(
+    'section',
+    {
+        className: 'finalize-rejection',
+        'aria-labelledby': 'rejection-title',
+    },
+
+    h(
+        'div',
+        { className: 'finalize-rejection__heading' },
+
+        h('i', {
+            className: 'bi bi-x-circle-fill',
+            'aria-hidden': 'true',
+        }),
+
+        h(
+            'h3',
+            { id: 'rejection-title' },
+            'Plan rejected'
+        )
+    ),
+
+    h(
+        'dl',
+        { className: 'finalize-rejection__details' },
+
+        h(
+            'div',
+            null,
+            h('dt', null, 'Stage'),
+            h('dd', null, rejection?.stage_name || 'Approval review')
+        ),
+
+        h(
+            'div',
+            null,
+            h('dt', null, 'Rejected by'),
+            h(
+                'dd',
+                null,
+                rejection?.actor_name || rejection?.approver || '—'
+            )
+        ),
+
+        h(
+            'div',
+            null,
+            h('dt', null, 'Date'),
+            h('dd', null, formatDateTime(rejection?.created_at))
+        )
+    ),
+
+    h(
+        'div',
+        { className: 'finalize-rejection__reason' },
+
+        h('strong', null, 'Reason for rejection'),
+
+        h(
+            'p',
+            null,
+            rejection?.comment ||
+                'No rejection comment was recorded. Review the approval history for more information.'
+        )
+    ),
+
+    !tracking?.can_resubmit && h(
+        'p',
+        {
+            className: 'ui-status ui-status--warning',
+            role: 'status',
+        },
+        'This plan is not currently eligible for resubmission.'
+    ),
+
+    h(
+        'div',
+        { className: 'ui-field finalize-revision-note' },
+
+        h(
+            'label',
+            {
+                className: 'ui-label',
+                htmlFor: 'revision-note',
+            },
+            'Revision note (optional)'
+        ),
+
+        h('textarea', {
+            id: 'revision-note',
+            className: 'ui-input',
+            maxLength: 5000,
+            rows: 4,
+            value: revisionNote,
+            onChange: event => setRevisionNote(event.target.value),
+            placeholder:
+                'Summarise the changes made in response to the rejection.',
+        }),
+
+        h(
+            'div',
+            { className: 'finalize-revision-note__meta' },
+
+            h(
+                'span',
+                { className: 'ui-help' },
+                'This note will be recorded in the new approval cycle.'
+            ),
+
+            h(
+                'span',
+                null,
+                `${revisionNote.length.toLocaleString()} / 5,000`
+            )
+        )
+    )
+),
                     h('div', { className: 'finalize-actions' },
+                        tracking?.current_submission && h('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: `/strategic-plans/${plan.record_id}/approval-status` }, 'Approval status and history'),
                         h('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: `/strategic-plans/${plan.record_id}/edit` }, 'View / Update'),
-                        h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', disabled: !ready || plan.status !== 'draft' || submitting, onClick: () => setDialog({ open: true, mode: 'confirm', title: 'Submit this plan for approval?', message: 'The plan will be finalized and sent to Management for review.' }) }, plan.status === 'finished' ? 'Submitted' : 'Submit for Approval')
+                    h(
+    'button',
+    {
+        className: 'ui-button ui-button--primary ui-button--sm',
+        type: 'button',
+
+        disabled:
+            !ready ||
+            (
+                plan.approval_status === 'rejected' &&
+                (
+                    !tracking?.can_resubmit ||
+                    !tracking?.current_submission?.id
+                )
+            ) ||
+            !['draft', 'finished'].includes(plan.status) ||
+            ['under_approval', 'approved'].includes(
+                plan.approval_status
+            ) ||
+            submitting,
+
+        onClick: () =>
+            setDialog({
+                open: true,
+                mode: 'confirm',
+                resubmission:
+                    plan.approval_status === 'rejected',
+
+                title:
+                    plan.approval_status === 'rejected'
+                        ? 'Resubmit the revised plan?'
+                        : 'Submit this plan for approval?',
+
+                message:
+                    plan.approval_status === 'rejected'
+                        ? 'The revised plan will start a new approval cycle using the active workflow. The previous rejection and approval history will be retained.'
+                        : 'The plan will enter the configured approval workflow.',
+            }),
+    },
+
+    plan.approval_status === 'under_approval'
+        ? 'Submitted'
+        : plan.approval_status === 'approved'
+            ? 'Approved'
+            : plan.approval_status === 'rejected'
+                ? 'Resubmit for Approval'
+                : 'Submit for Approval'
+)
                     )
                 )
             )

@@ -9,7 +9,7 @@ export const demoWorkflow = {
             id: 1,
             name: 'Office Review',
             approverType: 'role',
-            approver: 'Office/Agency Head',
+            approver: 'Office',
         },
         {
             id: 2,
@@ -21,17 +21,19 @@ export const demoWorkflow = {
             id: 3,
             name: 'Final Approval',
             approverType: 'role',
-            approver: 'Management / Executive',
+            approver: 'Management',
         },
     ],
 };
 
 export const approverOptions = {
     role: [
-        'Office/Agency Head',
+        'Administrator',
+        'test',
+        'Office',
         'Planning Officer',
-        'Division Head',
-        'Management / Executive',
+        'Management',
+        'Technical Administrator',
     ],
     office: [
         'DOST Central Office',

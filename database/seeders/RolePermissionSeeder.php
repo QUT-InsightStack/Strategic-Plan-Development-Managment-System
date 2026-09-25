@@ -60,10 +60,9 @@ class RolePermissionSeeder extends Seeder
             'Administrator' => $permissionsByCode->keys()->all(),
             'Technical Administrator' => $technicalPermissions,
             'Technical Admin' => $technicalPermissions,
-            'test' => $technicalPermissions,
             'Planning Officer' => $planningPermissions,
-            'Division Head' => $viewOnlyPermissions,
-            'Viewer' => $viewOnlyPermissions,
+            'Management' => $viewOnlyPermissions,
+            'Office' => $viewOnlyPermissions,
         ];
 
         foreach ($assignments as $roleName => $codes) {
@@ -116,5 +115,10 @@ class RolePermissionSeeder extends Seeder
             ->each(fn (Role $role) => $role->permissions()->syncWithoutDetaching($documentPermissionIds));
 
         $this->call(ObjectiveCollaborationPermissionSeeder::class);
+        $this->call(ObjectiveProgressPermissionSeeder::class);
+
+        // Include permissions created by the feature seeders above as well.
+        Role::query()->where('role_name', 'test')->first()?->permissions()
+            ->syncWithoutDetaching(Permission::query()->pluck('permission_id')->all());
     }
 }

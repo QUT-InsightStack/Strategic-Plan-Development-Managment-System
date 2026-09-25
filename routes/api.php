@@ -261,6 +261,19 @@ Route::middleware(['auth:api','auth.version','auth.session','system.available',]
 */
 
 Route::middleware(['auth:api', 'auth.version','auth.session','system.available',])->group(function () {
+    Route::get('approval-workflow', [\App\Http\Controllers\ApprovalWorkflowController::class, 'show']);
+    Route::put('approval-workflow', [\App\Http\Controllers\ApprovalWorkflowController::class, 'update']);
+    Route::get('plan-reviews', [\App\Http\Controllers\PlanApprovalController::class, 'index']);
+    Route::get('workflow-notifications', [\App\Http\Controllers\WorkflowNotificationController::class, 'index']);
+    Route::patch('workflow-notifications/{notification}/read', [\App\Http\Controllers\WorkflowNotificationController::class, 'read'])->whereNumber('notification');
+    Route::post('strategic-plans/{plan}/resubmit', [\App\Http\Controllers\PlanApprovalController::class, 'resubmit'])->whereNumber('plan');
+    Route::get('strategic-plans/{plan}/approval-status', [\App\Http\Controllers\PlanApprovalController::class, 'tracking'])->whereNumber('plan');
+    Route::post('strategic-plans/{plan}/submit', [\App\Http\Controllers\PlanApprovalController::class, 'submit'])->whereNumber('plan');
+    Route::get('strategic-plans/{plan}/approval-preparation', [\App\Http\Controllers\PlanApprovalController::class, 'preparation'])->whereNumber('plan');
+    Route::get('strategic-plans/{plan}/approval', [\App\Http\Controllers\PlanApprovalController::class, 'show'])->whereNumber('plan');
+    Route::post('strategic-plans/{plan}/approval/decision', [\App\Http\Controllers\PlanApprovalController::class, 'decide'])->whereNumber('plan');
+    Route::get('plan-submissions/{submission}/documents/{document}', [\App\Http\Controllers\PlanApprovalController::class, 'document'])
+        ->whereNumber('submission')->whereNumber('document');
     Route::get('strategic-plans/{plan}/documents', [StrategicDocumentController::class, 'planIndex'])
         ->whereNumber('plan')->middleware('permission:strategic_documents.view');
     Route::post('strategic-plans/{plan}/documents', [StrategicDocumentController::class, 'storeForPlan'])
@@ -309,6 +322,9 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
     )->whereNumber('planId');
 
     // Strategic objectives, including plan-filtered listing
+    Route::get('strategic-objective-progress', [\App\Http\Controllers\ObjectiveProgressController::class, 'index']);
+    Route::get('strategic-objectives/{objective}/progress-history', [\App\Http\Controllers\ObjectiveProgressController::class, 'history'])->whereNumber('objective');
+    Route::patch('strategic-objectives/{objective}/progress', [\App\Http\Controllers\ObjectiveProgressController::class, 'update'])->whereNumber('objective');
     Route::put(
         'strategic-objectives/{id}/alignments',
         [StrategicObjectiveController::class, 'updateAlignments']
@@ -457,7 +473,4 @@ Route::middleware([
     Route::patch('', [SystemSettingsController::class, 'update'])
         ->middleware('permission:settings.manage');
 });
-
-
-
 

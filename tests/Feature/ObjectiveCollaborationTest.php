@@ -386,6 +386,8 @@ class ObjectiveCollaborationTest extends TestCase
 
     public function test_seeders_provision_planner_and_office_permissions_idempotently(): void
     {
+        // Legacy collaboration roles remain supported, but are no longer defaults.
+        Role::create(['role_name' => 'Responsible Unit User']);
         $this->seed([RolesSeeder::class, PermissionSeeder::class, RolePermissionSeeder::class]);
         $this->seed(RolePermissionSeeder::class);
         $planner = Role::where('role_name', 'Planning Officer')->firstOrFail();

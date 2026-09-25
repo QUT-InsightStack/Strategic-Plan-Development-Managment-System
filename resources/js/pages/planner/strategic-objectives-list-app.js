@@ -11,6 +11,7 @@ import {
 import { listStrategicPlans } from '../../api/strategic-plans-api.js';
 import { ObjectiveFormDialog } from '../../strategic-objectives/ObjectiveFormDialog.js';
 import { AssignUnitDialog } from '../../strategic-objectives/AssignUnitDialog.js';
+import { ObjectiveProgressPanel } from '../../strategic-objectives/ObjectiveProgressPanel.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { AppDialog } from '../../components/AppDialog.js';
 import { PageHeader } from '../../components/PageHeader.js';
@@ -349,6 +350,9 @@ async function confirmArchiveChange() {
             React.createElement(PageHeader, { className: 'manage-plans-header', section: 'Strategic Planning', title: 'Strategic Objectives', subtitle: 'Create, review, update, and assign objectives across your strategic plans.',
                 actions: canCreateObjectives ? React.createElement('button', { type: 'button', className: 'ui-button ui-button--primary manage-plans-create', disabled: loading || plansLoading, onClick: () => { setFormErrors({}); setFormError(''); setForm({ open: true, objective: null, readOnly: false }); } }, React.createElement('i', { className: 'bi bi-plus-lg' }), 'Add Objective') : null }),
             status.message ? React.createElement('div', { className: `ui-status ui-status--${status.type} plans-feedback`, role: 'status' }, status.message) : null,
+            can(PERMISSIONS.OBJECTIVES_VIEW_PROGRESS) && React.createElement('details', null,
+                React.createElement('summary', null, 'Monitor and update progress'),
+                React.createElement(ObjectiveProgressPanel, { key: appliedFilters.plan_id, planId: appliedFilters.plan_id })),
             React.createElement('section', { className: 'ui-card plans-filter-card', 'aria-labelledby': 'objective-filter-title' },
                 React.createElement('div', { className: 'plans-section-header' },
                     React.createElement('div', null,

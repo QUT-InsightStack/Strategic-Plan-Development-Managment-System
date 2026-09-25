@@ -163,14 +163,8 @@ class BackupTest extends TestCase
 
     public function test_a_failed_backup_is_recorded_and_reported(): void
     {
-<<<<<<< HEAD
-        // The test database is :memory:, so there is no file to copy and the
-        // dump fails — which is the case being exercised here.
         $actor = $this->createUserWithPermissions(['backups.view', 'backups.create', 'logs.view']);
-=======
-        $actor = $this->createUserWithPermissions(['backups.view', 'backups.create']);
         Process::fake(['*' => Process::result(errorOutput: 'Simulated dump failure', exitCode: 1)]);
->>>>>>> origin/develop
 
         $this->actingAs($actor, 'api');
         $this->withoutMiddleware(ValidateAuthVersion::class)

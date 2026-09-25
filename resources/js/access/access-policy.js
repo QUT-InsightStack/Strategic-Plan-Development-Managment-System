@@ -23,6 +23,9 @@ export const PERMISSIONS = Object.freeze({
     INPUTS_VIEW: 'implementation_inputs.view',
     OBJECTIVES_CREATE: 'strategic_objectives.create',
     OBJECTIVES_UPDATE: 'strategic_objectives.update',
+    OBJECTIVES_VIEW_PROGRESS: 'strategic_objectives.view_progress',
+    OBJECTIVES_UPDATE_PROGRESS: 'strategic_objectives.update_progress',
+    OBJECTIVES_CORRECT_PROGRESS: 'strategic_objectives.correct_progress',
     OBJECTIVES_DELETE: 'strategic_objectives.delete',
     FOUNDATIONS_VIEW: 'strategic_foundations.view',
     FOUNDATIONS_MANAGE: 'strategic_foundations.manage',
@@ -111,7 +114,7 @@ const rolePolicies = {
     'Administrative Administrator': { home: '/dashboard', permissions: administrativeAdminPermissions },
     'Technical Administrator': { home: '/dashboard', permissions: technicalAdminPermissions },
     'Technical Admin': { home: '/dashboard', permissions: technicalAdminPermissions },
-    test: { home: '/dashboard', permissions: technicalAdminPermissions },
+    test: { home: '/dashboard', permissions: ['*'] },
     'Planning Officer': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
     'Planner/Encoder': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
     'Office Representative': { home: '/office', permissions: officePermissions },
@@ -123,6 +126,7 @@ const rolePolicies = {
     Executive: { home: '/strategic-plans', permissions: fullPlanningPermissions },
     'Management / Executive': { home: '/strategic-plans', permissions: fullPlanningPermissions },
     Viewer: { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.REPORTS_VIEW] },
+    Office: { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.REPORTS_VIEW] },
 };
 
 export function normalizePermissionList(list) {
@@ -142,11 +146,12 @@ export function hasRolePolicy(roleName) {
 }
 
 export const routeRules = [
+    { test: /^\/strategic-plans\/\d+\/approval-status(?:\/|$)/ },
     { test: /^\/consolidate-inputs(?:\/|$)/, permission: PERMISSIONS.INPUTS_VIEW },
     { test: /^\/office(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
     {
     test: /^\/workflow-configuration(?:\/|$)/,
-    permission: PERMISSIONS.SETTINGS_MANAGE,
+    roles: ['Administrator', 'Technical Administrator', 'Technical Admin', 'test'],
 },
     { test: /^\/administrative-admin\/reference-data(?:\/|$)/, permission: PERMISSIONS.REFERENCE_DATA_MANAGE },
     { test: /^\/administrative-admin\/templates(?:\/|$)/, permission: PERMISSIONS.TEMPLATES_MANAGE },
@@ -155,19 +160,14 @@ export const routeRules = [
     { test: /^\/role-management(?:\/|$)/, permission: PERMISSIONS.ROLES_MANAGE },
     { test: /^\/user-management(?:\/|$)/, permission: PERMISSIONS.USERS_VIEW },
     { test: /^\/pdp-chapters\/manage(?:\/|$)/, permission: PERMISSIONS.PDP_CHAPTERS_MANAGE },
-<<<<<<< HEAD
     { test: /^\/login-history(?:\/|$)/, permission: PERMISSIONS.LOGIN_HISTORY_VIEW },
-=======
     { test: /^\/audit-logs(?:\/|$)/, permission: PERMISSIONS.LOGS_VIEW },
-    { test: /^\/login-history(?:\/|$)/, permission: PERMISSIONS.LOGS_VIEW },
->>>>>>> origin/develop
+
     { test: /^\/manual-backup(?:\/|$)/, permission: PERMISSIONS.BACKUPS_VIEW },
 
-// A user must at least be allowed to view strategic plans before the
-// reviewer-assignment validation in the review application is performed.
+// Review access is checked against recorded workflow participants by the API.
 {
     test: /^\/strategic-plan-reviews(?:\/|$)/,
-    permission: PERMISSIONS.PLANS_VIEW,
 },
 
 { test: /^\/strategic-plans\/create(?:\/|$)/, permission: PERMISSIONS.PLANS_CREATE },

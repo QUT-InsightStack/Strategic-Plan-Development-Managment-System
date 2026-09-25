@@ -50,6 +50,7 @@ class SubmittedImplementationInputsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Role::firstOrCreate(['role_name' => 'Responsible Unit User']);
         $this->seed([RolesSeeder::class, PermissionSeeder::class, RolePermissionSeeder::class]);
         $this->planner = $this->user('Planning Officer');
         $this->office = $this->user('Responsible Unit User', 'ICT Office');
@@ -73,7 +74,7 @@ class SubmittedImplementationInputsTest extends TestCase
         foreach ($urls as $url) {
             $this->getJson($url)->assertUnauthorized();
         }
-        $this->authenticateApiUser($this->user('Viewer'));
+        $this->authenticateApiUser($this->user('Office'));
         foreach ($urls as $url) {
             $this->getJson($url)->assertForbidden();
         }
@@ -343,6 +344,7 @@ class SubmittedImplementationInputsTest extends TestCase
     {
         DB::rollBack();
         RefreshDatabaseState::$migrated = false;
+        Role::firstOrCreate(['role_name' => 'Responsible Unit User']);
         $this->seed([RolesSeeder::class, PermissionSeeder::class, RolePermissionSeeder::class]);
         $this->planner = $this->user('Planning Officer');
         $this->office = $this->user('Responsible Unit User', 'ICT Office');
