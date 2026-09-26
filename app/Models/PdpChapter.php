@@ -37,7 +37,10 @@ class PdpChapter extends Model
             'tblobjective_pdp_chapter',
             'chapter_id',
             'objective_id'
-        )->withTimestamps();
+        )
+            ->withPivot(['status', 'archived_at', 'archived_by'])
+            ->wherePivot('status', 'active')
+            ->withTimestamps();
     }
 
     public function creator()

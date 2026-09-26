@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Permission;
 use App\Models\Role;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class RolePermissionSeeder extends Seeder
@@ -22,6 +23,7 @@ class RolePermissionSeeder extends Seeder
             'strategic_foundations.update',
             'strategic_objectives.view', 'strategic_objectives.create',
             'strategic_objectives.update',
+            'strategic_alignments.archive',
             'strategic_documents.view', 'strategic_documents.upload', 'strategic_documents.download',
             'relations.view', 'relations.manage', 'relations.create', 'relations.update',
             'plan_core_values.view', 'plan_core_values.manage', 'plan_core_values.create',
@@ -47,6 +49,15 @@ class RolePermissionSeeder extends Seeder
             'backups.create',
             'backups.download',
             'backups.restore',
+            'strategic_alignments.delete',
+        ];
+
+        $managementPermissions = [
+            'dashboard.view',
+            'strategic_records.view', 'strategic_foundations.view', 'strategic_objectives.view',
+            'strategic_documents.view', 'strategic_documents.download',
+            'relations.view', 'plan_core_values.view',
+            'strategic_alignments.delete',
         ];
 
         $viewOnlyPermissions = [
@@ -58,10 +69,10 @@ class RolePermissionSeeder extends Seeder
 
         $assignments = [
             'Administrator' => $permissionsByCode->keys()->all(),
+            'test' => $permissionsByCode->keys()->all(),
             'Technical Administrator' => $technicalPermissions,
-            'Technical Admin' => $technicalPermissions,
+            'Management' => $managementPermissions,
             'Planning Officer' => $planningPermissions,
-            'Management' => $viewOnlyPermissions,
             'Office' => $viewOnlyPermissions,
         ];
 
@@ -76,12 +87,18 @@ class RolePermissionSeeder extends Seeder
                 throw new RuntimeException("Missing {$roleName} permissions: ".implode(', ', $missing));
             }
 
-            $role->permissions()->syncWithoutDetaching(
+            $changes = $role->permissions()->syncWithoutDetaching(
                 $permissionsByCode
                     ->filter(fn (Permission $permission) => in_array($permission->code, $codes, true))
                     ->pluck('permission_id')
                     ->all()
             );
+            
+            if (($changes['attached'] ?? []) !== []) {
+                DB::table('tblusers')
+                    ->where('role_id', $role->role_id)
+                    ->increment('auth_version');
+            }
         }
 
         // These contributor roles may create, review, update, and archive,
@@ -102,8 +119,14 @@ class RolePermissionSeeder extends Seeder
             ->all();
 
         Role::query()
-            ->whereIn('role_name', $restrictedRoleNames)
-            ->each(fn (Role $role) => $role->permissions()->detach($deletePermissionIds));
+        ->whereIn('role_name', $restrictedRoleNames)
+        ->each(function (Role $role) use ($deletePermissionIds): void {
+            if ($role->permissions()->detach($deletePermissionIds) > 0) {
+                DB::table('tblusers')
+                    ->where('role_id', $role->role_id)
+                    ->increment('auth_version');
+            }
+        });
 
         $documentPermissionIds = $permissionsByCode
             ->filter(fn (Permission $permission) => str_starts_with($permission->code, 'strategic_documents.'))
@@ -111,14 +134,33 @@ class RolePermissionSeeder extends Seeder
             ->all();
 
         Role::query()
-            ->whereIn('role_name', $restrictedRoleNames)
-            ->each(fn (Role $role) => $role->permissions()->syncWithoutDetaching($documentPermissionIds));
+        ->whereIn('role_name', $restrictedRoleNames)
+        ->each(function (Role $role) use ($documentPermissionIds): void {
+            $changes = $role->permissions()->syncWithoutDetaching($documentPermissionIds);
+    
+            if (($changes['attached'] ?? []) !== []) {
+                DB::table('tblusers')
+                    ->where('role_id', $role->role_id)
+                    ->increment('auth_version');
+            }
+        });
 
         $this->call(ObjectiveCollaborationPermissionSeeder::class);
         $this->call(ObjectiveProgressPermissionSeeder::class);
 
         // Include permissions created by the feature seeders above as well.
-        Role::query()->where('role_name', 'test')->first()?->permissions()
-            ->syncWithoutDetaching(Permission::query()->pluck('permission_id')->all());
+        $testRole = Role::query()->where('role_name', 'test')->first();
+
+        if ($testRole) {
+            $changes = $testRole->permissions()->syncWithoutDetaching(
+                Permission::query()->pluck('permission_id')->all()
+            );
+
+            if (($changes['attached'] ?? []) !== []) {
+                DB::table('tblusers')
+                    ->where('role_id', $testRole->role_id)
+                    ->increment('auth_version');
+            }
+        }
     }
 }

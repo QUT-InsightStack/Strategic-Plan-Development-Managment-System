@@ -22,6 +22,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\StrategicDocumentController;
 use App\Http\Controllers\PresidentialAgendaItemController;
+use App\Http\Controllers\StrategicObjectiveAlignmentController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:api', 'auth.version', 'permission:system_monitoring.view'])
@@ -329,10 +330,30 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
         'strategic-objectives/{id}/alignments',
         [StrategicObjectiveController::class, 'updateAlignments']
     )->whereNumber('id');
+
     Route::post(
         'strategic-objectives/{id}/alignments',
         [StrategicObjectiveController::class, 'storeAlignments']
     )->whereNumber('id');
+
+    Route::patch(
+        'strategic-objectives/{id}/alignments/{type}/{referenceId}/archive',
+        [StrategicObjectiveAlignmentController::class, 'archive']
+    )
+        ->whereNumber('id')
+        ->whereNumber('referenceId')
+        ->where('type', 'pdp-chapter|presidential-agenda')
+        ->middleware('permission:strategic_alignments.archive');
+
+    Route::delete(
+        'strategic-objectives/{id}/alignments/{type}/{referenceId}',
+        [StrategicObjectiveAlignmentController::class, 'destroy']
+    )
+        ->whereNumber('id')
+        ->whereNumber('referenceId')
+        ->where('type', 'pdp-chapter|presidential-agenda')
+        ->middleware('permission:strategic_alignments.delete');    
+
     Route::get('responsible-units', [ResponsibleUnitController::class, 'index']);
     Route::put('strategic-objectives/responsible-unit', [ResponsibleUnitController::class, 'assign']);
     Route::put('strategic-objectives/{id}/responsible-unit', [ResponsibleUnitController::class, 'assign'])->whereNumber('id');

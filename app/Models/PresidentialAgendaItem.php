@@ -38,7 +38,10 @@ class PresidentialAgendaItem extends Model
             'tblobjective_presidential_agenda',
             'agenda_id',
             'objective_id'
-        )->withTimestamps();
+        )
+            ->withPivot(['status', 'archived_at', 'archived_by'])
+            ->wherePivot('status', 'active')
+            ->withTimestamps();
     }
 
     public function creator()
