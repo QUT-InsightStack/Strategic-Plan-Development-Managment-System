@@ -213,6 +213,12 @@ class PermissionSeeder extends Seeder
                 'module' => 'strategic_alignments',
             ],
             [
+                'permission_name' => 'Delete Strategic Alignments',
+                'description' => 'Allows approved Management and Technical Administrators to permanently delete eligible Strategic Alignment mappings.',
+                'code' => 'strategic_alignments.delete',
+                'module' => 'strategic_alignments',
+            ],
+            [
                 'permission_name' => 'Manage Relations',
                 'description' => 'Allows maintaining relation mappings between strategic records.',
                 'code' => 'relations.manage',

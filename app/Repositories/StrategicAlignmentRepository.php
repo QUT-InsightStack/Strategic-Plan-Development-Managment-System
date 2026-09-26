@@ -75,4 +75,24 @@ class StrategicAlignmentRepository
                 'updated_at' => $archivedAt,
             ]);
     }
+
+        /**
+     * Deletes exactly one active composite-key pivot row.
+     *
+     * The caller must already hold the plan, objective, and mapping locks
+     * inside a database transaction.
+     */
+    public function deleteActive(
+        string $type,
+        int $objectiveId,
+        int $referenceId
+    ): int {
+        $definition = $this->definition($type);
+
+        return DB::table($definition['table'])
+            ->where('objective_id', $objectiveId)
+            ->where($definition['reference_column'], $referenceId)
+            ->where('status', 'active')
+            ->delete();
+    }
 }
