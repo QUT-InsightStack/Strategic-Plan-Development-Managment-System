@@ -437,6 +437,9 @@ class StrategicObjectiveController extends Controller
             );
             $this->ensureObjectiveCanBeChanged($objective);
 
+            // Checked under the plan lock, so submission cannot interleave.
+            $alignmentService->ensurePlanPermitsAlignmentChanges($plan);
+
             if ($replace) {
                 $changes = $alignmentService->update($objective, $data);
                 if ($changes === []) {

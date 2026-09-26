@@ -22,6 +22,7 @@ class RolePermissionSeeder extends Seeder
             'strategic_foundations.update',
             'strategic_objectives.view', 'strategic_objectives.create',
             'strategic_objectives.update',
+            'strategic_alignments.archive',
             'strategic_documents.view', 'strategic_documents.upload', 'strategic_documents.download',
             'relations.view', 'relations.manage', 'relations.create', 'relations.update',
             'plan_core_values.view', 'plan_core_values.manage', 'plan_core_values.create',

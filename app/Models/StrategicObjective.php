@@ -46,26 +46,58 @@ class StrategicObjective extends Model
         return $this->belongsTo(Strategic::class, 'strategic_plan_id', 'record_id');
     }
 
+        /**
+     * Active mappings only. Used by API responses and approval snapshots.
+     */
     public function pdpChapters(): BelongsToMany
+    {
+        return $this->pdpChaptersWithArchived()
+            ->wherePivot('status', 'active');
+    }
+
+    /**
+     * Active mappings only. Used by API responses and approval snapshots.
+     */
+    public function presidentialAgendaItems(): BelongsToMany
+    {
+        return $this->presidentialAgendaItemsWithArchived()
+            ->wherePivot('status', 'active');
+    }
+
+    /**
+     * Historical read access, including archived mappings. Never use this
+     * for active views, calculations, or plan validation.
+     */
+    public function pdpChaptersWithArchived(): BelongsToMany
     {
         return $this->belongsToMany(
             PdpChapter::class,
             'tblobjective_pdp_chapter',
             'objective_id',
             'chapter_id'
-        )->withTimestamps()->orderBy('tblpdp_chapters.chapter_id');
+        )
+            ->withPivot(['status', 'archived_at', 'archived_by'])
+            ->withTimestamps()
+            ->orderBy('tblpdp_chapters.chapter_id');
     }
 
-    public function presidentialAgendaItems(): BelongsToMany
+    /**
+     * Historical read access, including archived mappings. Never use this
+     * for active views, calculations, or plan validation.
+     */
+    public function presidentialAgendaItemsWithArchived(): BelongsToMany
     {
         return $this->belongsToMany(
             PresidentialAgendaItem::class,
             'tblobjective_presidential_agenda',
             'objective_id',
             'agenda_id'
-        )->withTimestamps()->orderBy('tblpresidential_agenda_items.agenda_id');
+        )
+            ->withPivot(['status', 'archived_at', 'archived_by'])
+            ->withTimestamps()
+            ->orderBy('tblpresidential_agenda_items.agenda_id');
     }
-
+    
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by', 'user_id');

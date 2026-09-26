@@ -207,6 +207,12 @@ class PermissionSeeder extends Seeder
                 'module' => 'strategic_objectives',
             ],
             [
+                'permission_name' => 'Archive Strategic Alignments',
+                'description' => 'Allows archiving obsolete or incorrect Strategic Alignment mappings.',
+                'code' => 'strategic_alignments.archive',
+                'module' => 'strategic_alignments',
+            ],
+            [
                 'permission_name' => 'Manage Relations',
                 'description' => 'Allows maintaining relation mappings between strategic records.',
                 'code' => 'relations.manage',
