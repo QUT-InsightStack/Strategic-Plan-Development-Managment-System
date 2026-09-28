@@ -27,6 +27,7 @@ export default defineConfig({
                 'resources/css/manual-backup.css',
                 'resources/css/workflow-configuration.css',
                 'resources/css/strategic-plan-review.css',
+                'resources/css/approval-status.css',
                 'resources/css/access-denied.css',
                 'resources/js/app.js',
                 'resources/js/pages/technical-admin/create-user-app.js',
