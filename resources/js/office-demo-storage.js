@@ -103,6 +103,17 @@ export function resubmitLocalAgencyInput(id, data) {
     write(INPUTS_KEY, items); return items[index];
 }
 
+// Read-only view of every locally recorded agency input, for dashboards that
+// summarise inputs across all plans rather than paging through one list.
+export function listAllLocalAgencyInputs() {
+    return read(INPUTS_KEY, []);
+}
+
+// Read-only view of every locally recorded progress update across plans.
+export function listAllLocalProgressUpdates() {
+    return read(UPDATES_KEY, []).filter(item => item.kind === 'progress');
+}
+
 export function listLocalOfficeUpdates(planId, page = 1) {
     const all = read(UPDATES_KEY, []).filter(item => Number(item.plan_id) === Number(planId));
     const perPage = 10;

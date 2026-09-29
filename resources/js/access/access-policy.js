@@ -114,9 +114,9 @@ const rolePolicies = {
     'Offices / Agencies': { home: '/office', permissions: officePermissions },
     'Responsible Unit User': { home: '/office', permissions: officePermissions },
     'Division Head': { home: '/strategic-plans', permissions: fullPlanningPermissions },
-    Management: { home: '/strategic-plans', permissions: fullPlanningPermissions },
-    Executive: { home: '/strategic-plans', permissions: fullPlanningPermissions },
-    'Management / Executive': { home: '/strategic-plans', permissions: fullPlanningPermissions },
+    Management: { home: '/management-dashboard', permissions: fullPlanningPermissions },
+    Executive: { home: '/management-dashboard', permissions: fullPlanningPermissions },
+    'Management / Executive': { home: '/management-dashboard', permissions: fullPlanningPermissions },
     Viewer: { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.REPORTS_VIEW] },
 };
 
@@ -146,6 +146,7 @@ export const routeRules = [
     { test: /^\/administrative-admin\/reference-data(?:\/|$)/, permission: PERMISSIONS.REFERENCE_DATA_MANAGE },
     { test: /^\/administrative-admin\/templates(?:\/|$)/, permission: PERMISSIONS.TEMPLATES_MANAGE },
     { test: /^\/dashboard(?:\/|$)/, permission: PERMISSIONS.DASHBOARD_VIEW },
+    { test: /^\/management-dashboard(?:\/|$)/, permission: PERMISSIONS.DASHBOARD_VIEW },
     { test: /^\/settings(?:\/|$)/, permission: PERMISSIONS.SETTINGS_MANAGE },
     { test: /^\/role-management(?:\/|$)/, permission: PERMISSIONS.ROLES_MANAGE },
     { test: /^\/user-management(?:\/|$)/, permission: PERMISSIONS.USERS_VIEW },

@@ -5,11 +5,13 @@ import { apiRequest } from '../api/api-client.js';
 import { displayRoleName } from '../access/role-labels.js';
 import { LogoutButton } from './LogoutButton.js';
 import { isOfficeRole, officeItems } from '../access/office-navigation.js';
+import { isManagementSession } from '../access/management-access.js';
 
 const { useState, useEffect } = React;
 
 const items = [
     { label: 'Home', icon: 'bi-house-door-fill', href: '/dashboard', permission: PERMISSIONS.DASHBOARD_VIEW },
+    { label: 'Management Dashboard', icon: 'bi-speedometer2', href: '/management-dashboard', permission: PERMISSIONS.DASHBOARD_VIEW, management: true },
     {
         label: 'Planning Module',
         icon: 'bi-clipboard2-check',
@@ -105,6 +107,7 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
 
     function renderItem(item) {
         if (item.permission && !can(item.permission, accessSession)) return null;
+        if (item.management && !isManagementSession(accessSession)) return null;
         if (item.children) {
             if (!item.children.some(child => !child.permission || can(child.permission, accessSession))) return null;
             const expanded = Boolean(openMenus[item.label]);

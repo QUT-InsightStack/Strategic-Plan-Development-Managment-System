@@ -14,6 +14,7 @@ Route::get('/reset-password/{token}', function (string $token, Request $request)
     ]);
 })->name('password.reset');
 Route::view('/dashboard', 'pages.dashboard')->name('dashboard');
+Route::view('/management-dashboard', 'pages.management-dashboard')->name('management-dashboard');
 Route::view('/administrative-admin/reference-data', 'pages.reference-data')
     ->name('administrative-admin.reference-data');
 Route::view('/administrative-admin/reference-data/agenda/create', 'pages.reference-data')

@@ -152,3 +152,105 @@ export function submitPlanForApproval(plan) {
 
     return submission;
 }
+
+export const APPROVAL_DECISIONS = Object.freeze([
+    'approved',
+    'returned',
+    'rejected',
+]);
+
+/*
+ * Records an approver's decision on the plan's current stage.
+ *
+ * Approving moves the plan to the next stage of the workflow snapshot taken
+ * at submission, or marks it approved after the final stage. Returning or
+ * rejecting ends the submission and needs a note explaining why. The caller
+ * is responsible for only offering this to the assigned approver.
+ */
+export function recordApprovalDecision(
+    planId,
+    { decision, note = '', decidedBy = '' }
+) {
+    if (!APPROVAL_DECISIONS.includes(decision)) {
+        throw new Error('Choose approve, return, or reject.');
+    }
+
+    const trimmedNote = String(note || '').trim();
+
+    if (decision !== 'approved' && !trimmedNote) {
+        throw new Error(
+            'Add a note explaining why the plan is being returned or rejected.'
+        );
+    }
+
+    const submissions = readStorage(
+        SUBMISSION_STORAGE_KEY,
+        {}
+    );
+    const key = String(planId);
+    const submission = submissions[key];
+
+    if (
+        !submission ||
+        submission.status !== 'under_approval' ||
+        submission.currentStage?.status !== 'pending'
+    ) {
+        throw new Error(
+            'This Strategic Plan is not waiting for an approval decision.'
+        );
+    }
+
+    const stages =
+        submission.workflowSnapshot?.stages || [];
+    const occurredAt = new Date().toISOString();
+    const current = submission.currentStage;
+    const nextIndex =
+        submission.currentStageIndex + 1;
+    const nextStage =
+        decision === 'approved'
+            ? stages[nextIndex]
+            : null;
+
+    const history = [
+        ...(submission.history || []),
+        {
+            action: decision,
+            stageSequence: current.sequence,
+            stageName: current.name,
+            assignedApprover: current.approver,
+            decidedBy,
+            note: trimmedNote,
+            occurredAt,
+        },
+    ];
+
+    const updated = nextStage
+        ? {
+              ...submission,
+              currentStageIndex: nextIndex,
+              currentStage: {
+                  sequence: nextIndex + 1,
+                  stageId: nextStage.id,
+                  name: nextStage.name,
+                  approverType: nextStage.approverType,
+                  approver: nextStage.approver,
+                  status: 'pending',
+              },
+              history,
+          }
+        : {
+              ...submission,
+              status: decision,
+              decidedAt: occurredAt,
+              currentStage: {
+                  ...current,
+                  status: decision,
+              },
+              history,
+          };
+
+    submissions[key] = updated;
+    writeSubmissions(submissions);
+
+    return updated;
+}
