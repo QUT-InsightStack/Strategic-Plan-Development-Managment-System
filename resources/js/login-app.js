@@ -2,7 +2,7 @@ import { BrandLogo } from './brand-logo.js';
 import { clearLogoutFlag } from './auth-session.js';
 import { createAccessSession, saveAccessSession } from './access/access-session.js';
 
-const { useEffect, useState } = React;
+const { useEffect, useRef, useState } = React;
 
 const messages = {
     systemNotice: 'There are no system notices at this time.',
@@ -121,8 +121,12 @@ function AccessIntro() {
     );
 }
 
-function FieldError({ message }) {
-    return React.createElement('p', { className: 'field-error' }, message || '');
+function FieldError({ id, message }) {
+    return React.createElement('p', { className: 'field-error', id, role: message ? 'alert' : undefined }, message || '');
+}
+
+function Spinner() {
+    return React.createElement('span', { className: 'button-spinner', 'aria-hidden': 'true' });
 }
 
 function EyeIcon({ hidden }) {
@@ -150,6 +154,9 @@ function LoginForm({ status, setStatus }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [lockedUntil, setLockedUntil] = useState(null);
     const [lockSecondsLeft, setLockSecondsLeft] = useState(0);
+    const [capsLockOn, setCapsLockOn] = useState(false);
+    const emailRef = useRef(null);
+    const passwordRef = useRef(null);
 
     const isLocked = lockedUntil !== null;
 
@@ -160,6 +167,10 @@ function LoginForm({ status, setStatus }) {
             setEmail(savedEmail);
             setRemember(true);
         }
+
+        // Start where the user needs to type: the password when the email is
+        // remembered, otherwise the email.
+        (savedEmail ? passwordRef : emailRef).current?.focus();
     }, []);
 
     useEffect(() => {
@@ -199,6 +210,10 @@ function LoginForm({ status, setStatus }) {
         }
 
         setErrors(nextErrors);
+
+        if (nextErrors.email) emailRef.current?.focus();
+        else if (nextErrors.password) passwordRef.current?.focus();
+
         return Object.keys(nextErrors).length === 0;
     }
 
@@ -254,6 +269,9 @@ function LoginForm({ status, setStatus }) {
                 setStatus('', 'info');
             } else {
                 setStatus(error.message, 'error');
+                setPassword('');
+                // The field is re-enabled once submission finishes; focus it after that render.
+                window.setTimeout(() => passwordRef.current?.focus(), 0);
             }
         } finally {
             setIsSubmitting(false);
@@ -267,7 +285,7 @@ function LoginForm({ status, setStatus }) {
             'div',
             { className: 'card-heading' },
             React.createElement('h2', { id: 'signin-title' }, 'Sign In'),
-            React.createElement('p', null, 'Please sign in to continue...')
+            React.createElement('p', null, 'Use your work email and password to continue.')
         ),
         React.createElement(
             'form',
@@ -295,21 +313,38 @@ function LoginForm({ status, setStatus }) {
                     )
                 )
                 : null,
+            !isLocked && status.type === 'error' && status.message
+                ? React.createElement(
+                    'div',
+                    { className: 'login-alert', role: 'alert' },
+                    React.createElement('span', { className: 'login-alert__icon', 'aria-hidden': 'true' }, '!'),
+                    React.createElement('p', null, status.message)
+                )
+                : null,
             React.createElement(
                 'div',
                 { className: `field-group ${errors.email ? 'has-error' : ''}` },
-                React.createElement('label', { htmlFor: 'email' }, 'UserName'),
+                React.createElement('label', { htmlFor: 'email' }, 'Email address'),
                 React.createElement('input', {
                     id: 'email',
                     name: 'email',
                     type: 'email',
                     autoComplete: 'email',
-                    placeholder: 'Enter your email id',
+                    inputMode: 'email',
+                    autoCapitalize: 'none',
+                    spellCheck: false,
+                    placeholder: 'name@agency.gov.ph',
                     value: email,
-                    disabled: isLocked,
-                    onChange: (event) => setEmail(event.target.value),
+                    ref: emailRef,
+                    disabled: isLocked || isSubmitting,
+                    'aria-invalid': errors.email ? 'true' : 'false',
+                    'aria-describedby': errors.email ? 'email-error' : undefined,
+                    onChange: (event) => {
+                        setEmail(event.target.value);
+                        if (errors.email) setErrors((current) => ({ ...current, email: undefined }));
+                    },
                 }),
-                React.createElement(FieldError, { message: errors.email })
+                React.createElement(FieldError, { id: 'email-error', message: errors.email })
             ),
             React.createElement(
                 'div',
@@ -325,8 +360,17 @@ function LoginForm({ status, setStatus }) {
                         autoComplete: 'current-password',
                         placeholder: 'Enter your password',
                         value: password,
-                        disabled: isLocked,
-                        onChange: (event) => setPassword(event.target.value),
+                        ref: passwordRef,
+                        disabled: isLocked || isSubmitting,
+                        'aria-invalid': errors.password ? 'true' : 'false',
+                        'aria-describedby': [errors.password ? 'password-error' : '', capsLockOn ? 'caps-lock-note' : ''].filter(Boolean).join(' ') || undefined,
+                        onChange: (event) => {
+                            setPassword(event.target.value);
+                            if (errors.password) setErrors((current) => ({ ...current, password: undefined }));
+                        },
+                        onKeyUp: (event) => setCapsLockOn(Boolean(event.getModifierState?.('CapsLock'))),
+                        onKeyDown: (event) => setCapsLockOn(Boolean(event.getModifierState?.('CapsLock'))),
+                        onBlur: () => setCapsLockOn(false),
                     }),
                     React.createElement(
                         'button',
@@ -341,7 +385,10 @@ function LoginForm({ status, setStatus }) {
                         React.createElement(EyeIcon, { hidden: !showPassword })
                     )
                 ),
-                React.createElement(FieldError, { message: errors.password })
+                capsLockOn
+                    ? React.createElement('p', { className: 'caps-lock-note', id: 'caps-lock-note' }, 'Caps Lock is on.')
+                    : null,
+                React.createElement(FieldError, { id: 'password-error', message: errors.password })
             ),
             React.createElement(
                 'div',
@@ -353,6 +400,7 @@ function LoginForm({ status, setStatus }) {
                         type: 'checkbox',
                         name: 'remember',
                         checked: remember,
+                        disabled: isLocked,
                         onChange: (event) => setRemember(event.target.checked),
                     }),
                     React.createElement('span', null, 'Remember Me')
@@ -366,7 +414,7 @@ function LoginForm({ status, setStatus }) {
             window.location.href = '/forgot-password';
         },
     },
-    'Forgot Password?'
+    'Forgot password?'
 )
             ),
             React.createElement(
@@ -374,11 +422,13 @@ function LoginForm({ status, setStatus }) {
                 {
                     className: 'ui-button ui-button--primary signin-button',
                     type: 'submit',
-                    disabled: isSubmitting || isLocked
+                    disabled: isSubmitting || isLocked,
+                    'aria-busy': isSubmitting ? 'true' : undefined,
                 },
+                isSubmitting ? React.createElement(Spinner) : null,
                 isLocked ? `Locked - ${formatLockCountdown(lockSecondsLeft)}` : isSubmitting ? 'Signing in...' : 'Sign in'
             ),
-            React.createElement('p', { className: `form-status is-${status.type}`, role: 'status', 'aria-live': 'polite' }, status.message),
+            React.createElement('p', { className: `form-status is-${status.type}`, role: 'status', 'aria-live': 'polite' }, status.type === 'error' ? '' : status.message),
             React.createElement('p', { className: 'access-note' }, "Access is granted based on the user's assigned role and permissions.")
         )
     );
