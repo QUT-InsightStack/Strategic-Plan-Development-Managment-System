@@ -48,6 +48,7 @@ const monitoringItems = [
 ];
 
 const securityItems = [
+    { label: 'System Activity', icon: 'bi-activity', href: '/system-monitoring', permission: PERMISSIONS.SYSTEM_MONITORING_VIEW },
     { label: 'Login History', icon: 'bi-clock-history', href: '/login-history', permission: PERMISSIONS.LOGS_VIEW },
     { label: 'Security Logs', icon: 'bi-shield-exclamation', notice: 'Security Logs is reserved for its implementation page.', permission: PERMISSIONS.LOGS_VIEW },
     { label: 'Audit Logs', icon: 'bi-journal-check', href: '/audit-logs', permission: PERMISSIONS.LOGS_VIEW },
