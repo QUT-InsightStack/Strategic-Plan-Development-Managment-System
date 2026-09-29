@@ -49,6 +49,8 @@
 .mapping-action:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-sm); }
 .mapping-action--archive { color: var(--color-warning); }
 .mapping-action--restore { color: var(--color-primary); }
+.mapping-action--delete { color: var(--color-danger); }
+.mapping-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
 .mapping-action:hover:not(:disabled) { text-decoration: underline; }
 .mapping-count { margin: var(--space-2) var(--space-4) var(--space-3); color: var(--color-text-secondary); font-size: var(--font-size-xs); }
 .mapping-reference-step { margin-bottom: var(--space-5); overflow: hidden; }

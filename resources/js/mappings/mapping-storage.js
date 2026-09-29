@@ -66,6 +66,17 @@ export function archiveLocalMapping(id, session = {}) {
     return items[index];
 }
 
+// Permanently removes a mapping, active or archived. There is no undo, so
+// callers must confirm with the user first.
+export function deleteLocalMapping(id) {
+    const items = readAll();
+    const index = items.findIndex(item => Number(item.id) === Number(id));
+    if (index < 0) throw new Error('This mapping no longer exists.');
+    const [removed] = items.splice(index, 1);
+    writeAll(items);
+    return removed;
+}
+
 export function restoreLocalMapping(id, session = {}) {
     const items = readAll();
     const index = items.findIndex(item => Number(item.id) === Number(id));
