@@ -67,6 +67,7 @@ export default defineConfig({
                 'resources/js/pages/management/strategic-plan-reviews-app.js',
                 'resources/js/pages/management/strategic-plan-review-app.js',
                 'resources/js/pages/management/management-dashboard-app.js',
+                'resources/js/pages/management/management-plan-review-app.js',
                 'resources/js/pages/shared/pdp-chapters-app.js',
                 'resources/js/pages/shared/access-denied-app.js',
             ],
