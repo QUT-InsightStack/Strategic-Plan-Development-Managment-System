@@ -62,6 +62,19 @@ const fullPlanningPermissions = [
     PERMISSIONS.REPORTS_VIEW,
 ];
 
+const managementPermissions = [
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.PLANS_VIEW,
+    PERMISSIONS.FOUNDATIONS_VIEW,
+    PERMISSIONS.OBJECTIVES_VIEW,
+    PERMISSIONS.OBJECTIVES_VIEW_PROGRESS,
+    PERMISSIONS.INPUTS_VIEW,
+    'relations.view',
+    'plan_core_values.view',
+    'strategic_documents.view',
+    'strategic_documents.download',
+];
+
 const contributorPlanningPermissions = [
     PERMISSIONS.DASHBOARD_VIEW,
     PERMISSIONS.PLANS_VIEW,
@@ -125,9 +138,9 @@ const rolePolicies = {
     'Offices / Agencies': { home: '/office', permissions: officePermissions },
     'Responsible Unit User': { home: '/office', permissions: officePermissions },
     'Division Head': { home: '/strategic-plans', permissions: fullPlanningPermissions },
-    Management: { home: '/strategic-plans', permissions: fullPlanningPermissions },
-    Executive: { home: '/strategic-plans', permissions: fullPlanningPermissions },
-    'Management / Executive': { home: '/strategic-plans', permissions: fullPlanningPermissions },
+    Management: { home: '/management-dashboard', permissions: managementPermissions },
+    Executive: { home: '/management-dashboard', permissions: managementPermissions },
+    'Management / Executive': { home: '/management-dashboard', permissions: managementPermissions },
     Viewer: { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.REPORTS_VIEW] },
     Office: { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.REPORTS_VIEW] },
 };
@@ -149,6 +162,7 @@ export function hasRolePolicy(roleName) {
 }
 
 export const routeRules = [
+    { test: /^\/management-dashboard(?:\/|$)/, roles: ['Management', 'Executive', 'Management / Executive'] },
     { test: /^\/strategic-plans\/\d+\/approval-status(?:\/|$)/ },
     { test: /^\/consolidate-inputs(?:\/|$)/, permission: PERMISSIONS.INPUTS_VIEW },
     { test: /^\/office(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },

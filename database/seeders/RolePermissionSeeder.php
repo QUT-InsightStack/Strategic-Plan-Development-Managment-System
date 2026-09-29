@@ -57,7 +57,6 @@ class RolePermissionSeeder extends Seeder
             'strategic_records.view', 'strategic_foundations.view', 'strategic_objectives.view',
             'strategic_documents.view', 'strategic_documents.download',
             'relations.view', 'plan_core_values.view',
-            'strategic_alignments.delete',
         ];
 
         $viewOnlyPermissions = [
@@ -101,11 +100,12 @@ class RolePermissionSeeder extends Seeder
             }
         }
 
-        // These contributor roles may create, review, update, and archive,
-        // but must never retain a permission whose action is Delete. The
-        // explicit detach is required because syncWithoutDetaching above does
+        // Contributor roles must not retain delete rights; Management is
+        // read-only and must not retain alignment deletion from older seeds.
+        // The explicit detach is required because syncWithoutDetaching above does
         // not revoke permissions assigned by an earlier seeder run.
         $restrictedRoleNames = [
+            'Management',
             'Planning Officer',
             'Planner/Encoder',
             'Office Representative',

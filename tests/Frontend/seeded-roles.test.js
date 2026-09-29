@@ -4,10 +4,9 @@ import { can, createAccessSession } from '../../resources/js/access/access-sessi
 import { policyForRole, routeRules, PERMISSIONS } from '../../resources/js/access/access-policy.js';
 import { displayRoleName } from '../../resources/js/access/role-labels.js';
 import { isOfficeRole } from '../../resources/js/access/office-navigation.js';
-import { demoRoles } from '../../resources/js/data/role-management-demo-data.js';
+import { assignUserRole } from '../../resources/js/api/users-api.js';
 
 test('renamed roles keep their previous navigation and fallback permissions', () => {
-    assert.deepEqual(policyForRole('Management'), policyForRole('Division Head'));
     assert.deepEqual(policyForRole('Office'), policyForRole('Viewer'));
     const session = createAccessSession({ role_name: 'Office', permissions: ['strategic_records.view'] });
     assert.equal(session.home, '/strategic-plans');
@@ -16,6 +15,18 @@ test('renamed roles keep their previous navigation and fallback permissions', ()
     assert.equal(isOfficeRole('Office'), true); // The upgraded Office role uses Office navigation.
     const management = createAccessSession({ role_name: 'Management', permissions: ['strategic_records.view'] });
     assert.equal(can(PERMISSIONS.PLANS_DELETE, management), false);
+});
+
+test('Management has its own read-only oversight dashboard permissions', () => {
+    const policy = policyForRole('Management');
+    const session = createAccessSession({ role_name: 'Management' });
+    assert.equal(policy.home, '/management-dashboard');
+    assert.equal(can(PERMISSIONS.OBJECTIVES_VIEW_PROGRESS, session), true);
+    assert.equal(can(PERMISSIONS.INPUTS_VIEW, session), true);
+    assert.equal(can('relations.view', session), true);
+    assert.equal(can(PERMISSIONS.OBJECTIVES_UPDATE_PROGRESS, session), false);
+    assert.equal(can(PERMISSIONS.OBJECTIVES_CORRECT_PROGRESS, session), false);
+    assert.equal(can(PERMISSIONS.MAPPINGS_MANAGE, session), false);
 });
 
 test('test account has full permissions and can enter workflow configuration', () => {
@@ -27,8 +38,20 @@ test('test account has full permissions and can enter workflow configuration', (
     assert.equal(displayRoleName('Office'), 'Office');
 });
 
-test('role management demonstration uses the six seeded role names', () => {
-    assert.deepEqual(demoRoles.map(role => role.name).sort(), [
-        'Administrator', 'test', 'Planning Officer', 'Management', 'Office', 'Technical Administrator',
-    ].sort());
+test('role assignment is persisted through the authenticated user role API', async () => {
+    const originalFetch = globalThis.fetch;
+    let request;
+    globalThis.fetch = async (url, options) => {
+        request = { url, options };
+        return { ok: true, status: 200, headers: new Headers(), json: async () => ({ message: 'Role assigned successfully.' }) };
+    };
+
+    try {
+        await assignUserRole(42, 3);
+        assert.equal(request.url, '/api/users/42/role');
+        assert.equal(request.options.method, 'PUT');
+        assert.deepEqual(JSON.parse(request.options.body), { role_id: 3 });
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
 });
