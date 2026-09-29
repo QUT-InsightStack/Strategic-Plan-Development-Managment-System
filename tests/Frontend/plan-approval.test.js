@@ -147,8 +147,8 @@ test('tracking displays current reviewer and history from previous and current c
     const tree = await app.load();
     assert.match(text(tree), /Assigned Reviewer/);
     const rows = nodes(tree, node => node.type === 'tr');
-    assert.match(text(rows[1]), /#5 Rejected.*Clarify targets/);
-    assert.match(text(rows[2]), /#8 Resubmitted.*Targets updated/);
+    assert.match(text(rows[1]), /#5\s+Rejected.*Clarify targets/);
+    assert.match(text(rows[2]), /#8\s+Resubmitted.*Targets updated/);
 });
 
 test('notification inbox marks the selected notification as read through the authenticated API', async () => {

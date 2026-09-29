@@ -1,5 +1,6 @@
 import { getCurrentUser } from './api/auth-api.js';
 import { getSecuritySettings } from './api/security-settings-api.js';
+import { getAccessSession } from './access/access-session.js';
 
 /**
  * Idle session timeout.
@@ -99,6 +100,11 @@ function recordActivity() {
  * all authenticated users requires a backend change and is tracked separately.
  */
 async function resolveTimeoutMinutes() {
+    const session = getAccessSession();
+    if (!['Technical Administrator', 'Technical Admin', 'Administrator'].includes(session?.roleName)) {
+        return DEFAULT_TIMEOUT_MINUTES;
+    }
+
     try {
         const payload = await getSecuritySettings();
         const minutes = Number(payload?.data?.session_timeout_minutes);

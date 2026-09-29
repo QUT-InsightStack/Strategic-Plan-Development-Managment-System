@@ -16,7 +16,7 @@ class ObjectiveProgressService
 {
     private const PLANNING_ROLES = ['Administrator', 'Planning Officer', 'Planner/Encoder', 'test'];
 
-    private const OFFICE_ROLES = ['Responsible Unit User', 'Office Representative', 'Office/Agency', 'Offices / Agencies'];
+    private const OFFICE_ROLES = ['Office', 'Responsible Unit User', 'Office Representative', 'Office/Agency', 'Offices / Agencies'];
 
     public function __construct(
         private readonly PermissionAuthorizationService $permissions,

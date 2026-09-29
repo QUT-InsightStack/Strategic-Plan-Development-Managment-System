@@ -20,7 +20,8 @@ function panel(roleName) {
             },
             useEffect: effect => effects.push(effect),
         },
-        can: () => true, getAccessSession: () => ({ roleName }), P: PERMISSIONS,
+        can: permission => permission === (roleName === 'Planning Officer' ? PERMISSIONS.OBJECTIVES_CORRECT_PROGRESS : PERMISSIONS.OBJECTIVES_UPDATE_PROGRESS),
+        getAccessSession: () => ({ roleName, roleLabel: roleName, name: `${roleName} User`, office: 'ICT Office' }), P: PERMISSIONS,
         calculatedProgressStatus, progressStatusLabel,
         listObjectiveProgress: async () => ({ data: [{ objective_id: 7, objective_title: 'Research capability', progress_percentage: 40, progress_status: 'in_progress', status: 'published', strategic_plan: { title: 'Plan', status: 'finished' } }], meta: { last_page: 1, total: 1 } }),
         listObjectiveProgressHistory: async () => ({ data: [], meta: { last_page: 1 } }),
@@ -47,9 +48,13 @@ test('planner form displays calculated status and requires a correction reason',
     const app = panel('Planning Officer');
     await app.load();
     let tree = app.render();
-    nodes(tree, node => node.type === 'button' && text(node) === 'Update progress')[0].props.onClick();
+    assert.match(text(tree), /Planning Officer User/);
+    assert.match(text(tree), /Find objectives/);
+    assert.match(text(tree), /Strategic Objectives for Progress Monitoring/);
+    nodes(tree, node => node.type === 'button' && text(node) === 'Correct progress')[0].props.onClick();
     tree = app.render();
     assert.equal(nodes(tree, node => node.type === 'textarea')[0].props.required, true);
+    assert.equal(text(nodes(tree, node => node.props.type === 'submit')[0]), 'Save correction');
     assert.equal(nodes(tree, node => node.props.type === 'submit')[0].props.disabled, true);
     const form = nodes(tree, node => node.type === 'form')[0];
     assert.equal(nodes(form, node => node.type === 'select').length, 0);
@@ -64,8 +69,12 @@ test('planner form displays calculated status and requires a correction reason',
 test('office form permits an update without a correction reason', async () => {
     const app = panel('Responsible Unit User');
     await app.load();
-    nodes(app.render(), node => node.type === 'button' && text(node) === 'Update progress')[0].props.onClick();
-    const tree = app.render();
+    let tree = app.render();
+    assert.match(text(tree), /Responsible Unit User User/);
+    assert.match(text(tree), /Find objectives/);
+    assert.match(text(tree), /Strategic Objectives for Progress Monitoring/);
+    nodes(tree, node => node.type === 'button' && text(node) === 'Update progress')[0].props.onClick();
+    tree = app.render();
     assert.equal(nodes(tree, node => node.type === 'textarea')[0].props.required, false);
     assert.equal(nodes(tree, node => node.props.type === 'submit')[0].props.disabled, false);
 });

@@ -15,6 +15,8 @@ class StrategicDocumentResource extends JsonResource
             'mime_type' => $this->mime_type,
             'extension' => $this->extension,
             'size_bytes' => $this->size_bytes,
+            'reference_level' => $this->reference_level,
+            'content_category' => $this->content_category,
             'uploaded_by' => $this->uploaded_by,
             'created_at' => $this->created_at,
             'download_url' => url('api/strategic-documents/'.$this->document_id.'/download'),

@@ -4,7 +4,7 @@ import { getStrategicPlan } from '../../api/strategic-plans-api.js';
 import { can } from '../../access/access-session.js';
 
 const h = React.createElement;
-export function OfficePlanInput({ planId, planOptions = [], onPlanChange = null }) {
+export function OfficePlanInput({ planId, planOptions = [], onPlanChange = null, pageTitle = 'Submit Planning Inputs', description = 'Upload reference materials for the selected strategic plan.' }) {
     const [plan, setPlan] = React.useState(null);
     const [error, setError] = React.useState('');
     const [loading, setLoading] = React.useState(true);
@@ -18,10 +18,10 @@ export function OfficePlanInput({ planId, planOptions = [], onPlanChange = null 
             .finally(() => { if (active) setLoading(false); });
         return () => { active = false; };
     }, [planId, attempt]);
-    const allowed = plan?.status === 'draft' && can('strategic_objectives.create');
+    const allowed = plan?.status === 'draft' && can('strategic_documents.upload');
     return h('main', { className: 'office-content office-input-page', 'aria-busy': loading },
-        h('header', null, !onPlanChange && h('a', { href: back }, '← Back to plan'), h('h1', null, 'Submit Planning Inputs'),
-            h('p', null, 'Upload reference materials for the selected strategic plan.'),
+        h('header', null, !onPlanChange && h('a', { href: back }, '← Back to plan'), h('h1', null, pageTitle),
+            h('p', null, description),
             onPlanChange && h('label', { className: 'office-input-plan-picker' }, h('span', null, 'Strategic plan'),
                 h('select', { value: String(planId), onChange: event => onPlanChange(event.target.value) },
                     planOptions.map(option => h('option', { key: option.record_id, value: option.record_id }, `${String(option.record_id).padStart(4, '0')} · ${option.title}`))))),
