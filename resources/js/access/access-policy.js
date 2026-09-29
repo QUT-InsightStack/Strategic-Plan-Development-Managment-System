@@ -177,6 +177,7 @@ export function hasRolePolicy(roleName) {
 
 export const routeRules = [
     { test: /^\/management-dashboard(?:\/|$)/, roles: ['Management', 'Executive', 'Management / Executive'] },
+    { test: /^\/management-plan-review(?:\/|$)/, roles: ['Management', 'Executive', 'Management / Executive'], permission: PERMISSIONS.PLANS_VIEW },
     { test: /^\/progress-monitoring(?:\/|$)/, permission: PERMISSIONS.OBJECTIVES_VIEW_PROGRESS },
     { test: /^\/strategic-plans\/\d+\/approval-status(?:\/|$)/ },
     { test: /^\/consolidate-inputs(?:\/|$)/, permission: PERMISSIONS.INPUTS_VIEW },
