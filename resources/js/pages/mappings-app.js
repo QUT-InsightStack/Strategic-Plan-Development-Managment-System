@@ -6,7 +6,8 @@ import { listPdpChapters } from '../api/pdp-chapters-api.js';
 import { createAccessSession, saveAccessSession, can } from '../access/access-session.js';
 import { isOfficeRole } from '../access/office-navigation.js';
 import { enforcePageAccess } from '../access/access-guard.js';
-import { agendaCatalog, listLocalMappings, removeLocalMapping, saveLocalMappings, updateLocalMappingReference } from '../mappings/mapping-storage.js';
+import { agendaCatalog, archiveLocalMapping, listLocalArchivedMappings, listLocalMappings, restoreLocalMapping, saveLocalMappings, updateLocalMappingReference } from '../mappings/mapping-storage.js';
+import { AppDialog } from '../components/AppDialog.js';
 import { listLocalAgencyInputs } from '../office-demo-storage.js';
 import { objectivesAssignedToOffice } from '../objective-assignment-storage.js';
 
@@ -25,17 +26,37 @@ function ChoiceLevel({ title, icon, items, selected, onToggle, valueKey, labelKe
         }) : h('p', { className: 'mapping-empty' }, `No ${title.toLowerCase()} available.`)));
 }
 
-function MappingPreview({ mappings, officeMode, canRemove, busy, remove }) {
+const agencyLabel = item => item.agency_objective?.objective_title || item.agency_input?.payload?.objective_title || item.agency_input?.payload?.content || item.dost_objective?.responsible_office_agency || '—';
+const mappingChain = item => `${item.agenda_title} → ${item.pdp_chapter?.chapter_title || 'PDP element'} → ${item.dost_objective?.objective_title || 'DOST objective'}`;
+const archivedLabel = item => {
+    const date = item.archived_at ? new Date(item.archived_at) : null;
+    const when = date && !Number.isNaN(date.getTime()) ? date.toLocaleString(undefined, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+    return item.archived_by_name ? `${when} by ${item.archived_by_name}` : when;
+};
+
+function MappingPreview({ mappings, archived, showArchived, setShowArchived, officeMode, canArchive, busy, onArchive, onRestore }) {
+    const rows = showArchived ? archived : mappings;
+    const columns = ['Agenda', 'PDP Element', 'DOST Objective', 'Agency Plan', ...(showArchived ? ['Archived'] : []), ...(canArchive ? ['Action'] : [])];
+    const tab = (archivedTab, label, count) => h('button', {
+        type: 'button', role: 'tab', 'aria-selected': showArchived === archivedTab, 'aria-controls': 'mapping-preview-table',
+        className: `mapping-tab${showArchived === archivedTab ? ' is-active' : ''}`, onClick: () => setShowArchived(archivedTab),
+    }, label, h('span', { className: 'mapping-tab__count' }, count));
     return h('section', { className: 'ui-card mapping-preview-card' },
-        h('h2', null, officeMode ? 'Four-level Mapping Preview' : 'Three-level Mapping Preview'),
-        h('div', { className: 'mapping-preview' }, h('table', { className: 'ui-table' },
-            h('thead', null, h('tr', null, ['Agenda', 'PDP Element', 'DOST Objective', 'Agency Plan', ...(canRemove ? ['Action'] : [])].map(label => h('th', { key: label }, label)))),
-            h('tbody', null, mappings.length ? mappings.map(item => h('tr', { key: item.id },
+        h('div', { className: 'mapping-preview-card__header' },
+            h('h2', null, officeMode ? 'Four-level Mapping Preview' : 'Three-level Mapping Preview'),
+            canArchive && h('div', { className: 'mapping-tabs', role: 'tablist', 'aria-label': 'Mapping status' }, tab(false, 'Active', mappings.length), tab(true, 'Archived', archived.length))),
+        showArchived && h('p', { className: 'mapping-archive-note' }, h('i', { className: 'bi bi-info-circle', 'aria-hidden': 'true' }), 'Archived mappings are kept for reference and are not used in alignment views, reference linking or reports. Restore a mapping to make it active again.'),
+        h('div', { className: 'mapping-preview', id: 'mapping-preview-table' }, h('table', { className: 'ui-table' },
+            h('thead', null, h('tr', null, columns.map(label => h('th', { key: label, scope: 'col' }, label)))),
+            h('tbody', null, rows.length ? rows.map(item => h('tr', { key: item.id, className: showArchived ? 'is-archived' : undefined },
                 h('td', null, item.agenda_title), h('td', null, item.pdp_chapter?.chapter_title || '—'), h('td', null, item.dost_objective?.objective_title || '—'),
-                h('td', null, item.agency_objective?.objective_title || item.agency_input?.payload?.objective_title || item.agency_input?.payload?.content || item.dost_objective?.responsible_office_agency || '—'),
-                canRemove && h('td', null, h('button', { className: 'mapping-remove', type: 'button', disabled: busy, onClick: () => remove(item.id) }, h('i', { className: 'bi bi-trash-fill' }), 'Remove'))
-            )) : h('tr', null, h('td', { className: 'mapping-empty', colSpan: canRemove ? 5 : 4 }, 'No hierarchical mappings added yet.'))))),
-        h('p', { className: 'mapping-count' }, `Showing ${mappings.length} mapping${mappings.length === 1 ? '' : 's'}`));
+                h('td', null, agencyLabel(item)),
+                showArchived && h('td', { className: 'mapping-archived-when' }, archivedLabel(item)),
+                canArchive && h('td', null, showArchived
+                    ? h('button', { className: 'mapping-action mapping-action--restore', type: 'button', disabled: busy, onClick: () => onRestore(item), 'aria-label': `Restore mapping ${mappingChain(item)}` }, h('i', { className: 'bi bi-arrow-counterclockwise', 'aria-hidden': 'true' }), 'Restore')
+                    : h('button', { className: 'mapping-action mapping-action--archive', type: 'button', disabled: busy, onClick: () => onArchive(item), 'aria-label': `Archive mapping ${mappingChain(item)}` }, h('i', { className: 'bi bi-archive', 'aria-hidden': 'true' }), 'Archive'))
+            )) : h('tr', null, h('td', { className: 'mapping-empty', colSpan: columns.length }, showArchived ? 'No archived mappings for this plan.' : 'No hierarchical mappings added yet.'))))),
+        h('p', { className: 'mapping-count' }, `Showing ${rows.length} ${showArchived ? 'archived ' : ''}mapping${rows.length === 1 ? '' : 's'}`));
 }
 
 function PlannerReferenceStep({ mappings, selectedId, selectMapping, details, setDetails, busy, saveReference }) {
@@ -75,6 +96,8 @@ function MappingApp({ session }) {
     const [plans, setPlans] = useState([]), [planId, setPlanId] = useState('');
     const [catalog, setCatalog] = useState({ agendas: [], pdp_chapters: [], dost_objectives: [], agency_inputs: [], agency_objectives: [] });
     const [mappings, setMappings] = useState([]), [selected, setSelected] = useState({ agendas: [], pdp: [], dost: [] });
+    const [archivedMappings, setArchivedMappings] = useState([]), [showArchived, setShowArchived] = useState(false), [archiveTarget, setArchiveTarget] = useState(null);
+    const canArchive = canManage && !viewOnly;
     const [agencyItem, setAgencyItem] = useState(''), [details, setDetails] = useState(blankDetails), [selectedMappingId, setSelectedMappingId] = useState('');
     const [loading, setLoading] = useState(true), [busy, setBusy] = useState(false), [message, setMessage] = useState({ type: '', text: '' });
 
@@ -86,7 +109,7 @@ function MappingApp({ session }) {
             if (!active) return;
             const objectives = (objectiveResult.data || []).filter(item => !['archived', 'deleted'].includes(item.status));
             setCatalog({ agendas: agendaCatalog, pdp_chapters: pdpResult.data || [], dost_objectives: objectives, agency_inputs: inputResult.data || [], agency_objectives: officeMode ? objectivesAssignedToOffice(objectives, session.office) : [] });
-            setMappings(listLocalMappings(planId, officeMode ? session.office : '')); setSelected({ agendas: [], pdp: [], dost: [] }); setAgencyItem(''); setSelectedMappingId(''); setDetails(blankDetails);
+            setMappings(listLocalMappings(planId, officeMode ? session.office : '')); setArchivedMappings(canManage ? listLocalArchivedMappings(planId) : []); setShowArchived(false); setSelected({ agendas: [], pdp: [], dost: [] }); setAgencyItem(''); setSelectedMappingId(''); setDetails(blankDetails);
         }).catch(error => { if (active) setMessage({ type: 'error', text: errorText(error) }); }).finally(() => { if (active) setLoading(false); });
         return () => { active = false; };
     }, [planId]);
@@ -94,7 +117,7 @@ function MappingApp({ session }) {
     const toggle = (group, value) => setSelected(current => ({ ...current, [group]: current[group].includes(value) ? current[group].filter(item => item !== value) : [...current[group], value] }));
     const selectedPlan = plans.find(plan => String(plan.record_id) === planId);
     const agencyOptions = [...(catalog.agency_objectives || []).map(item => ({ value: `objective:${item.objective_id}`, label: `Assigned objective · ${item.objective_title}` })), ...(catalog.agency_inputs || []).map(item => ({ value: `input:${item.id}`, label: `Submitted ${item.type.replace('_', ' ')} · ${item.payload.objective_title || item.payload.content}` }))];
-    const refreshMappings = () => setMappings(listLocalMappings(planId, officeMode ? session.office : ''));
+    const refreshMappings = () => { setMappings(listLocalMappings(planId, officeMode ? session.office : '')); setArchivedMappings(canManage ? listLocalArchivedMappings(planId) : []); };
 
     async function addHierarchy(event) {
         event.preventDefault(); if (!canCreate || busy) return;
@@ -111,7 +134,17 @@ function MappingApp({ session }) {
     }
 
     function selectReferenceMapping(id) { setSelectedMappingId(id); const item = mappings.find(mapping => String(mapping.id) === String(id)); setDetails(item ? { ...blankDetails, reference_file: item.reference_file || '', reference_section: item.reference_section || '', page_paragraph: item.page_paragraph || '', note: item.note || '' } : blankDetails); }
-    async function remove(id) { setBusy(true); try { removeLocalMapping(id); refreshMappings(); if (String(id) === String(selectedMappingId)) selectReferenceMapping(''); setMessage({ type: 'success', text: 'Mapping removed.' }); } catch (error) { setMessage({ type: 'error', text: errorText(error) }); } finally { setBusy(false); } }
+    function requestArchive(item) { if (canArchive && !busy) setArchiveTarget(item); }
+    function confirmArchive() {
+        const item = archiveTarget; setArchiveTarget(null); if (!item) return; setBusy(true);
+        try { archiveLocalMapping(item.id, session); refreshMappings(); if (String(item.id) === String(selectedMappingId)) selectReferenceMapping(''); setMessage({ type: 'success', text: 'Mapping archived. You can find and restore it under Archived.' }); }
+        catch (error) { setMessage({ type: 'error', text: errorText(error) }); refreshMappings(); } finally { setBusy(false); }
+    }
+    function restore(item) {
+        if (!canArchive || busy) return; setBusy(true);
+        try { restoreLocalMapping(item.id, session); refreshMappings(); setMessage({ type: 'success', text: 'Mapping restored and active again.' }); }
+        catch (error) { setMessage({ type: 'error', text: errorText(error) }); refreshMappings(); } finally { setBusy(false); }
+    }
 
     return h(React.Fragment, null, h(AppSidebar, { active: 'Mapping Module', onNotice: text => setMessage({ type: 'info', text }) }), h('main', { className: 'app-shell-main mapping-page' }, h('div', { className: 'app-shell-container mapping-container' },
         h('header', { className: 'mapping-header' }, h('h1', null, officeMode ? 'View/Add Mapping' : 'Create Reference Mapping'), h('p', null, officeMode ? 'Map your Agency inputs across Presidential Agenda, PDP, and DOST levels.' : 'Create three-level mappings across Presidential Agenda, PDP, and DOST objectives, then link them to uploaded reference sections.')),
@@ -119,9 +152,10 @@ function MappingApp({ session }) {
         h('section', { className: 'ui-card mapping-context' }, h('label', { className: 'ui-field' }, h('span', { className: 'ui-label' }, 'Strategic Plan'), h('select', { className: 'ui-select', value: planId, onChange: event => setPlanId(event.target.value) }, plans.map(plan => h('option', { value: plan.record_id, key: plan.record_id }, plan.title)))), officeMode && h('label', { className: 'ui-field' }, h('span', { className: 'ui-label' }, 'Agency Input / Objective'), h('select', { className: 'ui-select', value: agencyItem, disabled: viewOnly, onChange: event => setAgencyItem(event.target.value) }, h('option', { value: '' }, 'Select an item assigned to your office'), agencyOptions.map(item => h('option', { value: item.value, key: item.value }, item.label))))),
         loading ? h('section', { className: 'ui-card mapping-empty' }, 'Loading mapping data…') : h(React.Fragment, null,
             canCreate && h('form', { className: 'ui-card mapping-step mapping-hierarchy-step', onSubmit: addHierarchy }, h('div', { className: 'mapping-step__heading' }, h('span', null, '1'), h('h2', null, officeMode ? 'Step 1. Map Agency Input Across Levels' : 'Step 1. Create Three-Level Mapping')), h('div', { className: 'mapping-levels' }, h(ChoiceLevel, { title: 'Agenda', icon: 'bi-bank2', items: catalog.agendas, selected: selected.agendas, onToggle: value => toggle('agendas', value), valueKey: 'code', labelKey: 'title' }), h('i', { className: 'bi bi-arrow-right mapping-arrow' }), h(ChoiceLevel, { title: 'PDP Elements', icon: 'bi-file-earmark-text-fill', items: catalog.pdp_chapters, selected: selected.pdp, onToggle: value => toggle('pdp', value), valueKey: 'chapter_id', labelKey: 'chapter_title' }), h('i', { className: 'bi bi-arrow-right mapping-arrow' }), h(ChoiceLevel, { title: 'DOST Objectives', icon: 'bi-bullseye', items: catalog.dost_objectives, selected: selected.dost, onToggle: value => toggle('dost', value), valueKey: 'objective_id', labelKey: 'objective_title' })), h('div', { className: 'mapping-hierarchy-action' }, h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'submit', disabled: busy || selectedPlan?.status !== 'draft' }, busy ? 'Adding…' : '+ Add Hierarchical Mapping'))),
-            h(MappingPreview, { mappings, officeMode, canRemove: canManage && selectedPlan?.status === 'draft', busy, remove }),
+            h(MappingPreview, { mappings, archived: archivedMappings, showArchived: canArchive && showArchived, setShowArchived, officeMode, canArchive, busy, onArchive: requestArchive, onRestore: restore }),
             !officeMode && canManage && h(PlannerReferenceStep, { mappings, selectedId: selectedMappingId, selectMapping: selectReferenceMapping, details, setDetails, busy, saveReference: addReference })
-        )
+        ),
+        h(AppDialog, { open: Boolean(archiveTarget), variant: 'danger', title: 'Archive this mapping?', message: archiveTarget ? `“${mappingChain(archiveTarget)}” will be removed from active alignment and reference linking. It stays stored and can be restored at any time.` : '', confirmLabel: 'Archive mapping', cancelLabel: 'Cancel', onConfirm: confirmArchive, onCancel: () => setArchiveTarget(null) })
     )));
 }
 
