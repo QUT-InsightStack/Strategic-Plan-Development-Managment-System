@@ -26,9 +26,9 @@ const items = [
     {
         label: 'Mapping Module',
         icon: 'bi-map',
-        permission: PERMISSIONS.MAPPINGS_MANAGE,
         children: [
             { label: 'Create / Review Mapping', href: '/mappings', permission: PERMISSIONS.MAPPINGS_MANAGE },
+            { label: 'View Strategic Alignment', href: '/mappings?mode=view', permission: 'relations.view' },
         ],
     },
     { label: 'Plan Reviews', icon: 'bi-clipboard-check', href: '/strategic-plan-reviews' },
@@ -72,6 +72,7 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
             const view = new URLSearchParams(window.location.search).get('view');
             return currentPath === '/office' && (child.href === '/office' ? !view || ['review', 'comments'].includes(view) : child.href === `/office?view=${view}`);
         }
+        if (child.href?.startsWith('/mappings?')) return child.href === `${currentPath}${window.location.search}`;
         return child.href === currentPath
             || (child.href === '/strategic-plans/finalize' && /^\/strategic-plans\/\d+\/finalize\/?$/.test(currentPath))
             || (child.href === '/strategic-objectives' && isObjectivePage)
@@ -130,11 +131,13 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
             );
         }
 
-        const isCurrent = item.href === currentPath
+        const href = item.href === '/dashboard' && ['Management', 'Executive', 'Management / Executive'].includes(accessSession?.roleName)
+            ? '/management-dashboard' : item.href;
+        const isCurrent = href === currentPath
             || (item.href === '/strategic-plans/finalize' && isFinalizePage);
 
-        return item.href
-            ? React.createElement('a', { key: item.label, href: item.href, className: `app-sidebar__item${isCurrent ? ' active' : ''}`, 'aria-current': isCurrent ? 'page' : undefined }, React.createElement('i', { className: `bi ${item.icon}` }), React.createElement('span', null, item.label))
+        return href
+            ? React.createElement('a', { key: item.label, href, className: `app-sidebar__item${isCurrent ? ' active' : ''}`, 'aria-current': isCurrent ? 'page' : undefined }, React.createElement('i', { className: `bi ${item.icon}` }), React.createElement('span', null, item.label))
             : React.createElement('button', { key: item.label, type: 'button', className: `app-sidebar__item${active === item.label ? ' active' : ''}`, onClick: () => onNotice(`${item.label} is reserved for a later module.`) }, React.createElement('i', { className: `bi ${item.icon}` }), React.createElement('span', null, item.label));
     }
 
