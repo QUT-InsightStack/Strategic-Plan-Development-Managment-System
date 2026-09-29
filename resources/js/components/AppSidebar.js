@@ -15,11 +15,11 @@ const items = [
         icon: 'bi-clipboard2-check',
         permission: PERMISSIONS.PLANS_VIEW,
         children: [
-            { label: 'Submitted Inputs', href: '/consolidate-inputs', permission: PERMISSIONS.INPUTS_VIEW },
             { label: 'Create Plans', href: '/strategic-plans/create', permission: PERMISSIONS.PLANS_CREATE },
             { label: 'Manage Plans', href: '/strategic-plans', permission: PERMISSIONS.PLANS_VIEW },
             { label: 'Strategic Objectives', href: '/strategic-objectives', permission: PERMISSIONS.OBJECTIVES_VIEW },
-            { label: 'Consolidate Inputs', href: '/consolidate-inputs', permission: PERMISSIONS.PLANS_UPDATE },
+            { label: 'Consolidate Inputs', href: '/consolidate-inputs', permission: PERMISSIONS.INPUTS_VIEW },
+            { label: 'Update and Monitor Progress', href: '/office?view=progress', permission: PERMISSIONS.OBJECTIVES_VIEW_PROGRESS },
             { label: 'PDP Chapters', href: '/pdp-chapters', permission: PERMISSIONS.PLANS_VIEW },
         ],
     },
@@ -143,10 +143,10 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
             React.createElement(BrandLogo, { className: 'app-sidebar__logo' }),
             React.createElement('span', { className: 'app-sidebar__brand-copy' }, React.createElement('strong', null, 'SPDMS'), React.createElement('small', null, 'Strategic Planning System'))
         ),
-        React.createElement('a', { className: 'app-sidebar__profile', href: '/profile', 'aria-label': 'Open user profile' }, React.createElement('i', { className: 'bi bi-person-vcard-fill' }), React.createElement('span', null, currentPath === '/office' ? 'Office/ Agencies' : displayRoleName(accessSession?.roleName, 'User'))),
+        React.createElement('a', { className: 'app-sidebar__profile', href: '/profile', 'aria-label': 'Open user profile' }, React.createElement('i', { className: 'bi bi-person-vcard-fill' }), React.createElement('span', null, isOfficeRole(accessSession?.roleName) ? 'Office/ Agencies' : displayRoleName(accessSession?.roleName, 'User'))),
         React.createElement('nav', { className: 'app-sidebar__nav' },
             accessSession && renderItem({ label: 'Notifications', icon: 'bi-bell', href: '/workflow-notifications' }),
-            accessSession ? (currentPath === '/office' || isOfficeRole(accessSession.roleName) ? officeItems : items).map(renderItem)
+            accessSession ? (isOfficeRole(accessSession.roleName) ? officeItems : items).map(renderItem)
                 : React.createElement('p', { role: accessError ? 'alert' : 'status' }, accessError || 'Loading menu…'),
             accessError && React.createElement('button', { type: 'button', className: 'app-sidebar__item', onClick: () => setAccessAttempt(value => value + 1) }, 'Retry')),
         React.createElement(LogoutButton, { className: 'app-sidebar__item app-sidebar__logout', label: 'Log Out', iconClass: 'bi bi-box-arrow-left' })

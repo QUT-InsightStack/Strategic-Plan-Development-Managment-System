@@ -13,7 +13,7 @@ test('renamed roles keep their previous navigation and fallback permissions', ()
     assert.equal(session.home, '/strategic-plans');
     assert.equal(can(PERMISSIONS.PLANS_VIEW, session), true);
     assert.equal(can(PERMISSIONS.PLANS_CREATE, session), false);
-    assert.equal(isOfficeRole('Office'), false); // Viewer is not a collaboration role.
+    assert.equal(isOfficeRole('Office'), true); // The upgraded Office role uses Office navigation.
     const management = createAccessSession({ role_name: 'Management', permissions: ['strategic_records.view'] });
     assert.equal(can(PERMISSIONS.PLANS_DELETE, management), false);
 });

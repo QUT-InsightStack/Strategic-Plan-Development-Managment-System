@@ -33,7 +33,7 @@ class ObjectiveCollaborationPermissionSeeder extends Seeder
             'Administrator' => array_keys($permissions),
             'Planning Officer' => ['strategic_objectives.assign_responsible_unit', 'objective_comments.view_all', 'implementation_inputs.view_all', 'implementation_inputs.view', 'implementation_inputs.review'],
         ];
-        foreach (['Responsible Unit User', 'Office Representative', 'Office/Agency', 'Offices / Agencies'] as $roleName) {
+        foreach (['Office', 'Responsible Unit User', 'Office Representative', 'Office/Agency', 'Offices / Agencies'] as $roleName) {
             $assignments[$roleName] = ['strategic_records.view', 'strategic_objectives.view', 'objective_comments.create', 'implementation_inputs.create', 'implementation_inputs.view'];
         }
         foreach ($assignments as $roleName => $codes) {

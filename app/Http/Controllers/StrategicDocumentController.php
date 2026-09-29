@@ -8,6 +8,7 @@ use App\Models\Strategic;
 use App\Models\StrategicDocument;
 use App\Models\StrategicObjective;
 use App\Services\StrategicDocumentService;
+use App\Services\StrategicPlanAuthorizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +16,10 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class StrategicDocumentController extends Controller
 {
-    public function __construct(private readonly StrategicDocumentService $service) {}
+    public function __construct(
+        private readonly StrategicDocumentService $service,
+        private readonly StrategicPlanAuthorizationService $planAuthorization,
+    ) {}
 
     public function planIndex(Strategic $plan, Request $request): JsonResponse
     {
@@ -29,6 +33,7 @@ class StrategicDocumentController extends Controller
 
     public function storeForPlan(Strategic $plan, StoreStrategicDocumentRequest $request): JsonResponse
     {
+        $this->planAuthorization->ensureCanViewPlan($plan, Auth::guard('api')->user());
         return $this->store('strategic_plan_id', $plan->record_id, $request);
     }
 
@@ -59,7 +64,14 @@ class StrategicDocumentController extends Controller
 
     private function store(string $column, int $id, StoreStrategicDocumentRequest $request): JsonResponse
     {
-        $document = $this->service->store($request->file('document'), Auth::guard('api')->user(), $column, $id);
+        $document = $this->service->store(
+            $request->file('document'),
+            Auth::guard('api')->user(),
+            $column,
+            $id,
+            $request->validated('reference_level'),
+            $request->validated('content_category'),
+        );
         return response()->json(['success' => true, 'message' => 'Document uploaded successfully.', 'data' => new StrategicDocumentResource($document)], 201);
     }
 }

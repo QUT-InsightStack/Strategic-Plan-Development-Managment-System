@@ -15,12 +15,6 @@ export function reviewSubmittedInput(inputId, { status, review_note }) {
     });
 }
 
-export function submitObjectiveInput(objectiveId, { content, input_type }) {
-    return apiRequest(`/api/strategic-objectives/${objectiveId}/inputs`, {
-        method: 'POST', body: JSON.stringify({ content, input_type }),
-    });
-}
-
 export function listObjectiveInputs(objectiveId, params = {}) {
     return apiRequest(`/api/strategic-objectives/${objectiveId}/inputs?${new URLSearchParams(params)}`);
 }

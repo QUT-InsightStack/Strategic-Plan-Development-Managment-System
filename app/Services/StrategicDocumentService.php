@@ -20,7 +20,7 @@ class StrategicDocumentService
         return StrategicDocument::query()->where($column, $id)->latest()->paginate($perPage);
     }
 
-    public function store(UploadedFile $file, User $user, string $column, int $id): StrategicDocument
+    public function store(UploadedFile $file, User $user, string $column, int $id, string $referenceLevel, string $contentCategory): StrategicDocument
     {
         $extension = strtolower($file->extension());
         $storedPath = self::DIRECTORY.'/'.Str::uuid().'.'.$extension;
@@ -40,6 +40,8 @@ class StrategicDocumentService
                 'extension' => $extension,
                 'size_bytes' => (int) $file->getSize(),
                 'sha256' => hash_file('sha256', $file->getRealPath()),
+                'reference_level' => $referenceLevel,
+                'content_category' => $contentCategory,
             ]);
         } catch (\Throwable $exception) {
             Storage::disk(self::DISK)->delete($storedPath);

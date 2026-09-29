@@ -1,6 +1,7 @@
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { PageHeader } from '../../components/PageHeader.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
+import { getAccessSession } from '../../access/access-session.js';
 import {
     listAssignedPlanSubmissions,
 } from '../../api/plan-approval-api.js';
@@ -56,6 +57,7 @@ function stageOptions(reviews) {
 }
 
 function StrategicPlanReviewsApp() {
+    const session = getAccessSession();
 
     const [reviews, setReviews] = useState([]);
     const [search, setSearch] = useState('');

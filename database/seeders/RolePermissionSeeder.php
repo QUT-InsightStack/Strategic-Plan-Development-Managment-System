@@ -73,7 +73,7 @@ class RolePermissionSeeder extends Seeder
             'Technical Administrator' => $technicalPermissions,
             'Management' => $managementPermissions,
             'Planning Officer' => $planningPermissions,
-            'Office' => $viewOnlyPermissions,
+            'Office' => array_merge($viewOnlyPermissions, ['strategic_documents.upload']),
         ];
 
         foreach ($assignments as $roleName => $codes) {
@@ -111,6 +111,7 @@ class RolePermissionSeeder extends Seeder
             'Office Representative',
             'Office/Agency',
             'Offices / Agencies',
+            'Office',
         ];
 
         $deletePermissionIds = $permissionsByCode
