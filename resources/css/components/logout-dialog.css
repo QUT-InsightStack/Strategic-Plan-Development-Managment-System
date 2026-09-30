@@ -1,0 +1,79 @@
+@import './buttons.css';
+
+/* Sign-out confirmation. Neutral styling: logging out is not destructive. */
+.logout-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: grid;
+    place-items: center;
+    padding: var(--page-gutter, 16px);
+    background: rgba(17, 24, 39, 0.55);
+    animation: logout-fade 150ms ease-out;
+}
+
+.logout-dialog {
+    width: min(100%, 420px);
+    border-top: 5px solid var(--color-primary, #174c8f);
+    border-radius: var(--radius-xl, 10px);
+    padding: var(--space-8, 32px) var(--space-6, 24px) var(--space-6, 24px);
+    color: var(--color-text, #171717);
+    background: var(--color-surface, #fff);
+    box-shadow: 0 20px 55px rgba(0, 0, 0, 0.28);
+    text-align: center;
+    animation: logout-rise 180ms ease-out;
+}
+
+.logout-dialog__icon {
+    display: grid;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto var(--space-4, 16px);
+    place-items: center;
+    border-radius: 50%;
+    color: var(--color-primary, #174c8f);
+    background: var(--color-primary-soft, #eaf4fb);
+}
+
+.logout-dialog__icon svg { width: 28px; height: 28px; fill: currentColor; }
+
+.logout-dialog h2 {
+    margin: 0 0 var(--space-2, 8px);
+    color: var(--color-primary, #174c8f);
+    font-size: var(--font-size-xl, 20px);
+    font-weight: var(--font-weight-bold, 700);
+}
+
+.logout-dialog p {
+    max-width: 340px;
+    margin: 0 auto var(--space-6, 24px);
+    color: var(--color-text-secondary, #5f6368);
+    font-size: var(--font-size-sm, 14px);
+    line-height: var(--line-height-body, 1.5);
+}
+
+.logout-dialog__actions { display: flex; justify-content: center; gap: var(--space-3, 12px); }
+.logout-dialog__actions .ui-button { min-width: 140px; }
+.logout-dialog__confirm { gap: var(--space-2, 8px); }
+
+.logout-dialog__spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.45);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: logout-spin 0.8s linear infinite;
+}
+
+@keyframes logout-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes logout-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes logout-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+    .logout-dialog-backdrop, .logout-dialog, .logout-dialog__spinner { animation: none; }
+}
+
+@media (max-width: 520px) {
+    .logout-dialog__actions { flex-direction: column-reverse; }
+    .logout-dialog__actions .ui-button { width: 100%; }
+}

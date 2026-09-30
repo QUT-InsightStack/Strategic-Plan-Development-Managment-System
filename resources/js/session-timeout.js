@@ -233,7 +233,7 @@ function buildWarning() {
     signOut.type = 'button';
     signOut.className = 'spms-session-logout';
     signOut.textContent = 'Log Out Now';
-    signOut.addEventListener('click', () => expire());
+    signOut.addEventListener('click', () => expire('manual'));
 
     actions.append(stay, signOut);
     dialog.append(title, description, countdown, actions);
@@ -263,7 +263,7 @@ function hideWarning() {
     warningElement = null;
 }
 
-function expire() {
+function expire(reason = 'inactivity') {
     if (expiring) return;
     expiring = true;
 
@@ -279,7 +279,7 @@ function expire() {
     // logout() clears stored auth, invalidates the cookie server-side and
     // replaces the current history entry with the login page, so the expired
     // page cannot be reached with the Back button.
-    logout();
+    logout({ reason });
 }
 
 function tick() {

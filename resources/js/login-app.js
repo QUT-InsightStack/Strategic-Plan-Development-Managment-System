@@ -1,5 +1,5 @@
 import { BrandLogo } from './brand-logo.js';
-import { clearLogoutFlag } from './auth-session.js';
+import { clearLogoutFlag, readLogoutNotice } from './auth-session.js';
 import { createAccessSession, saveAccessSession } from './access/access-session.js';
 
 const { useEffect, useRef, useState } = React;
@@ -145,7 +145,33 @@ function EyeIcon({ hidden }) {
     );
 }
 
-function LoginForm({ status, setStatus }) {
+const LOGOUT_NOTICES = {
+    manual: { tone: 'success', title: 'You have been signed out', text: 'Your session has ended securely. Sign in again to continue.' },
+    inactivity: { tone: 'info', title: 'Signed out after inactivity', text: 'For your security, you were signed out because the session was idle. Sign in again to continue.' },
+};
+
+function LogoutNotice({ notice, onDismiss }) {
+    if (!notice) return null;
+    const content = LOGOUT_NOTICES[notice.reason] || LOGOUT_NOTICES.manual;
+
+    return React.createElement(
+        'div',
+        { className: `logout-notice is-${content.tone}`, role: 'status' },
+        React.createElement('span', { className: 'logout-notice__icon', 'aria-hidden': 'true' }, content.tone === 'success' ? '\u2713' : 'i'),
+        React.createElement(
+            'div',
+            null,
+            React.createElement('strong', null, content.title),
+            React.createElement('p', null, content.text),
+            notice.serverReached === false
+                ? React.createElement('p', { className: 'logout-notice__warning' }, 'The server could not be reached, so this device was signed out locally. If you are on a shared computer, close the browser as well.')
+                : null
+        ),
+        React.createElement('button', { type: 'button', className: 'logout-notice__close', onClick: onDismiss, 'aria-label': 'Dismiss sign-out message' }, '\u00d7')
+    );
+}
+
+function LoginForm({ status, setStatus, logoutNotice, dismissLogoutNotice }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [remember, setRemember] = useState(false);
@@ -228,6 +254,7 @@ function LoginForm({ status, setStatus }) {
         }
 
         setIsSubmitting(true);
+        dismissLogoutNotice?.();
         setStatus('Checking your sign in details...', 'info');
 
         try {
@@ -287,6 +314,7 @@ function LoginForm({ status, setStatus }) {
             React.createElement('h2', { id: 'signin-title' }, 'Sign In'),
             React.createElement('p', null, 'Use your work email and password to continue.')
         ),
+        React.createElement(LogoutNotice, { notice: logoutNotice, onDismiss: dismissLogoutNotice }),
         React.createElement(
             'form',
             { className: 'login-form', noValidate: true, onSubmit: handleSubmit },
@@ -523,6 +551,8 @@ function Footer({ onMessage }) {
 
 function LoginApp() {
     const [status, setStatusState] = useState({ message: '', type: 'info' });
+    // Read once on load; the note is cleared from storage as it is read.
+    const [logoutNotice, setLogoutNotice] = useState(() => readLogoutNotice());
 
     function setStatus(message, type = 'info') {
         setStatusState({ message, type });
@@ -536,7 +566,7 @@ function LoginApp() {
             'main',
             { className: 'login-main' },
             React.createElement(AccessIntro),
-            React.createElement(LoginForm, { status, setStatus })
+            React.createElement(LoginForm, { status, setStatus, logoutNotice, dismissLogoutNotice: () => setLogoutNotice(null) })
         ),
         React.createElement(Footer, { onMessage: (message) => setStatus(message, 'info') })
     );

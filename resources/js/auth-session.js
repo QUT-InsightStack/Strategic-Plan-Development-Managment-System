@@ -57,6 +57,38 @@ export function guardAgainstBackNavigation() {
 }
 
 const LOGOUT_FLAG = 'spms.loggedOut';
+const LOGOUT_NOTICE_KEY = 'spms.logoutNotice';
+const LOGOUT_REASONS = ['manual', 'inactivity'];
+
+/**
+ * Leave a one-time note for the login page explaining why the user is there,
+ * so it can confirm the sign out rather than showing a blank form.
+ */
+function rememberLogoutNotice(reason, serverReached) {
+    try {
+        window.sessionStorage.setItem(LOGOUT_NOTICE_KEY, JSON.stringify({
+            reason: LOGOUT_REASONS.includes(reason) ? reason : 'manual',
+            serverReached: Boolean(serverReached),
+        }));
+    } catch (error) {
+        // Non-fatal; the login page simply shows no confirmation.
+    }
+}
+
+/**
+ * Read and clear the note left by the last logout. Returns null when there is
+ * none, so a later visit to the login page does not repeat it.
+ */
+export function readLogoutNotice() {
+    try {
+        const raw = window.sessionStorage.getItem(LOGOUT_NOTICE_KEY);
+        window.sessionStorage.removeItem(LOGOUT_NOTICE_KEY);
+        const notice = raw ? JSON.parse(raw) : null;
+        return notice && LOGOUT_REASONS.includes(notice.reason) ? notice : null;
+    } catch (error) {
+        return null;
+    }
+}
 
 function markLoggedOut() {
     try {
@@ -95,12 +127,17 @@ export function clearLogoutFlag() {
  * Resolves only if the redirect somehow does not occur; callers should treat
  * this as fire-and-forget and use `onStart` to show a loading state.
  *
- * @param {{ onStart?: () => void, onError?: (message: string) => void }} handlers
+ * `reason` is shown on the login page: 'manual' when the user chose to log
+ * out, 'inactivity' when the session timed out.
+ *
+ * @param {{ onStart?: () => void, onError?: (message: string) => void, reason?: 'manual' | 'inactivity' }} handlers
  */
-export async function logout({ onStart, onError } = {}) {
+export async function logout({ onStart, onError, reason = 'manual' } = {}) {
     if (typeof onStart === 'function') {
         onStart();
     }
+
+    let serverReached = true;
 
     try {
         await fetch(logoutApiUrl, {
@@ -112,6 +149,7 @@ export async function logout({ onStart, onError } = {}) {
         // Network failure. The token may still be live server-side, but
         // there is nothing the client can do about that; clearing local
         // state and returning to login is the safest available outcome.
+        serverReached = false;
         if (typeof onError === 'function') {
             onError('Network error during logout. Clearing local session.');
         }
@@ -120,6 +158,7 @@ export async function logout({ onStart, onError } = {}) {
     clearAuthStorage();
     clearAccessSession();
     markLoggedOut();
+    rememberLogoutNotice(reason, serverReached);
 
     window.location.replace(loginUrl);
 }
