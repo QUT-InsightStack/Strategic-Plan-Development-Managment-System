@@ -369,7 +369,7 @@ class RolePremissionService
 
     private function canManageProtectedRoles(User $actor): bool
     {
-        if ($actor->role?->role_name === 'Administrator') {
+        if ($actor->role?->hasFullAccess()) {
             return true;
         }
 

@@ -3,12 +3,15 @@
 namespace App\Services;
 
 use App\Models\Strategic;
+use App\Models\ResponsibleUnit;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class StrategicPlanAuthorizationService
 {
+    private const OFFICE_ROLES = ['Office', 'Responsible Unit User', 'Office Representative', 'Office/Agency', 'Offices / Agencies'];
+
     public function __construct(private readonly PermissionAuthorizationService $permissionAuthorizationService)
     {
     }
@@ -112,32 +115,43 @@ class StrategicPlanAuthorizationService
     {
         $user = $this->permissionAuthorizationService->resolveUser($user);
 
-        // Future record-level plan access rule.
-        // Keep this block disabled until the approved ownership / office /
-        // workflow-based visibility rule is confirmed.
-        /*
-        $matchesApprovedRule = (int) $plan->created_by === (int) $user->user_id
-            || $plan->creator?->department === $user->department;
-
-        if (! $matchesApprovedRule) {
-            $this->deny($message);
+        if (in_array($user->role?->role_name, self::OFFICE_ROLES, true)) {
+            $unit = $this->activeOfficeUnit($user);
+            abort_unless($unit && $plan->objectives()
+                ->whereHas('responsibleUnitAssignment', fn (Builder $query) => $query->where('responsible_unit_id', $unit->responsible_unit_id))
+                ->exists(), 403, $message);
         }
-        */
 
         return $user;
     }
 
     private function applyApprovedListingScopeHook(Builder $query, User $user): void
     {
-        // Future record-level listing scope.
-        // Enable this block once the approved "which plans may this user view"
-        // rule is finalized.
-        /*
-        $query->where(function (Builder $builder) use ($user) {
-            $builder->where('created_by', $user->user_id)
-                ->orWhereHas('creator', fn (Builder $creator) => $creator->where('department', $user->department));
-        });
-        */
+        if (! in_array($user->role?->role_name, self::OFFICE_ROLES, true)) {
+            return;
+        }
+
+        $unit = $this->activeOfficeUnit($user);
+        if (! $unit) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        $query->whereHas('objectives.responsibleUnitAssignment', fn (Builder $assignment) =>
+            $assignment->where('responsible_unit_id', $unit->responsible_unit_id));
+    }
+
+    private function activeOfficeUnit(User $user): ?ResponsibleUnit
+    {
+        $office = trim((string) $user->office);
+        if ($office === '') {
+            return null;
+        }
+
+        return ResponsibleUnit::query()
+            ->where('name_key', ResponsibleUnit::nameKey($office))
+            ->where('is_active', true)
+            ->first();
     }
 
 }

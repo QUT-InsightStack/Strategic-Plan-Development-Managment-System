@@ -71,4 +71,4 @@ error. Nothing is hard-deleted.
 When the backend adds archive and restore endpoints, replace these three
 functions with API calls. The page itself only uses these functions.
 
-Tests: `npm run test:frontend` (`tests/frontend/mapping-archive.test.mjs`).
+Tests: `npm run test:frontend` (`tests/Frontend/mapping-archive.test.js`, `tests/Frontend/mapping-eligibility.test.js`).

@@ -1,5 +1,5 @@
 const ROLE_DISPLAY_NAMES = Object.freeze({
-    test: 'Technical Admin',
+    test: 'test',
     'Technical Administrator': 'Technical Admin',
     'Technical Admin': 'Technical Admin',
     'Administrative Administrator': 'Administrative Admin',
@@ -10,7 +10,10 @@ const ROLE_DISPLAY_NAMES = Object.freeze({
     'Offices / Agencies': 'Office/Agency',
     'Office/Agency': 'Office/Agency',
     'Responsible Unit User': 'Office/Agency',
-    Management: 'Management / Executive',
+    'Division Head': 'Management',
+    Management: 'Management',
+    Viewer: 'Office',
+    Office: 'Office',
     Executive: 'Management / Executive',
     'Management / Executive': 'Management / Executive',
 });
@@ -25,6 +28,7 @@ export function displayRoleName(roleName, fallback = 'Unassigned') {
 
 // Administrator is a separate legacy full-access role, not Administrative Admin.
 export function adminRoleKind(roleName) {
+    if (roleName === 'test') return 'technical';
     const label = displayRoleName(roleName, '');
     if (label === 'Administrative Admin') return 'administrative';
     if (label === 'Technical Admin') return 'technical';

@@ -37,7 +37,7 @@ class AuthSessionService
      * result instead of throwing inside that transaction, otherwise the
      * revocation would be rolled back.
      */
-    public function validLocked(string $id, int $userId): ?AuthSession
+    public function validLocked(string $id, int $userId, bool $readOnly = false): ?AuthSession
     {
         $session = $this->repository->findLocked($id);
 
@@ -58,8 +58,10 @@ class AuthSessionService
                 ->addMinutes($idleMinutes)
                 ->lessThanOrEqualTo($now)
         ) {
-            $session->revoked_at = $now;
-            $this->repository->save($session);
+            if (! $readOnly) {
+                $session->revoked_at = $now;
+                $this->repository->save($session);
+            }
 
             return null;
         }
@@ -67,10 +69,10 @@ class AuthSessionService
         return $session;
     }
 
-    public function check(string $id, int $userId): bool
+    public function check(string $id, int $userId, bool $readOnly = false): bool
     {
         return DB::transaction(
-            fn (): bool => $this->validLocked($id, $userId) !== null
+            fn (): bool => $this->validLocked($id, $userId, $readOnly) !== null
         );
     }
 

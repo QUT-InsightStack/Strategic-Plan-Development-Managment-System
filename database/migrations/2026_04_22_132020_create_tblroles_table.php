@@ -15,9 +15,12 @@ return new class extends Migration
             $table->id('role_id');
             $table->string('role_name', 100)->unique();
             $table->text('description')->nullable();
+            // Unknown roles remain protected and unavailable for assignment.
+            $table->boolean('is_assignable')->default(false);
+            $table->boolean('is_protected')->default(true);
             $table->timestamps();
         });
-    
+
     }
 
     /**

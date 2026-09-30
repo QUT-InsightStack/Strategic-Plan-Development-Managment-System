@@ -19,28 +19,31 @@ return new class extends Migration
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->enum('status', ['active', 'archived', 'deleted'])->default('active');
             $table->timestamp('archived_at')->nullable();
+            $table->unsignedBigInteger('archived_by')->nullable();
             $table->timestamp('deleted_at')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
 
             $table->foreign('core_value_id')
-                  ->references('foundation_id')
-                  ->on('tblstrategic_foundations')
-                  ->onDelete('cascade');
+                ->references('foundation_id')
+                ->on('tblstrategic_foundations')
+                ->onDelete('cascade');
             $table->foreign('plan_id')
-                  ->references('record_id')
-                  ->on('tblstrategic_record')
-                  ->onDelete('cascade');
+                ->references('record_id')
+                ->on('tblstrategic_record')
+                ->onDelete('cascade');
             $table->foreign('created_by')
-                  ->references('user_id')
-                  ->on('tblusers')
-                  ->onDelete('cascade');
+                ->references('user_id')
+                ->on('tblusers')
+                ->onDelete('cascade');
             $table->foreign('updated_by')
-                  ->references('user_id')
-                  ->on('tblusers')
-                  ->onDelete('cascade');
-             $table->unique(['core_value_id', 'plan_id']); // prevent duplicate links
-             $table->index('status');
+                ->references('user_id')
+                ->on('tblusers')
+                ->onDelete('cascade');
+            $table->unique(['core_value_id', 'plan_id']); // prevent duplicate links
+            $table->index('status');
+            $table->foreign('archived_by')->references('user_id')->on('tblusers')->nullOnDelete();
+            $table->index('archived_by');
         });
     }
 

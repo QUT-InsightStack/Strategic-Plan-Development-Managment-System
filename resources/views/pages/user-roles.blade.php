@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assign User Role | Strategic Planning Management System</title>
-    @vite(['resources/css/user-roles.css', 'resources/js/user-roles-app.js'])
+    @vite(['resources/css/role-management.css', 'resources/js/pages/technical-admin/user-roles-app.js'])
 </head>
 <body>
     <div id="root"></div>

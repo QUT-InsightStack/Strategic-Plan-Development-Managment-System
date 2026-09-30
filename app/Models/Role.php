@@ -13,10 +13,8 @@ class Role extends Model
     protected $primaryKey = 'role_id';
 
     /**
-     * Roles permitted to administer users and role assignments.
-     *
-     * Defined here as the single source of truth so authorisation checks and
-     * the seeder cannot drift apart. Must match RolesSeeder.
+     * Roles counted by the last-administrator safeguards. A test account
+     * must not replace the last real Administrator.
      */
     public const ADMIN_ROLES = ['Administrator'];
 
@@ -24,7 +22,9 @@ class Role extends Model
      * Roles that grant administrative privilege. Assigning one is treated as
      * privilege escalation and is restricted accordingly.
      */
-    public const PRIVILEGED_ROLES = ['Administrator'];
+    public const PRIVILEGED_ROLES = ['Administrator', 'Technical Administrator', 'Technical Admin', 'test'];
+
+    public const FULL_ACCESS_ROLES = ['Administrator', 'test'];
 
     protected $fillable = [
         'role_name',
@@ -33,6 +33,11 @@ class Role extends Model
         'is_protected',
 
     ];
+
+    public function hasFullAccess(): bool
+    {
+        return in_array($this->role_name, self::FULL_ACCESS_ROLES, true);
+    }
 
     /**
      * Whether this role grants administrative privilege.

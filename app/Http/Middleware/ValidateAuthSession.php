@@ -34,7 +34,7 @@ class ValidateAuthSession
             ! $user
             || ! is_string($sid)
             || ! Str::isUuid($sid)
-            || ! $this->sessions->check($sid, (int) $user->user_id)
+            || ! $this->sessions->check($sid, (int) $user->user_id, (bool) $request->route('read_only', false))
         ) {
             return $this->expired();
         }
@@ -49,6 +49,7 @@ class ValidateAuthSession
          */
         if (
             $response->getStatusCode() < 400
+            && ! $request->route('read_only', false)
             && ! $request->is('api/auth/me')
             && ! $request->routeIs('*.poll')
         ) {
