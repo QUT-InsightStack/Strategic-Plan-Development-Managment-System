@@ -91,7 +91,7 @@ class AuthenticationSessionService
         });
     }
 
-    public function logout(): void
+    public function logout(): ?int
     {
         try {
             $payload = $this->decodeForRefresh();
@@ -100,18 +100,10 @@ class AuthenticationSessionService
             | TokenExpiredException
             | TokenInvalidException $exception
         ) {
-            /*
-             * expired here means outside the refresh window.
-             * Such a token cannot obtain another valid session.
-             */
-            return;
+            return null;
         } catch (JWTException $exception) {
-            /*
-             * Missing token is normal for idempotent logout.
-             * Unexpected JWT failures should not all be silently ignored.
-             */
             if (! JWTAuth::getToken()) {
-                return;
+                return null;
             }
 
             throw $exception;
@@ -119,23 +111,12 @@ class AuthenticationSessionService
 
         $sid = $payload->get('sid');
         $userId = (int) $payload->get('sub');
+        $hasValidSessionClaims = is_string($sid) && Str::isUuid($sid) && $userId > 0;
 
-        if (
-            is_string($sid)
-            && Str::isUuid($sid)
-            && $userId > 0
-        ) {
-            /*
-             * Commit revocation before blacklisting. Even if blacklist
-             * storage subsequently fails, session enforcement blocks reuse.
-             */
+        if ($hasValidSessionClaims) {
             $this->sessions->revoke($sid, $userId);
         }
 
-        /*
-         * Enable refresh-flow validation so an expired access JWT can still
-         * be invalidated while inside its refresh window.
-         */
         $manager = JWTAuth::manager();
 
         try {
@@ -144,6 +125,8 @@ class AuthenticationSessionService
         } finally {
             $manager->setRefreshFlow(false);
         }
+
+        return $hasValidSessionClaims ? $userId : null;
     }
 
     private function decodeForRefresh(): Payload

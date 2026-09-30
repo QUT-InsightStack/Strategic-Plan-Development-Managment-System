@@ -283,8 +283,8 @@ export function decidedPlans(plans = []) {
         .filter((plan) => ['approved', 'returned', 'rejected'].includes(approvalStatusOf(plan)))
         .map((plan) => {
             const history = plan.approval_submission?.history || [];
-            const decision = [...history].reverse().find((event) => event.action !== 'submitted') || null;
-            return { plan, status: approvalStatusOf(plan), decidedAt: decision?.occurredAt || null, note: decision?.note || '', stageName: decision?.stageName || '' };
+            const decision = [...history].reverse().find((event) => !['submitted', 'resubmitted'].includes(event.action)) || null;
+            return { plan, status: approvalStatusOf(plan), decidedAt: decision?.occurredAt || null, note: decision?.comment || decision?.note || '', stageName: decision?.stageName || '' };
         })
         .sort((a, b) => (toTime(b.decidedAt) ?? 0) - (toTime(a.decidedAt) ?? 0));
 }

@@ -14,6 +14,7 @@ use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\RolesSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -176,6 +177,9 @@ class StrategicObjectiveAlignmentTest extends TestCase
         $this->link($this->objective, $chapter, $agenda);
         $this->authenticateOfficer();
 
+        // Objective archiving is independent of the parent plan's lifecycle.
+        $this->objective->update(['status' => 'archived', 'status_before_archive' => 'draft',
+            'archived_at' => now(), 'archived_by' => $this->officer->user_id]);
         $this->patchJson("/api/strategic-plans/{$this->plan->record_id}/status", ['status' => 'archived'])->assertOk();
         foreach (['index', 'by-plan', 'show'] as $endpoint) {
             $path = $endpoint === 'show' ? 'data' : 'data.0';
@@ -185,7 +189,7 @@ class StrategicObjectiveAlignmentTest extends TestCase
                 ->assertJsonCount(1, "{$path}.presidential_agenda_items");
         }
 
-        $this->objective->update(['status' => 'deleted', 'deleted_at' => now()]);
+        $this->objective->update(['status' => 'deleted', 'deleted_at' => now(), 'archived_at' => null, 'archived_by' => null, 'status_before_archive' => null]);
         $this->getJson($this->endpoint('show'))->assertNotFound();
         $this->getJson($this->endpoint('index'))->assertOk()->assertJsonPath('data', []);
         $this->getJson($this->endpoint('by-plan'))->assertOk()->assertJsonPath('data', []);
@@ -291,6 +295,9 @@ class StrategicObjectiveAlignmentTest extends TestCase
 
     public function test_alignment_migration_can_be_rolled_back_and_reapplied(): void
     {
+        // MySQL DDL commits implicitly; use committed fixtures and rebuild afterwards.
+        DB::commit();
+        RefreshDatabaseState::$migrated = false;
         $migration = require database_path('migrations/2026_09_08_000001_create_strategic_objective_alignment_tables.php');
         $migration->down();
         foreach (['tblobjective_pdp_chapter', 'tblobjective_presidential_agenda', 'tblpresidential_agenda_items'] as $table) {
@@ -307,7 +314,7 @@ class StrategicObjectiveAlignmentTest extends TestCase
 
     private function authenticateOfficer(): void
     {
-        $this->withToken(auth('api')->login($this->officer));
+        $this->authenticateApiUser($this->officer);
     }
 
     private function endpoint(string $endpoint): string

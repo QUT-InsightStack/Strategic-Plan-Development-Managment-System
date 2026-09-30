@@ -20,14 +20,23 @@ export const PERMISSIONS = Object.freeze({
     PLANS_ARCHIVE: 'strategic_records.archive',
     OBJECTIVES_ARCHIVE: 'strategic_objectives.archive',
     OBJECTIVES_VIEW: 'strategic_objectives.view',
+    INPUTS_VIEW: 'implementation_inputs.view',
+    INPUTS_CREATE: 'implementation_inputs.create',
+    OBJECTIVE_COMMENTS_CREATE: 'objective_comments.create',
+    DOCUMENTS_UPLOAD: 'strategic_documents.upload',
     OBJECTIVES_CREATE: 'strategic_objectives.create',
     OBJECTIVES_UPDATE: 'strategic_objectives.update',
+    OBJECTIVES_VIEW_PROGRESS: 'strategic_objectives.view_progress',
+    OBJECTIVES_UPDATE_PROGRESS: 'strategic_objectives.update_progress',
+    OBJECTIVES_CORRECT_PROGRESS: 'strategic_objectives.correct_progress',
     OBJECTIVES_DELETE: 'strategic_objectives.delete',
     FOUNDATIONS_VIEW: 'strategic_foundations.view',
     FOUNDATIONS_MANAGE: 'strategic_foundations.manage',
     MAPPINGS_MANAGE: 'relations.manage',
     REPORTS_VIEW: 'reports.view',
     LOGS_VIEW: 'logs.view',
+    LOGIN_HISTORY_VIEW: 'login_history.view',
+    SYSTEM_MONITORING_VIEW: 'system_monitoring.view',
     SETTINGS_MANAGE: 'settings.manage',
     DASHBOARD_VIEW: 'dashboard.view',
     PDP_CHAPTERS_MANAGE: 'pdp_chapters.manage',
@@ -51,6 +60,19 @@ const fullPlanningPermissions = [
     PERMISSIONS.FOUNDATIONS_MANAGE,
     PERMISSIONS.MAPPINGS_MANAGE,
     PERMISSIONS.REPORTS_VIEW,
+];
+
+const managementPermissions = [
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.PLANS_VIEW,
+    PERMISSIONS.FOUNDATIONS_VIEW,
+    PERMISSIONS.OBJECTIVES_VIEW,
+    PERMISSIONS.OBJECTIVES_VIEW_PROGRESS,
+    PERMISSIONS.INPUTS_VIEW,
+    'relations.view',
+    'plan_core_values.view',
+    'strategic_documents.view',
+    'strategic_documents.download',
 ];
 
 const contributorPlanningPermissions = [
@@ -79,6 +101,8 @@ const technicalAdminPermissions = [
     PERMISSIONS.PERMISSIONS_VIEW,
     PERMISSIONS.PERMISSIONS_MANAGE,
     PERMISSIONS.LOGS_VIEW,
+    PERMISSIONS.LOGIN_HISTORY_VIEW,
+    PERMISSIONS.SYSTEM_MONITORING_VIEW,
     PERMISSIONS.SETTINGS_MANAGE,
     PERMISSIONS.BACKUPS_VIEW,
     PERMISSIONS.BACKUPS_CREATE,
@@ -106,7 +130,7 @@ const rolePolicies = {
     'Administrative Administrator': { home: '/dashboard', permissions: administrativeAdminPermissions },
     'Technical Administrator': { home: '/dashboard', permissions: technicalAdminPermissions },
     'Technical Admin': { home: '/dashboard', permissions: technicalAdminPermissions },
-    test: { home: '/dashboard', permissions: technicalAdminPermissions },
+    test: { home: '/dashboard', permissions: ['*'] },
     'Planning Officer': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
     'Planner/Encoder': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
     'Office Representative': { home: '/office', permissions: officePermissions },
@@ -114,10 +138,11 @@ const rolePolicies = {
     'Offices / Agencies': { home: '/office', permissions: officePermissions },
     'Responsible Unit User': { home: '/office', permissions: officePermissions },
     'Division Head': { home: '/strategic-plans', permissions: fullPlanningPermissions },
-    Management: { home: '/management-dashboard', permissions: fullPlanningPermissions },
-    Executive: { home: '/management-dashboard', permissions: fullPlanningPermissions },
-    'Management / Executive': { home: '/management-dashboard', permissions: fullPlanningPermissions },
+    Management: { home: '/management-dashboard', permissions: managementPermissions },
+    Executive: { home: '/management-dashboard', permissions: managementPermissions },
+    'Management / Executive': { home: '/management-dashboard', permissions: managementPermissions },
     Viewer: { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.REPORTS_VIEW] },
+    Office: { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.REPORTS_VIEW] },
 };
 
 export function normalizePermissionList(list) {
@@ -137,24 +162,32 @@ export function hasRolePolicy(roleName) {
 }
 
 export const routeRules = [
-    { test: /^\/consolidate-inputs(?:\/|$)/, permission: PERMISSIONS.PLANS_UPDATE },
+    { test: /^\/management-dashboard(?:\/|$)/, roles: ['Management', 'Executive', 'Management / Executive'] },
+    { test: /^\/strategic-plans\/\d+\/approval-status(?:\/|$)/ },
+    { test: /^\/consolidate-inputs(?:\/|$)/, permission: PERMISSIONS.INPUTS_VIEW },
     { test: /^\/office(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
     {
     test: /^\/workflow-configuration(?:\/|$)/,
-    permission: PERMISSIONS.SETTINGS_MANAGE,
+    roles: ['Administrator', 'Technical Administrator', 'Technical Admin', 'test'],
 },
     { test: /^\/administrative-admin\/reference-data(?:\/|$)/, permission: PERMISSIONS.REFERENCE_DATA_MANAGE },
     { test: /^\/administrative-admin\/templates(?:\/|$)/, permission: PERMISSIONS.TEMPLATES_MANAGE },
     { test: /^\/dashboard(?:\/|$)/, permission: PERMISSIONS.DASHBOARD_VIEW },
-    { test: /^\/management-dashboard(?:\/|$)/, permission: PERMISSIONS.DASHBOARD_VIEW },
     { test: /^\/settings(?:\/|$)/, permission: PERMISSIONS.SETTINGS_MANAGE },
     { test: /^\/role-management(?:\/|$)/, permission: PERMISSIONS.ROLES_MANAGE },
     { test: /^\/user-management(?:\/|$)/, permission: PERMISSIONS.USERS_VIEW },
     { test: /^\/pdp-chapters\/manage(?:\/|$)/, permission: PERMISSIONS.PDP_CHAPTERS_MANAGE },
+    { test: /^\/login-history(?:\/|$)/, permission: PERMISSIONS.LOGIN_HISTORY_VIEW },
     { test: /^\/audit-logs(?:\/|$)/, permission: PERMISSIONS.LOGS_VIEW },
-    { test: /^\/login-history(?:\/|$)/, permission: PERMISSIONS.LOGS_VIEW },
+
     { test: /^\/manual-backup(?:\/|$)/, permission: PERMISSIONS.BACKUPS_VIEW },
-    { test: /^\/strategic-plans\/create(?:\/|$)/, permission: PERMISSIONS.PLANS_CREATE },
-    { test: /^\/strategic-plans\/\d+\/edit(?:\/|$)/, permission: PERMISSIONS.PLANS_UPDATE },
-    { test: /^\/strategic-(?:plans|objectives)(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
+
+// Review access is checked against recorded workflow participants by the API.
+{
+    test: /^\/strategic-plan-reviews(?:\/|$)/,
+},
+
+{ test: /^\/strategic-plans\/create(?:\/|$)/, permission: PERMISSIONS.PLANS_CREATE },
+{ test: /^\/strategic-plans\/\d+\/edit(?:\/|$)/, permission: PERMISSIONS.PLANS_UPDATE },
+{ test: /^\/strategic-(?:plans|objectives)(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
 ];

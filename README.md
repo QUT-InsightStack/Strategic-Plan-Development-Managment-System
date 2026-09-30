@@ -6,6 +6,9 @@ Automated tests use a separate MySQL database, `db_spdms_test`. Follow the
 [MySQL test environment guide](docs/mysql-testing.md) to configure `.env.testing`,
 then run `php artisan test`. Tests do not use the application's business database.
 
+For objective progress permissions, API endpoints, audit history and setup, see
+[strategic objective progress](docs/strategic-objective-progress.md).
+
 ---
 
 ## 1. Prerequisites
@@ -607,7 +610,7 @@ To set up the project locally:
 3. Clone repository
 4. Install dependencies
 5. Configure environment
-6. Run migrations
+6. Initialize the empty database with `php artisan migrate --seed` (see [database initialization](docs/database-initialization.md) for existing databases)
 7. Start the application
 
 This ensures consistency across all development environments.

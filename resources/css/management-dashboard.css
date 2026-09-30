@@ -185,3 +185,22 @@
     .mgmt-bars__row { grid-template-columns: 1fr 36px; }
     .mgmt-bars__track { grid-column: 1 / -1; grid-row: 2; }
 }
+
+/* ---------- quick links (shared with the original Management launcher) ---------- */
+.management-dashboard { min-height: 100vh; background: var(--color-background); }
+.management-dashboard__content { width: min(100%, 1440px); margin: 0 auto; padding: var(--space-6); }
+.management-dashboard__header { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-4); margin-bottom: var(--space-5); }
+.management-dashboard__eyebrow { margin: 0 0 var(--space-1); color: var(--color-text-secondary); font-size: var(--font-size-xs); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.management-dashboard__header h1 { margin: 0; color: var(--color-primary); font-size: var(--font-size-3xl); }
+.management-dashboard__header p:last-child { margin: var(--space-2) 0 0; color: var(--color-text-secondary); }
+.management-dashboard__group { margin: 0 0 var(--space-6); }
+.management-dashboard__group h2 { margin: 0 0 var(--space-3); color: var(--color-primary); font-size: var(--font-size-lg); }
+.management-dashboard__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: var(--space-4); }
+.management-dashboard__card { display: flex; min-height: 190px; flex-direction: column; gap: var(--space-3); padding: var(--space-4); }
+.management-dashboard__card-heading { display: flex; align-items: center; gap: var(--space-3); }
+.management-dashboard__icon { display: grid; width: 44px; height: 44px; flex: 0 0 44px; place-items: center; border-radius: 12px; color: var(--color-primary); background: var(--color-primary-soft); font-size: 20px; }
+.management-dashboard__card h3 { margin: 0; color: var(--color-text-primary); font-size: var(--font-size-md); }
+.management-dashboard__card p { margin: 0; color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+.management-dashboard__card .ui-button { align-self: flex-start; margin-top: auto; text-decoration: none; }
+.management-dashboard__empty { padding: var(--space-5); border: 1px dashed var(--color-border); border-radius: var(--radius-md); color: var(--color-text-secondary); background: var(--color-surface); }
+@media (max-width: 720px) { .management-dashboard__content { padding: var(--space-4); } .management-dashboard__header { display: block; } }

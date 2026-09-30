@@ -32,25 +32,3 @@ export function managementLevel(session) {
 export function isManagementSession(session) {
     return Boolean(managementLevel(session)) && can(PERMISSIONS.DASHBOARD_VIEW, session);
 }
-
-/**
- * A plan's current approval stage is actionable only by the approver the
- * active workflow assigned to it. Approvers can be configured by role, user,
- * office or unit, so each is matched against the matching session field.
- */
-export function isAssignedApprover(stage, session) {
-    if (!stage || !session || stage.status !== 'pending') return false;
-    if (session.permissions?.includes('*')) return true;
-
-    const approver = String(stage.approver || '').trim().toLocaleLowerCase();
-    if (!approver) return false;
-
-    const candidates = {
-        role: [session.roleName, displayRoleName(session.roleName, '')],
-        user: [session.name],
-        office: [session.office],
-        unit: [session.office],
-    }[stage.approverType] || [];
-
-    return candidates.some((value) => String(value || '').trim().toLocaleLowerCase() === approver);
-}

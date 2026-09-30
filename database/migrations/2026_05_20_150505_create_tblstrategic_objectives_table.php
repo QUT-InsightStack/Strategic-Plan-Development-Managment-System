@@ -24,7 +24,9 @@ return new class extends Migration
             $table->string('responsible_office_agency', 255)->nullable();
 
             $table->enum('status', ['draft', 'published', 'archived', 'deleted'])->default('draft');
+            $table->enum('status_before_archive', ['draft', 'published'])->nullable();
             $table->timestamp('archived_at')->nullable();
+            $table->unsignedBigInteger('archived_by')->nullable();
             $table->timestamp('deleted_at')->nullable();
 
             $table->timestamps();
@@ -46,6 +48,8 @@ return new class extends Migration
 
             $table->index('strategic_plan_id');
             $table->index('status');
+            $table->foreign('archived_by')->references('user_id')->on('tblusers')->nullOnDelete();
+            $table->index('archived_by');
         });
     }
 

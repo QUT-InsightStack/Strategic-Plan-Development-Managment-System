@@ -5,41 +5,43 @@ import { apiRequest } from '../api/api-client.js';
 import { displayRoleName } from '../access/role-labels.js';
 import { LogoutButton } from './LogoutButton.js';
 import { isOfficeRole, officeItems } from '../access/office-navigation.js';
-import { isManagementSession } from '../access/management-access.js';
 
 const { useState, useEffect } = React;
 
 const items = [
     { label: 'Home', icon: 'bi-house-door-fill', href: '/dashboard', permission: PERMISSIONS.DASHBOARD_VIEW },
-    { label: 'Management Dashboard', icon: 'bi-speedometer2', href: '/management-dashboard', permission: PERMISSIONS.DASHBOARD_VIEW, management: true },
     {
         label: 'Planning Module',
         icon: 'bi-clipboard2-check',
         permission: PERMISSIONS.PLANS_VIEW,
         children: [
-            { label: 'Consolidate Inputs', href: '/consolidate-inputs', permission: PERMISSIONS.PLANS_UPDATE },
             { label: 'Create Plans', href: '/strategic-plans/create', permission: PERMISSIONS.PLANS_CREATE },
             { label: 'Manage Plans', href: '/strategic-plans', permission: PERMISSIONS.PLANS_VIEW },
             { label: 'Strategic Objectives', href: '/strategic-objectives', permission: PERMISSIONS.OBJECTIVES_VIEW },
+            { label: 'Consolidate Inputs', href: '/consolidate-inputs', permission: PERMISSIONS.INPUTS_VIEW },
+            { label: 'Update and Monitor Progress', href: '/office?view=progress', permission: PERMISSIONS.OBJECTIVES_VIEW_PROGRESS },
             { label: 'PDP Chapters', href: '/pdp-chapters', permission: PERMISSIONS.PLANS_VIEW },
-            { label: 'Monitor Plans', permission: PERMISSIONS.MONITORING_VIEW },
-            { label: 'Finalize Plans', href: '/strategic-plans/finalize', permission: PERMISSIONS.PLANS_UPDATE },
         ],
     },
     {
         label: 'Mapping Module',
         icon: 'bi-map',
-        permission: PERMISSIONS.MAPPINGS_MANAGE,
         children: [
             { label: 'Create / Review Mapping', href: '/mappings', permission: PERMISSIONS.MAPPINGS_MANAGE },
+            { label: 'View Strategic Alignment', href: '/mappings?mode=view', permission: 'relations.view' },
         ],
     },
+    { label: 'Plan Reviews', icon: 'bi-clipboard-check', href: '/strategic-plan-reviews' },
+    { label: 'Finalize Plans', icon: 'bi-clipboard-check-fill', href: '/strategic-plans/finalize', permission: PERMISSIONS.PLANS_UPDATE },
+    { label: 'Monitor Plans', icon: 'bi-speedometer2', permission: PERMISSIONS.MONITORING_VIEW },
     { label: 'FAQ', icon: 'bi-info-square-fill' },
     { label: 'Report', icon: 'bi-file-earmark-bar-graph', permission: PERMISSIONS.REPORTS_VIEW },
 ];
 
 export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) {
     const currentPath = window.location.pathname;
+    const isFinalizePage = currentPath === '/strategic-plans/finalize'
+        || /^\/strategic-plans\/\d+\/finalize\/?$/.test(currentPath);
     const isObjectivePage = currentPath === '/strategic-objectives'
         || /^\/strategic-plans\/\d+\/objectives\/?$/.test(currentPath);
     const [accessSession, setAccessSession] = useState(null);
@@ -57,7 +59,7 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
         return () => { active = false; };
     }, [accessAttempt]);
     const [openMenus, setOpenMenus] = useState({
-        'Planning Module': (currentPath === '/office' && !['mapping', 'alignment'].includes(new URLSearchParams(window.location.search).get('view'))) || currentPath === '/consolidate-inputs' || currentPath.startsWith('/strategic-plan') || currentPath.startsWith('/strategic-objectives') || currentPath.startsWith('/pdp-chapters'),
+        'Planning Module': (currentPath === '/office' && !['mapping', 'alignment'].includes(new URLSearchParams(window.location.search).get('view'))) || currentPath === '/consolidate-inputs' || (currentPath.startsWith('/strategic-plan') && !isFinalizePage) || currentPath.startsWith('/strategic-objectives') || currentPath.startsWith('/pdp-chapters'),
         'Mapping Module': currentPath === '/mappings' || (currentPath === '/office' && ['mapping', 'alignment'].includes(new URLSearchParams(window.location.search).get('view'))),
     });
 
@@ -68,8 +70,9 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
     function isCurrentChild(child) {
         if (child.href?.startsWith('/office')) {
             const view = new URLSearchParams(window.location.search).get('view');
-            return currentPath === '/office' && (child.href === '/office' ? !view || view === 'review' : child.href === `/office?view=${view}`);
+            return currentPath === '/office' && (child.href === '/office' ? !view || ['review', 'comments'].includes(view) : child.href === `/office?view=${view}`);
         }
+        if (child.href?.startsWith('/mappings?')) return child.href === `${currentPath}${window.location.search}`;
         return child.href === currentPath
             || (child.href === '/strategic-plans/finalize' && /^\/strategic-plans\/\d+\/finalize\/?$/.test(currentPath))
             || (child.href === '/strategic-objectives' && isObjectivePage)
@@ -107,7 +110,6 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
 
     function renderItem(item) {
         if (item.permission && !can(item.permission, accessSession)) return null;
-        if (item.management && !isManagementSession(accessSession)) return null;
         if (item.children) {
             if (!item.children.some(child => !child.permission || can(child.permission, accessSession))) return null;
             const expanded = Boolean(openMenus[item.label]);
@@ -129,8 +131,13 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
             );
         }
 
-        return item.href
-            ? React.createElement('a', { key: item.label, href: item.href, className: `app-sidebar__item${item.href === currentPath ? ' active' : ''}`, 'aria-current': item.href === currentPath ? 'page' : undefined }, React.createElement('i', { className: `bi ${item.icon}` }), React.createElement('span', null, item.label))
+        const href = item.href === '/dashboard' && ['Management', 'Executive', 'Management / Executive'].includes(accessSession?.roleName)
+            ? '/management-dashboard' : item.href;
+        const isCurrent = href === currentPath
+            || (item.href === '/strategic-plans/finalize' && isFinalizePage);
+
+        return href
+            ? React.createElement('a', { key: item.label, href, className: `app-sidebar__item${isCurrent ? ' active' : ''}`, 'aria-current': isCurrent ? 'page' : undefined }, React.createElement('i', { className: `bi ${item.icon}` }), React.createElement('span', null, item.label))
             : React.createElement('button', { key: item.label, type: 'button', className: `app-sidebar__item${active === item.label ? ' active' : ''}`, onClick: () => onNotice(`${item.label} is reserved for a later module.`) }, React.createElement('i', { className: `bi ${item.icon}` }), React.createElement('span', null, item.label));
     }
 
@@ -139,9 +146,10 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
             React.createElement(BrandLogo, { className: 'app-sidebar__logo' }),
             React.createElement('span', { className: 'app-sidebar__brand-copy' }, React.createElement('strong', null, 'SPDMS'), React.createElement('small', null, 'Strategic Planning System'))
         ),
-        React.createElement('a', { className: 'app-sidebar__profile', href: '/profile', 'aria-label': 'Open user profile' }, React.createElement('i', { className: 'bi bi-person-vcard-fill' }), React.createElement('span', null, currentPath === '/office' ? 'Office/ Agencies' : displayRoleName(accessSession?.roleName, 'User'))),
+        React.createElement('a', { className: 'app-sidebar__profile', href: '/profile', 'aria-label': 'Open user profile' }, React.createElement('i', { className: 'bi bi-person-vcard-fill' }), React.createElement('span', null, isOfficeRole(accessSession?.roleName) ? 'Office/ Agencies' : displayRoleName(accessSession?.roleName, 'User'))),
         React.createElement('nav', { className: 'app-sidebar__nav' },
-            accessSession ? (currentPath === '/office' || isOfficeRole(accessSession.roleName) ? officeItems : items).map(renderItem)
+            accessSession && renderItem({ label: 'Notifications', icon: 'bi-bell', href: '/workflow-notifications' }),
+            accessSession ? (isOfficeRole(accessSession.roleName) ? officeItems : items).map(renderItem)
                 : React.createElement('p', { role: accessError ? 'alert' : 'status' }, accessError || 'Loading menu…'),
             accessError && React.createElement('button', { type: 'button', className: 'app-sidebar__item', onClick: () => setAccessAttempt(value => value + 1) }, 'Retry')),
         React.createElement(LogoutButton, { className: 'app-sidebar__item app-sidebar__logout', label: 'Log Out', iconClass: 'bi bi-box-arrow-left' })

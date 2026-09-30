@@ -17,6 +17,10 @@ class UpdateStrategicObjectiveRequest extends ApiFormRequest
         $isPublishing = $this->input('status') === 'published';
 
         return [
+            'progress_percentage' => ['missing'],
+            'progress_status' => ['missing'],
+            'progress_updated_at' => ['missing'],
+            'progress_updated_by' => ['missing'],
             'strategic_plan_id' => ['prohibited'],
             'created_by' => ['prohibited'],
             'updated_by' => ['prohibited'],

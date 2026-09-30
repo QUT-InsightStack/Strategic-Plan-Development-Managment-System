@@ -6,15 +6,15 @@ performance within their assigned scope.
 
 - Page: `/management-dashboard`
 - Blade view: `resources/views/pages/management-dashboard.blade.php`
-- Page script: `resources/js/pages/management-dashboard-app.js`
+- Page script: `resources/js/pages/management/management-dashboard-app.js`
 - Summaries: `resources/js/data/management-dashboard-data.js`
 - Access rules: `resources/js/access/management-access.js`
 - Styles: `resources/css/management-dashboard.css`
 
 ## For Management users
 
-Management and Executive users land on the dashboard after signing in. It is
-also listed as **Management Dashboard** in the sidebar.
+Management and Executive users land on the dashboard after signing in, and
+**Home** in the sidebar opens it.
 
 | Section | What it shows |
 | --- | --- |
@@ -37,10 +37,16 @@ objective status and approval status. Filters apply to every section at once.
 
 ### Approving plans
 
-**Approve**, **Return** and **Reject** appear only on plans where you are the
-assigned approver for the current stage. Other plans are marked *View only*.
-Approving moves the plan to the next stage, or marks it approved after the
-final stage. Returning or rejecting needs a reason.
+A **Review** button appears only on plans where you are an assigned reviewer
+for the current stage; other plans are marked *View only*. It opens the plan
+review page (`/strategic-plan-reviews/{id}`), where the approval decision is
+recorded. The dashboard itself does not record decisions.
+
+### Quick links
+
+Cards link to Assigned Plan Reviews, Strategic Plans, Agenda and PDP
+Alignment, Agency Input Review and Objective Progress. Each card appears only
+with its permission.
 
 ### Overdue and at-risk items
 
@@ -80,7 +86,7 @@ You can change these limits in `RISK_THRESHOLDS`.
 
 | Control | Permission |
 | --- | --- |
-| Approve / Return / Reject | Assigned approver for the current stage, matched by role, user, office or unit (`isAssignedApprover`) |
+| Review | Assigned reviewer for the current stage (`isSubmissionAssignedToReviewer` in `plan-approval-api.js`) |
 | Manage or delete plans | `strategic_records.delete` |
 | Manage or delete objectives | `strategic_objectives.delete` |
 | Manage alignment mappings | `relations.manage` |
@@ -98,15 +104,15 @@ screens are never linked from this dashboard.
 | --- | --- |
 | Plans | `GET /api/strategic-plans` (all pages, 100 per page, up to 1,000) |
 | Objectives | `GET /api/strategic-objectives` (same paging) |
-| Approval submissions | `plan-approval-demo-data.js` (browser storage, frontend demo) |
-| Agency inputs, progress updates | `office-demo-storage.js` (browser storage, frontend demo) |
+| Plan approval status | `approval_status` on each plan |
+| Current stage and history | `GET /api/plan-reviews` (submissions assigned to you) |
+| Agency inputs, progress updates | `data/office-demo-storage.js` (browser storage, frontend demo) |
 | Alignment mappings | `mapping-storage.js` (browser storage, frontend demo) |
 
 All summaries are pure functions in `management-dashboard-data.js`. Building
-the dashboard only reads records. The only thing the page writes is an
-approval decision recorded through `recordApprovalDecision`.
+the dashboard only reads records; the page writes nothing.
 
-When backend endpoints exist for approvals, inputs, progress and mappings,
+When backend endpoints exist for inputs, progress and mappings,
 replace the browser-storage readers in `loadDashboardData`. The summary
 functions will not need to change.
 
@@ -116,9 +122,8 @@ functions will not need to change.
 npm run test:frontend
 ```
 
-The tests in `tests/frontend/` cover:
+The tests in `tests/Frontend/management-dashboard.test.js` cover:
 
 - the summaries and filters, and that building the dashboard does not change
   the loaded records;
-- management access and assigned-approver checks;
-- approval decisions.
+- management access checks.

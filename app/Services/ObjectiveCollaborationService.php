@@ -83,25 +83,9 @@ class ObjectiveCollaborationService
         return $query->orderBy('comment_id')->paginate($perPage);
     }
 
-    public function inputs(?int $planId, ?int $objectiveId, int $perPage, User $actor): LengthAwarePaginator
-    {
-        [$plan, $objective] = $this->context($planId, $objectiveId, $actor);
-        $query = ImplementationInput::where('strategic_plan_id', $plan->record_id);
-        if ($objective) {
-            $query->where('objective_id', $objective->objective_id);
-        }
-        if (! $this->canViewAll('implementation_inputs.view_all', $actor)) {
-            $this->permissions->ensureHasPermission('implementation_inputs.create', $actor);
-            $unit = $this->authorizeUnit($plan, $objective, $actor);
-            $query->where('responsible_unit_id', $unit->responsible_unit_id);
-        }
-
-        return $query->orderBy('input_id')->paginate($perPage);
-    }
-
     private function canViewAll(string $permission, User $actor): bool
     {
-        return $actor->role?->role_name === 'Administrator'
+        return $actor->role?->hasFullAccess()
             || $this->permissions->userPermissionCodes($actor)->contains($permission);
     }
 

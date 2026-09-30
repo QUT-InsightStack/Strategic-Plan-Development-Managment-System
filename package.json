@@ -5,7 +5,7 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "test:frontend": "node --test tests/frontend/*.test.mjs"
+        "test:frontend": "node --experimental-test-isolation=none --test tests/Frontend/*.test.js"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

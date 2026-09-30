@@ -6,6 +6,7 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use RuntimeException;
 
 class UsersSeeder extends Seeder
 {
@@ -17,7 +18,18 @@ class UsersSeeder extends Seeder
         }
 
         $defaultPassword = env('SEEDER_DEFAULT_PASSWORD', '123456');
-        $testRoleId = Role::where('role_name', 'test')->value('role_id');
+
+        $roleIds = Role::query()
+            ->whereIn('role_name', ['Administrator', 'Planning Officer', 'Office', 'test'])
+            ->pluck('role_id', 'role_name');
+
+        foreach (['Administrator', 'Planning Officer', 'Office', 'test'] as $roleName) {
+            if (! $roleIds->has($roleName)) {
+                throw new RuntimeException(
+                    "UsersSeeder requires the '{$roleName}' role to exist. Ensure RolesSeeder runs first."
+                );
+            }
+        }
 
         $users = [
             [
@@ -30,7 +42,7 @@ class UsersSeeder extends Seeder
                 'office' => 'Main Office',
                 'position' => 'System Administrator',
                 'password' => Hash::make($defaultPassword),
-                'role_id' => 1,
+                'role_id' => $roleIds['Administrator'],
                 'status' => 'active',
             ],
             [
@@ -43,19 +55,19 @@ class UsersSeeder extends Seeder
                 'office' => 'Planning Office',
                 'position' => 'Planning Officer',
                 'password' => Hash::make($defaultPassword),
-                'role_id' => 2,
+                'role_id' => $roleIds['Planning Officer'],
                 'status' => 'active',
             ],
             [
                 'first_name' => 'Test',
-                'last_name' => 'Viewer',
+                'last_name' => 'Office',
                 'email' => 'testviewer@example.com',
                 'department' => 'Research Division',
                 'unit' => 'Monitoring Unit',
                 'office' => 'Records Office',
-                'position' => 'Viewer',
+                'position' => 'Office',
                 'password' => Hash::make($defaultPassword),
-                'role_id' => 4,
+                'role_id' => $roleIds['Office'],
                 'status' => 'inactive',
             ],
             [
@@ -66,13 +78,13 @@ class UsersSeeder extends Seeder
                 'department' => 'Testing',
                 'position' => 'Test User',
                 'password' => Hash::make($defaultPassword),
-                'role_id' => $testRoleId,
+                'role_id' => $roleIds['test'],
                 'status' => 'active',
             ],
         ];
 
         foreach ($users as $data) {
-            User::firstOrCreate(['email' => $data['email']], $data);
+            User::updateOrCreate(['email' => $data['email']], $data);
         }
     }
 }

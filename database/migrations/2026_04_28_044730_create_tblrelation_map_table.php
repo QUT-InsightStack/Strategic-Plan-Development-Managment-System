@@ -18,26 +18,29 @@ return new class extends Migration
             $table->unsignedBigInteger('created_by');
             $table->enum('status', ['active', 'archived', 'deleted'])->default('active');
             $table->timestamp('archived_at')->nullable();
+            $table->unsignedBigInteger('archived_by')->nullable();
             $table->timestamp('deleted_at')->nullable();
             $table->timestamps();
 
-                $table->foreign('record_id')
-                    ->references('record_id')
-                    ->on('tblstrategic_record')
-                    ->onDelete('cascade');
-    
-                $table->foreign('parent_id')
-                    ->references('record_id')
-                    ->on('tblstrategic_record')
-                    ->onDelete('cascade');
-    
-                $table->foreign('created_by')
-                    ->references('user_id')
-                    ->on('tblusers')
-                    ->onDelete('cascade');
+            $table->foreign('record_id')
+                ->references('record_id')
+                ->on('tblstrategic_record')
+                ->onDelete('cascade');
 
-                $table->unique(['record_id', 'parent_id']); // prevent duplicate relationships
-                $table->index('status');
+            $table->foreign('parent_id')
+                ->references('record_id')
+                ->on('tblstrategic_record')
+                ->onDelete('cascade');
+
+            $table->foreign('created_by')
+                ->references('user_id')
+                ->on('tblusers')
+                ->onDelete('cascade');
+
+            $table->unique(['record_id', 'parent_id']); // prevent duplicate relationships
+            $table->index('status');
+            $table->foreign('archived_by')->references('user_id')->on('tblusers')->nullOnDelete();
+            $table->index('archived_by');
         });
     }
 

@@ -3,12 +3,15 @@
 namespace Database\Seeders;
 
 use App\Models\Role;
+use App\Support\RoleNameUpgrade;
 use Illuminate\Database\Seeder;
 
 class RolesSeeder extends Seeder
 {
     public function run(): void
     {
+        RoleNameUpgrade::run();
+
         $roles = [
             [
                 'role_name' => 'Administrator',
@@ -29,16 +32,22 @@ class RolesSeeder extends Seeder
                 'is_protected' => false,
             ],
             [
-                'role_name' => 'Division Head',
+                'role_name' => 'Management',
                 'description' => 'Reviews and approves plans within their division.',
                 'is_assignable' => true,
                 'is_protected' => false,
             ],
             [
-                'role_name' => 'Viewer',
+                'role_name' => 'Office',
                 'description' => 'Read-only access to published plans and reports.',
                 'is_assignable' => true,
                 'is_protected' => false,
+            ],
+            [
+                'role_name' => 'Technical Administrator',
+                'description' => 'Manages accounts, security, backups, and system activity monitoring.',
+                'is_assignable' => true,
+                'is_protected' => true,
             ],
         ];
 

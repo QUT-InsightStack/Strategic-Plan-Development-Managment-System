@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Password;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
-use App\Services\SecuritySettingsService;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\UploadProfilePhotoRequest;
@@ -42,7 +41,6 @@ class AuthController extends Controller
         private readonly StrategicLogWriter $auditWriter,
         private readonly ProfilePhotoService $profilePhotos,
         private readonly LoginHistoryRecorder $loginHistoryRecorder,
-        private readonly SecuritySettingsService $securitySettings
     ) {
     }
     
@@ -80,29 +78,48 @@ class AuthController extends Controller
             ]);
         }
 
+        if ($result['status'] !== 'success') {
+            throw new \LogicException('Unexpected authentication result.');
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Logged in successfully.',
-        ])->withCookie($this->makeAccessCookie($result['token']));
+        ])->withCookie($this->accessCookies->make($result['token']));
     }
 
     public function logout(): JsonResponse
     {
         try {
-            $this->sessionService->logout();
+            $userId = $this->sessionService->logout();
         } catch (\Throwable $exception) {
             report($exception);
-    
+
             return response()->json([
                 'success' => false,
                 'message' => 'The cookie was cleared, but server-side logout could not be confirmed.',
-            ], 503)->withCookie($this->forgetAccessCookie());
+            ], 503)->withCookie($this->accessCookies->forget());
         }
-    
+
+        if ($userId !== null) {
+            try {
+                $this->auditWriter->write('auth.logout', [
+                    'actor_user_id' => $userId,
+                    'resource_type' => 'user',
+                    'resource_id' => $userId,
+                    'states' => 'success',
+                ]);
+            } catch (\Throwable $exception) {
+                // The session is already revoked; an audit failure must not
+                // report the logout itself as failed.
+                report($exception);
+            }
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Logged out successfully.',
-        ])->withCookie($this->forgetAccessCookie());
+        ])->withCookie($this->accessCookies->forget());
     }
   
     public function refresh(): JsonResponse
@@ -134,8 +151,49 @@ class AuthController extends Controller
     
             return response()->json([
                 'success' => false,
-                'message' => 'Unable to refresh the authentication session.',
-            ], 503);
+                'message' => 'Authentication session expired.',
+            ], 401)->withCookie($this->forgetAccessCookie());
+        } catch (TokenExpiredException $e) {
+            SystemLog::notice('Rejected JWT outside the refresh window.', [
+                'exception' => $e,
+            ]);
+
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Token has expired and cannot be refreshed.',
+            ], 401)->withCookie($this->forgetAccessCookie());
+        } catch (TokenInvalidException $e) {
+            SystemLog::notice('Rejected invalid JWT refresh request.', [
+                'exception' => $e,
+            ]);
+
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Token is invalid.',
+            ], 401)->withCookie($this->forgetAccessCookie());
+        } catch (JWTException $e) {
+            SystemLog::warning('Unable to refresh JWT.', [
+                'exception' => $e,
+            ]);
+
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to refresh token.',
+            ], 401)->withCookie($this->forgetAccessCookie());
+        } catch (\Throwable $e) {
+            SystemLog::error('Unexpected JWT refresh failure.', [
+                'exception' => $e,
+            ]);
+            app(\App\Services\SystemEventRecorder::class)->record('auth.refresh_failed', 'auth', 'error', 'failure', ['exception_type' => $e::class]);
+
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to refresh token.',
+            ], 500)->withCookie($this->forgetAccessCookie());
         }
     }
 
@@ -253,7 +311,6 @@ class AuthController extends Controller
         }
 
         $user->save();
-
         LogModel::create([
             'user_id'   => $user->user_id,
             'operation' => 'Profile updated: ' . implode(', ', $changed),
@@ -319,6 +376,7 @@ class AuthController extends Controller
             try {
                 Password::broker()->sendResetLink(['email' => $email]);
             } catch (\Throwable $e) {
+                app(\App\Services\SystemEventRecorder::class)->record('auth.password_reset_delivery_failed', 'auth', 'error', 'failure', ['exception_type' => $e::class]);
                 SystemLog::error('Unable to send password reset link.', [
                     'email' => $email,
                     'exception' => $e,

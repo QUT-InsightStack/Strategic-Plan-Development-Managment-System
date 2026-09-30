@@ -12,3 +12,4 @@ export function updateStrategicPlan(id, data) { return apiRequest(`${baseUrl}/${
 export function deleteStrategicPlan(id) { return apiRequest(`${baseUrl}/${id}`, { method: 'DELETE' }); }
 export function copyStrategicPlan(id) { return apiRequest(`${baseUrl}/${id}/copy`, { method: 'POST' }); }
 export function updateStrategicPlanStatus(id, status) { return apiRequest(`${baseUrl}/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }); }
+export function getStrategicPlanCoreValues(planId) { return apiRequest(`/api/strategic-records/${planId}/core-values`);}

@@ -49,6 +49,101 @@ export function getPlanSubmission(planId) {
 
     return submissions[String(planId)] || null;
 }
+export function getPlanSubmissions() {
+    return Object.values(
+        readStorage(SUBMISSION_STORAGE_KEY, {})
+    );
+}
+
+function normalizeReviewerValue(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s*\/\s*/g, '/')
+        .replace(/\s+/g, ' ');
+}
+
+function reviewerCandidates(session, approverType) {
+    if (!session) {
+        return [];
+    }
+
+    switch (approverType) {
+        case 'role':
+            return [
+                session.roleName,
+                session.roleLabel,
+            ];
+
+        case 'office':
+            return [
+                session.office,
+                session.department,
+            ];
+
+        case 'unit':
+            return [
+                session.unit,
+            ];
+
+        case 'user':
+            return [
+                session.name,
+                session.email,
+                session.userId,
+            ];
+
+        default:
+            return [];
+    }
+}
+
+export function isSubmissionAssignedToReviewer(
+    submission,
+    session
+) {
+    const currentStage = submission?.currentStage;
+
+    if (
+        !currentStage ||
+        currentStage.status !== 'pending' ||
+        !currentStage.approverType ||
+        !currentStage.approver
+    ) {
+        return false;
+    }
+
+    const expectedReviewer = normalizeReviewerValue(
+        currentStage.approver
+    );
+
+    return reviewerCandidates(
+        session,
+        currentStage.approverType
+    ).some(
+        (candidate) =>
+            normalizeReviewerValue(candidate) ===
+            expectedReviewer
+    );
+}
+
+export function listAssignedPlanSubmissions(session) {
+    return getPlanSubmissions()
+        .filter(
+            (submission) =>
+                submission.status ===
+                    'under_approval' &&
+                isSubmissionAssignedToReviewer(
+                    submission,
+                    session
+                )
+        )
+        .sort(
+            (first, second) =>
+                new Date(second.submittedAt) -
+                new Date(first.submittedAt)
+        );
+}
 
 export function applySubmissionToPlan(plan) {
     const submission = getPlanSubmission(
@@ -153,33 +248,89 @@ export function submitPlanForApproval(plan) {
     return submission;
 }
 
-export const APPROVAL_DECISIONS = Object.freeze([
-    'approved',
-    'returned',
-    'rejected',
-]);
+function reviewerDisplayName(session) {
+    return (
+        session?.name ||
+        session?.email ||
+        session?.roleLabel ||
+        session?.roleName ||
+        'Authorised approver'
+    );
+}
 
-/*
- * Records an approver's decision on the plan's current stage.
- *
- * Approving moves the plan to the next stage of the workflow snapshot taken
- * at submission, or marks it approved after the final stage. Returning or
- * rejecting ends the submission and needs a note explaining why. The caller
- * is responsible for only offering this to the assigned approver.
- */
-export function recordApprovalDecision(
+function createDecisionHistoryEntry({
+    decision,
+    comment,
+    submission,
+    session,
+}) {
+    const currentStage = submission.currentStage;
+
+    return {
+        action:
+            decision === 'approve'
+                ? 'approved'
+                : 'rejected',
+
+        decision,
+        comment: comment || '',
+
+        stageSequence:
+            currentStage.sequence,
+
+        stageId:
+            currentStage.stageId,
+
+        stageName:
+            currentStage.name,
+
+        assignedApprover:
+            currentStage.approver,
+
+        decidedByUserId:
+            session?.userId || null,
+
+        decidedBy:
+            reviewerDisplayName(session),
+
+        decidedByRole:
+            session?.roleName || '',
+
+        occurredAt:
+            new Date().toISOString(),
+    };
+}
+
+export function processPlanDecision({
     planId,
-    { decision, note = '', decidedBy = '' }
-) {
-    if (!APPROVAL_DECISIONS.includes(decision)) {
-        throw new Error('Choose approve, return, or reject.');
+    decision,
+    comment = '',
+    session,
+}) {
+    const normalizedDecision =
+        String(decision || '')
+            .trim()
+            .toLowerCase();
+
+    const normalizedComment =
+        String(comment || '').trim();
+
+    if (
+        !['approve', 'reject'].includes(
+            normalizedDecision
+        )
+    ) {
+        throw new Error(
+            'Select either Approve or Reject.'
+        );
     }
 
-    const trimmedNote = String(note || '').trim();
-
-    if (decision !== 'approved' && !trimmedNote) {
+    if (
+        normalizedDecision === 'reject' &&
+        !normalizedComment
+    ) {
         throw new Error(
-            'Add a note explaining why the plan is being returned or rejected.'
+            'A reason is required when rejecting a Strategic Plan.'
         );
     }
 
@@ -187,70 +338,156 @@ export function recordApprovalDecision(
         SUBMISSION_STORAGE_KEY,
         {}
     );
-    const key = String(planId);
-    const submission = submissions[key];
 
-    if (
-        !submission ||
-        submission.status !== 'under_approval' ||
-        submission.currentStage?.status !== 'pending'
-    ) {
+    const submission =
+        submissions[String(planId)];
+
+    if (!submission) {
         throw new Error(
-            'This Strategic Plan is not waiting for an approval decision.'
+            'This Strategic Plan has not been submitted for approval.'
         );
     }
 
-    const stages =
-        submission.workflowSnapshot?.stages || [];
-    const occurredAt = new Date().toISOString();
-    const current = submission.currentStage;
-    const nextIndex =
-        submission.currentStageIndex + 1;
-    const nextStage =
-        decision === 'approved'
-            ? stages[nextIndex]
-            : null;
+    if (
+        submission.status !==
+        'under_approval'
+    ) {
+        throw new Error(
+            'A decision has already been processed for this approval cycle.'
+        );
+    }
 
-    const history = [
-        ...(submission.history || []),
-        {
-            action: decision,
-            stageSequence: current.sequence,
-            stageName: current.name,
-            assignedApprover: current.approver,
-            decidedBy,
-            note: trimmedNote,
-            occurredAt,
-        },
+    if (
+        submission.currentStage?.status !==
+        'pending'
+    ) {
+        throw new Error(
+            'The current workflow stage is no longer awaiting a decision.'
+        );
+    }
+
+    if (
+        !isSubmissionAssignedToReviewer(
+            submission,
+            session
+        )
+    ) {
+        throw new Error(
+            'You are not assigned to process the current workflow stage.'
+        );
+    }
+
+    const updatedSubmission =
+        structuredClone(submission);
+
+    const decisionHistory =
+        createDecisionHistoryEntry({
+            decision: normalizedDecision,
+            comment: normalizedComment,
+            submission: updatedSubmission,
+            session,
+        });
+
+    updatedSubmission.history = [
+        ...(updatedSubmission.history || []),
+        decisionHistory,
     ];
 
-    const updated = nextStage
-        ? {
-              ...submission,
-              currentStageIndex: nextIndex,
-              currentStage: {
-                  sequence: nextIndex + 1,
-                  stageId: nextStage.id,
-                  name: nextStage.name,
-                  approverType: nextStage.approverType,
-                  approver: nextStage.approver,
-                  status: 'pending',
-              },
-              history,
-          }
-        : {
-              ...submission,
-              status: decision,
-              decidedAt: occurredAt,
-              currentStage: {
-                  ...current,
-                  status: decision,
-              },
-              history,
-          };
+    if (normalizedDecision === 'reject') {
+        updatedSubmission.status =
+            'rejected';
 
-    submissions[key] = updated;
+        updatedSubmission.rejectedAt =
+            decisionHistory.occurredAt;
+
+        updatedSubmission.completedAt =
+            decisionHistory.occurredAt;
+
+        updatedSubmission.currentStage = {
+            ...updatedSubmission.currentStage,
+            status: 'rejected',
+            decision: 'rejected',
+            comment: normalizedComment,
+            decidedBy:
+                decisionHistory.decidedBy,
+            decidedAt:
+                decisionHistory.occurredAt,
+        };
+
+        submissions[String(planId)] =
+            updatedSubmission;
+
+        writeSubmissions(submissions);
+
+        return updatedSubmission;
+    }
+
+    const stages =
+        updatedSubmission.workflowSnapshot
+            ?.stages || [];
+
+    const currentStageIndex =
+        Number(
+            updatedSubmission.currentStageIndex
+        );
+
+    const nextStageIndex =
+        currentStageIndex + 1;
+
+    const nextStage =
+        stages[nextStageIndex];
+
+    if (nextStage) {
+        updatedSubmission.currentStageIndex =
+            nextStageIndex;
+
+        updatedSubmission.currentStage = {
+            sequence: nextStageIndex + 1,
+            stageId: nextStage.id,
+            name: nextStage.name,
+            approverType:
+                nextStage.approverType,
+            approver: nextStage.approver,
+            status: 'pending',
+        };
+
+        updatedSubmission.history.push({
+            action: 'advanced',
+            stageSequence:
+                nextStageIndex + 1,
+            stageId: nextStage.id,
+            stageName: nextStage.name,
+            assignedApprover:
+                nextStage.approver,
+            occurredAt:
+                decisionHistory.occurredAt,
+        });
+    } else {
+        updatedSubmission.status =
+            'approved';
+
+        updatedSubmission.approvedAt =
+            decisionHistory.occurredAt;
+
+        updatedSubmission.completedAt =
+            decisionHistory.occurredAt;
+
+        updatedSubmission.currentStage = {
+            ...updatedSubmission.currentStage,
+            status: 'approved',
+            decision: 'approved',
+            comment: normalizedComment,
+            decidedBy:
+                decisionHistory.decidedBy,
+            decidedAt:
+                decisionHistory.occurredAt,
+        };
+    }
+
+    submissions[String(planId)] =
+        updatedSubmission;
+
     writeSubmissions(submissions);
 
-    return updated;
+    return updatedSubmission;
 }
