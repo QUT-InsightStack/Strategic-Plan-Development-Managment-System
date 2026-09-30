@@ -3,6 +3,7 @@ import { can, getAccessSession } from '../access/access-session.js';
 import { PERMISSIONS as P } from '../access/access-policy.js';
 import { adminRoleKind, displayRoleName } from '../access/role-labels.js';
 import { TechnicalAdminSidebar } from './TechnicalAdminSidebar.js';
+
 import { LogoutButton } from './LogoutButton.js';
 
 const { useState } = React;
@@ -60,7 +61,7 @@ export function AdministrativeAdminSidebar({ active = 'Reference Data', onNotice
                 openMenus.monitoring ? React.createElement('div', { className: 'app-sidebar__submenu app-sidebar__submenu--icons', id: 'administrative-monitoring' },
                     noticeItem('Monitoring Dashboard', 'bi-bar-chart-line-fill', 'Monitoring Dashboard is reserved for its implementation page.'),
                     noticeItem('Reports', 'bi-file-earmark-bar-graph-fill', 'Reports is reserved for its implementation page.'),
-                    subitem('System Logs', '/login-history', 'bi-list-check')
+                    can(P.LOGIN_HISTORY_VIEW, accessSession) ? subitem('System Logs', '/login-history', 'bi-list-check') : null
                 ) : null
             )
         ),

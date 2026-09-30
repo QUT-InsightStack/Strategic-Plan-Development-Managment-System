@@ -20,7 +20,7 @@
 
     @vite([
         'resources/css/workflow-configuration.css',
-        'resources/js/pages/workflow-configuration-app.js'
+        'resources/js/pages/technical-admin/workflow-configuration-app.js'
     ])
 </head>
 

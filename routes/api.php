@@ -17,10 +17,25 @@ use App\Http\Controllers\StrategicObjectiveController;
 use App\Http\Controllers\ResponsibleUnitController;
 use App\Http\Controllers\ObjectiveCommentController;
 use App\Http\Controllers\ImplementationInputController;
+use App\Http\Controllers\ImplementationInputScopeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SystemSettingsController;
-use App\Http\Controllers\SecuritySettingsController;
+use App\Http\Controllers\StrategicDocumentController;
+use App\Http\Controllers\PresidentialAgendaItemController;
+use App\Http\Controllers\StrategicObjectiveAlignmentController;
 use Illuminate\Support\Facades\Route;
+
+Route::middleware(['auth:api', 'auth.version', 'permission:system_monitoring.view'])
+    ->prefix('system-monitoring')->group(function (): void {
+        Route::get('events', [\App\Http\Controllers\SystemMonitoringController::class, 'events']);
+        Route::get('events/{id}', [\App\Http\Controllers\SystemMonitoringController::class, 'event'])->whereNumber('id');
+        Route::get('alerts', [\App\Http\Controllers\SystemMonitoringController::class, 'alerts']);
+        Route::get('trends', [\App\Http\Controllers\SystemMonitoringController::class, 'trends']);
+        Route::get('summary', [\App\Http\Controllers\SystemMonitoringController::class, 'summary']);
+        Route::get('requests', [\App\Http\Controllers\SystemMonitoringController::class, 'requests']);
+        Route::get('health', [\App\Http\Controllers\SystemMonitoringController::class, 'health']);
+        Route::get('checks', [\App\Http\Controllers\SystemMonitoringController::class, 'checks']);
+    });
 
 /*
 |--------------------------------------------------------------------------
@@ -134,20 +149,33 @@ Route::middleware(['auth:api','auth.version', 'auth.session','system.available',
 */
 
 Route::middleware(['auth:api','auth.version','auth.session','system.available',])->group(function () {
-    Route::get('security-settings', [SecuritySettingsController::class, 'show']);
-    Route::put('security-settings', [SecuritySettingsController::class, 'update']);
+   
 
     Route::get('pdp-chapters', [PdpChapterController::class, 'index']);
+    
     Route::get('pdp-chapters/{chapter}', [PdpChapterController::class, 'show'])
         ->whereNumber('chapter');
+
+    Route::patch('pdp-chapters/{chapter}/archive', [PdpChapterController::class, 'archive'])
+        ->whereNumber('chapter')
+        ->middleware('permission:pdp_chapters.archive');
+    
+
     Route::post('pdp-chapters', [PdpChapterController::class, 'store'])
         ->middleware('permission:pdp_chapters.manage');
+
     Route::put('pdp-chapters/{chapter}', [PdpChapterController::class, 'update'])
         ->whereNumber('chapter')
         ->middleware('permission:pdp_chapters.manage');
-    Route::delete('pdp-chapters/{chapter}', [PdpChapterController::class, 'destroy'])
+
+    Route::patch('pdp-chapters/{chapter}/status', [PdpChapterController::class, 'updateStatus'])
         ->whereNumber('chapter')
-        ->middleware('permission:pdp_chapters.manage');
+        ->middleware('permission:pdp_chapters.archive');
+
+    Route::delete('pdp-chapters/{chapter}', [PdpChapterController::class, 'delete'])
+        ->whereNumber('chapter')
+        ->middleware('permission:pdp_chapters.delete');
+
 
     // Roles
     Route::get('roles', [RoleController::class, 'index'])
@@ -234,6 +262,30 @@ Route::middleware(['auth:api','auth.version','auth.session','system.available',]
 */
 
 Route::middleware(['auth:api', 'auth.version','auth.session','system.available',])->group(function () {
+    Route::get('approval-workflow', [\App\Http\Controllers\ApprovalWorkflowController::class, 'show']);
+    Route::put('approval-workflow', [\App\Http\Controllers\ApprovalWorkflowController::class, 'update']);
+    Route::get('plan-reviews', [\App\Http\Controllers\PlanApprovalController::class, 'index']);
+    Route::get('workflow-notifications', [\App\Http\Controllers\WorkflowNotificationController::class, 'index']);
+    Route::patch('workflow-notifications/{notification}/read', [\App\Http\Controllers\WorkflowNotificationController::class, 'read'])->whereNumber('notification');
+    Route::post('strategic-plans/{plan}/resubmit', [\App\Http\Controllers\PlanApprovalController::class, 'resubmit'])->whereNumber('plan');
+    Route::get('strategic-plans/{plan}/approval-status', [\App\Http\Controllers\PlanApprovalController::class, 'tracking'])->whereNumber('plan');
+    Route::post('strategic-plans/{plan}/submit', [\App\Http\Controllers\PlanApprovalController::class, 'submit'])->whereNumber('plan');
+    Route::get('strategic-plans/{plan}/approval-preparation', [\App\Http\Controllers\PlanApprovalController::class, 'preparation'])->whereNumber('plan');
+    Route::get('strategic-plans/{plan}/approval', [\App\Http\Controllers\PlanApprovalController::class, 'show'])->whereNumber('plan');
+    Route::post('strategic-plans/{plan}/approval/decision', [\App\Http\Controllers\PlanApprovalController::class, 'decide'])->whereNumber('plan');
+    Route::get('plan-submissions/{submission}/documents/{document}', [\App\Http\Controllers\PlanApprovalController::class, 'document'])
+        ->whereNumber('submission')->whereNumber('document');
+    Route::get('strategic-plans/{plan}/documents', [StrategicDocumentController::class, 'planIndex'])
+        ->whereNumber('plan')->middleware('permission:strategic_documents.view');
+    Route::post('strategic-plans/{plan}/documents', [StrategicDocumentController::class, 'storeForPlan'])
+        ->whereNumber('plan')->middleware('permission:strategic_documents.upload');
+    Route::get('strategic-objectives/{objective}/documents', [StrategicDocumentController::class, 'objectiveIndex'])
+        ->whereNumber('objective')->middleware('permission:strategic_documents.view');
+    Route::post('strategic-objectives/{objective}/documents', [StrategicDocumentController::class, 'storeForObjective'])
+        ->whereNumber('objective')->middleware('permission:strategic_documents.upload');
+    Route::get('strategic-documents/{document}/download', [StrategicDocumentController::class, 'download'])
+        ->whereNumber('document')->middleware('permission:strategic_documents.download');
+
     // Strategic plan management
     Route::get('strategic-plans', [PlanCreationController::class, 'index']);
     Route::post('strategic-plans', [PlanCreationController::class, 'store']);
@@ -271,14 +323,50 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
     )->whereNumber('planId');
 
     // Strategic objectives, including plan-filtered listing
+    Route::get('strategic-objective-progress', [\App\Http\Controllers\ObjectiveProgressController::class, 'index']);
+    Route::get('strategic-objectives/{objective}/progress-history', [\App\Http\Controllers\ObjectiveProgressController::class, 'history'])->whereNumber('objective');
+    Route::patch('strategic-objectives/{objective}/progress', [\App\Http\Controllers\ObjectiveProgressController::class, 'update'])->whereNumber('objective');
+    Route::put(
+        'strategic-objectives/{id}/alignments',
+        [StrategicObjectiveController::class, 'updateAlignments']
+    )->whereNumber('id');
+
+    Route::post(
+        'strategic-objectives/{id}/alignments',
+        [StrategicObjectiveController::class, 'storeAlignments']
+    )->whereNumber('id');
+
+    Route::patch(
+        'strategic-objectives/{id}/alignments/{type}/{referenceId}/archive',
+        [StrategicObjectiveAlignmentController::class, 'archive']
+    )
+        ->whereNumber('id')
+        ->whereNumber('referenceId')
+        ->where('type', 'pdp-chapter|presidential-agenda')
+        ->middleware('permission:strategic_alignments.archive');
+
+    Route::delete(
+        'strategic-objectives/{id}/alignments/{type}/{referenceId}',
+        [StrategicObjectiveAlignmentController::class, 'destroy']
+    )
+        ->whereNumber('id')
+        ->whereNumber('referenceId')
+        ->where('type', 'pdp-chapter|presidential-agenda')
+        ->middleware('permission:strategic_alignments.delete');    
+
     Route::get('responsible-units', [ResponsibleUnitController::class, 'index']);
     Route::put('strategic-objectives/responsible-unit', [ResponsibleUnitController::class, 'assign']);
     Route::put('strategic-objectives/{id}/responsible-unit', [ResponsibleUnitController::class, 'assign'])->whereNumber('id');
     Route::get('strategic-objectives/{objectiveId}/comments', [ObjectiveCommentController::class, 'index'])->whereNumber('objectiveId');
     Route::post('strategic-objectives/{objectiveId}/comments', [ObjectiveCommentController::class, 'store'])->whereNumber('objectiveId');
-    Route::get('strategic-objectives/{objectiveId}/inputs', [ImplementationInputController::class, 'index'])->whereNumber('objectiveId');
+    Route::get('implementation-inputs', [ImplementationInputController::class, 'index'])->defaults('read_only', true);
+    Route::get('implementation-inputs/{inputId}', [ImplementationInputController::class, 'show'])->whereNumber('inputId')->defaults('read_only', true);
+    Route::post('implementation-inputs/{inputId}/review', [ImplementationInputController::class, 'review'])->whereNumber('inputId');
+    Route::get('strategic-plans/{planId}/input-scope', [ImplementationInputScopeController::class, 'show'])->whereNumber('planId')->defaults('read_only', true);
+    Route::put('strategic-plans/{planId}/input-scope', [ImplementationInputScopeController::class, 'update'])->whereNumber('planId');
+    Route::get('strategic-objectives/{objectiveId}/inputs', [ImplementationInputController::class, 'index'])->whereNumber('objectiveId')->defaults('read_only', true);
     Route::post('strategic-objectives/{objectiveId}/inputs', [ImplementationInputController::class, 'store'])->whereNumber('objectiveId');
-    Route::get('strategic-plans/{planId}/inputs', [ImplementationInputController::class, 'index'])->whereNumber('planId');
+    Route::get('strategic-plans/{planId}/inputs', [ImplementationInputController::class, 'index'])->whereNumber('planId')->defaults('read_only', true);
     Route::post('strategic-plans/{planId}/inputs', [ImplementationInputController::class, 'store'])->whereNumber('planId');
 
     Route::get(
@@ -309,6 +397,35 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
         'relations',
         RelationController::class
     );
+
+    //Presidential Agenda routes
+    Route::get('presidential-agenda', [PresidentialAgendaItemController::class, 'index'])
+    ->middleware('permission:presidential_agenda.view');
+
+    Route::post('presidential-agenda', [PresidentialAgendaItemController::class, 'store'])
+        ->middleware('permission:presidential_agenda.manage');
+
+    Route::get('presidential-agenda/{agendaItem}', [PresidentialAgendaItemController::class, 'show'])
+        ->whereNumber('agendaItem')
+        ->middleware('permission:presidential_agenda.view');
+
+    Route::put('presidential-agenda/{agendaItem}', [PresidentialAgendaItemController::class, 'update'])
+        ->whereNumber('agendaItem')
+        ->middleware('permission:presidential_agenda.manage');
+
+    Route::patch(
+        'presidential-agenda/{agendaItem}/archive',
+        [PresidentialAgendaItemController::class, 'archive']
+    )
+        ->whereNumber('agendaItem')
+        ->middleware('permission:presidential_agenda.archive');
+
+    Route::delete(
+        'presidential-agenda/{agendaItem}',
+        [PresidentialAgendaItemController::class, 'delete']
+    )
+        ->whereNumber('agendaItem')
+        ->middleware('permission:presidential_agenda.delete');
 
     Route::get(
         'logs',
@@ -341,6 +458,11 @@ Route::middleware([
     'system.available',
 ])->group(function () {
     Route::get(
+        'login-history/me',
+        [LoginHistoryController::class, 'me']
+    );
+
+    Route::get(
         'login-history',
         [LoginHistoryController::class, 'index']
     )->middleware('permission:login_history.view');
@@ -372,9 +494,4 @@ Route::middleware([
     Route::patch('', [SystemSettingsController::class, 'update'])
         ->middleware('permission:settings.manage');
 });
-
-
-
-
-
 

@@ -25,8 +25,8 @@ class CreatePlanRequest extends ApiFormRequest
             'core_values' => $isDraft ? ['sometimes', 'array'] : ['required', 'array', 'min:1'],
             'core_values.*' => ['required', 'string', 'max:255'],
 
-            // Reserved API contract. These values can be sent by the page now,
-            // but are not persisted until the matching database columns exist.
+            // Planning period values are persisted on the strategic record.
+            // Department/agency remains reserved until its database column is added.
             'planning_start_date' => ['nullable', 'date'],
             'planning_end_date' => ['nullable', 'date', 'after_or_equal:planning_start_date'],
             'department_agency' => ['nullable', 'string', 'max:255'],

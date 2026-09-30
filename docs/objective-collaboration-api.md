@@ -19,9 +19,13 @@ User membership is determined from the existing administrator-maintained `tbluse
 | Add comments | `objective_comments.create` | User's office must currently be assigned to the objective |
 | Submit inputs | `implementation_inputs.create` | Same office rule; plan-only inputs require an assigned active objective in that plan |
 | Read all objective comments | `objective_comments.view_all` | Existing plan scope |
-| Read all implementation inputs | `implementation_inputs.view_all` | Existing plan scope |
+| Read all implementation inputs | `implementation_inputs.view_all` or Planning Officer with `implementation_inputs.view` | Explicit submitted-input plan grants |
+
+Submitted-input listing, filters, summaries, review and planning grants are documented in [Submitted Office/Agency inputs](submitted-implementation-inputs.md). Apply the additional `2026_09_16` migration for these endpoints. Office history can also be read with `implementation_inputs.view` without submission permission.
 
 Planning Officers receive assignment and both read-all permissions. Responsible Unit Users and existing Office Representative / Office/Agency / Offices / Agencies roles receive comment/input submission permissions and plan/objective view permissions. Administrators retain the existing permission bypass, but **submitting feedback still requires an assigned office** so its provenance is meaningful. Custom roles can receive these permissions through the existing role-management API.
+
+These collaboration roles are supported when already present; they are no longer automatically created. The default Office role is the renamed, read-only Viewer and does not receive collaboration grants. The test role has full access, including collaboration permissions, while feedback submissions still require an assigned office. See [default roles and upgrades](role-seeding.md).
 
 Contributors can list only their own office's feedback within their current assignment scope. Planners can see previous offices' feedback after reassignment. A previous office loses submission access immediately. Legacy objective creation/editing requires the new assignment permission when the responsibility value changes; submitting an unchanged value does not require that permission. Ordinary objective create/update permissions remain necessary on those legacy endpoints.
 
