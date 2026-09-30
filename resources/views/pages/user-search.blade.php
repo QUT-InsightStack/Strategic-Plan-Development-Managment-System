@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Search Users | Strategic Planning Management System</title>
-    @vite(['resources/css/user-search.css', 'resources/js/user-search-app.js'])
+    @vite(['resources/css/user-search.css', 'resources/js/pages/technical-admin/user-search-app.js'])
 </head>
 <body>
     <div id="root"></div>

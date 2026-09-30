@@ -2,11 +2,21 @@
 
 namespace Tests;
 
+use App\Models\User;
+use App\Services\AuthSessionService;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Tests\Support\MySqlTestDatabase;
 
 abstract class TestCase extends BaseTestCase
 {
+    protected function authenticateApiUser(User $user): void
+    {
+        $session = app(AuthSessionService::class)->create($user);
+        $token = auth('api')->claims(['sid' => $session->id])->login($user->fresh());
+        auth('api')->forgetUser();
+        $this->withToken($token);
+    }
+
     public function createApplication()
     {
         $app = parent::createApplication();

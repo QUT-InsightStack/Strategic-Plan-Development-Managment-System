@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->prepend(\App\Http\Middleware\MonitorSystemActivity::class);
         $middleware->redirectGuestsTo(fn (Request $request) => null);
 
         $middleware->encryptCookies(except: [
@@ -48,6 +49,21 @@ return Application::configure(basePath: dirname(__DIR__))
         
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        $exceptions->report(function (\Throwable $exception): void {
+            if (app()->bound('request') && request()->attributes->has('monitoring')) {
+                request()->attributes->set('monitoring_exception_type', $exception::class);
+            } else {
+                app(\App\Services\SystemEventRecorder::class)->record('application.exception', 'application', 'error', 'failure', [
+                    'exception_type' => $exception::class,
+                ]);
+            }
+        });
+        $exceptions->context(function (): array {
+            $metrics = app()->bound('request') ? request()->attributes->get('monitoring') : null;
+
+            return is_array($metrics) ? ['request_id' => $metrics['request_id']] : [];
+        });
+
         $exceptions->shouldRenderJsonWhen(function (Request $request) {
             return $request->is('api/*') || $request->expectsJson();
         });
@@ -97,6 +113,20 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (ThrottleRequestsException $e, Request $request) {
+            if ($request->isMethod('post') && $request->is('api/auth/login')
+                && ! $request->attributes->get('login_rate_limit_recorded')) {
+                $request->attributes->set('login_rate_limit_recorded', true);
+                $email = $request->input('email');
+                try {
+                    app(\App\Services\LoginHistoryRecorder::class)->recordFailedLogin(
+                        is_string($email) ? $email : '', $request, 'rate_limited'
+                    );
+                } catch (\Throwable) {
+                    // Preserve the 429 response even when the history database is unavailable.
+                    error_log('Unable to record a rate-limited login attempt.');
+                }
+            }
+
             if ($request->is('api/*') || $request->expectsJson()) {
                 return response()->json([
                     'success' => false,
