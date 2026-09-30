@@ -2,6 +2,7 @@ import defaultAvatar from '../images/profile-avatar.svg';
 import { BrandLogo } from './brand-logo.js';
 import { logout, guardAgainstBackNavigation } from './auth-session.js';
 import { LogoutButton } from './components/LogoutButton.js';
+import { AppDialog } from './components/AppDialog.js';
 import { myLoginHistory } from './api/login-history-api.js';
 import { PHOTO_ACCEPT, checkPhoto, removeProfilePhoto, uploadProfilePhoto } from './api/profile-photo-api.js';
 
@@ -84,10 +85,11 @@ function Icon({ type }) {
     );
 }
 
-function ProfileSideCard({ avatar, onAvatarSelect, onMessage }) {
+function ProfileSideCard({ avatar, identity, onAvatarSelect, onMessage }) {
     const fileInputRef = useRef(null);
     const [busy, setBusy] = useState(false);
     const [photoError, setPhotoError] = useState('');
+    const [confirmRemove, setConfirmRemove] = useState(false);
 
     const hasPhoto = Boolean(avatar) && avatar !== defaultAvatar;
 
@@ -127,10 +129,7 @@ function ProfileSideCard({ avatar, onAvatarSelect, onMessage }) {
     }
 
     async function handleRemove() {
-        if (!window.confirm('Remove your profile photo?')) {
-            return;
-        }
-
+        setConfirmRemove(false);
         setPhotoError('');
         setBusy(true);
 
@@ -145,19 +144,32 @@ function ProfileSideCard({ avatar, onAvatarSelect, onMessage }) {
         }
     }
 
+    const fullName = [identity?.first_name, identity?.last_name].filter(Boolean).join(' ');
+
     return React.createElement(
         'aside',
-        { className: 'profile-side-card', 'aria-label': 'Profile photo panel' },
+        { className: 'profile-side-card', 'aria-label': 'Your profile summary' },
         React.createElement(
             'div',
             { className: 'avatar-frame' },
-            React.createElement('img', { className: 'avatar-image', src: avatar || defaultAvatar, alt: 'Profile avatar preview' })
+            React.createElement('img', { className: 'avatar-image', src: avatar || defaultAvatar, alt: fullName ? `Profile photo of ${fullName}` : 'Profile photo' })
         ),
         React.createElement(
             'div',
-            { className: 'upload-row' },
-            React.createElement('button', { className: 'upload-button', type: 'button', onClick: openFilePicker, disabled: busy, 'aria-label': 'Upload profile photo' }, '+'),
-            React.createElement('button', { className: 'upload-action', type: 'button', onClick: openFilePicker, disabled: busy }, busy ? 'Uploading…' : 'Update your photo'),
+            { className: 'profile-identity' },
+            React.createElement('strong', { className: 'profile-identity__name' }, fullName || 'Your profile'),
+            identity?.designation ? React.createElement('span', { className: 'profile-identity__role' }, identity.designation) : null,
+            identity?.email ? React.createElement('span', { className: 'profile-identity__email' }, identity.email) : null
+        ),
+        React.createElement(
+            'div',
+            { className: 'photo-actions' },
+            React.createElement('button', { className: 'action-button secondary photo-change', type: 'button', onClick: openFilePicker, disabled: busy, 'aria-describedby': photoError ? 'photo-error' : 'photo-hint' },
+                React.createElement('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true', focusable: 'false' }, React.createElement('path', { d: 'M9 4h6l1.5 2H20a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h3.5L9 4Zm3 4.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Zm0 2a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5Z' })),
+                busy ? 'Working…' : hasPhoto ? 'Change photo' : 'Upload photo'),
+            hasPhoto
+                ? React.createElement('button', { className: 'photo-remove', type: 'button', onClick: () => setConfirmRemove(true), disabled: busy }, 'Remove photo')
+                : null,
             React.createElement('input', {
                 ref: fileInputRef,
                 type: 'file',
@@ -166,29 +178,34 @@ function ProfileSideCard({ avatar, onAvatarSelect, onMessage }) {
                 onChange: handleFileChange,
             })
         ),
-        hasPhoto
-            ? React.createElement('button', { className: 'photo-remove', type: 'button', onClick: handleRemove, disabled: busy }, 'Remove photo')
-            : null,
         photoError
-            ? React.createElement('p', { className: 'photo-error', role: 'alert' }, photoError)
-            : React.createElement('p', { className: 'photo-hint' }, 'JPG, PNG or WebP, up to 2 MB.'),
-    React.createElement('p', { className: 'side-copy' }, 'Manage your contact details', React.createElement('br'), 'and account information'),
-
-React.createElement(
-    'button',
-    {
-        className: 'action-button secondary profile-password-button',
-        type: 'button',
-        onClick: () => {
-            window.location.href = '/change-password';
-        },
-    },
-    'Change Password'
-)    
+            ? React.createElement('p', { className: 'photo-error', id: 'photo-error', role: 'alert' }, photoError)
+            : React.createElement('p', { className: 'photo-hint', id: 'photo-hint' }, 'JPG, PNG or WebP, up to 2 MB.'),
+        React.createElement(
+            'div',
+            { className: 'profile-security' },
+            React.createElement('h3', null, 'Security'),
+            React.createElement('p', null, 'Change your password regularly and never share it.'),
+            React.createElement(
+                'a',
+                { className: 'action-button secondary profile-password-button', href: '/change-password' },
+                'Change password'
+            )
+        ),
+        React.createElement(AppDialog, {
+            open: confirmRemove,
+            variant: 'danger',
+            title: 'Remove your photo?',
+            message: 'Your profile will show the default avatar until you upload a new photo.',
+            confirmLabel: 'Remove photo',
+            cancelLabel: 'Keep photo',
+            onConfirm: handleRemove,
+            onCancel: () => setConfirmRemove(false),
+        })
     );
 }
 
-function TextField({ id, label, value, error, type = 'text', icon, helperText, onHelperClick, onChange, disabled = false }) {
+function TextField({ id, label, value, error, type = 'text', icon, helperText, onHelperClick, onChange, disabled = false, required = false, hint = '', autoComplete }) {
     return React.createElement(
         'div',
         { className: `field-group ${error ? 'has-error' : ''}` },
@@ -196,7 +213,7 @@ function TextField({ id, label, value, error, type = 'text', icon, helperText, o
             'div',
             { className: 'field-label-row' },
             icon ? React.createElement(Icon, { type: icon }) : null,
-            React.createElement('label', { htmlFor: id }, label)
+            React.createElement('label', { htmlFor: id }, label, required ? React.createElement('span', { className: 'field-required', 'aria-hidden': 'true' }, ' *') : null)
         ),
         helperText
             ? React.createElement('button', { className: 'field-helper', type: 'button', onClick: onHelperClick }, helperText)
@@ -208,24 +225,33 @@ function TextField({ id, label, value, error, type = 'text', icon, helperText, o
             type,
             value,
             disabled,
+            required,
+            autoComplete,
+            'aria-required': required ? 'true' : undefined,
             // Ties the message below to the input, so a screen reader reads
             // the reason rather than just announcing the field as invalid.
             'aria-invalid': error ? 'true' : undefined,
-            'aria-describedby': error ? `${id}-error` : undefined,
+            'aria-describedby': [error ? `${id}-error` : '', hint ? `${id}-hint` : ''].filter(Boolean).join(' ') || undefined,
             onChange: (event) => onChange(event.target.value),
         }),
+        hint && !error
+            ? React.createElement('p', { id: `${id}-hint`, className: 'field-hint' }, hint)
+            : null,
         error
             ? React.createElement('p', { id: `${id}-error`, className: 'field-error', role: 'alert' }, error)
             : null
     );
 }
 
-function ProfileForm({ status, setStatus, onAvatarChange }) {
+function ProfileForm({ status, setStatus, onAvatarChange, onProfileLoaded }) {
     const [profile, setProfile] = useState(initialProfile);
     const [originalProfile, setOriginalProfile] = useState(initialProfile);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [loadError, setLoadError] = useState('');
+    const [confirmDiscard, setConfirmDiscard] = useState(false);
+    const formRef = useRef(null);
 
     // The photo is no longer part of this form. It is uploaded as a file by
     // the side card and saved by its own endpoint, so nothing here has to
@@ -250,6 +276,8 @@ function ProfileForm({ status, setStatus, onAvatarChange }) {
     }, [dirty]);
 
     function loadProfile() {
+        setLoading(true);
+        setLoadError('');
         fetch(apiConfig.profileUrl, {
             method: 'GET',
             credentials: 'include',
@@ -285,6 +313,7 @@ function ProfileForm({ status, setStatus, onAvatarChange }) {
 
             setProfile(profileData);
             setOriginalProfile(profileData);
+            onProfileLoaded?.(profileData);
 
             if (profileData.profile_picture) {
                 onAvatarChange(profileData.profile_picture);
@@ -294,7 +323,9 @@ function ProfileForm({ status, setStatus, onAvatarChange }) {
         })
         .catch(error => {
             console.error('Error loading profile:', error);
-            setStatus('Failed to load profile data.', 'error');
+            // Without the saved values the form would show blanks that could
+            // be saved over real data, so it is not shown at all.
+            setLoadError('Your profile could not be loaded. Check your connection and try again.');
             setLoading(false);
         });
     }
@@ -332,7 +363,14 @@ function ProfileForm({ status, setStatus, onAvatarChange }) {
         }
 
         setErrors(nextErrors);
+        focusFirstError(nextErrors);
         return Object.keys(nextErrors).length === 0;
+    }
+
+    function focusFirstError(nextErrors) {
+        const order = ['email', 'designation', 'first_name', 'last_name', 'mobile', 'address'];
+        const first = order.find((field) => nextErrors[field]);
+        if (first) window.setTimeout(() => formRef.current?.querySelector(`#${first}`)?.focus(), 0);
     }
 
     function handleSave(event) {
@@ -343,7 +381,7 @@ function ProfileForm({ status, setStatus, onAvatarChange }) {
         }
 
         if (!validate()) {
-            setStatus('Please check the highlighted fields and try again.', 'error');
+            setStatus('Please fix the highlighted fields and try again.', 'error');
             return;
         }
 
@@ -374,14 +412,17 @@ function ProfileForm({ status, setStatus, onAvatarChange }) {
                     if (data.errors && typeof data.errors === 'object') {
                         // Laravel returns each field's errors as an array;
                         // the form fields expect a single string.
-                        setErrors(Object.fromEntries(
+                        const fieldErrors = Object.fromEntries(
                             Object.entries(data.errors).map(([field, messages]) => [
                                 field,
                                 Array.isArray(messages) ? messages[0] : messages,
                             ])
-                        ));
+                        );
+                        setErrors(fieldErrors);
+                        focusFirstError(fieldErrors);
+                        throw new Error('Please fix the highlighted fields and try again.');
                     }
-                    throw new Error(data.message || 'Failed to update profile');
+                    throw new Error(data.message || 'Your changes could not be saved. Please try again.');
                 });
             }
             return response.json();
@@ -389,7 +430,8 @@ function ProfileForm({ status, setStatus, onAvatarChange }) {
         .then(() => {
             setErrors({});
             setOriginalProfile(profile);
-            setStatus('Profile updated successfully!', 'success');
+            onProfileLoaded?.(profile);
+            setStatus('Your profile has been updated.', 'success');
         })
         .catch(error => {
             console.error('Error updating profile:', error);
@@ -401,26 +443,34 @@ function ProfileForm({ status, setStatus, onAvatarChange }) {
     }
 
     function handleCancel() {
-        if (!dirty) {
-            setErrors({});
-            setStatus('There were no changes to discard.', 'info');
-            return;
-        }
+        if (!dirty) return;
+        setConfirmDiscard(true);
+    }
 
-        if (!window.confirm('Discard your unsaved changes?')) {
-            return;
-        }
-
+    function discardChanges() {
+        setConfirmDiscard(false);
         setProfile(originalProfile);
         setErrors({});
-        setStatus('Changes were cancelled.', 'info');
+        setStatus('Your unsaved changes were discarded.', 'info');
     }
 
     if (loading) {
         return React.createElement(
             'section',
-            { className: 'profile-card' },
-            React.createElement('p', null, 'Loading profile...')
+            { className: 'profile-card profile-card--state', 'aria-busy': 'true' },
+            React.createElement('p', { className: 'ui-visually-hidden', role: 'status' }, 'Loading your profile…'),
+            React.createElement('div', { className: 'profile-skeleton', 'aria-hidden': 'true' },
+                [1, 2, 3, 4, 5].map((key) => React.createElement('span', { key })))
+        );
+    }
+
+    if (loadError) {
+        return React.createElement(
+            'section',
+            { className: 'profile-card profile-card--state' },
+            React.createElement('div', { className: 'profile-load-error', role: 'alert' },
+                React.createElement('p', null, loadError),
+                React.createElement('button', { className: 'action-button primary', type: 'button', onClick: loadProfile }, 'Try again'))
         );
     }
 
@@ -443,7 +493,21 @@ return React.createElement(
     // FORM
     React.createElement(
         'form',
-        { className: 'profile-form', noValidate: true, onSubmit: handleSave },
+        { className: 'profile-form', noValidate: true, onSubmit: handleSave, ref: formRef },
+
+        status.message
+            ? React.createElement(
+                'div',
+                {
+                    className: `profile-status is-${status.type}`,
+                    role: status.type === 'error' ? 'alert' : 'status',
+                    'aria-live': status.type === 'error' ? 'assertive' : 'polite',
+                },
+                React.createElement('span', { className: 'profile-status__icon', 'aria-hidden': 'true' }, status.type === 'success' ? '\u2713' : status.type === 'error' ? '!' : 'i'),
+                React.createElement('p', null, status.message),
+                React.createElement('button', { type: 'button', className: 'profile-status__close', onClick: () => setStatus('', 'info'), 'aria-label': 'Dismiss message' }, '\u00d7')
+            )
+            : null,
 
         // TWO COLUMN LAYOUT
         React.createElement(
@@ -465,6 +529,7 @@ return React.createElement(
                         label: 'Employee ID',
                         icon: 'employee',
                         value: profile.user_id,
+                        hint: 'Assigned by your administrator and cannot be changed.',
                         disabled: true,
                         onChange: () => {},
                     }),
@@ -474,6 +539,8 @@ return React.createElement(
                         label: 'Email',
                         type: 'email',
                         icon: 'email',
+                        required: true,
+                        autoComplete: 'email',
                         value: profile.email,
                         error: errors.email,
                         onChange: (value) => updateField('email', value),
@@ -502,6 +569,8 @@ return React.createElement(
                     React.createElement(TextField, {
                         id: 'first_name',
                         label: 'First Name',
+                        required: true,
+                        autoComplete: 'given-name',
                         value: profile.first_name,
                         error: errors.first_name,
                         onChange: (value) => updateField('first_name', value),
@@ -510,6 +579,8 @@ return React.createElement(
                     React.createElement(TextField, {
                         id: 'last_name',
                         label: 'Last Name',
+                        required: true,
+                        autoComplete: 'family-name',
                         value: profile.last_name,
                         error: errors.last_name,
                         onChange: (value) => updateField('last_name', value),
@@ -519,6 +590,7 @@ return React.createElement(
                         id: 'mobile',
                         label: 'Phone',
                         type: 'tel',
+                        autoComplete: 'tel',
                         value: profile.mobile,
                         error: errors.mobile,
                         onChange: (value) => updateField('mobile', value),
@@ -534,6 +606,7 @@ return React.createElement(
             React.createElement(TextField, {
                 id: 'address',
                 label: 'Address',
+                autoComplete: 'street-address',
                 value: profile.address,
                 error: errors.address,
                 onChange: (value) => updateField('address', value),
@@ -550,10 +623,10 @@ return React.createElement(
                 {
                     className: 'action-button secondary',
                     type: 'button',
-                    disabled: saving,
+                    disabled: saving || !dirty,
                     onClick: handleCancel,
                 },
-                'Reset'
+                'Discard changes'
             ),
 
             React.createElement(
@@ -565,25 +638,26 @@ return React.createElement(
                     // also stops a second submit while the first is in flight.
                     disabled: saving || !dirty,
                 },
-                saving ? 'Saving…' : 'Save Changes'
+                saving ? React.createElement('span', { className: 'profile-spinner', 'aria-hidden': 'true' }) : null,
+                saving ? 'Saving…' : 'Save changes'
             )
         ),
 
         dirty
             ? React.createElement('p', { className: 'form-dirty-note' }, 'You have unsaved changes.')
-            : null,
+            : null
+    ),
 
-        // STATUS MESSAGE
-        React.createElement(
-            'p',
-            {
-                className: `form-status modern-status is-${status.type}`,
-                role: 'status',
-                'aria-live': 'polite',
-            },
-            status.message
-        )
-    )
+    React.createElement(AppDialog, {
+        open: confirmDiscard,
+        variant: 'danger',
+        title: 'Discard your changes?',
+        message: 'Your edits will be lost and the form will go back to your saved details.',
+        confirmLabel: 'Discard changes',
+        cancelLabel: 'Keep editing',
+        onConfirm: discardChanges,
+        onCancel: () => setConfirmDiscard(false),
+    })
 );
 }
 
@@ -678,6 +752,15 @@ function ProfileApp() {
     const [avatar, setAvatar] = useState(defaultAvatar);
     const [status, setStatusState] = useState({ message: '', type: 'info' });
     const [loggingOut, setLoggingOut] = useState(false);
+    const [identity, setIdentity] = useState(null);
+
+    // Success and info messages clear themselves; errors stay until dismissed
+    // or fixed so they are not missed.
+    useEffect(() => {
+        if (!status.message || status.type === 'error') return undefined;
+        const timer = window.setTimeout(() => setStatusState({ message: '', type: 'info' }), 6000);
+        return () => window.clearTimeout(timer);
+    }, [status]);
 
     useEffect(() => {
         guardAgainstBackNavigation();
@@ -710,17 +793,17 @@ function ProfileApp() {
                 React.createElement(
                     'div',
                     { className: 'page-title' },
-                    React.createElement('h1', null, 'Profile Settings'),
-                    React.createElement('p', null, 'Manage your account information and contact details.')
+                    React.createElement('h1', null, 'My Profile'),
+                    React.createElement('p', null, 'Review and update your account information, contact details and photo.')
                 ),
                 React.createElement(
                     'div',
                     { className: 'profile-layout' },
-                    React.createElement(ProfileSideCard, { avatar, onAvatarSelect: handleAvatarSelect, onMessage: setStatus }),
+                    React.createElement(ProfileSideCard, { avatar, identity, onAvatarSelect: handleAvatarSelect, onMessage: setStatus }),
                     React.createElement(
                         'div',
                         { className: 'profile-column' },
-                        React.createElement(ProfileForm, { status, setStatus, onAvatarChange: setAvatar }),
+                        React.createElement(ProfileForm, { status, setStatus, onAvatarChange: setAvatar, onProfileLoaded: setIdentity }),
                         React.createElement(RecentSignIns, null)
                     )
                 )
