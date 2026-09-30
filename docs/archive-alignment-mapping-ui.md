@@ -25,6 +25,29 @@ Those screens only read active mappings. Adding the same Agenda → PDP → DOST
 chain again also reactivates the archived mapping rather than creating a
 duplicate.
 
+## When a mapping can be archived
+
+A mapping can be archived only when both of these are true:
+
+- the mapping is active;
+- its Strategic Plan is still a **draft** and is not under approval or
+  approved.
+
+Mappings on finalised, submitted, under-approval, approved or archived plans
+are locked. For those plans the **Archive** and **Restore** buttons are
+disabled, and a note above the table explains why.
+
+These rules are checked twice: when the button is clicked, and again when
+the archive is confirmed. If the plan is locked, or the mapping was already
+archived in another tab, the archive does not go ahead. An error message
+explains the reason instead.
+
+The rules live in `resources/js/mappings/mapping-eligibility.js`
+(`mappingChangeLockReason`, `mappingArchiveBlockReason`).
+
+Archiving never changes or removes the related Strategic Objective, PDP
+Chapter, Presidential Agenda item or Strategic Plan.
+
 ## Who can archive
 
 The **Archive** and **Restore** controls, and the **Archived** tab, appear only
