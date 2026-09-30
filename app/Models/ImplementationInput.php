@@ -11,6 +11,8 @@ class ImplementationInput extends Model
 
     public const PENDING_REVIEW = 'Pending Review';
 
+    public const STATUSES = [self::PENDING_REVIEW, 'Approved', 'Rejected'];
+
     protected $table = 'tblimplementation_inputs';
 
     protected $primaryKey = 'input_id';
@@ -25,7 +27,7 @@ class ImplementationInput extends Model
 
     protected function casts(): array
     {
-        return ['submitted_at' => 'immutable_datetime'];
+        return ['submitted_at' => 'immutable_datetime', 'reviewed_at' => 'immutable_datetime'];
     }
 
     public function strategicPlan(): BelongsTo
@@ -36,5 +38,15 @@ class ImplementationInput extends Model
     public function objective(): BelongsTo
     {
         return $this->belongsTo(StrategicObjective::class, 'objective_id');
+    }
+
+    public function submittingUnit(): BelongsTo
+    {
+        return $this->belongsTo(ResponsibleUnit::class, 'responsible_unit_id');
+    }
+
+    public function submitter(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'submitted_by');
     }
 }

@@ -8,7 +8,7 @@ described in `docs/system-monitoring.md`.
 - Page: `/system-monitoring`, listed as **System Activity** under
   **Security Management** in the Technical Admin sidebar
 - View: `resources/views/pages/system-monitoring.blade.php`
-- Page script: `resources/js/pages/system-monitoring-app.js`
+- Page script: `resources/js/pages/technical-admin/system-monitoring-app.js`
 - API client: `resources/js/api/system-monitoring-api.js`
 - Formatting and status logic: `resources/js/data/system-monitoring-data.js`
 - Styles: `resources/css/system-monitoring.css`
@@ -50,7 +50,7 @@ turn this off or refresh manually.
   matches the filters.
 - **Partial failure:** each section reports its own error with **Try again**.
   The rest of the page stays usable.
-- **Service missing:** until the SPDM-66 backend is deployed, the API returns
+- **Service missing:** if the SPDM-66 backend is not deployed, the API returns
   404 and the page says the monitoring service is not available on this server
   yet.
 - **Validation:** an invalid event code shows a field error. Codes use
@@ -64,7 +64,7 @@ The page is read-only. It never writes monitoring or audit data.
 npm run test:frontend
 ```
 
-`tests/frontend/system-monitoring.test.mjs` covers:
+`tests/Frontend/system-monitoring.test.js` covers:
 
 - issue labels;
 - overall status, including a stale scheduler;

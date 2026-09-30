@@ -8,7 +8,7 @@ export function myLoginHistory(limit = 10) {
     return apiRequest(`/api/login-history/me?limit=${encodeURIComponent(limit)}`);
 }
 
-/** Sign-in history across all accounts. Requires logs.view. */
+/** Sign-in history across all accounts. Requires login_history.view. */
 export function listLoginHistory(params = {}) {
     const query = new URLSearchParams(
         Object.entries(params).filter(([, value]) => value !== '' && value != null)

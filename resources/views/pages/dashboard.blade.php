@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | Strategic Planning Management System</title>
-    @vite(['resources/css/profile.css', 'resources/js/dashboard-app.js'])
+    @vite(['resources/css/profile.css', 'resources/js/pages/shared/dashboard-app.js'])
 </head>
 <body>
     <div id="root"></div>

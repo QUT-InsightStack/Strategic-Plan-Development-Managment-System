@@ -14,6 +14,7 @@ Route::get('/reset-password/{token}', function (string $token, Request $request)
     ]);
 })->name('password.reset');
 Route::view('/dashboard', 'pages.dashboard')->name('dashboard');
+Route::view('/management-dashboard', 'pages.management-dashboard')->name('management-dashboard');
 Route::view('/administrative-admin/reference-data', 'pages.reference-data')
     ->name('administrative-admin.reference-data');
 Route::view('/administrative-admin/reference-data/agenda/create', 'pages.reference-data')
@@ -40,6 +41,9 @@ Route::get('/resource', function (Request $request) {
 Route::view('/resource-form', 'pages.resource-form')->name('resource.form');
 Route::view('/create-user', 'pages.create-user')->name('users.create');
 Route::view('/strategic-plans', 'pages.strategic-plans.index')->name('strategic-plans.index');
+Route::get('/strategic-plans/{id}/approval-status', fn (int $id) => view('pages.strategic-plans.approval-status', ['planId' => $id]))
+    ->whereNumber('id')->name('strategic-plans.approval-status');
+Route::view('/workflow-notifications', 'pages.workflow-notifications')->name('workflow-notifications');
 Route::view('/strategic-plans/create', 'pages.strategic-plan')->name('strategic-plans.create');
 Route::get('/strategic-plans/{id}/edit', function (int $id) {
     return view('pages.strategic-plans.edit', ['planId' => $id]);
@@ -78,6 +82,30 @@ Route::view(
     '/workflow-configuration',
     'pages.workflow-configuration'
 )->name('workflow-configuration.index');
+
+/*
+|--------------------------------------------------------------------------
+| Strategic Plan Reviews
+|--------------------------------------------------------------------------
+|
+| These routes render the reviewer-facing pages. The frontend application
+| retrieves and verifies the assigned approval submission.
+|
+*/
+
+Route::view(
+    '/strategic-plan-reviews',
+    'pages.strategic-plans.reviews'
+)->name('strategic-plan-reviews.index');
+
+Route::get('/strategic-plan-reviews/{id}', function (int $id) {
+    return view('pages.strategic-plans.review', [
+        'planId' => $id,
+    ]);
+})
+    ->whereNumber('id')
+    ->name('strategic-plan-reviews.show');
+
 Route::view('/access-denied', 'pages.access-denied')->name('access-denied');
 
 Route::redirect('/login.html', '/login');

@@ -171,8 +171,8 @@ class UserRepository
                                 $pattern
                             )
                             ->orWhereRaw(
-                                "CONCAT_WS(' ', tblusers.first_name, tblusers.last_name) LIKE ? ESCAPE '\\\\'",
-                                [$pattern]
+                                "CONCAT_WS(' ', tblusers.first_name, tblusers.last_name) LIKE ? ESCAPE ?",
+                                [$pattern, '\\']
                             );
                     });
                 }
