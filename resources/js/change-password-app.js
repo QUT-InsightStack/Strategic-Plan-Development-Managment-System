@@ -1,7 +1,7 @@
 import { BrandLogo } from './brand-logo.js';
 import { LogoutButton } from './components/LogoutButton.js';
 
-const { useEffect, useState } = React;
+const { useEffect, useRef, useState } = React;
 
 const rootElement = document.getElementById('root');
 
@@ -10,7 +10,8 @@ const profileUrl = '/profile';
 const loginUrl = '/login';
 
 const apiConfig = {
-    meUrl: rootElement?.dataset?.meUrl || '/api/me',
+    // /api/me does not exist; the authenticated profile lives at /api/auth/me.
+    meUrl: rootElement?.dataset?.meUrl || '/api/auth/me',
     changePasswordUrl:
         rootElement?.dataset?.changePasswordUrl || '/api/change-password',
 };
@@ -35,7 +36,7 @@ function Brand() {
         React.createElement(
             'span',
             { className: 'brand-name' },
-            'Strategic planning Management System'
+            'Strategic Planning Management System'
         )
     );
 }
@@ -135,7 +136,19 @@ function PasswordField({
     onChange,
     autoComplete,
     placeholder,
+    inputRef,
+    describedBy = '',
+    disabled = false,
 }) {
+    const [capsLockOn, setCapsLockOn] = useState(false);
+    const errorId = `${id}-error`;
+    const capsId = `${id}-caps`;
+    const described = [error ? errorId : '', capsLockOn ? capsId : '', describedBy]
+        .filter(Boolean)
+        .join(' ') || undefined;
+    const checkCapsLock = (event) =>
+        setCapsLockOn(Boolean(event.getModifierState?.('CapsLock')));
+
     return React.createElement(
         'div',
         {
@@ -144,7 +157,8 @@ function PasswordField({
         React.createElement(
             'label',
             { htmlFor: id },
-            label
+            label,
+            React.createElement('span', { className: 'field-required', 'aria-hidden': 'true' }, ' *')
         ),
         React.createElement(
             'div',
@@ -157,7 +171,18 @@ function PasswordField({
                 value,
                 autoComplete,
                 placeholder,
+                ref: inputRef,
+                disabled,
+                required: true,
+                'aria-required': 'true',
+                'aria-invalid': error ? 'true' : 'false',
+                'aria-describedby': described,
+                autoCapitalize: 'none',
+                spellCheck: false,
                 onChange: (event) => onChange(event.target.value),
+                onKeyDown: checkCapsLock,
+                onKeyUp: checkCapsLock,
+                onBlur: () => setCapsLockOn(false),
             }),
             React.createElement(
                 'button',
@@ -171,6 +196,8 @@ function PasswordField({
                         ? 'Hide password'
                         : 'Show password',
                     'aria-pressed': showPassword,
+                    'aria-controls': id,
+                    disabled,
                     onClick: onToggle,
                 },
                 React.createElement(EyeIcon, {
@@ -178,45 +205,49 @@ function PasswordField({
                 })
             )
         ),
+        capsLockOn
+            ? React.createElement('p', { className: 'caps-lock-note', id: capsId }, 'Caps Lock is on.')
+            : null,
         React.createElement(
             'p',
-            { className: 'field-error' },
+            { className: 'field-error', id: errorId, role: error ? 'alert' : undefined },
             error || ''
         )
     );
 }
 
-function PasswordRequirements({ password }) {
+const PASSWORD_RULES = [
+    { label: 'At least 16 characters', test: (password) => password.length >= 16 },
+    { label: 'At least one uppercase letter', test: (password) => /[A-Z]/.test(password) },
+    { label: 'At least one lowercase letter', test: (password) => /[a-z]/.test(password) },
+    { label: 'At least one number', test: (password) => /\d/.test(password) },
+    { label: 'At least one special character', test: (password) => /[^A-Za-z0-9]/.test(password) },
+];
+
+function PasswordRequirements({ id, password, currentPassword, confirmPassword }) {
     const requirements = [
+        ...PASSWORD_RULES.map((rule) => ({ label: rule.label, valid: rule.test(password) })),
         {
-            label: 'At least 16 characters',
-            valid: password.length >= 16,
-        },
-        {
-            label: 'At least one uppercase letter',
-            valid: /[A-Z]/.test(password),
-        },
-        {
-            label: 'At least one lowercase letter',
-            valid: /[a-z]/.test(password),
-        },
-        {
-            label: 'At least one number',
-            valid: /\d/.test(password),
-        },
-        {
-            label: 'At least one special character',
-            valid: /[^A-Za-z0-9]/.test(password),
+            label: 'Different from your current password',
+            valid: Boolean(password) && password !== currentPassword,
         },
     ];
+    const met = requirements.filter((requirement) => requirement.valid).length;
+    const matches = Boolean(password) && Boolean(confirmPassword) && password === confirmPassword;
 
     return React.createElement(
         'div',
-        { className: 'password-requirements' },
+        { className: 'password-requirements', id },
         React.createElement(
-            'h3',
-            null,
-            'New password requirements'
+            'div',
+            { className: 'password-requirements__head' },
+            React.createElement('h3', null, 'New password requirements'),
+            React.createElement('span', { className: `password-requirements__count${met === requirements.length ? ' is-complete' : ''}` }, `${met} of ${requirements.length} met`)
+        ),
+        React.createElement(
+            'div',
+            { className: 'password-meter', 'aria-hidden': 'true' },
+            React.createElement('span', { style: { width: `${(met / requirements.length) * 100}%` } })
         ),
         React.createElement(
             'ul',
@@ -224,16 +255,20 @@ function PasswordRequirements({ password }) {
             requirements.map((requirement) =>
                 React.createElement(
                     'li',
-                    {
-                        key: requirement.label,
-                        className: requirement.valid
-                            ? 'is-valid'
-                            : '',
-                    },
-                    requirement.label
+                    { key: requirement.label, className: requirement.valid ? 'is-valid' : '' },
+                    React.createElement('span', { className: 'password-requirements__mark', 'aria-hidden': 'true' }, requirement.valid ? '\u2713' : ''),
+                    requirement.label,
+                    React.createElement('span', { className: 'ui-visually-hidden' }, requirement.valid ? ' (met)' : ' (not met)')
                 )
             )
-        )
+        ),
+        confirmPassword
+            ? React.createElement(
+                'p',
+                { className: `password-match ${matches ? 'is-valid' : 'is-invalid'}`, 'aria-live': 'polite' },
+                matches ? 'Passwords match.' : 'Passwords do not match yet.'
+            )
+            : null
     );
 }
 
@@ -252,14 +287,28 @@ function ChangePasswordForm({ status, setStatus }) {
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const currentRef = useRef(null);
+    const newRef = useRef(null);
+    const confirmRef = useRef(null);
+    const hasInput = Boolean(currentPassword || newPassword || confirmPassword);
+
     function passwordIsValid(password) {
-        return (
-            password.length >= 16 &&
-            /[A-Z]/.test(password) &&
-            /[a-z]/.test(password) &&
-            /\d/.test(password) &&
-            /[^A-Za-z0-9]/.test(password)
-        );
+        return PASSWORD_RULES.every((rule) => rule.test(password));
+    }
+
+    function focusFirstError(nextErrors) {
+        const target = nextErrors.current_password ? currentRef
+            : nextErrors.new_password ? newRef
+            : nextErrors.confirm_password ? confirmRef
+            : null;
+        if (target) window.setTimeout(() => target.current?.focus(), 0);
+    }
+
+    function updateField(setter, field) {
+        return (value) => {
+            setter(value);
+            if (errors[field]) setErrors((current) => ({ ...current, [field]: undefined }));
+        };
     }
 
     function validate() {
@@ -296,6 +345,7 @@ function ChangePasswordForm({ status, setStatus }) {
         }
 
         setErrors(nextErrors);
+        focusFirstError(nextErrors);
 
         return Object.keys(nextErrors).length === 0;
     }
@@ -313,22 +363,25 @@ function ChangePasswordForm({ status, setStatus }) {
     function handleReset() {
         clearPasswordFields();
         setErrors({});
-        setStatus('Password fields have been cleared.', 'info');
+        setStatus('', 'info');
+        currentRef.current?.focus();
     }
 
     async function handleSubmit(event) {
         event.preventDefault();
 
+        if (isSubmitting) return;
+
         if (!validate()) {
             setStatus(
-                'Please check the highlighted fields and try again.',
+                'Please fix the highlighted fields and try again.',
                 'error'
             );
             return;
         }
 
         setIsSubmitting(true);
-        setStatus('Updating password...', 'info');
+        setStatus('', 'info');
 
         try {
             const response = await fetch(
@@ -385,6 +438,21 @@ function ChangePasswordForm({ status, setStatus }) {
                     }
 
                     setErrors(backendErrors);
+                    focusFirstError(backendErrors);
+
+                    // The current password is never kept after a rejected
+                    // attempt; the new password is kept unless the server
+                    // rejected it, so a typo in the current password does
+                    // not mean retyping everything.
+                    setCurrentPassword('');
+                    if (backendErrors.new_password || backendErrors.confirm_password) {
+                        setNewPassword('');
+                        setConfirmPassword('');
+                    }
+
+                    const error = new Error('Please fix the highlighted fields and try again.');
+                    error.handled = true;
+                    throw error;
                 }
 
                 throw new Error(
@@ -405,11 +473,11 @@ function ChangePasswordForm({ status, setStatus }) {
 
             setStatus(
                 data.message ||
-                'Password updated successfully.',
+                'Your password has been changed. Use the new password next time you sign in.',
                 'success'
             );
         } catch (error) {
-            clearPasswordFields();
+            if (!error.handled) clearPasswordFields();
 
             setStatus(
                 error.message ||
@@ -438,7 +506,7 @@ function ChangePasswordForm({ status, setStatus }) {
             React.createElement(
                 'p',
                 null,
-                'Update your account password securely.'
+                'Enter your current password, then choose a new one that meets every requirement below.'
             )
         ),
         React.createElement(
@@ -447,7 +515,27 @@ function ChangePasswordForm({ status, setStatus }) {
                 className: 'password-form',
                 noValidate: true,
                 onSubmit: handleSubmit,
+                'aria-busy': isSubmitting ? 'true' : undefined,
             },
+            status.message
+                ? React.createElement(
+                    'div',
+                    {
+                        className: `password-banner is-${status.type}`,
+                        role: status.type === 'error' ? 'alert' : 'status',
+                    },
+                    React.createElement('span', { className: 'password-banner__icon', 'aria-hidden': 'true' }, status.type === 'success' ? '\u2713' : status.type === 'error' ? '!' : 'i'),
+                    React.createElement(
+                        'div',
+                        null,
+                        React.createElement('p', null, status.message),
+                        status.type === 'success'
+                            ? React.createElement('a', { href: profileUrl }, 'Back to My Profile')
+                            : null
+                    ),
+                    React.createElement('button', { type: 'button', className: 'password-banner__close', onClick: () => setStatus('', 'info'), 'aria-label': 'Dismiss message' }, '\u00d7')
+                )
+                : null,
             React.createElement(PasswordField, {
                 id: 'current_password',
                 label: 'Current Password',
@@ -456,7 +544,9 @@ function ChangePasswordForm({ status, setStatus }) {
                 showPassword: showCurrentPassword,
                 onToggle: () =>
                     setShowCurrentPassword(!showCurrentPassword),
-                onChange: setCurrentPassword,
+                onChange: updateField(setCurrentPassword, 'current_password'),
+                inputRef: currentRef,
+                disabled: isSubmitting,
                 autoComplete: 'current-password',
                 placeholder: 'Enter your current password',
             }),
@@ -468,12 +558,18 @@ function ChangePasswordForm({ status, setStatus }) {
                 showPassword: showNewPassword,
                 onToggle: () =>
                     setShowNewPassword(!showNewPassword),
-                onChange: setNewPassword,
+                onChange: updateField(setNewPassword, 'new_password'),
+                inputRef: newRef,
+                disabled: isSubmitting,
+                describedBy: 'password-requirements',
                 autoComplete: 'new-password',
                 placeholder: 'Enter your new password',
             }),
             React.createElement(PasswordRequirements, {
+                id: 'password-requirements',
                 password: newPassword,
+                currentPassword,
+                confirmPassword,
             }),
             React.createElement(PasswordField, {
                 id: 'confirm_password',
@@ -483,7 +579,9 @@ function ChangePasswordForm({ status, setStatus }) {
                 showPassword: showConfirmPassword,
                 onToggle: () =>
                     setShowConfirmPassword(!showConfirmPassword),
-                onChange: setConfirmPassword,
+                onChange: updateField(setConfirmPassword, 'confirm_password'),
+                inputRef: confirmRef,
+                disabled: isSubmitting,
                 autoComplete: 'new-password',
                 placeholder: 'Re-enter your new password',
             }),
@@ -497,10 +595,10 @@ function ChangePasswordForm({ status, setStatus }) {
                     {
                         className: 'action-button secondary',
                         type: 'button',
-                        disabled: isSubmitting,
+                        disabled: isSubmitting || !hasInput,
                         onClick: handleReset,
                     },
-                    'Reset'
+                    'Clear'
                 ),
                 React.createElement(
                     'button',
@@ -509,20 +607,11 @@ function ChangePasswordForm({ status, setStatus }) {
                         type: 'submit',
                         disabled: isSubmitting,
                     },
+                    isSubmitting ? React.createElement('span', { className: 'password-spinner', 'aria-hidden': 'true' }) : null,
                     isSubmitting
-                        ? 'Updating...'
-                        : 'Update Password'
+                        ? 'Updating…'
+                        : 'Update password'
                 )
-            ),
-            React.createElement(
-                'p',
-                {
-                    className:
-                        `form-status password-status is-${status.type}`,
-                    role: 'status',
-                    'aria-live': 'polite',
-                },
-                status.message
             )
         )
     );
@@ -653,6 +742,11 @@ function ChangePasswordApp() {
                 React.createElement(
                     'div',
                     { className: 'page-title' },
+                    React.createElement(
+                        'a',
+                        { className: 'password-back-link', href: profileUrl },
+                        '\u2190 Back to My Profile'
+                    ),
                     React.createElement(
                         'h1',
                         null,
