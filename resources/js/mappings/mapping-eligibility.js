@@ -1,3 +1,5 @@
+import { displayRoleName } from '../access/role-labels.js';
+
 /*
  * Whether a Strategic Plan currently allows its alignment mappings to be
  * archived or restored.
@@ -25,4 +27,33 @@ export function mappingArchiveBlockReason(mapping, plan) {
     if (!mapping) return 'This mapping no longer exists.';
     if (mapping.status !== 'active') return 'This mapping is already archived.';
     return mappingChangeLockReason(plan);
+}
+
+/*
+ * Permanent deletion is limited to Management users and Technical
+ * Administrators (SPDM-42). Planning Officers and Office/Agency users archive
+ * instead, even if a role were given relations.delete by mistake. The server
+ * still makes the final authorisation decision.
+ */
+const DELETE_ROLE_LABELS = ['Management / Executive', 'Technical Admin'];
+const NEVER_DELETE_ROLE_LABELS = ['Planning Officer', 'Office/Agency'];
+
+export function canDeleteMappings(session) {
+    if (!session) return false;
+    const label = displayRoleName(session.roleName, '');
+    if (NEVER_DELETE_ROLE_LABELS.includes(label)) return false;
+    if (session.permissions?.includes('*')) return true;
+    return DELETE_ROLE_LABELS.includes(label) || Boolean(session.permissions?.includes('relations.delete'));
+}
+
+/*
+ * Only active mappings on draft plans can be permanently deleted. Archived
+ * mappings are historical records, and mappings on finalised or approval
+ * plans are part of the submitted record, so both must be kept.
+ */
+export function mappingDeleteBlockReason(mapping, plan) {
+    if (!mapping) return 'This mapping no longer exists.';
+    if (mapping.status === 'archived') return 'Archived mappings are kept as historical records and cannot be permanently deleted.';
+    const locked = mappingChangeLockReason(plan);
+    return locked ? `${locked} It must be kept as part of the plan record.` : null;
 }

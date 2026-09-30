@@ -68,12 +68,38 @@ export function archiveLocalMapping(id, session = {}) {
 
 // Permanently removes a mapping, active or archived. There is no undo, so
 // callers must confirm with the user first.
-export function deleteLocalMapping(id) {
+const DELETION_LOG_KEY = 'spdms.frontend-mapping-deletions';
+
+function readDeletionLog() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(DELETION_LOG_KEY));
+        return Array.isArray(stored) ? stored : [];
+    } catch { return []; }
+}
+
+// Deleted mappings are gone from the mapping list, but a record of what was
+// deleted, by whom and when is kept so the deletion can still be audited.
+export function listLocalMappingDeletions(planId = null) {
+    return readDeletionLog().filter(entry => planId === null || Number(entry.plan_id) === Number(planId));
+}
+
+export function deleteLocalMapping(id, session = {}, reason = '') {
     const items = readAll();
     const index = items.findIndex(item => Number(item.id) === Number(id));
-    if (index < 0) throw new Error('This mapping no longer exists.');
+    if (index < 0) throw new Error('This mapping no longer exists. It may already have been deleted.');
     const [removed] = items.splice(index, 1);
     writeAll(items);
+    const log = readDeletionLog();
+    log.unshift({
+        mapping_id: removed.id,
+        plan_id: removed.plan_id,
+        mapping: removed,
+        reason: String(reason || '').trim(),
+        deleted_by: session.userId ?? null,
+        deleted_by_name: session.name || '',
+        deleted_at: new Date().toISOString(),
+    });
+    localStorage.setItem(DELETION_LOG_KEY, JSON.stringify(log));
     return removed;
 }
 

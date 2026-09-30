@@ -12,9 +12,11 @@ const {
     archiveLocalMapping,
     deleteLocalMapping,
     listLocalArchivedMappings,
+    listLocalMappingDeletions,
     listLocalMappings,
     saveLocalMappings,
 } = await import('../../resources/js/mappings/mapping-storage.js');
+const { canDeleteMappings, mappingDeleteBlockReason } = await import('../../resources/js/mappings/mapping-eligibility.js');
 
 const catalog = {
     agency_inputs: [],
@@ -57,4 +59,35 @@ test('a deleted chain can be mapped again as a new mapping', () => {
     const recreated = listLocalMappings(1).find((item) => item.dost_objective_id === first.dost_objective_id);
     assert.ok(recreated);
     assert.notEqual(recreated.id, first.id);
+});
+
+test('each deletion is recorded with the mapping, user and time', () => {
+    const [first] = listLocalMappings(1);
+    deleteLocalMapping(first.id, { userId: 9, name: 'Tech Admin' });
+    const [entry] = listLocalMappingDeletions(1);
+    assert.equal(entry.mapping_id, first.id);
+    assert.equal(entry.deleted_by, 9);
+    assert.equal(entry.deleted_by_name, 'Tech Admin');
+    assert.equal(entry.mapping.dost_objective_id, first.dost_objective_id);
+    assert.ok(entry.deleted_at);
+});
+
+test('only Management and Technical Administrators may delete mappings', () => {
+    assert.equal(canDeleteMappings({ roleName: 'Management / Executive', permissions: [] }), true);
+    assert.equal(canDeleteMappings({ roleName: 'Executive', permissions: [] }), true);
+    assert.equal(canDeleteMappings({ roleName: 'Technical Administrator', permissions: [] }), true);
+    assert.equal(canDeleteMappings({ roleName: 'Administrator', permissions: ['*'] }), true);
+    assert.equal(canDeleteMappings({ roleName: 'Planning Officer', permissions: ['relations.manage', 'relations.delete'] }), false);
+    assert.equal(canDeleteMappings({ roleName: 'Office/Agency', permissions: ['relations.delete'] }), false);
+    assert.equal(canDeleteMappings({ roleName: 'Viewer', permissions: [] }), false);
+    assert.equal(canDeleteMappings(null), false);
+});
+
+test('protected mappings must be kept instead of deleted', () => {
+    const draft = { status: 'draft' };
+    assert.equal(mappingDeleteBlockReason({ status: 'active' }, draft), null);
+    assert.match(mappingDeleteBlockReason({ status: 'archived' }, draft), /historical records/);
+    assert.match(mappingDeleteBlockReason({ status: 'active' }, { status: 'finished' }), /finalised.*plan record/);
+    assert.match(mappingDeleteBlockReason({ status: 'active' }, { status: 'draft', approval_status: 'approved' }), /approved/);
+    assert.match(mappingDeleteBlockReason(undefined, draft), /no longer exists/);
 });

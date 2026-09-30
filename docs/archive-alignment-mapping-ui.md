@@ -48,22 +48,40 @@ The rules live in `resources/js/mappings/mapping-eligibility.js`
 Archiving never changes or removes the related Strategic Objective, PDP
 Chapter, Presidential Agenda item or Strategic Plan.
 
-## Deleting (SPDM-298)
+## Deleting (SPDM-42, SPDM-298)
 
-Users with `relations.delete` see a **Delete** action on both the Active and
-Archived tabs. Delete permanently removes the mapping and its linked reference
-details, and it cannot be undone. A confirmation dialog says so before
-anything is removed. On an active mapping, the dialog also suggests archiving
-instead when you are allowed to archive.
+**Who can delete:** Management users (Management, Executive, Management /
+Executive) and Technical Administrators. Administrator can also delete, and so
+can any other role given `relations.delete`. Planning Officers and
+Office/Agency users never see **Delete**, even if a role is given
+`relations.delete` by mistake; they archive instead. Technical Administrators
+reach the page through **Alignment Mappings** in their sidebar. The server
+still makes the final authorisation decision.
 
-If the deleted mapping was selected in the reference-linking step, the
-selection is cleared. The same Agenda → PDP → DOST chain can be mapped again
-afterwards, and it is saved as a new mapping.
+**What can be deleted:** only an active mapping on a draft plan that is not
+under approval or approved. Anything else is protected and must be kept:
 
-In the seeded roles, only Administrator has `relations.delete`. Planning
-Officers can archive but not delete. Delete follows the same plan lock as
-archive: it is unavailable on finalised, under-approval, approved or
-archived plans.
+- archived mappings, which are historical records;
+- mappings on finalised, submitted, under-approval, approved or archived
+  plans.
+
+**How it works:** **Delete** appears on the Active tab only. The
+confirmation dialog names the mapping, says deletion is permanent, and
+confirms that the objective, PDP chapter and agenda item are not affected.
+**Cancel** leaves everything unchanged. Eligibility is checked again when the
+deletion is confirmed. A mapping that was already deleted, archived or locked
+in the meantime gets an error message instead of being deleted.
+
+**What is removed:** only the selected mapping. Its related records and all
+other mappings are untouched. If it was selected in the reference-linking
+step, that selection is cleared.
+
+**Record of deletions:** each deletion is kept in a deletion record
+(`listLocalMappingDeletions`) with the mapping's details, the user and the
+time. The deletion stays traceable even though the mapping is gone.
+
+The rules are in `mapping-eligibility.js` (`canDeleteMappings`,
+`mappingDeleteBlockReason`).
 
 ## Who can archive
 
@@ -81,7 +99,8 @@ alignment API supports writes.
 | `archiveLocalMapping(id, session)` | Sets `status: 'archived'` and records `archived_at`, `archived_by` and `archived_by_name` |
 | `restoreLocalMapping(id, session)` | Sets the mapping back to `active` and clears the archive fields |
 | `listLocalArchivedMappings(planId, office)` | Lists archived mappings for a plan, newest first |
-| `deleteLocalMapping(id)` | Permanently removes a mapping, active or archived |
+| `deleteLocalMapping(id, session, reason)` | Permanently removes a mapping and adds an entry to the deletion record |
+| `listLocalMappingDeletions(planId)` | Lists deleted mappings with who deleted them and when |
 
 Archiving an already-archived mapping, or restoring an active one, raises an
 error. Only `deleteLocalMapping` removes data permanently.

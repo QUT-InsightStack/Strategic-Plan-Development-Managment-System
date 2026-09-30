@@ -9,7 +9,7 @@ import { enforcePageAccess } from '../access/access-guard.js';
 import { agendaCatalog, archiveLocalMapping, deleteLocalMapping, listLocalArchivedMappings, listLocalMappings, restoreLocalMapping, saveLocalMappings, updateLocalMappingReference } from '../mappings/mapping-storage.js';
 import { AppDialog } from '../components/AppDialog.js';
 import { applySubmissionToPlan } from '../data/plan-approval-demo-data.js';
-import { mappingArchiveBlockReason, mappingChangeLockReason } from '../mappings/mapping-eligibility.js';
+import { canDeleteMappings, mappingArchiveBlockReason, mappingChangeLockReason, mappingDeleteBlockReason } from '../mappings/mapping-eligibility.js';
 import { listLocalAgencyInputs } from '../office-demo-storage.js';
 import { objectivesAssignedToOffice } from '../objective-assignment-storage.js';
 
@@ -60,7 +60,7 @@ function MappingPreview({ mappings, archived, showArchived, setShowArchived, off
                     canArchive && (showArchived
                         ? h('button', { className: 'mapping-action mapping-action--restore', type: 'button', disabled: busy || Boolean(lockReason), title: lockReason || undefined, onClick: () => onRestore(item), 'aria-label': `Restore mapping ${mappingChain(item)}` }, h('i', { className: 'bi bi-arrow-counterclockwise', 'aria-hidden': 'true' }), 'Restore')
                         : h('button', { className: 'mapping-action mapping-action--archive', type: 'button', disabled: busy || Boolean(lockReason), title: lockReason || undefined, onClick: () => onArchive(item), 'aria-label': `Archive mapping ${mappingChain(item)}` }, h('i', { className: 'bi bi-archive', 'aria-hidden': 'true' }), 'Archive')),
-                    canDelete && h('button', { className: 'mapping-action mapping-action--delete', type: 'button', disabled: busy || Boolean(lockReason), title: lockReason || undefined, onClick: () => onDelete(item), 'aria-label': `Delete mapping ${mappingChain(item)}` }, h('i', { className: 'bi bi-trash', 'aria-hidden': 'true' }), 'Delete')))
+                    canDelete && !showArchived && h('button', { className: 'mapping-action mapping-action--delete', type: 'button', disabled: busy || Boolean(lockReason), title: lockReason || undefined, onClick: () => onDelete(item), 'aria-label': `Delete mapping ${mappingChain(item)}` }, h('i', { className: 'bi bi-trash', 'aria-hidden': 'true' }), 'Delete')))
             )) : h('tr', null, h('td', { className: 'mapping-empty', colSpan: columns.length }, showArchived ? 'No archived mappings for this plan.' : 'No hierarchical mappings added yet.'))))),
         h('p', { className: 'mapping-count' }, `Showing ${rows.length} ${showArchived ? 'archived ' : ''}mapping${rows.length === 1 ? '' : 's'}`));
 }
@@ -104,7 +104,7 @@ function MappingApp({ session }) {
     const [mappings, setMappings] = useState([]), [selected, setSelected] = useState({ agendas: [], pdp: [], dost: [] });
     const [archivedMappings, setArchivedMappings] = useState([]), [showArchived, setShowArchived] = useState(false), [archiveTarget, setArchiveTarget] = useState(null);
     const canArchive = canManage && !viewOnly;
-    const canDelete = !viewOnly && !officeMode && can('relations.delete', session);
+    const canDelete = !viewOnly && !officeMode && canDeleteMappings(session);
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [agencyItem, setAgencyItem] = useState(''), [details, setDetails] = useState(blankDetails), [selectedMappingId, setSelectedMappingId] = useState('');
     const [loading, setLoading] = useState(true), [busy, setBusy] = useState(false), [message, setMessage] = useState({ type: '', text: '' });
@@ -162,13 +162,20 @@ function MappingApp({ session }) {
     }
     function requestDelete(item) {
         if (!canDelete || busy) return;
-        const blocked = mappingChangeLockReason(selectedPlan);
+        const blocked = mappingDeleteBlockReason(item, selectedPlan);
         if (blocked) { setMessage({ type: 'error', text: `This mapping cannot be deleted. ${blocked}` }); return; }
         setDeleteTarget(item);
     }
     function confirmDelete() {
-        const item = deleteTarget; setDeleteTarget(null); if (!item) return; setBusy(true);
-        try { deleteLocalMapping(item.id); refreshMappings(); if (String(item.id) === String(selectedMappingId)) selectReferenceMapping(''); setMessage({ type: 'success', text: 'Mapping deleted permanently.' }); }
+        const item = deleteTarget; setDeleteTarget(null); if (!item) return;
+        // Re-checked at confirmation in case the mapping was archived or
+        // deleted, or the plan locked, while the dialog was open.
+        const current = listLocalMappings(planId, officeMode ? session.office : '').find(mapping => String(mapping.id) === String(item.id))
+            || listLocalArchivedMappings(planId).find(mapping => String(mapping.id) === String(item.id));
+        const blocked = mappingDeleteBlockReason(current, selectedPlan);
+        if (blocked) { setMessage({ type: 'error', text: `This mapping cannot be deleted. ${blocked}` }); refreshMappings(); return; }
+        setBusy(true);
+        try { deleteLocalMapping(item.id, session); refreshMappings(); if (String(item.id) === String(selectedMappingId)) selectReferenceMapping(''); setMessage({ type: 'success', text: `Mapping “${mappingChain(item)}” was deleted permanently. Other mappings and the related objective, PDP chapter and agenda item are unchanged.` }); }
         catch (error) { setMessage({ type: 'error', text: errorText(error) }); refreshMappings(); } finally { setBusy(false); }
     }
     function restore(item) {
@@ -190,7 +197,7 @@ function MappingApp({ session }) {
             !officeMode && canManage && h(PlannerReferenceStep, { mappings, selectedId: selectedMappingId, selectMapping: selectReferenceMapping, details, setDetails, busy, saveReference: addReference })
         ),
         h(AppDialog, { open: Boolean(archiveTarget), variant: 'danger', title: 'Archive this mapping?', message: archiveTarget ? `“${mappingChain(archiveTarget)}” will be removed from active alignment and reference linking. It stays stored and can be restored at any time.` : '', confirmLabel: 'Archive mapping', cancelLabel: 'Cancel', onConfirm: confirmArchive, onCancel: () => setArchiveTarget(null) }),
-        h(AppDialog, { open: Boolean(deleteTarget), variant: 'danger', title: 'Delete this mapping permanently?', message: deleteTarget ? `“${mappingChain(deleteTarget)}” and its linked reference details will be deleted. This cannot be undone.${canArchive && deleteTarget.status !== 'archived' ? ' To keep a record instead, archive it.' : ''}` : '', confirmLabel: 'Delete permanently', cancelLabel: 'Cancel', onConfirm: confirmDelete, onCancel: () => setDeleteTarget(null) })
+        h(AppDialog, { open: Boolean(deleteTarget), variant: 'danger', title: 'Delete this mapping permanently?', message: deleteTarget ? `“${mappingChain(deleteTarget)}” and its linked reference details will be permanently deleted. This cannot be undone. The Strategic Objective, PDP Chapter and Presidential Agenda item are not affected.${canArchive ? ' To keep a record instead, archive it.' : ''}` : '', confirmLabel: 'Delete permanently', cancelLabel: 'Cancel', onConfirm: confirmDelete, onCancel: () => setDeleteTarget(null) })
     )));
 }
 
