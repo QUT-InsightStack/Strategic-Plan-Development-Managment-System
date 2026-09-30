@@ -281,10 +281,10 @@ class UserUpdateTest extends TestCase
             'states'  => 'success',
         ]);
 
-        $operation = (string) Log::latest('log_id')->value('operation');
-        $this->assertStringContainsString('user.account_updated', $operation);
-        $this->assertStringContainsString((string) $target->user_id, $operation);
-        $this->assertStringContainsString('first_name', $operation);
+        $audit = Log::latest('log_id')->first();
+        $this->assertSame('user.account_updated', $audit->operation);
+        $this->assertSame($target->user_id, (int) $audit->resource_id);
+        $this->assertContains('first_name', $audit->metadata['fields']);
     }
 
     public function test_updated_information_appears_in_search_results(): void

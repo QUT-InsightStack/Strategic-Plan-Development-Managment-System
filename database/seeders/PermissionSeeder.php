@@ -171,6 +171,24 @@ class PermissionSeeder extends Seeder
                 'module' => 'strategic_objectives',
             ],
             [
+                'permission_name' => 'View Strategic Documents',
+                'description' => 'Allows viewing document metadata attached to plans and objectives.',
+                'code' => 'strategic_documents.view',
+                'module' => 'strategic_documents',
+            ],
+            [
+                'permission_name' => 'Upload Strategic Documents',
+                'description' => 'Allows uploading supporting documents to plans and objectives.',
+                'code' => 'strategic_documents.upload',
+                'module' => 'strategic_documents',
+            ],
+            [
+                'permission_name' => 'Download Strategic Documents',
+                'description' => 'Allows downloading supporting documents attached to plans and objectives.',
+                'code' => 'strategic_documents.download',
+                'module' => 'strategic_documents',
+            ],
+            [
                 'permission_name' => 'Create Strategic Objectives',
                 'description' => 'Allows creating strategic objectives.',
                 'code' => 'strategic_objectives.create',
@@ -187,6 +205,18 @@ class PermissionSeeder extends Seeder
                 'description' => 'Allows deleting strategic objectives.',
                 'code' => 'strategic_objectives.delete',
                 'module' => 'strategic_objectives',
+            ],
+            [
+                'permission_name' => 'Archive Strategic Alignments',
+                'description' => 'Allows archiving obsolete or incorrect Strategic Alignment mappings.',
+                'code' => 'strategic_alignments.archive',
+                'module' => 'strategic_alignments',
+            ],
+            [
+                'permission_name' => 'Delete Strategic Alignments',
+                'description' => 'Allows approved Management and Technical Administrators to permanently delete eligible Strategic Alignment mappings.',
+                'code' => 'strategic_alignments.delete',
+                'module' => 'strategic_alignments',
             ],
             [
                 'permission_name' => 'Manage Relations',
@@ -255,6 +285,12 @@ class PermissionSeeder extends Seeder
                 'module' => 'logs',
             ],
             [
+                'permission_name' => 'View System Monitoring',
+                'description' => 'Allows viewing operational metrics, requests, and dependency health.',
+                'code' => 'system_monitoring.view',
+                'module' => 'system_monitoring',
+            ],
+            [
                 'permission_name' => 'Manage PDP Chapters',
                 'description' => 'Allows creating and editing PDP Chapters and their linked strategic objectives.',
                 'code' => 'pdp_chapters.manage',
@@ -264,6 +300,31 @@ class PermissionSeeder extends Seeder
             // every user record and password hash, so being able to trigger
             // one is not the same as being allowed to take a copy off the
             // server.
+
+            [
+                'permission_name' => 'View Presidential Agenda',
+                'description' => 'Allows viewing Presidential Agenda items.',
+                'code' => 'presidential_agenda.view',
+                'module' => 'presidential_agenda',
+            ],
+            [
+                'permission_name' => 'Manage Presidential Agenda',
+                'description' => 'Allows creating and editing Presidential Agenda items.',
+                'code' => 'presidential_agenda.manage',
+                'module' => 'presidential_agenda',
+            ],
+            [
+                'permission_name' => 'Archive Presidential Agenda',
+                'description' => 'Allows archiving Presidential Agenda items.',
+                'code' => 'presidential_agenda.archive',
+                'module' => 'presidential_agenda',
+            ],
+            [
+                'permission_name' => 'Delete Presidential Agenda',
+                'description' => 'Allows logically deleting archived Presidential Agenda items.',
+                'code' => 'presidential_agenda.delete',
+                'module' => 'presidential_agenda',
+            ],
             [
                 'permission_name' => 'View Backups',
                 'description' => 'Allows viewing the list of manual database backups.',

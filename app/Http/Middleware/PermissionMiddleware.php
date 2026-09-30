@@ -37,7 +37,7 @@ class PermissionMiddleware
             ], 403);
         }
 
-        if ($role->role_name === 'Administrator') {
+        if ($role->hasFullAccess()) {
             return $next($request);
         }
 

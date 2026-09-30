@@ -67,7 +67,7 @@ class SearchLogsRequest extends ApiFormRequest
             'date_to' => [
                 'sometimes',
                 'date_format:Y-m-d',
-                'after_or_equal:date_from',
+                Rule::when($this->filled('date_from'), 'after_or_equal:date_from'),
             ],
             'sort_by' => [
                 'sometimes',

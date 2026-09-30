@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Log;
+use App\Contracts\StrategicLogWriter;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -18,6 +18,8 @@ use Illuminate\Support\Str;
  */
 class ProfilePhotoService
 {
+    public function __construct(private readonly StrategicLogWriter $logWriter) {}
+
     private const DISK = 'public';
     private const DIRECTORY = 'avatars';
 
@@ -97,9 +99,9 @@ class ProfilePhotoService
 
     private function audit(User $user, string $event): void
     {
-        Log::create([
-            'user_id' => $user->user_id,
-            'operation' => $event,
+        $this->logWriter->write($event, [
+            'actor_user_id' => $user->user_id,
+            'resource_type' => 'user', 'resource_id' => $user->user_id,
             'states' => 'success',
         ]);
     }

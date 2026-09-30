@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Access Denied | Strategic Planning Management System</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    @vite(['resources/css/access-denied.css', 'resources/js/pages/access-denied-app.js'])
+    @vite(['resources/css/access-denied.css', 'resources/js/pages/shared/access-denied-app.js'])
 </head>
 <body><div id="root"></div><script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script><script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script></body>
 </html>

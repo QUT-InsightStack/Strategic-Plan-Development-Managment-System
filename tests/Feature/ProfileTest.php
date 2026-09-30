@@ -114,10 +114,9 @@ class ProfileTest extends TestCase
             'user_id' => $user->user_id,
             'states'  => 'success',
         ]);
-        $this->assertStringContainsString(
-            'designation',
-            (string) Log::latest('log_id')->value('operation')
-        );
+        $audit = Log::latest('log_id')->first();
+        $this->assertSame('user.profile_updated', $audit->operation);
+        $this->assertContains('designation', $audit->metadata['fields']);
     }
 
     // ─── Validation ──────────────────────────────────────────────────

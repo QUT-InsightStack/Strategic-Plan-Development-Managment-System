@@ -24,7 +24,8 @@ Refresh token TTL: 7 days (10080 minutes).
 
 ### Authorization Model
 Role-Based Access Control (RBAC).
-Roles: Administrator, Planning Officer, Division Head, Viewer.
+Default roles: Administrator, test, Planning Officer, Management, Office, Technical Administrator.
+Management replaces Division Head and Office replaces Viewer without changing their permissions. The protected test role has full access for testing.
 All routes deny access by default — access must be explicitly granted.
 Role check is enforced server-side on every request via RoleMiddleware.
 

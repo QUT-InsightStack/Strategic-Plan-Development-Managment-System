@@ -17,6 +17,10 @@ class StoreStrategicObjectiveRequest extends ApiFormRequest
         $isDraft = $this->input('status', 'draft') === 'draft';
 
         return [
+            'progress_percentage' => ['missing'],
+            'progress_status' => ['missing'],
+            'progress_updated_at' => ['missing'],
+            'progress_updated_by' => ['missing'],
             'created_by' => ['prohibited'],
             'updated_by' => ['prohibited'],
             'archived_at' => ['prohibited'],
