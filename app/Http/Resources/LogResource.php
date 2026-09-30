@@ -13,16 +13,16 @@ class LogResource extends JsonResource
             'log_id' => (int) $this->log_id,
             'user' => $this->userSummary(),
             'actor_name' => $this->actor_name,
-            'action' => $this->operation,
+            'action' => $this->resource->eventName(),
             'resource' => [
                 'type' => $this->resource_type,
                 'id' => $this->resource_id !== null
                     ? (int) $this->resource_id
                     : null,
             ],
-            'outcome' => $this->outcome,
+            'outcome' => $this->resource->effectiveOutcome(),
             'state' => $this->states,
-            'metadata' => $this->metadata,
+            'metadata' => $this->resource->eventMetadata(),
             'occurred_at' => $this->created_at,
         ];
     }

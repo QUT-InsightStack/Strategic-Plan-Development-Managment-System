@@ -15,30 +15,27 @@ class LoginRequest extends ApiFormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $email = $this->input('email');
+
+        if (is_string($email)) {
+            $this->merge([
+                'email' => mb_strtolower(trim($email)),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
-            'email'    => AuthValidationRules::loginEmail(),
+            'email' => AuthValidationRules::loginEmail(),
             'password' => AuthValidationRules::loginPassword(),
         ];
     }
 
-    /**
-     * Friendly field names for error messages.
-     */
     public function attributes(): array
     {
         return ValidationAttributes::all();
     }
-
-    protected function prepareForValidation(): void
-{
-    $email = $this->input('email');
-
-    if (is_string($email)) {
-        $this->merge([
-            'email' => mb_strtolower(trim($email)),
-        ]);
-    }
-}
 }

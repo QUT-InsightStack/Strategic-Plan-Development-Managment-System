@@ -108,5 +108,5 @@ error. Only `deleteLocalMapping` removes data permanently.
 When the backend adds archive, restore and delete endpoints, replace these
 functions with API calls. The page itself only uses these functions.
 
-Tests: `npm run test:frontend` (`tests/frontend/mapping-archive.test.mjs`,
-`tests/frontend/mapping-delete.test.mjs`).
+Tests: `npm run test:frontend` (`tests/Frontend/mapping-archive.test.js`,
+`tests/Frontend/mapping-eligibility.test.js`, `tests/Frontend/mapping-delete.test.js`).
