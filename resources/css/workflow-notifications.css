@@ -1,0 +1,349 @@
+.workflow-notifications-page {
+    min-height: 100vh;
+    background: #f4f7fb;
+}
+
+.workflow-notifications-container {
+    width: min(1180px, 100%);
+    margin: 0 auto;
+}
+
+.notification-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.notification-summary__card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 104px;
+    padding: 20px;
+    border: 1px solid #dce4ef;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgb(15 43 77 / 5%);
+}
+
+.notification-summary__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    border-radius: 12px;
+    color: #1559a6;
+    background: #eaf3ff;
+    font-size: 20px;
+}
+
+.notification-summary__card.is-unread .notification-summary__icon {
+    color: #9a5a00;
+    background: #fff3dc;
+}
+
+.notification-summary__card.is-read .notification-summary__icon {
+    color: #287744;
+    background: #e7f6eb;
+}
+
+.notification-summary__label {
+    display: block;
+    margin-bottom: 3px;
+    color: #65758b;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.notification-summary__value {
+    display: block;
+    color: #173b68;
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.notification-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding: 16px;
+    border: 1px solid #dce4ef;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.notification-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.notification-tab {
+    padding: 9px 16px;
+    border: 1px solid #c9d5e5;
+    border-radius: 8px;
+    color: #36516f;
+    background: #fff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.notification-tab:hover {
+    border-color: #1f5ca8;
+    color: #1f5ca8;
+}
+
+.notification-tab.is-active {
+    border-color: #1f5ca8;
+    color: #fff;
+    background: #1f5ca8;
+}
+
+.notification-toolbar__count {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.notification-list {
+    display: grid;
+    gap: 14px;
+}
+
+.workflow-notification {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 16px;
+    padding: 20px;
+    overflow: hidden;
+    border: 1px solid #dce4ef;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgb(15 43 77 / 5%);
+}
+
+.workflow-notification.is-unread {
+    border-color: #9fc5f5;
+    background: #f8fbff;
+}
+
+.workflow-notification.is-unread::before {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: #1f6ac5;
+    content: "";
+}
+
+.workflow-notification__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    color: #1559a6;
+    background: #eaf3ff;
+    font-size: 19px;
+}
+
+.workflow-notification.is-approved .workflow-notification__icon {
+    color: #23733f;
+    background: #e5f5e9;
+}
+
+.workflow-notification.is-rejected .workflow-notification__icon {
+    color: #b42318;
+    background: #feeceb;
+}
+
+.workflow-notification.is-resubmitted .workflow-notification__icon {
+    color: #7651a8;
+    background: #f1eafa;
+}
+
+.workflow-notification__content {
+    min-width: 0;
+}
+
+.workflow-notification__heading {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-bottom: 6px;
+}
+
+.workflow-notification__title {
+    margin: 0;
+    color: #173b68;
+    font-size: 18px;
+    overflow-wrap: anywhere;
+}
+
+.notification-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    color: #1f5ca8;
+    background: #e8f2ff;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: capitalize;
+}
+
+.notification-badge.is-approved {
+    color: #23733f;
+    background: #e5f5e9;
+}
+
+.notification-badge.is-rejected {
+    color: #b42318;
+    background: #feeceb;
+}
+
+.notification-badge.is-resubmitted {
+    color: #7651a8;
+    background: #f1eafa;
+}
+
+.notification-badge.is-read {
+    color: #526173;
+    background: #edf1f5;
+}
+
+.workflow-notification__message {
+    margin: 0 0 10px;
+    color: #334155;
+    line-height: 1.55;
+}
+
+.workflow-notification__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.workflow-notification__meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.workflow-notification__comment {
+    margin: 12px 0 0;
+    padding: 10px 12px;
+    border-left: 3px solid #9dbce2;
+    border-radius: 4px;
+    color: #3e526c;
+    background: #f3f7fc;
+}
+
+.workflow-notification__actions {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.notification-empty,
+.notification-loading {
+    padding: 52px 24px;
+    border: 1px dashed #c8d5e5;
+    border-radius: 12px;
+    color: #64748b;
+    background: #fff;
+    text-align: center;
+}
+
+.notification-empty i,
+.notification-loading i {
+    display: block;
+    margin-bottom: 12px;
+    color: #8aa8cc;
+    font-size: 34px;
+}
+
+.notification-empty h2 {
+    margin: 0 0 7px;
+    color: #254b78;
+    font-size: 20px;
+}
+
+.notification-empty p,
+.notification-loading p {
+    margin: 0;
+}
+
+.notification-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 20px;
+}
+
+.notification-pagination__label {
+    color: #526173;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+@media (max-width: 900px) {
+    .notification-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .workflow-notification {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .workflow-notification__actions {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 640px) {
+    .notification-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .notification-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .workflow-notification {
+        grid-template-columns: 1fr;
+    }
+
+    .workflow-notification__icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .workflow-notification__actions {
+        grid-column: auto;
+    }
+
+    .workflow-notification__actions .ui-button {
+        width: 100%;
+        justify-content: center;
+    }
+}

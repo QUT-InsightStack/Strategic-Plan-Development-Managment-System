@@ -8,7 +8,7 @@
 
     @vite([
     'resources/css/login.css',
-    'resources/js/pages/forgot-password-app.js'
+    'resources/js/pages/auth/forgot-password-app.js'
   ])
 </head>
 

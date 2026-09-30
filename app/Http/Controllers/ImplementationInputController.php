@@ -2,26 +2,42 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ListObjectiveFeedbackRequest;
+use App\Http\Requests\ListImplementationInputsRequest;
+use App\Http\Requests\ReviewImplementationInputRequest;
 use App\Http\Requests\StoreImplementationInputRequest;
+use App\Services\ImplementationInputQueryService;
 use App\Services\ObjectiveCollaborationService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ImplementationInputController extends Controller
 {
-    public function __construct(private readonly ObjectiveCollaborationService $service) {}
+    public function __construct(
+        private readonly ObjectiveCollaborationService $service,
+        private readonly ImplementationInputQueryService $queries,
+    ) {}
 
-    public function index(ListObjectiveFeedbackRequest $request): JsonResponse
+    public function index(ListImplementationInputsRequest $request): JsonResponse
     {
-        $inputs = $this->service->inputs(
-            $request->route('planId'), $request->route('objectiveId'),
-            $request->validated('per_page', 25), $request->user('api'),
-        );
+        $filters = $request->validated();
+        foreach (['planId' => 'plan_id', 'objectiveId' => 'objective_id'] as $route => $field) {
+            if ($request->route($route) !== null) {
+                abort_if(isset($filters[$field]) && (int) $filters[$field] !== (int) $request->route($route), 422, 'Conflicting route and filter.');
+                $filters[$field] = $request->route($route);
+            }
+        }
 
-        return response()->json(['success' => true, 'data' => $inputs->items(), 'meta' => [
-            'current_page' => $inputs->currentPage(), 'last_page' => $inputs->lastPage(),
-            'per_page' => $inputs->perPage(), 'total' => $inputs->total(),
-        ]]);
+        return response()->json($this->queries->listing($filters, $request->user('api')));
+    }
+
+    public function show(Request $request, int $inputId): JsonResponse
+    {
+        return response()->json(['success' => true, 'data' => $this->queries->show($inputId, $request->user('api'))]);
+    }
+
+    public function review(ReviewImplementationInputRequest $request, int $inputId): JsonResponse
+    {
+        return response()->json(['success' => true, 'data' => $this->queries->review($inputId, $request->validated(), $request->user('api'))]);
     }
 
     public function store(StoreImplementationInputRequest $request): JsonResponse

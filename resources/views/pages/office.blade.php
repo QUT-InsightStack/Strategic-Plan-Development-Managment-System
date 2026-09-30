@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Offices / Agencies | SPDMS</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    @vite(['resources/css/office.css', 'resources/js/office.js'])
+    @vite(['resources/css/office.css', 'resources/js/pages/office/office.js'])
 </head>
 <body>
     <div id="root"></div>

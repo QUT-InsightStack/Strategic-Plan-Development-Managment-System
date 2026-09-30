@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Log;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -40,13 +41,6 @@ class LogRepository
             ->find($id);
     }
 
-    public function create(array $data): Log
-    {
-        return $this->model
-            ->newQuery()
-            ->create($data);
-    }
-
     private function applyFilters(
         Builder $query,
         array $filters
@@ -59,10 +53,7 @@ class LogRepository
         }
 
         if (! empty($filters['action'])) {
-            $query->where(
-                'tbllog.operation',
-                $filters['action']
-            );
+            $query->forAction($filters['action']);
         }
 
         if (! empty($filters['resource_type'])) {
@@ -80,25 +71,22 @@ class LogRepository
         }
 
         if (! empty($filters['outcome'])) {
-            $query->where(
-                'tbllog.outcome',
-                $filters['outcome']
-            );
+            $query->forOutcome($filters['outcome']);
         }
 
         if (! empty($filters['date_from'])) {
-            $query->whereDate(
+            $query->where(
                 'tbllog.created_at',
                 '>=',
-                $filters['date_from']
+                CarbonImmutable::parse($filters['date_from'], config('app.timezone'))->startOfDay()
             );
         }
 
         if (! empty($filters['date_to'])) {
-            $query->whereDate(
+            $query->where(
                 'tbllog.created_at',
-                '<=',
-                $filters['date_to']
+                '<',
+                CarbonImmutable::parse($filters['date_to'], config('app.timezone'))->addDay()->startOfDay()
             );
         }
 
@@ -161,7 +149,14 @@ class LogRepository
         array $filters
     ): void {
         $sortBy = $filters['sort_by'] ?? 'created_at';
-        $direction = $filters['sort_direction'] ?? 'desc';
+        $direction = ($filters['sort_direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+
+        if ($sortBy === 'outcome') {
+            $query->orderByRaw(Log::outcomeSql() . ' ' . $direction)
+                ->orderBy('tbllog.log_id', $direction);
+
+            return;
+        }
 
         $column = match ($sortBy) {
             'action' => 'tbllog.operation',

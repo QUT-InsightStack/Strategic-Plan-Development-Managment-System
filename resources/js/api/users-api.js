@@ -38,3 +38,10 @@ export function updateUser(userId, data) {
         body: JSON.stringify(data),
     });
 }
+
+export function assignUserRole(userId, roleId) {
+    return apiRequest(`/api/users/${userId}/role`, {
+        method: 'PUT',
+        body: JSON.stringify({ role_id: Number(roleId) }),
+    });
+}

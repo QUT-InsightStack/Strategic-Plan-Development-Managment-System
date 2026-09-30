@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Contracts\StrategicLogWriter;
-use App\Http\Middleware\ValidateAuthVersion;
 use App\Models\ImplementationInput;
 use App\Models\ObjectiveComment;
 use App\Models\Permission;
@@ -62,7 +61,8 @@ class ObjectiveCollaborationTest extends TestCase
     public function test_real_jwt_authentication_accepts_active_office_and_rejects_inactive_user(): void
     {
         config(['jwt.secret' => str_repeat('collaboration-test-', 4)]);
-        $token = auth('api')->login($this->office->refresh());
+        $session = app(\App\Services\AuthSessionService::class)->create($this->office);
+        $token = auth('api')->claims(['sid' => $session->id])->login($this->office->refresh());
         auth('api')->forgetUser();
         $this->withToken($token)->postJson($this->inputsUrl(), $this->input())->assertCreated();
         $this->office->update(['status' => 'inactive']);
@@ -386,6 +386,8 @@ class ObjectiveCollaborationTest extends TestCase
 
     public function test_seeders_provision_planner_and_office_permissions_idempotently(): void
     {
+        // Legacy collaboration roles remain supported, but are no longer defaults.
+        Role::create(['role_name' => 'Responsible Unit User']);
         $this->seed([RolesSeeder::class, PermissionSeeder::class, RolePermissionSeeder::class]);
         $this->seed(RolePermissionSeeder::class);
         $planner = Role::where('role_name', 'Planning Officer')->firstOrFail();
@@ -398,7 +400,7 @@ class ObjectiveCollaborationTest extends TestCase
 
     private function login(User $user): void
     {
-        $this->withoutMiddleware(ValidateAuthVersion::class)->actingAs($user, 'api');
+        $this->authenticateApiUser($user);
     }
 
     private function user(array $codes, ?string $office = null): User
@@ -415,8 +417,14 @@ class ObjectiveCollaborationTest extends TestCase
 
     private function plan(): Strategic
     {
-        return app(PlanCreationService::class)->create(['level' => 'strategic_plan', 'title' => 'Test plan',
+        $plan = app(PlanCreationService::class)->create(['level' => 'strategic_plan', 'title' => 'Test plan',
             'mission' => 'Mission', 'vision' => 'Vision', 'core_values' => ['Integrity'], 'status' => 'draft'], $this->planner);
+        DB::table('tblimplementation_input_scopes')->insert([
+            'strategic_plan_id' => $plan->record_id, 'user_id' => $this->planner->user_id,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        return $plan;
     }
 
     private function objective(Strategic $plan): StrategicObjective

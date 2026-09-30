@@ -78,6 +78,23 @@
     background: var(--color-primary-soft);
     white-space: nowrap;
 }
+.plan-approval-badge.is-approved {
+    border-color: #86c99b;
+    color: var(--color-success);
+    background: var(--color-success-soft);
+}
+
+.plan-approval-badge.is-rejected {
+    border-color: #e6a2a2;
+    color: var(--color-danger);
+    background: var(--color-danger-soft);
+}
+
+.plan-approval-badge.is-pending {
+    border-color: #9dc5ee;
+    color: var(--color-primary);
+    background: var(--color-primary-soft);
+}
 
 .plan-approval-not-submitted {
     color: var(--color-text-secondary);

@@ -21,6 +21,10 @@ abstract class ApiFormRequest extends FormRequest
             return false;
         }
 
+        if ($user->role?->hasFullAccess()) {
+            return true;
+        }
+
         $requiredPermissions = $this->requiredPermissions();
 
         if (empty($requiredPermissions)) {

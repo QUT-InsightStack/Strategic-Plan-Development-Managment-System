@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Contracts\StrategicLogWriter;
+use App\Http\Requests\StoreStrategicObjectiveAlignmentRequest;
 use App\Http\Requests\StoreStrategicObjectiveRequest;
+use App\Http\Requests\UpdateStrategicObjectiveAlignmentRequest;
 use App\Http\Requests\UpdateStrategicObjectiveRequest;
 use App\Http\Requests\UpdateStrategicObjectiveStatusRequest;
 use App\Models\Strategic;
 use App\Models\StrategicObjective;
 use App\Services\PermissionAuthorizationService;
 use App\Services\ResponsibleUnitService;
+use App\Services\StrategicObjectiveAlignmentService;
 use App\Services\StrategicPlanAuthorizationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -27,6 +30,7 @@ class StrategicObjectiveController extends Controller
         'updater',
         'pdpChapters',
         'presidentialAgendaItems',
+        'responsibleUnitAssignment.responsibleUnit',
     ];
 
     public function __construct(
@@ -75,14 +79,14 @@ class StrategicObjectiveController extends Controller
             }
         }
 
-        $query = StrategicObjective::with(['strategicPlan.creator', 'creator', 'updater', 'responsibleUnitAssignment.responsibleUnit'])
+        $query = StrategicObjective::with(self::RESPONSE_RELATIONS)
             ->where('status', '!=', 'deleted')
             ->whereIn('strategic_plan_id', $authorizedPlanIds->all())
             ->whereHas('strategicPlan', fn (Builder $builder) => $builder->where('status', '!=', 'deleted'));
 
         if (! empty($filters['search'])) {
             $search = trim((string) $filters['search']);
-            $like = '%' . $search . '%';
+            $like = '%'.$search.'%';
 
             $query->where(function (Builder $builder) use ($like) {
                 $builder->where('objective_title', 'like', $like)
@@ -103,7 +107,7 @@ class StrategicObjectiveController extends Controller
             $query->where('status', $filters['status']);
         }
         if (! empty($filters['responsible_office_agency'])) {
-            $query->where('responsible_office_agency', 'like', '%' . $filters['responsible_office_agency'] . '%');
+            $query->where('responsible_office_agency', 'like', '%'.$filters['responsible_office_agency'].'%');
         }
         if (! empty($filters['year'])) {
             $query->whereYear('updated_at', $filters['year']);
@@ -144,7 +148,7 @@ class StrategicObjectiveController extends Controller
             'You are not authorized to view strategic objectives for this strategic plan.'
         );
 
-        $objectives = StrategicObjective::with(['strategicPlan.creator', 'creator', 'updater', 'responsibleUnitAssignment.responsibleUnit'])
+        $objectives = StrategicObjective::with(self::RESPONSE_RELATIONS)
             ->where('strategic_plan_id', $planId)
             ->where('status', '!=', 'deleted')
             ->orderBy('objective_id')
@@ -207,7 +211,7 @@ class StrategicObjectiveController extends Controller
             $this->responsibleUnits->applyLegacyAssignment(new StrategicObjective, $data, $request->user('api'));
             $objective = StrategicObjective::create($data);
             $this->responsibleUnits->syncLegacyAssignment($objective, $request->user('api'));
-            $objective->load(['strategicPlan.creator', 'creator', 'updater', 'responsibleUnitAssignment.responsibleUnit']);
+            $objective->load(self::RESPONSE_RELATIONS);
 
             $this->logWriter->write('strategic_objective.created', [
                 'objective_id' => $objective->objective_id,
@@ -261,53 +265,89 @@ class StrategicObjectiveController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Updated',
-                'data' => $objective->fresh(['strategicPlan.creator', 'creator', 'updater', 'responsibleUnitAssignment.responsibleUnit']),
+                'data' => $objective->fresh(self::RESPONSE_RELATIONS),
             ], 200);
         }, 3);
     }
 
     public function updateStatus(
-    UpdateStrategicObjectiveStatusRequest $request,
-    int $id
-): JsonResponse {
-    $user = Auth::guard('api')->user();
+        UpdateStrategicObjectiveStatusRequest $request,
+        int $id
+    ): JsonResponse {
+        $user = Auth::guard('api')->user();
 
-    $objective = $this->findObjectiveForWrite($id);
+        $objective = $this->findObjectiveForWrite($id);
 
-    if (! $objective) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Strategic objective not found.',
-        ], 404);
-    }
+        if (! $objective) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Strategic objective not found.',
+            ], 404);
+        }
 
-    if (
-        ! $objective->strategicPlan ||
-        $objective->strategicPlan->status === 'deleted'
-    ) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Strategic objective not found.',
-        ], 404);
-    }
+        if (
+            ! $objective->strategicPlan ||
+            $objective->strategicPlan->status === 'deleted'
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Strategic objective not found.',
+            ], 404);
+        }
 
-    $objective->strategicPlan->loadMissing('creator');
+        $objective->strategicPlan->loadMissing('creator');
 
-    $this->authorizationService->ensurePlanIsWithinAuthorizedScope(
-        $objective->strategicPlan,
-        $user,
-        'You are not authorized to archive or restore this strategic objective.'
-    );
+        $this->authorizationService->ensurePlanIsWithinAuthorizedScope(
+            $objective->strategicPlan,
+            $user,
+            'You are not authorized to archive or restore this strategic objective.'
+        );
 
-    $this->ensurePlanCanBeChanged($objective->strategicPlan);
+        $this->ensurePlanCanBeChanged($objective->strategicPlan);
 
-    $requestedStatus = $request->validated('status');
+        $requestedStatus = $request->validated('status');
 
-    if ($requestedStatus === 'archived') {
-        if ($objective->status === 'archived') {
+        if ($requestedStatus === 'archived') {
+            if ($objective->status === 'archived') {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Strategic objective is already archived.',
+                    'data' => $objective->fresh([
+                        'strategicPlan.creator',
+                        'creator',
+                        'updater',
+                    ]),
+                ]);
+            }
+
+            if (! in_array($objective->status, ['draft', 'published'], true)) {
+                throw ValidationException::withMessages([
+                    'status' => ['Only active Strategic Objectives can be archived.'],
+                ]);
+            }
+
+            $previousStatus = $objective->status;
+
+            $objective->update([
+                'updated_by' => $user->user_id,
+                'status_before_archive' => $previousStatus,
+                'status' => 'archived',
+                'archived_at' => now(),
+                'archived_by' => $user->user_id,
+                'deleted_at' => null,
+            ]);
+
+            $this->logWriter->write('strategic_objective.archived', [
+                'objective_id' => $objective->objective_id,
+                'record_id' => $objective->strategic_plan_id,
+                'from' => $previousStatus,
+                'to' => 'archived',
+                'user_id' => $user->user_id,
+            ]);
+
             return response()->json([
                 'success' => true,
-                'message' => 'Strategic objective is already archived.',
+                'message' => 'Strategic objective archived successfully.',
                 'data' => $objective->fresh([
                     'strategicPlan.creator',
                     'creator',
@@ -316,123 +356,204 @@ class StrategicObjectiveController extends Controller
             ]);
         }
 
-        if (! in_array($objective->status, ['draft', 'published'], true)) {
-            throw ValidationException::withMessages([
-                'status' => ['Only active Strategic Objectives can be archived.'],
+        if ($objective->status !== 'archived') {
+            return response()->json([
+                'success' => true,
+                'message' => 'Strategic objective is already active.',
+                'data' => $objective->fresh([
+                    'strategicPlan.creator',
+                    'creator',
+                    'updater',
+                ]),
             ]);
         }
 
-        $previousStatus = $objective->status;
+        $restoredStatus = $objective->status_before_archive ?? 'draft';
 
         $objective->update([
             'updated_by' => $user->user_id,
-            'status_before_archive' => $previousStatus,
-            'status' => 'archived',
-            'archived_at' => now(),
-            'archived_by' => $user->user_id,
+            'status' => $restoredStatus,
+            'status_before_archive' => null,
+            'archived_at' => null,
+            'archived_by' => null,
             'deleted_at' => null,
         ]);
 
-        $this->logWriter->write('strategic_objective.archived', [
+        $this->logWriter->write('strategic_objective.restored', [
             'objective_id' => $objective->objective_id,
             'record_id' => $objective->strategic_plan_id,
-            'from' => $previousStatus,
-            'to' => 'archived',
+            'from' => 'archived',
+            'to' => $restoredStatus,
             'user_id' => $user->user_id,
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Strategic objective archived successfully.',
-            'data' => $objective->fresh([
-                'strategicPlan.creator',
-                'creator',
-                'updater',
-            ]),
+            'message' => 'Strategic objective restored successfully.',
+            'data' => $objective->fresh(self::RESPONSE_RELATIONS),
         ]);
     }
 
-    if ($objective->status !== 'archived') {
+    public function storeAlignments(
+        StoreStrategicObjectiveAlignmentRequest $request,
+        int $id,
+        StrategicObjectiveAlignmentService $alignmentService
+    ): JsonResponse {
+        return $this->writeAlignments($request->validated(), $id, $alignmentService, replace: false);
+    }
+
+    public function updateAlignments(
+        UpdateStrategicObjectiveAlignmentRequest $request,
+        int $id,
+        StrategicObjectiveAlignmentService $alignmentService
+    ): JsonResponse {
+        return $this->writeAlignments($request->validated(), $id, $alignmentService, replace: true);
+    }
+
+    private function writeAlignments(
+        array $data,
+        int $id,
+        StrategicObjectiveAlignmentService $alignmentService,
+        bool $replace
+    ): JsonResponse {
+        $user = Auth::guard('api')->user();
+        $planId = StrategicObjective::where('status', '!=', 'deleted')
+            ->whereKey($id)->value('strategic_plan_id');
+        abort_if($planId === null, 404, 'Strategic objective not found.');
+
+        $objective = DB::transaction(function () use ($data, $user, $id, $planId, $alignmentService, $replace): StrategicObjective {
+            // Lock the parent first, matching the plan lifecycle's parent-to-child writes.
+            $plan = Strategic::with('creator')->where('status', '!=', 'deleted')
+                ->lockForUpdate()->findOrFail($planId);
+            $objective = StrategicObjective::where('status', '!=', 'deleted')
+                ->where('strategic_plan_id', $planId)
+                ->lockForUpdate()->findOrFail($id);
+            $objective->setRelation('strategicPlan', $plan);
+
+            $this->authorizationService->ensurePlanIsWithinAuthorizedScope(
+                $plan,
+                $user,
+                'You are not authorized to change alignments for this strategic objective.'
+            );
+            $this->ensureObjectiveCanBeChanged($objective);
+
+            // Checked under the plan lock, so submission cannot interleave.
+            $alignmentService->ensurePlanPermitsAlignmentChanges($plan);
+
+            if ($replace) {
+                $changes = $alignmentService->update($objective, $data);
+                if ($changes === []) {
+                    return $objective->load(self::RESPONSE_RELATIONS);
+                }
+                $metadata = ['changes' => $changes];
+            } else {
+                $alignmentService->create($objective, $data);
+                $metadata = [
+                    'pdp_chapter_ids' => $data['pdp_chapter_ids'] ?? [],
+                    'presidential_agenda_item_ids' => $data['presidential_agenda_item_ids'] ?? [],
+                ];
+            }
+            $objective->forceFill(['updated_by' => $user->user_id, 'updated_at' => now()])->save();
+
+            $this->logWriter->write($replace ? 'strategic_objective.alignments_updated' : 'strategic_objective.alignments_created', [
+                'actor_user_id' => $user->user_id,
+                'resource_type' => 'strategic_objective',
+                'resource_id' => $objective->objective_id,
+                'record_id' => $plan->record_id,
+                ...$metadata,
+            ]);
+
+            return $objective->load(self::RESPONSE_RELATIONS);
+        }, 3);
+
         return response()->json([
             'success' => true,
-            'message' => 'Strategic objective is already active.',
-            'data' => $objective->fresh([
-                'strategicPlan.creator',
-                'creator',
-                'updater',
-            ]),
-        ]);
+            'message' => $replace ? 'Strategic alignment mappings updated successfully.' : 'Strategic alignment mappings created successfully.',
+            'data' => $objective,
+        ], $replace ? 200 : 201);
     }
 
-    $restoredStatus = $objective->status_before_archive ?? 'draft';
-
-    $objective->update([
-        'updated_by' => $user->user_id,
-        'status' => $restoredStatus,
-        'status_before_archive' => null,
-        'archived_at' => null,
-        'archived_by' => null,
-        'deleted_at' => null,
-    ]);
-
-    $this->logWriter->write('strategic_objective.restored', [
-        'objective_id' => $objective->objective_id,
-        'record_id' => $objective->strategic_plan_id,
-        'from' => 'archived',
-        'to' => $restoredStatus,
-        'user_id' => $user->user_id,
-    ]);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Strategic objective restored successfully.',
-        'data' => $objective->fresh([
-            'strategicPlan.creator',
-            'creator',
-            'updater',
-        ]),
-    ]);
-}
     public function destroy(int $id): JsonResponse
     {
         $user = Auth::guard('api')->user();
+
         $this->permissionAuthorizationService->ensureHasPermission(
             'strategic_objectives.delete',
             $user,
             'You are not authorized to delete strategic objectives.'
         );
-        $objective = StrategicObjective::where('status', '!=', 'deleted')->find($id);
 
-        if (! $objective) {
-            return response()->json(['message' => 'Not found'], 404);
-        }
+        return DB::transaction(function () use ($id, $user): JsonResponse {
+            $planId = StrategicObjective::query()
+                ->whereKey($id)
+                ->value('strategic_plan_id');
 
-        if (! $objective->strategicPlan || $objective->strategicPlan->status === 'deleted') {
-            return response()->json(['message' => 'Not found'], 404);
-        }
+            if ($planId === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Strategic objective not found.',
+                ], 404);
+            }
 
-        $objective->strategicPlan?->loadMissing('creator');
-        $this->authorizationService->ensurePlanIsWithinAuthorizedScope(
-            $objective->strategicPlan,
-            $user,
-            'You are not authorized to delete this strategic objective.'
-        );
-        $this->ensurePlanCanBeChanged($objective->strategicPlan);
-        $objective->update([
-            'updated_by' => Auth::guard('api')->id(),
-            'status' => 'deleted',
-            'status_before_archive' => null,
-            'archived_at' => null,
-            'archived_by' => null,
-            'deleted_at' => now(),
-        ]);
+            // Follow the parent-then-child locking order used by alignment writes.
+            $plan = Strategic::with('creator')
+                ->whereKey($planId)
+                ->lockForUpdate()
+                ->first();
 
-        $this->logWriter->write('strategic_objective.deleted', [
-            'objective_id' => $objective->objective_id,
-            'record_id' => $objective->strategic_plan_id,
-        ]);
+            $objective = StrategicObjective::query()
+                ->whereKey($id)
+                ->where('strategic_plan_id', $planId)
+                ->lockForUpdate()
+                ->first();
 
-        return response()->json(['message' => 'Deleted'], 200);
+            if (! $plan || ! $objective || $plan->status === 'deleted') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Strategic objective not found.',
+                ], 404);
+            }
+
+            $this->authorizationService->ensurePlanIsWithinAuthorizedScope(
+                $plan,
+                $user,
+                'You are not authorized to delete this strategic objective.'
+            );
+
+            if ($objective->status === 'deleted') {
+                throw ValidationException::withMessages([
+                    'status' => ['This Strategic Objective has already been deleted.'],
+                ]);
+            }
+
+            $this->ensurePlanCanBeChanged($plan);
+            $previousStatus = $objective->status;
+
+            // Do not call delete() or detach relationships: retain historical data.
+            $objective->update([
+                'updated_by' => $user->user_id,
+                'status' => 'deleted',
+                'status_before_archive' => null,
+                'archived_at' => null,
+                'archived_by' => null,
+                'deleted_at' => now(),
+            ]);
+
+            $this->logWriter->write('strategic_objective.deleted', [
+                'actor_user_id' => $user->user_id,
+                'resource_type' => 'strategic_objective',
+                'resource_id' => $objective->objective_id,
+                'objective_id' => $objective->objective_id,
+                'record_id' => $objective->strategic_plan_id,
+                'from' => $previousStatus,
+                'to' => 'deleted',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Strategic Objective deleted successfully.',
+            ], 200);
+        }, 3);
     }
 
     private function ensurePlanCanBeChanged(Strategic $plan): void
@@ -463,7 +584,7 @@ class StrategicObjectiveController extends Controller
 
     private function findObjectiveForRead(int $id): ?StrategicObjective
     {
-        return StrategicObjective::with(['strategicPlan.creator', 'creator', 'updater', 'responsibleUnitAssignment.responsibleUnit'])
+        return StrategicObjective::with(self::RESPONSE_RELATIONS)
             ->where('status', '!=', 'deleted')
             ->find($id);
     }
