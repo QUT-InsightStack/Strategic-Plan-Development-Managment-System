@@ -21,6 +21,7 @@ export function listLocalMappings(planId, office = '') {
     return readAll().filter(item => Number(item.plan_id) === Number(planId) && item.status === 'active' && (!office || item.agency_office === office));
 }
 
+// Read-only view of every active mapping across plans.
 export function listAllLocalMappings() {
     return readAll().filter(item => item.status === 'active');
 }
