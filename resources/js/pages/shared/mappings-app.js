@@ -6,9 +6,9 @@ import { listPdpChapters } from '../../api/pdp-chapters-api.js';
 import { createAccessSession, saveAccessSession, can } from '../../access/access-session.js';
 import { isOfficeRole } from '../../access/office-navigation.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
-import { agendaCatalog, archiveLocalMapping, listLocalArchivedMappings, listLocalMappings, restoreLocalMapping, saveLocalMappings, updateLocalMappingReference } from '../../mappings/mapping-storage.js';
+import { agendaCatalog, archiveLocalMapping, deleteLocalMapping, listLocalArchivedMappings, listLocalMappings, restoreLocalMapping, saveLocalMappings, updateLocalMappingReference } from '../../mappings/mapping-storage.js';
 import { AppDialog } from '../../components/AppDialog.js';
-import { mappingArchiveBlockReason, mappingChangeLockReason } from '../../mappings/mapping-eligibility.js';
+import { canDeleteMappings, mappingArchiveBlockReason, mappingChangeLockReason, mappingDeleteBlockReason } from '../../mappings/mapping-eligibility.js';
 import { listLocalAgencyInputs } from '../../data/office-demo-storage.js';
 import { objectivesAssignedToOffice } from '../../objective-assignment-storage.js';
 
@@ -35,9 +35,10 @@ const archivedLabel = item => {
     return item.archived_by_name ? `${when} by ${item.archived_by_name}` : when;
 };
 
-function MappingPreview({ mappings, archived, showArchived, setShowArchived, officeMode, canArchive, lockReason, busy, onArchive, onRestore }) {
+function MappingPreview({ mappings, archived, showArchived, setShowArchived, officeMode, canArchive, canDelete, lockReason, busy, onArchive, onRestore, onDelete }) {
+    const hasActions = canArchive || canDelete;
     const rows = showArchived ? archived : mappings;
-    const columns = ['Agenda', 'PDP Element', 'DOST Objective', 'Agency Plan', ...(showArchived ? ['Archived'] : []), ...(canArchive ? ['Action'] : [])];
+    const columns = ['Agenda', 'PDP Element', 'DOST Objective', 'Agency Plan', ...(showArchived ? ['Archived'] : []), ...(hasActions ? ['Action'] : [])];
     const tab = (archivedTab, label, count) => h('button', {
         type: 'button', role: 'tab', 'aria-selected': showArchived === archivedTab, 'aria-controls': 'mapping-preview-table',
         className: `mapping-tab${showArchived === archivedTab ? ' is-active' : ''}`, onClick: () => setShowArchived(archivedTab),
@@ -45,8 +46,8 @@ function MappingPreview({ mappings, archived, showArchived, setShowArchived, off
     return h('section', { className: 'ui-card mapping-preview-card' },
         h('div', { className: 'mapping-preview-card__header' },
             h('h2', null, officeMode ? 'Four-level Mapping Preview' : 'Three-level Mapping Preview'),
-            canArchive && h('div', { className: 'mapping-tabs', role: 'tablist', 'aria-label': 'Mapping status' }, tab(false, 'Active', mappings.length), tab(true, 'Archived', archived.length))),
-        canArchive && lockReason && h('p', { className: 'mapping-lock-note', role: 'note' }, h('i', { className: 'bi bi-lock-fill', 'aria-hidden': 'true' }), `${lockReason} Archive and restore are unavailable.`),
+            hasActions && h('div', { className: 'mapping-tabs', role: 'tablist', 'aria-label': 'Mapping status' }, tab(false, 'Active', mappings.length), tab(true, 'Archived', archived.length))),
+        hasActions && lockReason && h('p', { className: 'mapping-lock-note', role: 'note' }, h('i', { className: 'bi bi-lock-fill', 'aria-hidden': 'true' }), `${lockReason} Archive, restore and delete are unavailable.`),
         showArchived && h('p', { className: 'mapping-archive-note' }, h('i', { className: 'bi bi-info-circle', 'aria-hidden': 'true' }), 'Archived mappings are kept for reference and are not used in alignment views, reference linking or reports. Restore a mapping to make it active again.'),
         h('div', { className: 'mapping-preview', id: 'mapping-preview-table' }, h('table', { className: 'ui-table' },
             h('thead', null, h('tr', null, columns.map(label => h('th', { key: label, scope: 'col' }, label)))),
@@ -54,9 +55,11 @@ function MappingPreview({ mappings, archived, showArchived, setShowArchived, off
                 h('td', null, item.agenda_title), h('td', null, item.pdp_chapter?.chapter_title || '—'), h('td', null, item.dost_objective?.objective_title || '—'),
                 h('td', null, agencyLabel(item)),
                 showArchived && h('td', { className: 'mapping-archived-when' }, archivedLabel(item)),
-                canArchive && h('td', null, showArchived
-                    ? h('button', { className: 'mapping-action mapping-action--restore', type: 'button', disabled: busy || Boolean(lockReason), title: lockReason || undefined, onClick: () => onRestore(item), 'aria-label': `Restore mapping ${mappingChain(item)}` }, h('i', { className: 'bi bi-arrow-counterclockwise', 'aria-hidden': 'true' }), 'Restore')
-                    : h('button', { className: 'mapping-action mapping-action--archive', type: 'button', disabled: busy || Boolean(lockReason), title: lockReason || undefined, onClick: () => onArchive(item), 'aria-label': `Archive mapping ${mappingChain(item)}` }, h('i', { className: 'bi bi-archive', 'aria-hidden': 'true' }), 'Archive'))
+                hasActions && h('td', null, h('div', { className: 'mapping-actions' },
+                    canArchive && (showArchived
+                        ? h('button', { className: 'mapping-action mapping-action--restore', type: 'button', disabled: busy || Boolean(lockReason), title: lockReason || undefined, onClick: () => onRestore(item), 'aria-label': `Restore mapping ${mappingChain(item)}` }, h('i', { className: 'bi bi-arrow-counterclockwise', 'aria-hidden': 'true' }), 'Restore')
+                        : h('button', { className: 'mapping-action mapping-action--archive', type: 'button', disabled: busy || Boolean(lockReason), title: lockReason || undefined, onClick: () => onArchive(item), 'aria-label': `Archive mapping ${mappingChain(item)}` }, h('i', { className: 'bi bi-archive', 'aria-hidden': 'true' }), 'Archive')),
+                    canDelete && !showArchived && h('button', { className: 'mapping-action mapping-action--delete', type: 'button', disabled: busy || Boolean(lockReason), title: lockReason || undefined, onClick: () => onDelete(item), 'aria-label': `Delete mapping ${mappingChain(item)}` }, h('i', { className: 'bi bi-trash', 'aria-hidden': 'true' }), 'Delete')))
             )) : h('tr', null, h('td', { className: 'mapping-empty', colSpan: columns.length }, showArchived ? 'No archived mappings for this plan.' : 'No hierarchical mappings added yet.'))))),
         h('p', { className: 'mapping-count' }, `Showing ${rows.length} ${showArchived ? 'archived ' : ''}mapping${rows.length === 1 ? '' : 's'}`));
 }
@@ -100,6 +103,8 @@ function MappingApp({ session }) {
     const [mappings, setMappings] = useState([]), [selected, setSelected] = useState({ agendas: [], pdp: [], dost: [] });
     const [archivedMappings, setArchivedMappings] = useState([]), [showArchived, setShowArchived] = useState(false), [archiveTarget, setArchiveTarget] = useState(null);
     const canArchive = canManage && !viewOnly;
+    const canDelete = !viewOnly && !officeMode && canDeleteMappings(session);
+    const [deleteTarget, setDeleteTarget] = useState(null);
     const [agencyItem, setAgencyItem] = useState(''), [details, setDetails] = useState(blankDetails), [selectedMappingId, setSelectedMappingId] = useState('');
     const [loading, setLoading] = useState(true), [busy, setBusy] = useState(false), [message, setMessage] = useState({ type: '', text: '' });
 
@@ -111,7 +116,7 @@ function MappingApp({ session }) {
             if (!active) return;
             const objectives = (objectiveResult.data || []).filter(item => !['archived', 'deleted'].includes(item.status));
             setCatalog({ agendas: agendaCatalog, pdp_chapters: pdpResult.data || [], dost_objectives: objectives, agencies: unitsResult.data || [], agency_inputs: inputResult.data || [], agency_objectives: officeMode ? objectivesAssignedToOffice(objectives, session.office) : [] });
-            setMappings(listLocalMappings(planId, officeMode ? session.office : '')); setArchivedMappings(canManage ? listLocalArchivedMappings(planId) : []); setShowArchived(false); setSelected({ agendas: [], pdp: [], dost: [] }); setAgencyItem(''); setSelectedMappingId(''); setDetails(blankDetails);
+            setMappings(listLocalMappings(planId, officeMode ? session.office : '')); setArchivedMappings(canManage || canDelete ? listLocalArchivedMappings(planId) : []); setShowArchived(false); setSelected({ agendas: [], pdp: [], dost: [] }); setAgencyItem(''); setSelectedMappingId(''); setDetails(blankDetails);
         }).catch(error => { if (active) setMessage({ type: 'error', text: errorText(error) }); }).finally(() => { if (active) setLoading(false); });
         return () => { active = false; };
     }, [planId]);
@@ -120,7 +125,7 @@ function MappingApp({ session }) {
     const selectedPlan = plans.find(plan => String(plan.record_id) === planId);
     const agencyOptions = [...(catalog.agency_objectives || []).map(item => ({ value: `objective:${item.objective_id}`, label: `Assigned objective · ${item.objective_title}` })), ...(catalog.agency_inputs || []).map(item => ({ value: `input:${item.id}`, label: `Submitted ${item.type.replace('_', ' ')} · ${item.payload.objective_title || item.payload.content}` }))];
     const agencyChoices = (catalog.agencies || []).map(unit => ({ value: String(unit.responsible_unit_id), label: unit.responsible_office_agency || unit.name }));
-    const refreshMappings = () => { setMappings(listLocalMappings(planId, officeMode ? session.office : '')); setArchivedMappings(canManage ? listLocalArchivedMappings(planId) : []); };
+    const refreshMappings = () => { setMappings(listLocalMappings(planId, officeMode ? session.office : '')); setArchivedMappings(canManage || canDelete ? listLocalArchivedMappings(planId) : []); };
 
     async function addHierarchy(event) {
         event.preventDefault(); if (!canCreate || busy) return;
@@ -162,6 +167,24 @@ function MappingApp({ session }) {
         try { archiveLocalMapping(item.id, session); refreshMappings(); if (String(item.id) === String(selectedMappingId)) selectReferenceMapping(''); setMessage({ type: 'success', text: 'Mapping archived. It is no longer an active alignment; its Strategic Objective, PDP Chapter and Presidential Agenda item are unchanged. You can find it under Archived.' }); }
         catch (error) { setMessage({ type: 'error', text: errorText(error) }); refreshMappings(); } finally { setBusy(false); }
     }
+    function requestDelete(item) {
+        if (!canDelete || busy) return;
+        const blocked = mappingDeleteBlockReason(item, selectedPlan);
+        if (blocked) { setMessage({ type: 'error', text: `This mapping cannot be deleted. ${blocked}` }); return; }
+        setDeleteTarget(item);
+    }
+    function confirmDelete() {
+        const item = deleteTarget; setDeleteTarget(null); if (!item) return;
+        // Re-checked at confirmation in case the mapping was archived or
+        // deleted, or the plan locked, while the dialog was open.
+        const current = listLocalMappings(planId, officeMode ? session.office : '').find(mapping => String(mapping.id) === String(item.id))
+            || listLocalArchivedMappings(planId).find(mapping => String(mapping.id) === String(item.id));
+        const blocked = mappingDeleteBlockReason(current, selectedPlan);
+        if (blocked) { setMessage({ type: 'error', text: `This mapping cannot be deleted. ${blocked}` }); refreshMappings(); return; }
+        setBusy(true);
+        try { deleteLocalMapping(item.id, session); refreshMappings(); if (String(item.id) === String(selectedMappingId)) selectReferenceMapping(''); setMessage({ type: 'success', text: `Mapping “${mappingChain(item)}” was deleted permanently. Other mappings and the related objective, PDP chapter and agenda item are unchanged.` }); }
+        catch (error) { setMessage({ type: 'error', text: errorText(error) }); refreshMappings(); } finally { setBusy(false); }
+    }
     function restore(item) {
         if (!canArchive || busy) return;
         const blocked = mappingChangeLockReason(selectedPlan);
@@ -193,10 +216,11 @@ function MappingApp({ session }) {
         ),
         loading ? h('section', { className: 'ui-card mapping-empty' }, 'Loading mapping data…') : h(React.Fragment, null,
             canCreate && h('form', { className: 'ui-card mapping-step mapping-hierarchy-step', onSubmit: addHierarchy }, h('div', { className: 'mapping-step__heading' }, h('span', null, '1'), h('h2', null, officeMode ? 'Step 1. Map Agency Input Across Levels' : 'Step 1. Create Three-Level Mapping')), h('div', { className: 'mapping-levels' }, h(ChoiceLevel, { title: 'Agenda', icon: 'bi-bank2', items: catalog.agendas, selected: selected.agendas, onToggle: value => toggle('agendas', value), valueKey: 'code', labelKey: 'title' }), h('i', { className: 'bi bi-arrow-right mapping-arrow' }), h(ChoiceLevel, { title: 'PDP Elements', icon: 'bi-file-earmark-text-fill', items: catalog.pdp_chapters, selected: selected.pdp, onToggle: value => toggle('pdp', value), valueKey: 'chapter_id', labelKey: 'chapter_title' }), h('i', { className: 'bi bi-arrow-right mapping-arrow' }), h(ChoiceLevel, { title: 'DOST Objectives', icon: 'bi-bullseye', items: catalog.dost_objectives, selected: selected.dost, onToggle: value => toggle('dost', value), valueKey: 'objective_id', labelKey: 'objective_title' })), h('div', { className: 'mapping-hierarchy-action' }, h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'submit', disabled: busy || selectedPlan?.status !== 'draft' }, busy ? 'Adding…' : '+ Add Hierarchical Mapping'))),
-            h(MappingPreview, { mappings, archived: archivedMappings, showArchived: canArchive && showArchived, setShowArchived, officeMode, canArchive, lockReason: canArchive ? mappingChangeLockReason(selectedPlan) : null, busy, onArchive: requestArchive, onRestore: restore }),
+            h(MappingPreview, { mappings, archived: archivedMappings, showArchived: (canArchive || canDelete) && showArchived, setShowArchived, officeMode, canArchive, canDelete, lockReason: (canArchive || canDelete) ? mappingChangeLockReason(selectedPlan) : null, busy, onArchive: requestArchive, onRestore: restore, onDelete: requestDelete }),
             !officeMode && canManage && h(PlannerReferenceStep, { mappings, selectedId: selectedMappingId, selectMapping: selectReferenceMapping, details, setDetails, busy, saveReference: addReference })
         ),
-        h(AppDialog, { open: Boolean(archiveTarget), variant: 'danger', title: 'Archive this mapping?', message: archiveTarget ? `“${mappingChain(archiveTarget)}” will no longer be treated as an active alignment and will be left out of alignment views and reference linking. The mapping and its Strategic Objective, PDP Chapter and Presidential Agenda item are kept for history, and it can be restored while the plan is in draft.` : '', confirmLabel: 'Archive mapping', cancelLabel: 'Cancel', onConfirm: confirmArchive, onCancel: () => setArchiveTarget(null) })
+        h(AppDialog, { open: Boolean(archiveTarget), variant: 'danger', title: 'Archive this mapping?', message: archiveTarget ? `“${mappingChain(archiveTarget)}” will no longer be treated as an active alignment and will be left out of alignment views and reference linking. The mapping and its Strategic Objective, PDP Chapter and Presidential Agenda item are kept for history, and it can be restored while the plan is in draft.` : '', confirmLabel: 'Archive mapping', cancelLabel: 'Cancel', onConfirm: confirmArchive, onCancel: () => setArchiveTarget(null) }),
+        h(AppDialog, { open: Boolean(deleteTarget), variant: 'danger', title: 'Delete this mapping permanently?', message: deleteTarget ? `“${mappingChain(deleteTarget)}” and its linked reference details will be permanently deleted. This cannot be undone. The Strategic Objective, PDP Chapter and Presidential Agenda item are not affected.${canArchive ? ' To keep a record instead, archive it.' : ''}` : '', confirmLabel: 'Delete permanently', cancelLabel: 'Cancel', onConfirm: confirmDelete, onCancel: () => setDeleteTarget(null) })
     )));
 }
 
