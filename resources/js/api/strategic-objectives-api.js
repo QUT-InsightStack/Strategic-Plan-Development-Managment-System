@@ -2,7 +2,10 @@ import { apiRequest } from './api-client.js';
 
 const baseUrl = '/api/strategic-objectives';
 
-export function listStrategicObjectives(planId) { return apiRequest(`/api/strategic-plans/${planId}/objectives`); }
+export function listStrategicObjectives(planId, params = {}) {
+    const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value !== '' && value != null));
+    return apiRequest(`/api/strategic-plans/${planId}/objectives${query.size ? `?${query}` : ''}`);
+}
 export function listAllStrategicObjectives(params = {}) {
     const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value !== '' && value != null));
     return apiRequest(`${baseUrl}?${query.toString()}`);

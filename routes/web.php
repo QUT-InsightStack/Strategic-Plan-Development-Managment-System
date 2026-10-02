@@ -53,18 +53,12 @@ Route::view('/strategic-plans/finalize', 'pages.strategic-plans.finalize', ['pla
 Route::get('/strategic-plans/{id}/finalize', function (int $id) {
     return view('pages.strategic-plans.finalize', ['planId' => $id]);
 })->whereNumber('id')->name('strategic-plans.finalize');
-Route::get('/strategic-plans/{id}/objectives', function (Request $request, int $id) {
-    $parameters = ['plan_id' => $id];
-    $edit = $request->query('edit');
-
-    if (is_string($edit) && preg_match('/^[1-9][0-9]*$/D', $edit)) {
-        $parameters['edit'] = $edit;
-    }
-
-    return redirect('/strategic-objectives?' . http_build_query($parameters));
+Route::get('/strategic-plans/{id}/objectives', function (int $id) {
+    return view('pages.strategic-plans.objectives', ['planId' => $id]);
 })->whereNumber('id')->name('strategic-plans.objectives');
 Route::redirect('/strategic-plan', '/strategic-plans/create')->name('strategic-plan');
 Route::view('/strategic-objectives', 'pages.strategic-objectives.index')->name('strategic-objectives.index');
+Route::view('/progress-monitoring', 'pages.progress-monitoring')->name('strategic-objectives.progress');
 Route::view('/pdp-chapters', 'pages.pdp-chapters', ['mode' => 'view'])->name('pdp-chapters.index');
 Route::view('/pdp-chapters/manage', 'pages.pdp-chapters', ['mode' => 'manage'])->name('pdp-chapters.manage');
 Route::view('/pdp-chapters/{chapter}', 'pages.pdp-chapters', ['mode' => 'detail'])
@@ -82,6 +76,9 @@ Route::view(
     '/workflow-configuration',
     'pages.workflow-configuration'
 )->name('workflow-configuration.index');
+
+Route::view('/management-dashboard', 'pages.management-dashboard')
+    ->name('management.dashboard');
 
 /*
 |--------------------------------------------------------------------------

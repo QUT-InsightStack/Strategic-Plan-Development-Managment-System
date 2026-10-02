@@ -1,3 +1,4 @@
+import { mountProtectedPage } from '../../access/mount-protected-page.js';
 import '../../resource-crud-config.js';
 import { BrandLogo } from '../../brand-logo.js';
 import { LogoutButton } from '../../components/LogoutButton.js';
@@ -618,4 +619,4 @@ function UserSearchApp() {
     );
 }
 
-ReactDOM.createRoot(rootElement).render(React.createElement(UserSearchApp));
+mountProtectedPage(rootElement, () => React.createElement(UserSearchApp));

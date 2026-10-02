@@ -3,8 +3,8 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
-        "dev": "vite",
+        "build": "vite build --configLoader native",
+        "dev": "vite --configLoader native",
         "test:frontend": "node --experimental-test-isolation=none --test tests/Frontend/*.test.js"
     },
     "devDependencies": {

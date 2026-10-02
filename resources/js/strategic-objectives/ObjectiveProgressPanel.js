@@ -51,6 +51,8 @@ export function ObjectiveProgressPanel({ planId = '' }) {
     async function save(event) {
         event.preventDefault();
         if (saving) return;
+        if (!calculatedProgressStatus(percentage)) { setError('Enter a whole-number percentage from 0 to 100.'); return; }
+        if (correction && !reason.trim()) { setError('Provide a reason for this change.'); return; }
         setSaving(true); setError(''); setMessage('');
         try {
             await updateObjectiveProgress(selected.objective_id, percentage, reason);

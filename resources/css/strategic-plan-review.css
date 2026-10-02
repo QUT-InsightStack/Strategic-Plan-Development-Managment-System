@@ -55,7 +55,7 @@
 .plan-review-assignment-card small {
     margin-bottom: 2px;
     color: var(--color-text-secondary);
-    font-size: 11px;
+    font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
@@ -153,7 +153,7 @@
 .plan-review-table td {
     padding-top: var(--space-3);
     padding-bottom: var(--space-3);
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-table);
     vertical-align: middle;
 }
 
@@ -186,7 +186,7 @@
 .plan-review-stage-sequence {
     margin-top: 2px;
     color: var(--color-text-secondary);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .plan-review-row-error {
@@ -194,7 +194,7 @@
     max-width: 240px;
     margin-top: 3px;
     color: var(--color-danger);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .plan-review-status {
@@ -326,7 +326,7 @@
     display: block;
     margin-bottom: var(--space-1);
     color: var(--color-text-secondary);
-    font-size: 10px;
+    font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.03em;
 }
@@ -544,7 +544,7 @@
     display: block;
     margin-top: var(--space-2);
     color: var(--color-text-secondary);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .plan-review-empty-text {
@@ -591,7 +591,7 @@
 .plan-review-document small {
     margin-top: 2px;
     color: var(--color-text-secondary);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .plan-review-current-stage {
@@ -609,7 +609,7 @@
     border-radius: var(--radius-pill);
     color: var(--color-primary);
     background: var(--color-primary-soft);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: var(--font-weight-semibold);
 }
 
@@ -632,7 +632,7 @@
 
 .plan-review-current-stage dt {
     color: var(--color-text-secondary);
-    font-size: 10px;
+    font-size: 12px;
     text-transform: uppercase;
 }
 
@@ -664,7 +664,7 @@
     border-radius: 50%;
     color: var(--color-text-secondary);
     background: var(--color-surface);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: var(--font-weight-bold);
 }
 
@@ -693,7 +693,7 @@
 .plan-review-workflow-list small {
     margin-top: 2px;
     color: var(--color-text-secondary);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .plan-review-history-list li {
@@ -719,12 +719,12 @@
 .plan-review-history-list p {
     margin: 3px 0;
     color: var(--color-text-secondary);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .plan-review-history-list small {
     color: var(--color-text-secondary);
-    font-size: 10px;
+    font-size: 12px;
 }
 
 .plan-review-access-denied {
@@ -850,7 +850,7 @@
     display: block;
     margin-top: var(--space-1);
     color: var(--color-text-secondary);
-    font-size: 10px;
+    font-size: 12px;
     text-align: right;
 }
 

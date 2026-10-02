@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class ImplementationInputAccessService
 {
-    private const OFFICE_ROLES = ['Responsible Unit User', 'Office Representative', 'Office/Agency', 'Offices / Agencies'];
+    private const OFFICE_ROLES = ['Office', 'Responsible Unit User', 'Office Representative', 'Office/Agency', 'Offices / Agencies'];
 
     public function __construct(private readonly PermissionAuthorizationService $permissions) {}
 
@@ -52,8 +52,11 @@ class ImplementationInputAccessService
         }
         $unit = $this->office($actor);
 
-        return $query->whereHas('objectives', fn (Builder $q) => $q->where('status', '!=', 'deleted')
-            ->whereHas('responsibleUnitAssignment', fn (Builder $q) => $q->where('responsible_unit_id', $unit->responsible_unit_id)));
+        return $query->where(fn (Builder $scope) => $scope
+            ->whereHas('objectives', fn (Builder $q) => $q->where('status', '!=', 'deleted')
+                ->whereHas('responsibleUnitAssignment', fn (Builder $q) => $q->where('responsible_unit_id', $unit->responsible_unit_id)))
+            ->orWhereHas('inputs', fn (Builder $q) => $q->whereNull('objective_id')
+                ->where('responsible_unit_id', $unit->responsible_unit_id)));
     }
 
     public function ensurePlan(int $planId, User $actor): Strategic
@@ -61,7 +64,12 @@ class ImplementationInputAccessService
         $this->ensureCanView($actor);
         $plan = Strategic::where('level', 'strategic_plan')->where('status', '!=', 'deleted')->findOrFail($planId);
         abort_unless($this->plans($actor)->whereKey($planId)->exists(), 403, 'This plan is outside your authorized input scope.');
-        app(StrategicPlanAuthorizationService::class)->ensurePlanIsWithinAuthorizedScope($plan, $actor);
+        $hasOwnPlanLevelInput = in_array($actor->role?->role_name, self::OFFICE_ROLES, true)
+            && $plan->inputs()->whereNull('objective_id')
+                ->where('responsible_unit_id', $this->office($actor)->responsible_unit_id)->exists();
+        app(StrategicPlanAuthorizationService::class)->ensurePlanIsWithinAuthorizedScope(
+            $plan, $actor, 'This plan is outside your authorized input scope.', $hasOwnPlanLevelInput,
+        );
 
         return $plan;
     }

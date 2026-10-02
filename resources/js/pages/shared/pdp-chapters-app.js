@@ -1,11 +1,12 @@
-import { enforcePageAccess } from '../../access/access-guard.js';
+import { mountProtectedPage } from '../../access/mount-protected-page.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { AdministrativeAdminSidebar } from '../../components/AdministrativeAdminSidebar.js';
 import { PageHeader } from '../../components/PageHeader.js';
 import { AppDialog } from '../../components/AppDialog.js';
+import { can, getAccessSession } from '../../access/access-session.js';
+import { PERMISSIONS } from '../../access/access-policy.js';
 import { archivePdpChapter, createPdpChapter, deletePdpChapter, getPdpChapter, listPdpChapters, updatePdpChapter } from '../../api/pdp-chapters-api.js';
 
-enforcePageAccess();
 const { useEffect, useMemo, useState } = React;
 const rootElement = document.getElementById('root');
 const isManageMode = rootElement.dataset.mode === 'manage';
@@ -63,7 +64,7 @@ function ChapterDialog({ mode, chapter, onClose, onSaved }) {
         ));
 }
 
-function ChapterTable({ chapters, loading, selectedIds, onToggle, onOpen, onArchive, onDelete }) {
+function ChapterTable({ chapters, loading, selectedIds, onToggle, onOpen, onArchive, onDelete, canManage, canArchive, canDelete }) {
     const columns = 5;
     return React.createElement('section', { className: 'ui-card pdp-table-card', 'aria-labelledby': 'pdp-register-title' },
         React.createElement('div', { className: 'ui-section-header' },
@@ -94,9 +95,9 @@ function ChapterTable({ chapters, loading, selectedIds, onToggle, onOpen, onArch
                             React.createElement('td', null, formatDate(chapter.updated_at)),
                             isManageMode ? React.createElement('td', null,
                                 React.createElement('div', { className: 'pdp-table__actions' },
-                                    React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => onOpen(chapter) }, 'Edit'),
-                                    React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => onArchive(chapter) }, 'Archive'),
-                                    React.createElement('button', { className: 'ui-button ui-button--danger ui-button--sm', type: 'button', onClick: () => onDelete(chapter) }, 'Delete'))) : null))))));
+                                    canManage && chapter.status !== 'archived' ? React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => onOpen(chapter) }, 'Edit') : null,
+                                    canArchive && chapter.status !== 'archived' ? React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => onArchive(chapter) }, 'Archive') : null,
+                                    canDelete && chapter.status === 'archived' ? React.createElement('button', { className: 'ui-button ui-button--danger ui-button--sm', type: 'button', onClick: () => onDelete(chapter) }, 'Delete') : null)) : null))))));
 }
 
 function PdpChapterDetailApp() {
@@ -131,8 +132,13 @@ function PdpChapterDetailApp() {
 }
 
 function PdpChaptersApp() {
+    const accessSession = getAccessSession();
+    const canManagePdp = can(PERMISSIONS.PDP_CHAPTERS_MANAGE, accessSession);
+    const canArchivePdp = can(PERMISSIONS.PDP_CHAPTERS_ARCHIVE, accessSession);
+    const canDeletePdp = can(PERMISSIONS.PDP_CHAPTERS_DELETE, accessSession);
     const [chapters, setChapters] = useState([]);
     const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('active');
     const [selectedIds, setSelectedIds] = useState(initialSelection), [dialog, setDialog] = useState(null);
     const [status, setStatus] = useState({ type: '', message: '' }), [loading, setLoading] = useState(true);
     const [confirmDialog, setConfirmDialog] = useState({ open: false, variant: 'danger', title: '', message: '', chapter: null, action: null });
@@ -140,13 +146,13 @@ function PdpChaptersApp() {
     async function load() {
         setLoading(true);
         try {
-            const chapterPayload = await listPdpChapters();
+            const chapterPayload = await listPdpChapters({ status: statusFilter });
             setChapters(chapterPayload.data || []);
         } catch (error) { setStatus({ type: 'error', message: error.message }); }
         finally { setLoading(false); }
     }
 
-    useEffect(() => { load(); }, []);
+    useEffect(() => { load(); }, [statusFilter]);
     useEffect(() => { if (!isManageMode) sessionStorage.setItem(storageKey, JSON.stringify(selectedIds)); }, [selectedIds]);
 
     function closeConfirmDialog() {
@@ -158,7 +164,7 @@ function PdpChaptersApp() {
             open: true,
             variant: 'danger',
             title: 'Delete PDP Chapter?',
-            message: `Delete “${chapter.chapter_title || 'Untitled chapter'}”? This action cannot be undone.`,
+            message: `Delete “${chapter.chapter_title || 'Untitled chapter'}”? Only archived chapters can be deleted; the record and history are retained.`,
             chapter,
             action: 'delete',
         });
@@ -223,7 +229,6 @@ function PdpChaptersApp() {
         const term = search.trim().toLowerCase();
 
         return chapters
-            .filter((chapter) => chapter.status !== 'archived' && chapter.status !== 'deleted')
             .filter((chapter) => !term || [chapter.chapter_title, chapter.chapter_description].some((value) => String(value || '').toLowerCase().includes(term)));
     }, [chapters, search]);
     const Sidebar = isManageMode ? AdministrativeAdminSidebar : AppSidebar;
@@ -236,14 +241,17 @@ function PdpChaptersApp() {
                 section: isManageMode ? 'Administrative Administration' : 'Strategic Planning',
                 title: isManageMode ? 'Manage PDP Chapters' : 'PDP Chapter List',
                 subtitle: isManageMode ? 'Create and maintain PDP Chapters.' : 'Review and select available PDP Chapters.',
-                actions: isManageMode ? React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: () => setDialog({ mode: 'create', chapter: null }) }, React.createElement('i', { className: 'bi bi-plus-lg' }), ' Create New Chapter') : null,
+                actions: isManageMode && canManagePdp ? React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: () => setDialog({ mode: 'create', chapter: null }) }, React.createElement('i', { className: 'bi bi-plus-lg' }), ' Create New Chapter') : null,
             }),
             status.message ? React.createElement('div', { className: `ui-status ui-status--${status.type} pdp-status` }, status.message) : null,
             React.createElement('section', { className: 'ui-card pdp-filter-card', 'aria-label': 'Search PDP Chapters' },
-                React.createElement('div', { className: 'pdp-toolbar' }, React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'pdp-search' }, 'Search PDP Chapters'), React.createElement('input', { id: 'pdp-search', className: 'ui-input', value: search, placeholder: 'Search title or description', onChange: (event) => setSearch(event.target.value) })), React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setSearch('') }, 'Clear'))
+                React.createElement('div', { className: 'pdp-toolbar' },
+                    React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'pdp-search' }, 'Search PDP Chapters'), React.createElement('input', { id: 'pdp-search', className: 'ui-input', value: search, placeholder: 'Search title or description', onChange: (event) => setSearch(event.target.value) })),
+                    isManageMode ? React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'pdp-status' }, 'Status'), React.createElement('select', { id: 'pdp-status', className: 'ui-select', value: statusFilter, onChange: (event) => setStatusFilter(event.target.value) }, React.createElement('option', { value: 'active' }, 'Active'), React.createElement('option', { value: 'archived' }, 'Archived'), React.createElement('option', { value: 'all' }, 'All records'))) : null,
+                    React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => { setSearch(''); setStatusFilter('active'); } }, 'Clear'))
             ),
             React.createElement('p', { className: 'pdp-summary' }, loading ? 'Loading PDP Chapters…' : `${visible.length} chapter(s)${!isManageMode ? ` · ${selectedIds.length} selected` : ''}`),
-            React.createElement(ChapterTable, { chapters: visible, loading, selectedIds, onToggle: (id) => setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]), onOpen: (chapter) => setDialog({ mode: isManageMode ? 'edit' : 'view', chapter }), onArchive: requestArchive, onDelete: requestDelete }),
+            React.createElement(ChapterTable, { chapters: visible, loading, selectedIds, onToggle: (id) => setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]), onOpen: (chapter) => setDialog({ mode: isManageMode ? 'edit' : 'view', chapter }), onArchive: requestArchive, onDelete: requestDelete, canManage: isManageMode && canManagePdp, canArchive: isManageMode && canArchivePdp, canDelete: isManageMode && canDeletePdp }),
             dialog ? React.createElement(ChapterDialog, { ...dialog, onClose: () => setDialog(null), onSaved: async (payload) => { setDialog(null); setStatus({ type: 'success', message: payload.message }); await load(); } }) : null,
             React.createElement(AppDialog, {
                 open: confirmDialog.open,
@@ -258,4 +266,4 @@ function PdpChaptersApp() {
     );
 }
 
-ReactDOM.createRoot(rootElement).render(React.createElement(isDetailMode ? PdpChapterDetailApp : PdpChaptersApp));
+mountProtectedPage(rootElement, () => React.createElement(isDetailMode ? PdpChapterDetailApp : PdpChaptersApp));

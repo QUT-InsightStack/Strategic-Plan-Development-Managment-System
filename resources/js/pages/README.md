@@ -13,3 +13,5 @@ Every browser page entry belongs under this directory. Group entries by the role
 Reusable UI belongs in `resources/js/components/`. API calls belong in `resources/js/api/`. Shared data and demo stores belong in `resources/js/data/`.
 
 When adding or moving a page entry, update both its Blade `@vite` reference and the `input` list in `vite.config.js`.
+
+See [NAVIGATION.md](NAVIGATION.md) for canonical role destinations, compatibility pages, data sources, and frontend validation.

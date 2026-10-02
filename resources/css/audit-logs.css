@@ -16,10 +16,10 @@
 
 .audit-when { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .audit-table td strong { display: block; color: var(--color-text); }
-.audit-email { display: block; margin-top: 2px; color: var(--color-text-secondary); font-size: 11px; overflow-wrap: anywhere; }
+.audit-email { display: block; margin-top: 2px; color: var(--color-text-secondary); font-size: 12px; overflow-wrap: anywhere; }
 .audit-action {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--color-primary);
     overflow-wrap: anywhere;
 }
@@ -70,13 +70,13 @@
 .audit-detail__facts dt {
     margin-bottom: 2px;
     color: var(--color-text-secondary);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: var(--font-weight-semibold);
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
 .audit-detail__facts dd { margin: 0; color: var(--color-text); font-size: var(--font-size-sm); overflow-wrap: anywhere; }
-.audit-detail__sub { display: block; margin-top: 2px; color: var(--color-text-secondary); font-size: 11px; }
+.audit-detail__sub { display: block; margin-top: 2px; color: var(--color-text-secondary); font-size: 12px; }
 .audit-detail__id { font-variant-numeric: tabular-nums; }
 
 .audit-detail__block h4 {
@@ -96,7 +96,7 @@
     background: var(--color-gray-100, #f3f4f6);
     color: var(--color-text);
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.5;
 }
 .audit-detail__empty { margin: 0; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
