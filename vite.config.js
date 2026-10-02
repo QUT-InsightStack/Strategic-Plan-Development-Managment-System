@@ -6,6 +6,7 @@ export default defineConfig({
     plugins: [
         laravel({
             input: [
+                'resources/css/progress-monitoring.css',
                 'resources/css/app.css',
                 'resources/css/create-user.css',
                 'resources/css/login.css',
@@ -32,6 +33,7 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/js/pages/technical-admin/create-user-app.js',
                 'resources/js/pages/shared/dashboard-app.js',
+                'resources/js/pages/planner/progress-monitoring-app.js',
                 'resources/js/pages/auth/login-app.js',
                 'resources/js/pages/auth/change-password-app.js',
                 'resources/js/pages/auth/forgot-password-app.js',

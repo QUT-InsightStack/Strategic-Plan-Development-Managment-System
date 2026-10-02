@@ -1,3 +1,5 @@
+@import './strategic-plans-list.css';
+
 .progress-monitoring-container { max-width: 1440px; }
 .progress-monitoring-page .app-page-header { width: 100%; max-width: none; margin-bottom: var(--space-5); }
 .progress-monitor-assignment-card { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-5); padding: var(--space-4); border-left: 4px solid var(--color-brand-cyan); }
