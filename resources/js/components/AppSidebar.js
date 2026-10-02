@@ -16,7 +16,11 @@ export function AppSidebar() {
         if (!allowed && item.hideWhenDenied) return null;
         const current = isCurrentPage(item, href);
         const className = `${nested ? 'app-sidebar__subitem' : 'app-sidebar__item'}${current ? ' active' : ''}`;
-        const content = [h('span', { key: 'label' }, item.label), item.placeholder && h('small', { key: 'state' }, 'Planned')];
+        const content = [
+            item.icon && h('i', { key: 'icon', className: `bi ${item.icon}`, 'aria-hidden': true }),
+            h('span', { key: 'label' }, item.label),
+            item.placeholder && h('small', { key: 'state' }, 'Planned'),
+        ].filter(Boolean);
         return allowed ? h('a', { key: item.id, href: item.href, className, 'aria-current': current ? 'page' : undefined }, ...content)
             : h('span', { key: item.id, className: className + ' navigation-locked', 'aria-disabled': true, title: 'Your account does not have the permissions required to open this page.' }, ...content, h('small', null, 'No access'));
     }
@@ -30,8 +34,8 @@ export function AppSidebar() {
                 if (!item.children) return leaf(item);
                 const children = item.children.filter(child => !child.dashboardOnly && (!child.hideWhenDenied || canOpenPage(child, session)));
                 if (!children.length) return null;
-                const expanded = open[item.id] ?? true;
                 const current = children.some(child => isCurrentPage(child, href));
+                const expanded = open[item.id] ?? current;
                 return h('div', { key: item.id, className: 'app-sidebar__group' },
                     h('button', { type: 'button', className: `app-sidebar__item app-sidebar__toggle${current ? ' active' : ''}`, 'aria-expanded': expanded, 'aria-controls': `nav-${item.id}`, onClick: () => setOpen(value => ({ ...value, [item.id]: !expanded })) },
                         h('i', { className: `bi ${item.icon}`, 'aria-hidden': true }), h('span', null, item.label), h('i', { className: `bi bi-chevron-${expanded ? 'up' : 'down'} app-sidebar__chevron`, 'aria-hidden': true })),

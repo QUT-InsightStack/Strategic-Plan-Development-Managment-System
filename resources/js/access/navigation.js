@@ -1,6 +1,6 @@
 // Canonical frontend destinations. Permissions describe existing APIs; no grants are added here.
 const page = (id, label, href, permissions = [], extra = {}) => ({ id, label, href, permissions, ...extra });
-const pending = (id, label) => page(id, label, `/dashboard?feature=${id}`, [], { placeholder: true });
+const pending = (id, label, extra = {}) => page(id, label, `/dashboard?feature=${id}`, [], { placeholder: true, ...extra });
 const group = (id, label, children, icon = 'bi-clipboard2-check') => ({ id, label, children, icon });
 export const isOfficeRole = role => ['Office', 'Office Representative', 'Office/Agency', 'Offices / Agencies', 'Responsible Unit User'].includes(role);
 export function navigationRole(role) {
@@ -16,26 +16,26 @@ const progress = page('progress', 'Objective Progress', '/office?view=progress',
 const mapping = page('mapping', 'Strategic Mapping', '/mappings', ['strategic_records.view', 'strategic_objectives.view'], { anyPermissions: ['relations.manage', 'relations.create'], source: 'local' });
 const alignment = page('alignment', 'View Strategic Alignment', '/mappings?mode=view', ['strategic_records.view', 'relations.view'], { source: 'local' });
 const inputs = page('inputs', 'Consolidate Inputs', '/consolidate-inputs', ['implementation_inputs.view']);
-const common = [page('notifications', 'Notifications', '/workflow-notifications'), page('profile', 'Profile', '/profile'), pending('faq', 'FAQ')];
+const common = [page('notifications', 'Notifications', '/workflow-notifications', [], { icon: 'bi-bell' }), page('profile', 'Profile', '/profile', [], { icon: 'bi-person' }), pending('faq', 'FAQ', { icon: 'bi-question-circle' })];
 export const roleNavigation = {
     technical: [group('accounts', 'Access Administration', [
-        page('users', 'Users', '/user-management', ['users.view']),
-        page('roles', 'Role Management', '/role-management', ['roles.manage', 'users.view', 'roles.view']),
-        page('permissions', 'Permissions', '/role-management?section=permissions', ['roles.manage', 'roles.view', 'permissions.view']),
-        page('workflow', 'Workflow Configuration', '/workflow-configuration'),
+        page('users', 'Users', '/user-management', ['users.view'], { icon: 'bi-people' }),
+        page('roles', 'Role Management', '/role-management', ['roles.manage', 'users.view', 'roles.view'], { icon: 'bi-person-gear' }),
+        page('permissions', 'Permissions', '/role-management?section=permissions', ['roles.manage', 'roles.view', 'permissions.view'], { icon: 'bi-key' }),
+        page('workflow', 'Workflow Configuration', '/workflow-configuration', [], { icon: 'bi-diagram-3' }),
     ], 'bi-person-lock'), group('security', 'Account Security', [
-        page('logins', 'Login History', '/login-history', ['login_history.view']),
-        pending('security-logs', 'Security Logs'),
-        page('audit', 'Audit Logs', '/audit-logs', ['logs.view']),
-        page('security-settings', 'Security Settings', '/settings', ['settings.manage']),
-        page('maintenance', 'Backups', '/manual-backup', ['backups.view']),
+        page('logins', 'Login History', '/login-history', ['login_history.view'], { icon: 'bi-clock-history' }),
+        pending('security-logs', 'Security Logs', { icon: 'bi-shield-exclamation' }),
+        page('audit', 'Audit Logs', '/audit-logs', ['logs.view'], { icon: 'bi-journal-text' }),
+        page('security-settings', 'Security Settings', '/settings', ['settings.manage'], { icon: 'bi-shield-lock' }),
+        page('maintenance', 'Backups', '/manual-backup', ['backups.view'], { icon: 'bi-hdd-stack' }),
     ], 'bi-shield-check')],
     administrative: [group('references', 'Planning Preparation', [
-        page('agenda', 'Presidential Agenda', '/administrative-admin/reference-data?tab=agenda', ['reference_data.manage', 'presidential_agenda.view']),
-        page('pdp', 'PDP Chapters', '/pdp-chapters/manage', ['pdp_chapters.manage']),
-        page('reference', 'Reference Data', '/administrative-admin/reference-data?tab=reference', ['reference_data.manage']),
-        page('templates', 'Templates', '/administrative-admin/templates', ['templates.manage']),
-    ]), group('admin-monitoring', 'Monitoring', [pending('admin-monitoring', 'Monitoring Dashboard'), pending('admin-reports', 'Reports'), page('system-logs', 'System Logs', '/audit-logs', ['logs.view'])], 'bi-graph-up')],
+        page('agenda', 'Presidential Agenda', '/administrative-admin/reference-data?tab=agenda', ['reference_data.manage', 'presidential_agenda.view'], { icon: 'bi-bank' }),
+        page('pdp', 'PDP Chapters', '/pdp-chapters/manage', ['pdp_chapters.manage'], { icon: 'bi-journal-bookmark' }),
+        page('reference', 'Reference Data', '/administrative-admin/reference-data?tab=reference', ['reference_data.manage'], { icon: 'bi-collection' }),
+        page('templates', 'Templates', '/administrative-admin/templates', ['templates.manage'], { icon: 'bi-file-earmark-text' }),
+    ], 'bi-journal-check'), group('admin-monitoring', 'Administrative Monitoring', [pending('admin-monitoring', 'Monitoring Dashboard', { icon: 'bi-speedometer2' }), pending('admin-reports', 'Reports', { icon: 'bi-file-earmark-bar-graph' }), page('system-logs', 'System Logs', '/audit-logs', ['logs.view'], { icon: 'bi-list-check' })], 'bi-graph-up')],
     planner: [group('planning', 'Planning', [
         page('plans', 'Strategic Plan List', '/strategic-plans', ['strategic_records.view']),
         page('create-plan', 'Create Strategic Plan / MVC', '/strategic-plans/create', ['strategic_records.create']),
@@ -63,7 +63,8 @@ export const roleNavigation = {
 export const dashboardLabels = { technical: 'Technical Administration Dashboard', administrative: 'Administrative Dashboard', planner: 'Planning Dashboard', office: 'Office/Agency Dashboard', management: 'Executive Dashboard' };
 export function navigationFor(role) {
     const kind = navigationRole(role);
-    return [page('home', 'Dashboard', kind === 'management' ? '/management-dashboard' : '/dashboard', [], { icon: 'bi-speedometer2' }), ...roleNavigation[kind], group('account', 'Account and Help', common, 'bi-person-circle')];
+    const dashboardLabel = kind === 'administrative' ? 'Administrative Dashboard' : 'Dashboard';
+    return [page('home', dashboardLabel, kind === 'management' ? '/management-dashboard' : '/dashboard', [], { icon: 'bi-speedometer2' }), ...roleNavigation[kind], group('account', 'Account and Help', common, 'bi-person-circle')];
 }
 export function flattenNavigation(items) { return items.flatMap(item => item.children ? flattenNavigation(item.children) : [item]); }
 export function canOpenPage(item, session) {
