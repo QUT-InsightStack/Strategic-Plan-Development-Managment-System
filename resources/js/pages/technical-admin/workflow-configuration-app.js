@@ -1,10 +1,9 @@
+import { mountProtectedPage } from '../../access/mount-protected-page.js';
 import { TechnicalAdminSidebar } from '../../components/TechnicalAdminSidebar.js';
 import { AppDialog } from '../../components/AppDialog.js';
 import { PageHeader } from '../../components/PageHeader.js';
-import { enforcePageAccess } from '../../access/access-guard.js';
 import { apiRequest } from '../../api/api-client.js';
 
-enforcePageAccess();
 const { useEffect, useMemo, useState } = React;
 const blankWorkflow = { name: 'Strategic Plan Approval', description: '', status: 'draft', version: 0, stages: [] };
 function fromServer(data) {
@@ -853,8 +852,4 @@ function WorkflowConfigurationApp() {
     );
 }
 
-ReactDOM.createRoot(
-    document.getElementById('root')
-).render(
-    React.createElement(WorkflowConfigurationApp)
-);
+mountProtectedPage(document.getElementById('root'), () => React.createElement(WorkflowConfigurationApp));

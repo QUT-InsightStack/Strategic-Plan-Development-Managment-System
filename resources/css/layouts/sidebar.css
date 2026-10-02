@@ -1,27 +1,27 @@
 .app-sidebar { position: fixed; inset: 0 auto 0 0; z-index: 100; display: flex; width: var(--sidebar-width); flex-direction: column; color: #fff; background: var(--color-primary); box-shadow: 2px 0 8px rgba(14, 49, 93, 0.18); overflow-y: auto; }
 .app-sidebar__brand { display: flex; min-height: 76px; align-items: center; gap: 10px; padding: 14px 16px; color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.2); }
 .app-sidebar__brand-copy { display: grid; line-height: 1.15; }
-.app-sidebar__brand-copy strong { font-size: var(--font-size-sm); }
-.app-sidebar__brand-copy small { margin-top: 3px; font-size: 9px; opacity: .85; }
+.app-sidebar__brand-copy strong { font-size: var(--font-size-md); }
+.app-sidebar__brand-copy small { margin-top: 3px; font-size: 12px; opacity: .85; }
 .app-sidebar__profile { display: grid; min-height: 122px; place-items: center; align-content: center; gap: 9px; padding: 18px; color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.2); }
 .app-sidebar__profile i { font-size: 36px; }
 .app-sidebar__profile:hover, .app-sidebar__profile:focus-visible, .app-sidebar__item:hover, .app-sidebar__item:focus-visible, .app-sidebar__item.active { background: rgba(255,255,255,.14); outline: none; }
 .app-sidebar__nav { display: grid; gap: 2px; padding: 14px 10px; }
 .app-sidebar__group { display: grid; gap: 2px; }
-.app-sidebar__item { display: flex; width: 100%; min-height: 44px; align-items: center; gap: 12px; border: 0; border-radius: var(--radius-md); padding: 10px 12px; color: #fff; background: transparent; text-align: left; text-decoration: none; }
+.app-sidebar__item { display: flex; width: 100%; min-height: 44px; align-items: center; gap: 12px; border: 0; border-radius: var(--radius-md); padding: 10px 12px; color: #fff; background: transparent; font-size: 15px; text-align: left; text-decoration: none; }
 .app-sidebar__item > i:first-child { width: 20px; text-align: center; font-size: 17px; }
-.app-sidebar__chevron { margin-left: auto; font-size: 11px; }
+.app-sidebar__chevron { margin-left: auto; font-size: 12px; }
 .app-sidebar__toggle[aria-expanded='true'] { background: rgba(255,255,255,.14); }
 .app-sidebar__submenu { display: grid; padding: 2px 0 6px 42px; }
 .app-sidebar__submenu--icons { padding-left: 28px; }
-.app-sidebar__subitem { display: flex; min-height: 34px; align-items: center; border: 0; border-left: 2px solid rgba(255,255,255,.25); padding: 7px 10px; color: rgba(255,255,255,.88); background: transparent; font-size: var(--font-size-xs); text-align: left; text-decoration: none; }
+.app-sidebar__subitem { display: flex; min-height: 34px; align-items: center; border: 0; border-left: 2px solid rgba(255,255,255,.25); padding: 7px 10px; color: rgba(255,255,255,.88); background: transparent; font-size: var(--font-size-sm); text-align: left; text-decoration: none; }
 .app-sidebar__subitem > i { width: 16px; margin-right: 7px; text-align: center; }
 .app-sidebar__subitem:hover, .app-sidebar__subitem:focus-visible { border-left-color: var(--color-brand-cyan); color: #fff; background: rgba(255,255,255,.1); outline: none; }
 .app-sidebar__subitem.active { border-left-color: var(--color-brand-cyan); color: #fff; background: rgba(255,255,255,.16); font-weight: var(--font-weight-semibold); }
 .app-sidebar__nested-group { display: grid; }
 .app-sidebar__nested-toggle { justify-content: space-between; cursor: pointer; }
-.app-sidebar__nested-toggle i { margin-left: auto; font-size: 10px; }
+.app-sidebar__nested-toggle i { margin-left: auto; font-size: 12px; }
 .app-sidebar__nested-menu { display: grid; padding-left: 12px; }
-.app-sidebar__nested-menu .app-sidebar__subitem { min-height: 30px; font-size: 11px; }
+.app-sidebar__nested-menu .app-sidebar__subitem { min-height: 34px; font-size: var(--font-size-sm); }
 .app-sidebar__logout { margin-top: auto; border-radius: 0; padding-left: 22px; border-top: 1px solid rgba(255,255,255,.2); }
 @media (max-width: 720px) { .app-sidebar { position: static; width: 100%; } .app-sidebar__profile { min-height: 82px; } .app-sidebar__nav { grid-template-columns: 1fr; } .app-sidebar__logout { margin: 0; border-top: 0; } }

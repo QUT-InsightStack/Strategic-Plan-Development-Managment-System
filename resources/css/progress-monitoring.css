@@ -5,7 +5,7 @@
 .progress-monitor-assignment-card { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-5); padding: var(--space-4); border-left: 4px solid var(--color-brand-cyan); }
 .progress-monitor-assignment-icon { display: grid; width: 42px; height: 42px; flex: 0 0 42px; place-items: center; border-radius: 50%; color: var(--color-primary); background: var(--color-primary-soft); font-size: var(--font-size-xl); }
 .progress-monitor-assignment-card small, .progress-monitor-assignment-card strong, .progress-monitor-assignment-card span { display: block; }
-.progress-monitor-assignment-card small { margin-bottom: 2px; color: var(--color-text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.progress-monitor-assignment-card small { margin-bottom: 2px; color: var(--color-text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
 .progress-monitor-assignment-card strong { color: var(--color-primary); font-size: var(--font-size-sm); }
 .progress-monitor-assignment-card span { margin-top: 2px; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
 .progress-monitor-feedback { margin-bottom: var(--space-4); }
@@ -19,11 +19,11 @@
 .progress-monitor-table-wrap { overflow-x: auto; }
 .progress-monitor-table { min-width: 1050px; }
 .progress-monitor-table th { color: var(--color-primary); background: var(--color-surface-header); }
-.progress-monitor-table th, .progress-monitor-table td { padding-top: var(--space-3); padding-bottom: var(--space-3); font-size: var(--font-size-xs); vertical-align: middle; }
+.progress-monitor-table th, .progress-monitor-table td { padding-top: var(--space-3); padding-bottom: var(--space-3); font-size: var(--font-size-table); vertical-align: middle; }
 .progress-monitor-table tbody tr:hover { background: #f2faff; }
 .progress-monitor-table td > strong, .progress-monitor-table td > small, .progress-monitor-updater { display: block; }
 .progress-monitor-table td > strong { color: var(--color-gray-800); }
-.progress-monitor-id, .progress-monitor-updater { margin-top: 3px; color: var(--color-text-secondary); font-size: 11px; }
+.progress-monitor-id, .progress-monitor-updater { margin-top: 3px; color: var(--color-text-secondary); font-size: 12px; }
 .progress-monitor-status { display: inline-flex; margin-top: 4px; border: 1px solid #9dc5ee; border-radius: var(--radius-sm); padding: 2px 7px; color: var(--color-primary); background: var(--color-primary-soft); white-space: nowrap; }
 .progress-monitor-status.is-completed { border-color: #9dd7b0; color: #146c36; background: #e7f6ec; }
 .progress-monitor-status.is-not_started { border-color: var(--color-border); color: var(--color-text-secondary); background: var(--color-surface-muted); }

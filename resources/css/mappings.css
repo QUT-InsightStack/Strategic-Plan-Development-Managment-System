@@ -29,7 +29,7 @@
 .mapping-preview-card > h2 { margin: 0; padding: var(--space-3) var(--space-4); color: var(--color-primary); border-bottom: 1px solid var(--color-border-subtle); font-size: var(--font-size-md); font-weight: 600; }
 .mapping-preview { padding: var(--space-3) var(--space-4) 0; overflow-x: auto; }
 .mapping-preview table { min-width: 760px; }
-.mapping-preview td, .mapping-preview th { font-size: var(--font-size-xs); }
+.mapping-preview td, .mapping-preview th { font-size: var(--font-size-table); }
 .mapping-preview .ui-button { padding: 5px 9px; }
 .mapping-preview-card__header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border-subtle); }
 .mapping-preview-card__header h2 { margin: 0; color: var(--color-primary); font-size: var(--font-size-md); font-weight: 600; }
@@ -59,7 +59,7 @@
 .mapping-selected-panel h3, .mapping-reference-form h3 { margin: 0 0 var(--space-1); color: var(--color-primary); font-size: var(--font-size-sm); }
 .mapping-selected-panel > small { display: block; margin-bottom: var(--space-2); color: var(--color-text-secondary); }
 .mapping-search-select { position: relative; display: block; }
-.mapping-search-select i { position: absolute; z-index: 1; top: 50%; left: 11px; transform: translateY(-50%); font-size: 12px; }
+.mapping-search-select i { position: absolute; z-index: 1; top: 50%; left: 11px; transform: translateY(-50%); font-size: 13px; }
 .mapping-search-select select { width: 100%; min-height: 38px; padding: 7px 30px; border: 1px solid var(--color-border-subtle); border-radius: var(--radius-sm); background: white; font-size: var(--font-size-xs); }
 .mapping-selected-chain { display: grid; gap: var(--space-2); margin-top: var(--space-3); }
 .mapping-selected-chain article { display: flex; gap: var(--space-3); align-items: center; min-height: 58px; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); background: #eef4ff; }
@@ -67,7 +67,7 @@
 .mapping-selected-chain article.is-agency { background: #f2effc; }
 .mapping-selected-chain i { color: #075bc4; font-size: 18px; }
 .mapping-selected-chain small, .mapping-selected-chain strong { display: block; }
-.mapping-selected-chain small { color: var(--color-text-secondary); font-size: 10px; }
+.mapping-selected-chain small { color: var(--color-text-secondary); font-size: 12px; }
 .mapping-selected-chain strong { margin-top: 2px; color: var(--color-text-primary); font-size: var(--font-size-xs); font-weight: 500; }
 .mapping-reference-form { display: grid; gap: var(--space-3); align-content: start; }
 .mapping-reference-submit { justify-self: center; min-width: 190px; margin-top: var(--space-1); }

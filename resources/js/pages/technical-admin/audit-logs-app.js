@@ -1,10 +1,9 @@
-import { enforcePageAccess } from '../../access/access-guard.js';
+import { mountProtectedPage } from '../../access/mount-protected-page.js';
 import { listLogs } from '../../api/logs-api.js';
 import { searchUsers } from '../../api/users-api.js';
 import { PageHeader } from '../../components/PageHeader.js';
 import { TechnicalAdminSidebar } from '../../components/TechnicalAdminSidebar.js';
 
-enforcePageAccess();
 
 const { useEffect, useState } = React;
 
@@ -370,4 +369,4 @@ function AuditLogsApp() {
     );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(AuditLogsApp));
+mountProtectedPage(document.getElementById('root'), () => React.createElement(AuditLogsApp));

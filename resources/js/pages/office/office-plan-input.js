@@ -4,7 +4,7 @@ import { getStrategicPlan } from '../../api/strategic-plans-api.js';
 import { can } from '../../access/access-session.js';
 
 const h = React.createElement;
-export function OfficePlanInput({ planId, planOptions = [], onPlanChange = null, pageTitle = 'Submit Planning Inputs', description = 'Upload reference materials for the selected strategic plan.' }) {
+export function OfficePlanInput({ planId, planOptions = [], onPlanChange = null, pageTitle = 'Submit Planning Inputs', description = 'Upload reference materials for the selected strategic plan.', plansLoading = false, listError = '', onRetryPlans = null }) {
     const [plan, setPlan] = React.useState(null);
     const [error, setError] = React.useState('');
     const [loading, setLoading] = React.useState(true);
@@ -13,6 +13,7 @@ export function OfficePlanInput({ planId, planOptions = [], onPlanChange = null,
     React.useEffect(() => {
         let active = true;
         setLoading(true); setError(''); setPlan(null);
+        if (!planId) { setLoading(false); return () => { active = false; }; }
         getStrategicPlan(planId).then(result => { if (active) setPlan(result.data); })
             .catch(err => { if (active) setError(err.message); })
             .finally(() => { if (active) setLoading(false); });
@@ -24,8 +25,12 @@ export function OfficePlanInput({ planId, planOptions = [], onPlanChange = null,
             h('p', null, description),
             onPlanChange && h('label', { className: 'office-input-plan-picker' }, h('span', null, 'Strategic plan'),
                 h('select', { value: String(planId), onChange: event => onPlanChange(event.target.value) },
+                    h('option', { value: '', disabled: true }, plansLoading ? 'Loading plans…' : 'Select a draft plan'),
                     planOptions.map(option => h('option', { key: option.record_id, value: option.record_id }, `${String(option.record_id).padStart(4, '0')} · ${option.title}`))))),
-        plan && h('div', { id: 'office-materials-panel' }, h(OfficeReferenceMaterials, { key: plan.record_id, plan, allowed, back })),
+        plansLoading && h('p', { role: 'status' }, 'Loading available draft plans…'),
+        listError && h('p', { role: 'alert' }, listError, onRetryPlans && h('button', { onClick: onRetryPlans }, 'Retry')),
+        !planId && !plansLoading && !listError && h('p', { role: 'status' }, 'No draft plans are available in your authorized scope. Upload controls will become available when a draft plan is assigned.'),
+        h('div', { id: 'office-materials-panel' }, h(OfficeReferenceMaterials, { key: plan?.record_id || 'empty', plan: plan || { title: 'Select a draft plan' }, allowed: Boolean(plan && allowed), back: planId ? back : '/office' })),
         loading && h('p', { role: 'status' }, 'Loading plan…'),
         error && h('div', { className: 'office-panel', role: 'alert' }, error,
             !plan && h('button', { onClick: () => setAttempt(attempt + 1) }, 'Retry')));

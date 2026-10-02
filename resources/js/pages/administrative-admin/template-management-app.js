@@ -11,12 +11,7 @@ const templateTabs = [
     { id: 'approval-form', label: 'Approval Form', icon: 'bi-speedometer2' },
 ];
 
-const templateRows = [
-    { id: 'TPL-01', name: 'Strategic Plan Template', updated: '05/02/2026', version: 'v1.0', status: 'active', category: 'strategic-plan' },
-    { id: 'TPL-02', name: 'Annual Report Template', updated: '05/02/2026', version: 'v1.1', status: 'inactive', category: 'report' },
-    { id: 'TPL-03', name: 'Progress Update Template', updated: '05/02/2026', version: 'v2.0', status: 'active', category: 'progress-update' },
-    { id: 'TPL-04', name: 'Approval Memo Template', updated: '05/02/2026', version: 'v1.0', status: 'active', category: 'approval-form' },
-];
+const templateRows = [];
 
 function TemplateTable({ rows, onArchive, onDelete }) {
     return React.createElement('div', { className: 'ui-table-wrap reference-table-wrap' },
@@ -26,7 +21,7 @@ function TemplateTable({ rows, onArchive, onDelete }) {
                 ['Template ID', 'Template Name', 'Updated', 'Version', 'Status', 'Action'].map((heading) => React.createElement('th', { key: heading, scope: 'col' }, heading))
             )),
             React.createElement('tbody', null,
-                rows.length === 0 ? React.createElement('tr', null, React.createElement('td', { className: 'ui-empty', colSpan: 6 }, 'No templates match the current category and filters.')) : null,
+                rows.length === 0 ? React.createElement('tr', null, React.createElement('td', { className: 'ui-empty', colSpan: 6 }, 'Template records are unavailable because this system has no template table or API yet.')) : null,
                 rows.map((row) => React.createElement('tr', { key: row.id },
                     React.createElement('td', null, React.createElement('strong', null, row.id)),
                     React.createElement('td', null, row.name),
@@ -102,12 +97,12 @@ export function TemplateManagementApp() {
                         React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm reference-filter-button', type: 'button', onClick: () => setNotice({ type: 'success', message: 'Template filters applied.' }) }, React.createElement('i', { className: 'bi bi-funnel' }), 'Filter')
                     ),
                     React.createElement('div', { className: 'reference-add-row' },
-                        React.createElement('a', { className: 'ui-button ui-button--primary ui-button--sm', href: '/administrative-admin/templates/create' }, React.createElement('i', { className: 'bi bi-plus-lg' }), 'Add Template')
+                    React.createElement('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', disabled: true, title: 'No template table or API exists in the current backend.' }, React.createElement('i', { className: 'bi bi-plus-lg' }), 'Add Template')
                     ),
                     React.createElement(TemplateTable, {
                         rows: visibleRows,
-                        onArchive: (row) => setNotice({ type: 'info', message: `Archive for ${row.id} requires the approved backend archive endpoint.` }),
-                        onDelete: (row) => setNotice({ type: 'info', message: `Delete for ${row.id} requires backend approval and a confirmation workflow.` }),
+                        onArchive: () => {},
+                        onDelete: () => {},
                     }),
                     React.createElement('footer', { className: 'reference-table-footer' },
                         React.createElement('span', null, `0 of ${visibleRows.length} row(s) selected.`),

@@ -254,7 +254,7 @@ button {
 .profile-card-header p {
     margin: 0;
     color: var(--color-text-secondary);
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .profile-form {
@@ -320,7 +320,7 @@ button {
     color: #006dff;
     background: transparent;
     text-align: left;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -361,7 +361,7 @@ button {
     min-height: 16px;
     margin: 0;
     color: var(--danger);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .address-field {
@@ -388,7 +388,7 @@ button {
     padding: 9px 16px;
     color: #ffffff;
     background: var(--primary);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     line-height: 1.1;
     text-decoration: none;
@@ -442,7 +442,7 @@ button {
     border-radius: 6px;
     padding: 0;
     text-align: center;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
 }
 
@@ -519,7 +519,7 @@ button {
 .dashboard-card p {
     margin: 0;
     color: var(--muted);
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.55;
 }
 
@@ -568,7 +568,7 @@ button {
 .password-assistance-header p {
     margin: 0;
     color: var(--muted);
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .password-assistance-count {
@@ -577,7 +577,7 @@ button {
     padding: 6px 11px;
     color: #7a5200;
     background: #fff8df;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
 }
 
@@ -594,7 +594,7 @@ button {
     color: var(--accent);
     background: var(--color-surface);
     font: inherit;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     cursor: pointer;
 }
@@ -634,13 +634,13 @@ button {
 .password-assistance-table th {
     color: var(--accent);
     background: var(--color-surface-header);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
 }
 
 .password-assistance-table td {
     color: var(--text);
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .password-assistance-table td strong,
@@ -657,7 +657,7 @@ button {
     display: inline-flex;
     border-radius: 999px;
     padding: 5px 9px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
 }
 
@@ -677,7 +677,7 @@ button {
 
 .password-assistance-complete {
     color: var(--muted);
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .password-assistance-empty {
@@ -719,7 +719,7 @@ button {
     width: 100%;
     min-width: 760px;
     border-collapse: collapse;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .resource-table th,
@@ -733,7 +733,7 @@ button {
 .resource-table th {
     color: #334155;
     background: var(--color-surface-header);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 800;
     text-transform: uppercase;
 }
@@ -793,7 +793,7 @@ button {
 .resource-editor p {
     margin: 0;
     color: var(--muted);
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .resource-json-input {
@@ -806,7 +806,7 @@ button {
     color: var(--text);
     background: var(--color-surface-muted);
     font-family: Consolas, 'Courier New', monospace;
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.5;
 }
 
@@ -836,7 +836,7 @@ button {
 
 .empty-state p {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .crud-form-card {
@@ -869,7 +869,7 @@ button {
 
 .crud-field label {
     color: var(--primary);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 800;
 }
 
@@ -911,7 +911,7 @@ select.crud-input[multiple] {
 .field-note {
     margin: 0;
     color: var(--muted-light);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .crud-form-actions {
@@ -927,7 +927,7 @@ select.crud-input[multiple] {
     grid-template-columns: 1fr repeat(3, 210px);
     align-items: center;
     padding: 0 36px;
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .app-footer span {
@@ -1152,7 +1152,7 @@ select.crud-input[multiple] {
 .sign-ins__intro {
     margin: 0 0 16px;
     color: var(--muted);
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .sign-ins__alert {
@@ -1165,7 +1165,7 @@ select.crud-input[multiple] {
     padding: 10px 14px;
     color: var(--danger);
     background: var(--danger-soft);
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .sign-ins__list {
@@ -1194,7 +1194,7 @@ select.crud-input[multiple] {
 
 .sign-ins__meta {
     color: var(--muted);
-    font-size: 12px;
+    font-size: 13px;
     overflow-wrap: anywhere;
 }
 
@@ -1205,14 +1205,14 @@ select.crud-input[multiple] {
     padding: 2px 8px;
     color: var(--danger);
     background: var(--danger-soft);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
 }
 
 .sign-ins__empty {
     margin: 0;
     color: var(--muted);
-    font-size: 13px;
+    font-size: 14px;
 }
 
 /* ── Photo upload ────────────────────────────────────────────────── */
@@ -1220,7 +1220,7 @@ select.crud-input[multiple] {
 .photo-hint,
 .photo-error {
     margin: 10px 0 0;
-    font-size: 12px;
+    font-size: 13px;
     text-align: center;
 }
 
@@ -1240,7 +1240,7 @@ select.crud-input[multiple] {
     padding: 4px 10px;
     color: var(--danger);
     background: none;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     text-decoration: underline;
     cursor: pointer;
@@ -1258,7 +1258,7 @@ select.crud-input[multiple] {
 .form-dirty-note {
     margin: 10px 0 0;
     color: var(--muted);
-    font-size: 12px;
+    font-size: 13px;
     text-align: right;
 }
 

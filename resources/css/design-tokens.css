@@ -42,9 +42,10 @@
 
     /* Typography */
     --font-family-sans: Arial, Helvetica, sans-serif;
-    --font-size-xs: 12px;
+    --font-size-xs: 13px;
     --font-size-sm: 14px;
     --font-size-md: 16px;
+    --font-size-table: 14px;
     --font-size-lg: 18px;
     --font-size-xl: 20px;
     --font-size-2xl: 24px;
@@ -111,7 +112,7 @@
     --focus-ring: 0 0 0 3px rgba(0, 174, 239, 0.18);
 
     /* Layout */
-    --sidebar-width: 230px;
+    --sidebar-width: 250px;
     --content-max-width: 1440px;
     --page-gutter: clamp(16px, 2.5vw, 32px);
     --brand-logo-size: 36px;

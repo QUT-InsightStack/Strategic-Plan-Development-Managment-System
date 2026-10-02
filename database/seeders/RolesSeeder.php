@@ -49,6 +49,12 @@ class RolesSeeder extends Seeder
                 'is_assignable' => true,
                 'is_protected' => true,
             ],
+            [
+                'role_name' => 'Administrative Admin',
+                'description' => 'Manages planning reference data, templates, and administrative monitoring.',
+                'is_assignable' => true,
+                'is_protected' => true,
+            ],
         ];
 
         foreach ($roles as $role) {

@@ -129,7 +129,7 @@ class StrategicObjectiveController extends Controller
         ], 200);
     }
 
-    public function byPlan(int $planId): JsonResponse
+    public function byPlan(Request $request, int $planId): JsonResponse
     {
         $user = Auth::guard('api')->user();
         $this->permissionAuthorizationService->ensureHasPermission(
@@ -145,7 +145,8 @@ class StrategicObjectiveController extends Controller
         $this->authorizationService->ensurePlanIsWithinAuthorizedScope(
             $plan,
             $user,
-            'You are not authorized to view strategic objectives for this strategic plan.'
+            'You are not authorized to view strategic objectives for this strategic plan.',
+            $request->boolean('include_all_office_plans')
         );
 
         $objectives = StrategicObjective::with(self::RESPONSE_RELATIONS)

@@ -1,14 +1,13 @@
+import { mountProtectedPage } from '../../access/mount-protected-page.js';
 import { TechnicalAdminSidebar } from '../../components/TechnicalAdminSidebar.js';
 import { AppDialog } from '../../components/AppDialog.js';
 import { PageHeader } from '../../components/PageHeader.js';
-import { enforcePageAccess } from '../../access/access-guard.js';
 import { PERMISSIONS } from '../../access/access-policy.js';
 import { can, getAccessSession } from '../../access/access-session.js';
 import { displayRoleName } from '../../access/role-labels.js';
 import { apiRequest } from '../../api/api-client.js';
 import { assignUserRole, listRoles, searchUsers } from '../../api/users-api.js';
 
-enforcePageAccess();
 
 const { useEffect, useState } = React;
 const PAGE_SIZE = 10;
@@ -95,6 +94,7 @@ function RoleManagementApp() {
     }, []);
 
     useEffect(() => {
+        if (isPermissionSection) return;
         let active = true;
         const timer = window.setTimeout(async () => {
             setLoading(true);
@@ -220,4 +220,4 @@ function RoleManagementApp() {
     );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(RoleManagementApp));
+mountProtectedPage(document.getElementById('root'), () => React.createElement(RoleManagementApp));

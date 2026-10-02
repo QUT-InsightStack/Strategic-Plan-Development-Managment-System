@@ -1,4 +1,4 @@
-import { enforcePageAccess } from '../../access/access-guard.js';
+import { mountProtectedPage } from '../../access/mount-protected-page.js';
 import { getAccessSession } from '../../access/access-session.js';
 import { listLoginHistory } from '../../api/login-history-api.js';
 import { searchUsers } from '../../api/users-api.js';
@@ -6,7 +6,6 @@ import { AdministrativeAdminSidebar } from '../../components/AdministrativeAdmin
 import { PageHeader } from '../../components/PageHeader.js';
 import { TechnicalAdminSidebar } from '../../components/TechnicalAdminSidebar.js';
 
-enforcePageAccess();
 
 const { useEffect, useState } = React;
 
@@ -234,4 +233,4 @@ function LoginHistoryApp() {
     );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(LoginHistoryApp));
+mountProtectedPage(document.getElementById('root'), () => React.createElement(LoginHistoryApp));

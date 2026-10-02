@@ -296,6 +296,42 @@ class PermissionSeeder extends Seeder
                 'code' => 'pdp_chapters.manage',
                 'module' => 'pdp_chapters',
             ],
+            [
+                'permission_name' => 'Archive PDP Chapters',
+                'description' => 'Allows archiving PDP Chapters while retaining their history.',
+                'code' => 'pdp_chapters.archive',
+                'module' => 'pdp_chapters',
+            ],
+            [
+                'permission_name' => 'Delete PDP Chapters',
+                'description' => 'Allows deleting archived PDP Chapters from active use.',
+                'code' => 'pdp_chapters.delete',
+                'module' => 'pdp_chapters',
+            ],
+            [
+                'permission_name' => 'Manage Reference Data',
+                'description' => 'Allows opening the administrative reference-data workspace.',
+                'code' => 'reference_data.manage',
+                'module' => 'reference_data',
+            ],
+            [
+                'permission_name' => 'Manage Templates',
+                'description' => 'Allows opening planning template administration.',
+                'code' => 'templates.manage',
+                'module' => 'templates',
+            ],
+            [
+                'permission_name' => 'View Administrative Monitoring',
+                'description' => 'Allows opening the administrative monitoring workspace.',
+                'code' => 'monitoring.view',
+                'module' => 'monitoring',
+            ],
+            [
+                'permission_name' => 'View Reports',
+                'description' => 'Allows opening administrative reports.',
+                'code' => 'reports.view',
+                'module' => 'reports',
+            ],
             // Kept separate from one another on purpose: a backup file holds
             // every user record and password hash, so being able to trigger
             // one is not the same as being allowed to take a copy off the

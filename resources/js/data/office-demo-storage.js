@@ -1,5 +1,4 @@
 const INPUTS_KEY = 'spdms.frontend-agency-inputs';
-const UPDATES_KEY = 'spdms.frontend-office-updates';
 const FINALIZED_KEY = 'spdms.frontend-finalized-plans';
 
 function read(key, fallback) {
@@ -101,22 +100,6 @@ export function resubmitLocalAgencyInput(id, data) {
     const now = new Date().toISOString();
     items[index] = { ...items[index], payload: Object.fromEntries(Object.entries(data).filter(([key]) => !['type', 'version'].includes(key))), status: 'pending', review_note: '', version: Number(items[index].version || 1) + 1, updated_at: now };
     write(INPUTS_KEY, items); return items[index];
-}
-
-export function listLocalOfficeUpdates(planId, page = 1) {
-    const all = read(UPDATES_KEY, []).filter(item => Number(item.plan_id) === Number(planId));
-    const perPage = 10;
-    const currentPage = Math.max(1, Number(page) || 1);
-    return { data: { data: all.slice((currentPage - 1) * perPage, currentPage * perPage), current_page: currentPage, last_page: Math.max(1, Math.ceil(all.length / perPage)), total: all.length } };
-}
-
-export function saveLocalOfficeUpdate(plan, data, session = {}) {
-    const items = read(UPDATES_KEY, []);
-    const now = new Date().toISOString();
-    const update = { id: nextId(items), plan_id: Number(plan.record_id), created_by: session.userId, creator: creator(session), ...data, created_at: now, updated_at: now };
-    items.unshift(update); write(UPDATES_KEY, items);
-    if (data.kind === 'comment') saveLocalAgencyInput(plan, { type: 'comment', content: data.content }, session);
-    return { data: update };
 }
 
 export function getLocalFinalization(planId) {

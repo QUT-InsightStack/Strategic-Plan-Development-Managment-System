@@ -51,8 +51,10 @@ class PlanCreationController extends Controller
             'year' => ['nullable', 'integer', 'min:2000', 'max:2100'],
             'status' => ['nullable', 'string', Rule::in(['draft', 'finished', 'archived', 'deleted'])],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'include_all_office_plans' => ['sometimes', 'boolean'],
         ]);
-        $authorizedPlanIds = $this->authorizationService->authorizedPlanIdsForListing($user);
+        $includeAllOfficePlans = (bool) ($filters['include_all_office_plans'] ?? false);
+        $authorizedPlanIds = $this->authorizationService->authorizedPlanIdsForListing($user, ['archived', 'deleted'], $includeAllOfficePlans);
         $plans = $this->planCreationService->paginate($filters, $authorizedPlanIds);
 
         return response()->json([
@@ -68,12 +70,14 @@ class PlanCreationController extends Controller
         ]);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
         $user = Auth::guard('api')->user();
+        $this->authorizationService->ensureCanViewAny($user);
         $plan = $this->planCreationService->find($id);
         abort_if(! $plan, 404, 'Strategic plan not found.');
-        $this->authorizationService->ensureCanViewPlan($plan, $user);
+        $includeAllOfficePlans = $request->boolean('include_all_office_plans');
+        $this->authorizationService->ensurePlanIsWithinAuthorizedScope($plan, $user, 'You are not authorized to view this strategic plan.', $includeAllOfficePlans);
 
         return response()->json(['success' => true, 'data' => $plan]);
     }
