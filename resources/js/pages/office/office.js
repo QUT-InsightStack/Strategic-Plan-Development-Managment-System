@@ -108,5 +108,3 @@ apiRequest('/api/auth/me').then(payload => {
  saveAccessSession(createAccessSession(payload.data));
  if (enforcePageAccess()) root.render(detailId ? h('div', { className: 'office-workspace' }, h(AppSidebar), new URLSearchParams(location.search).get('view') === 'inputs' ? h(OfficePlanInput, { planId: detailId }) : h(OfficePlanDetail, { planId: detailId })) : h(OfficeApp));
 }).catch(error => root.render(h('p', { role: 'alert' }, error.message)));
-
-

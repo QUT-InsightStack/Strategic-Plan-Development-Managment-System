@@ -21,6 +21,16 @@ export function listLocalMappings(planId, office = '') {
     return readAll().filter(item => Number(item.plan_id) === Number(planId) && item.status === 'active' && (!office || item.agency_office === office));
 }
 
+export function listAllLocalMappings() {
+    return readAll().filter(item => item.status === 'active');
+}
+
+export function listPlannerMappings(planId) {
+    return readAll().filter(item => Number(item.plan_id) === Number(planId)
+        && item.status === 'active'
+        && !item.agency_office);
+}
+
 export function saveLocalMappings(data, catalog, session) {
     const items = readAll();
     let nextId = items.reduce((max, item) => Math.max(max, Number(item.id) || 0), 0) + 1;
@@ -36,7 +46,8 @@ export function saveLocalMappings(data, catalog, session) {
             dost_objective_id: Number(dostId), dost_objective: catalog.dost_objectives.find(item => Number(item.objective_id) === Number(dostId)) || null,
             agency_input_id: data.agency_input_id || null, agency_input: agencyInput,
             agency_objective_id: data.agency_objective_id || null, agency_objective: agencyObjective,
-            agency_office: data.agency_office || null, reference_file: data.reference_file || '', reference_section: data.reference_section || '',
+            agency_office: data.agency_office || null, parent_mapping_id: data.parent_mapping_id || existing?.parent_mapping_id || null,
+            reference_file: data.reference_file || '', reference_section: data.reference_section || '',
             mapping_rationale: data.mapping_rationale || '', support_reference: data.support_reference || '', page_paragraph: data.page_paragraph || '', note: data.note || '',
             status: 'active', archived_at: null, archived_by: null, archived_by_name: '', created_by: existing?.created_by || session.userId, updated_by: session.userId, updated_at: new Date().toISOString(),
         };

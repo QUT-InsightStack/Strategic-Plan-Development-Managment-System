@@ -31,9 +31,16 @@ const items = [
             { label: 'View Strategic Alignment', href: '/mappings?mode=view', permission: 'relations.view' },
         ],
     },
+    {
+        label: 'Monitor Module',
+        icon: 'bi-speedometer2',
+        permission: PERMISSIONS.OBJECTIVES_VIEW_PROGRESS,
+        children: [
+            { label: 'Progress Monitoring', href: '/progress-monitoring', permission: PERMISSIONS.OBJECTIVES_VIEW_PROGRESS },
+        ],
+    },
     { label: 'Plan Reviews', icon: 'bi-clipboard-check', href: '/strategic-plan-reviews' },
     { label: 'Finalize Plans', icon: 'bi-clipboard-check-fill', href: '/strategic-plans/finalize', permission: PERMISSIONS.PLANS_UPDATE },
-    { label: 'Monitor Plans', icon: 'bi-speedometer2', permission: PERMISSIONS.MONITORING_VIEW },
     { label: 'FAQ', icon: 'bi-info-square-fill' },
     { label: 'Report', icon: 'bi-file-earmark-bar-graph', permission: PERMISSIONS.REPORTS_VIEW },
 ];
@@ -61,6 +68,7 @@ export function AppSidebar({ active = 'Planning Module', onNotice = () => {} }) 
     const [openMenus, setOpenMenus] = useState({
         'Planning Module': (currentPath === '/office' && !['mapping', 'alignment'].includes(new URLSearchParams(window.location.search).get('view'))) || currentPath === '/consolidate-inputs' || (currentPath.startsWith('/strategic-plan') && !isFinalizePage) || currentPath.startsWith('/strategic-objectives') || currentPath.startsWith('/pdp-chapters'),
         'Mapping Module': currentPath === '/mappings' || (currentPath === '/office' && ['mapping', 'alignment'].includes(new URLSearchParams(window.location.search).get('view'))),
+        'Monitor Module': currentPath === '/progress-monitoring',
     });
 
     function toggleMenu(label) {

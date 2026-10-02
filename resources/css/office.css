@@ -1,4 +1,5 @@
 @import './strategic-plans-list.css';
+@import './progress-monitoring.css';
 @import './brand-logo.css';
 @import './design-tokens.css';
 @import './progress-monitoring.css';
@@ -600,8 +601,8 @@ body {
 .office-filter-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto auto; gap: 18px; align-items: end; }
 .office-filter { display: grid; gap: 8px; color: #526379; font-size: 12px; }
 .office-filter input, .office-filter select { width: 100%; min-width: 0; height: 36px; border: 1px solid #bacce3; border-radius: 4px; padding: 6px 10px; background: #fff; }
-.office-content button { border: 1px solid #a7bfe5; border-radius: 4px; padding: 8px 15px; background: var(--color-surface); color: var(--color-primary); cursor: pointer; }
-.office-content button:disabled { opacity: .45; cursor: default; }
+.office-content button:not(.ui-button):not(.progress-objective-link) { border: 1px solid #a7bfe5; border-radius: 4px; padding: 8px 15px; background: var(--color-surface); color: var(--color-primary); cursor: pointer; }
+.office-content button:not(.ui-button):disabled { opacity: .45; cursor: default; }
 .office-content a { color: var(--color-primary); }
 .office-content :focus-visible { outline: 2px solid #2176cc; outline-offset: 3px; }
 .office-plans { min-height: 420px; }
