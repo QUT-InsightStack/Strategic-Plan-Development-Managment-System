@@ -194,6 +194,7 @@ export const routeRules = [
     { test: /^\/pdp-chapters\/manage(?:\/|$)/, permission: PERMISSIONS.PDP_CHAPTERS_MANAGE },
     { test: /^\/login-history(?:\/|$)/, permission: PERMISSIONS.LOGIN_HISTORY_VIEW },
     { test: /^\/audit-logs(?:\/|$)/, permission: PERMISSIONS.LOGS_VIEW },
+    { test: /^\/system-monitoring(?:\/|$)/, permission: PERMISSIONS.SYSTEM_MONITORING_VIEW },
 
     { test: /^\/manual-backup(?:\/|$)/, permission: PERMISSIONS.BACKUPS_VIEW },
 
