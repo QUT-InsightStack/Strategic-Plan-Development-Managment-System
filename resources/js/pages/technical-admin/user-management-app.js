@@ -1,4 +1,4 @@
-import { enforcePageAccess } from '../../access/access-guard.js';
+import { mountProtectedPage } from '../../access/mount-protected-page.js';
 import { PERMISSIONS } from '../../access/access-policy.js';
 import { can, getAccessSession } from '../../access/access-session.js';
 import { displayRoleName } from '../../access/role-labels.js';
@@ -8,7 +8,6 @@ import { PageHeader } from '../../components/PageHeader.js';
 import { TechnicalAdminSidebar } from '../../components/TechnicalAdminSidebar.js';
 import { useDialogBehaviour } from '../../components/use-dialog-behaviour.js';
 
-enforcePageAccess();
 
 const { useEffect, useState } = React;
 const initialFilters = { search: '', role_id: '', status: '' };
@@ -573,4 +572,4 @@ function UserManagementApp() {
     );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(UserManagementApp));
+mountProtectedPage(document.getElementById('root'), () => React.createElement(UserManagementApp));

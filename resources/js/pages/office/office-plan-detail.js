@@ -1,8 +1,7 @@
-import { can, getAccessSession } from '../../access/access-session.js';
 import { OfficeComments } from './office-comments.js';
 import { getStrategicPlan } from '../../api/strategic-plans-api.js';
 import { listStrategicObjectives } from '../../api/strategic-objectives-api.js';
-import { objectivesAssignedToOffice } from '../../objective-assignment-storage.js';
+import { listObjectiveProgress } from '../../api/objective-progress-api.js';
 const h = React.createElement;
 const { useEffect, useState } = React;
 const dateLabel = value => {
@@ -11,7 +10,7 @@ const dateLabel = value => {
     return Number.isNaN(date.getTime()) ? 'Not provided' : date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-export function OfficePlanDetail({ planId }) {
+export function OfficePlanDetail({ planId, mode = 'review', includeAllOfficePlans = false }) {
     const [plan, setPlan] = useState(null);
     const [objectives, setObjectives] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -19,7 +18,6 @@ export function OfficePlanDetail({ planId }) {
     const [objectiveError, setObjectiveError] = useState('');
     const [attempt, setAttempt] = useState(0);
     const [page, setPage] = useState(1);
-    const [notes, setNotes] = useState('');
     const [assignmentVersion, setAssignmentVersion] = useState(0);
     const pageSize = 5;
     useEffect(() => { const refresh = event => { if (!event.key || event.key === 'spdms.frontend-objective-assignments') setAssignmentVersion(value => value + 1); }; window.addEventListener('storage', refresh); window.addEventListener('spdms:objective-assignments-changed', refresh); return () => { window.removeEventListener('storage', refresh); window.removeEventListener('spdms:objective-assignments-changed', refresh); }; }, []);
@@ -28,32 +26,47 @@ export function OfficePlanDetail({ planId }) {
         setLoading(true); setError(''); setObjectiveError(''); setPlan(null); setObjectives([]); setPage(1);
         async function load() {
             try {
-                const payload = await getStrategicPlan(planId);
+                const payload = await getStrategicPlan(planId, includeAllOfficePlans ? { include_all_office_plans: 1 } : {});
                 if (!active) return;
                 setPlan(payload.data);
                 try {
-                    const result = await listStrategicObjectives(planId);
-                    if (active) setObjectives(objectivesAssignedToOffice(result.data || [], getAccessSession()?.office));
+                    if (includeAllOfficePlans) {
+                        const result = await listStrategicObjectives(planId, { include_all_office_plans: 1 });
+                        if (active) setObjectives(result.data || []);
+                    } else {
+                        const assigned = [];
+                        let currentPage = 1;
+                        let lastPage = 1;
+                        do {
+                            const result = await listObjectiveProgress({ plan_id: planId, page: currentPage, per_page: 100 });
+                            if (!active) return;
+                            assigned.push(...result.data);
+                            lastPage = result.meta.last_page;
+                            currentPage++;
+                        } while (currentPage <= lastPage);
+                        if (active) setObjectives(assigned);
+                    }
                 } catch (err) { if (active) setObjectiveError(err.message); }
             } catch (err) { if (active) setError(err.message); }
             finally { if (active) setLoading(false); }
         }
         load();
         return () => { active = false; };
-    }, [planId, attempt, assignmentVersion]);
+    }, [planId, attempt, assignmentVersion, includeAllOfficePlans]);
     const field = (label, value) => h('div', { className: 'office-summary-field', key: label }, h('dt', null, label), h('dd', null, value || 'Not provided'));
     const pageCount = Math.max(1, Math.ceil(objectives.length / pageSize));
     const author = plan?.creator?.name || [plan?.creator?.first_name, plan?.creator?.last_name].filter(Boolean).join(' ');
-    const isDraft = plan?.status === 'draft';
-    return h('main', { className: 'office-content office-detail', 'aria-busy': loading },
+    const hasInputPanel = mode === 'comments' || mode === 'proposal';
+    return h('main', { className: `office-content office-detail ${hasInputPanel ? 'office-detail--with-action' : ''}`, 'aria-busy': loading },
+        h('div', { className: 'office-detail-scroll' },
         h('header', { className: 'office-detail-heading' },
-            h('a', { href: '/office', className: 'office-back', 'aria-label': 'Back to initial plans' }, h('i', { className: 'bi bi-chevron-left', 'aria-hidden': true })),
+            h('a', { href: mode === 'review' ? '/office' : `/office?view=${mode}`, className: 'office-back', 'aria-label': 'Back to plan list' }, h('i', { className: 'bi bi-chevron-left', 'aria-hidden': true })),
             h('h1', null, plan ? `${plan.record_id} ${plan.title}` : 'Plan details')),
         loading && h('p', { role: 'status' }, 'Loading plan details...'),
         error && h('div', { className: 'office-panel', role: 'alert' }, h('p', null, error), h('button', { onClick: () => setAttempt(attempt + 1) }, 'Retry')),
         plan && !loading && h('article', { className: 'office-panel office-detail-panel' },
             h('section', { 'aria-labelledby': 'plan-summary-title' },
-                h('div', { className: 'office-plan-toolbar' }, h('h2', { id: 'plan-summary-title' }, 'Plan Summary'), isDraft && can('strategic_documents.upload') && h('a', { className: 'office-action-link', href: '/office?plan=' + encodeURIComponent(planId) + '&view=inputs' }, 'Submit Planning Inputs')),
+                h('div', { className: 'office-plan-toolbar' }, h('h2', { id: 'plan-summary-title' }, 'Plan Summary')),
                 h('dl', { className: 'office-summary-grid' },
                     field('Plan ID', plan.record_id), field('Plan Title', plan.title),
                     field('Plan period', plan.planning_start_date && plan.planning_end_date ? `${dateLabel(plan.planning_start_date)} – ${dateLabel(plan.planning_end_date)}` : null),
@@ -70,12 +83,12 @@ export function OfficePlanDetail({ planId }) {
                         h('thead', null, h('tr', null, ['No.', 'Objectives', 'Expected outcome', 'Indicator', 'Target', 'Responsible Office/Agency'].map(label => h('th', { key: label, scope: 'col' }, label)))),
                         h('tbody', null, objectives.length ? objectives.slice((page - 1) * pageSize, page * pageSize).map((objective, index) => h('tr', { key: objective.objective_id },
                             h('td', null, (page - 1) * pageSize + index + 1), h('td', null, objective.objective_title || objective.objective_description || '—'),
-                            ...['expected_outcome', 'indicator', 'target', 'responsible_office_agency'].map(key => h('td', { key }, objective[key] || '—'))))
+                            ...['expected_outcome', 'indicator', 'target'].map(key => h('td', { key }, objective[key] || '—')),
+                            h('td', null, objective.responsible_unit_assignment?.responsible_unit?.responsible_office_agency || objective.responsible_office_agency || '—')))
                             : h('tr', null, h('td', { colSpan: 6 }, 'No strategic objectives have been added to this plan.'))))),
                     h('footer', { className: 'office-pagination' }, h('span', null, `${objectives.length} objectives`),
                         h('button', { 'aria-label': 'Previous objectives page', disabled: page <= 1, onClick: () => setPage(page - 1) }, '‹'),
                         h('span', { 'aria-live': 'polite' }, `${page} / ${pageCount}`),
-                        h('button', { 'aria-label': 'Next objectives page', disabled: page >= pageCount, onClick: () => setPage(page + 1) }, '›')))),
-            h(OfficeComments, { plan })));
+                        h('button', { 'aria-label': 'Next objectives page', disabled: page >= pageCount, onClick: () => setPage(page + 1) }, '›')))))),
+        plan && !loading && hasInputPanel && h(OfficeComments, { plan, mode }));
 }
-

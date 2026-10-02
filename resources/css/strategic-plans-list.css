@@ -32,7 +32,7 @@
 .plans-bulk-delete { display: inline-flex; align-items: center; gap: var(--space-2); border: 0; color: #005ea8; background: transparent; font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
 .plans-bulk-delete:disabled { color: var(--color-text-disabled); cursor: not-allowed; }
 .plans-select-column { width: 42px; text-align: center !important; }
-.plans-table td, .plans-table th { padding-top: 10px; padding-bottom: 10px; font-size: var(--font-size-xs); }
+.plans-table td, .plans-table th { padding-top: 10px; padding-bottom: 10px; font-size: var(--font-size-table); }
 .plans-table td strong { color: var(--color-gray-800); font-weight: var(--font-weight-semibold); }
 .plans-id { color: #005ea8; font-weight: var(--font-weight-semibold); }
 .plans-actions-cell { width: 280px; }
@@ -116,7 +116,7 @@
 
 .plan-current-stage small {
     color: var(--color-text-secondary);
-    font-size: 11px;
+    font-size: 12px;
     line-height: var(--line-height-body);
 }
 

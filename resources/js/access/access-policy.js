@@ -40,6 +40,12 @@ export const PERMISSIONS = Object.freeze({
     SETTINGS_MANAGE: 'settings.manage',
     DASHBOARD_VIEW: 'dashboard.view',
     PDP_CHAPTERS_MANAGE: 'pdp_chapters.manage',
+    PDP_CHAPTERS_ARCHIVE: 'pdp_chapters.archive',
+    PDP_CHAPTERS_DELETE: 'pdp_chapters.delete',
+    PRESIDENTIAL_AGENDA_VIEW: 'presidential_agenda.view',
+    PRESIDENTIAL_AGENDA_MANAGE: 'presidential_agenda.manage',
+    PRESIDENTIAL_AGENDA_ARCHIVE: 'presidential_agenda.archive',
+    PRESIDENTIAL_AGENDA_DELETE: 'presidential_agenda.delete',
     REFERENCE_DATA_MANAGE: 'reference_data.manage',
     TEMPLATES_MANAGE: 'templates.manage',
     MONITORING_VIEW: 'monitoring.view',
@@ -112,16 +118,24 @@ const technicalAdminPermissions = [
 
 const administrativeAdminPermissions = [
     PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.PRESIDENTIAL_AGENDA_VIEW,
+    PERMISSIONS.PRESIDENTIAL_AGENDA_MANAGE,
+    PERMISSIONS.PRESIDENTIAL_AGENDA_ARCHIVE,
+    PERMISSIONS.PRESIDENTIAL_AGENDA_DELETE,
     PERMISSIONS.REFERENCE_DATA_MANAGE,
     PERMISSIONS.TEMPLATES_MANAGE,
     PERMISSIONS.PDP_CHAPTERS_MANAGE,
+    PERMISSIONS.PDP_CHAPTERS_ARCHIVE,
+    PERMISSIONS.PDP_CHAPTERS_DELETE,
     PERMISSIONS.MONITORING_VIEW,
     PERMISSIONS.REPORTS_VIEW,
     PERMISSIONS.LOGS_VIEW,
 ];
 
 const officePermissions = [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW,
-    PERMISSIONS.OBJECTIVES_VIEW, PERMISSIONS.OBJECTIVES_CREATE, PERMISSIONS.OBJECTIVES_UPDATE,
+    PERMISSIONS.OBJECTIVES_VIEW, PERMISSIONS.OBJECTIVES_UPDATE,
+    PERMISSIONS.OBJECTIVES_VIEW_PROGRESS, PERMISSIONS.OBJECTIVES_UPDATE_PROGRESS,
+    PERMISSIONS.INPUTS_CREATE, PERMISSIONS.OBJECTIVE_COMMENTS_CREATE, PERMISSIONS.DOCUMENTS_UPLOAD,
     PERMISSIONS.FOUNDATIONS_VIEW, 'relations.view', 'relations.create', PERMISSIONS.REPORTS_VIEW];
 
 const rolePolicies = {
@@ -133,6 +147,7 @@ const rolePolicies = {
     test: { home: '/dashboard', permissions: ['*'] },
     'Planning Officer': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
     'Planner/Encoder': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
+    Office: { home: '/office', permissions: officePermissions },
     'Office Representative': { home: '/office', permissions: officePermissions },
     'Office/Agency': { home: '/office', permissions: officePermissions },
     'Offices / Agencies': { home: '/office', permissions: officePermissions },
@@ -142,7 +157,6 @@ const rolePolicies = {
     Executive: { home: '/management-dashboard', permissions: managementPermissions },
     'Management / Executive': { home: '/management-dashboard', permissions: managementPermissions },
     Viewer: { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.REPORTS_VIEW] },
-    Office: { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.REPORTS_VIEW] },
 };
 
 export function normalizePermissionList(list) {
@@ -163,6 +177,7 @@ export function hasRolePolicy(roleName) {
 
 export const routeRules = [
     { test: /^\/management-dashboard(?:\/|$)/, roles: ['Management', 'Executive', 'Management / Executive'] },
+    { test: /^\/progress-monitoring(?:\/|$)/, permission: PERMISSIONS.OBJECTIVES_VIEW_PROGRESS },
     { test: /^\/strategic-plans\/\d+\/approval-status(?:\/|$)/ },
     { test: /^\/consolidate-inputs(?:\/|$)/, permission: PERMISSIONS.INPUTS_VIEW },
     { test: /^\/office(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },

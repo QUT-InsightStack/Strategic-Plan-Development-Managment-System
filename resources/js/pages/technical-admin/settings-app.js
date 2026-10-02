@@ -1,9 +1,9 @@
-import { enforcePageAccess } from '../../access/access-guard.js';
+import { mountProtectedPage } from '../../access/mount-protected-page.js';
 import { TechnicalAdminSidebar } from '../../components/TechnicalAdminSidebar.js';
 import { PageHeader } from '../../components/PageHeader.js';
 import { SecuritySettings } from '../../components/SecuritySettings.js';
 
-if (enforcePageAccess()) {
+mountProtectedPage(document.getElementById('root'), () => {
     const SettingsApp = () => React.createElement(React.Fragment, null,
         React.createElement(TechnicalAdminSidebar, { active: 'Settings' }),
         React.createElement('main', { className: 'app-shell-main settings-page' },
@@ -18,5 +18,5 @@ if (enforcePageAccess()) {
         )
     );
 
-    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(SettingsApp));
-}
+    return React.createElement(SettingsApp);
+});

@@ -4,7 +4,7 @@ import { setImmediate } from 'node:timers/promises';
 import vm from 'node:vm';
 import test from 'node:test';
 import { calculatedProgressStatus, progressStatusLabel, updateObjectiveProgress } from '../../resources/js/api/objective-progress-api.js';
-import { PERMISSIONS } from '../../resources/js/access/access-policy.js';
+import { PERMISSIONS, routeRules } from '../../resources/js/access/access-policy.js';
 
 function panel(roleName) {
     const state = [], effects = [];
@@ -43,6 +43,27 @@ function nodes(tree, predicate) {
 function text(tree) {
     return tree == null || tree === false ? '' : typeof tree !== 'object' ? String(tree) : tree.children.map(text).join(' ');
 }
+
+test('planning officer monitor route reuses the shared objective progress panel', () => {
+    const source = readFileSync(new URL('../../resources/js/pages/planner/progress-monitoring-app.js', import.meta.url), 'utf8');
+    const sidebar = readFileSync(new URL('../../resources/js/components/AppSidebar.js', import.meta.url), 'utf8');
+    assert.match(source, /import \{ ObjectiveProgressPanel \}/);
+    assert.match(source, /React\.createElement\(ObjectiveProgressPanel\)/);
+    assert.match(sidebar, /label: 'Monitor Module'/);
+    assert.match(sidebar, /href: '\/progress-monitoring'/);
+    const rule = routeRules.find(candidate => candidate.test.test('/progress-monitoring'));
+    assert.equal(rule.permission, PERMISSIONS.OBJECTIVES_VIEW_PROGRESS);
+});
+
+test('progress boundaries derive status and invalid values never reach the API', () => {
+    for (const [value, status] of [[0, 'not_started'], [1, 'in_progress'], [99, 'in_progress'], [100, 'completed']]) {
+        assert.equal(calculatedProgressStatus(value), status);
+    }
+    for (const value of ['', '   ', 'abc', -1, 101, 1.5]) {
+        assert.equal(calculatedProgressStatus(value), '');
+        assert.throws(() => updateObjectiveProgress(7, value), /whole-number percentage/);
+    }
+});
 
 test('planner form displays calculated status and requires a correction reason', async () => {
     const app = panel('Planning Officer');

@@ -1,4 +1,4 @@
-import { enforcePageAccess } from '../../access/access-guard.js';
+import { mountProtectedPage } from '../../access/mount-protected-page.js';
 import { PERMISSIONS } from '../../access/access-policy.js';
 import { can, getAccessSession } from '../../access/access-session.js';
 import { createBackup, downloadBackup, listBackups, restoreBackup } from '../../api/backups-api.js';
@@ -7,7 +7,6 @@ import { AppDialog } from '../../components/AppDialog.js';
 import { PageHeader } from '../../components/PageHeader.js';
 import { TechnicalAdminSidebar } from '../../components/TechnicalAdminSidebar.js';
 
-enforcePageAccess();
 
 const { useEffect, useState } = React;
 
@@ -280,4 +279,4 @@ function ManualBackupApp() {
     );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(ManualBackupApp));
+mountProtectedPage(document.getElementById('root'), () => React.createElement(ManualBackupApp));

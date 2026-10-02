@@ -46,8 +46,9 @@ class ObjectiveCollaborationService
         $this->permissions->ensureHasPermission('implementation_inputs.create', $actor);
 
         return DB::transaction(function () use ($planId, $objectiveId, $data, $actor) {
-            [$plan, $objective] = $this->context($planId, $objectiveId, $actor, true);
-            $unit = $this->authorizeUnit($plan, $objective, $actor, true);
+            $planLevelProposal = $objectiveId === null && $data['input_type'] === 'change_request';
+            [$plan, $objective] = $this->context($planId, $objectiveId, $actor, true, $planLevelProposal);
+            $unit = $this->authorizeUnit($plan, $objective, $actor, true, $planLevelProposal);
             $this->ensureOpen($plan, $objective);
             if ($data['input_type'] === 'change_request'
                 && ($plan->status !== 'draft' || ($objective && $objective->status !== 'draft'))) {
@@ -90,14 +91,14 @@ class ObjectiveCollaborationService
     }
 
     /** @return array{Strategic, ?StrategicObjective} */
-    private function context(?int $planId, ?int $objectiveId, User $actor, bool $lock = false): array
+    private function context(?int $planId, ?int $objectiveId, User $actor, bool $lock = false, bool $allowUnassignedPlan = false): array
     {
         if ($planId === null) {
             $planId = StrategicObjective::whereKey($objectiveId)->value('strategic_plan_id');
         }
         $plan = Strategic::whereKey($planId)->when($lock, fn ($q) => $q->lockForUpdate())->firstOrFail();
         abort_if($plan->status === 'deleted', 404, 'Strategic plan not found.');
-        $this->plans->ensurePlanIsWithinAuthorizedScope($plan, $actor);
+        $this->plans->ensurePlanIsWithinAuthorizedScope($plan, $actor, 'You are not authorized to access this strategic plan.', $allowUnassignedPlan);
         $objective = $objectiveId === null ? null : StrategicObjective::whereKey($objectiveId)
             ->when($lock, fn ($q) => $q->lockForUpdate())->firstOrFail();
         abort_if($objective?->status === 'deleted', 404, 'Strategic objective not found.');
@@ -108,7 +109,7 @@ class ObjectiveCollaborationService
         return [$plan, $objective];
     }
 
-    private function authorizeUnit(Strategic $plan, ?StrategicObjective $objective, User $actor, bool $lock = false): ResponsibleUnit
+    private function authorizeUnit(Strategic $plan, ?StrategicObjective $objective, User $actor, bool $lock = false, bool $allowUnassignedPlan = false): ResponsibleUnit
     {
         // Office placement is maintained through the existing administrator API,
         // never from a submitted payload or a self-service profile edit.
@@ -121,7 +122,7 @@ class ObjectiveCollaborationService
         if ($objective) {
             $scope->whereKey($objective->objective_id);
         }
-        if ($user->status !== 'active' || ! $unit || ! $scope->exists()) {
+        if ($user->status !== 'active' || ! $unit || (! $allowUnassignedPlan && ! $scope->exists())) {
             throw new AuthorizationException('Your office is not assigned to this strategic objective or plan.');
         }
 

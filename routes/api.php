@@ -23,6 +23,7 @@ use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\StrategicDocumentController;
 use App\Http\Controllers\PresidentialAgendaItemController;
 use App\Http\Controllers\StrategicObjectiveAlignmentController;
+use App\Http\Controllers\StrategicPlanCommentController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:api', 'auth.version', 'permission:system_monitoring.view'])
@@ -288,6 +289,8 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
 
     // Strategic plan management
     Route::get('strategic-plans', [PlanCreationController::class, 'index']);
+    Route::get('strategic-plans/{planId}/comments', [StrategicPlanCommentController::class, 'index'])->whereNumber('planId');
+    Route::post('strategic-plans/{planId}/comments', [StrategicPlanCommentController::class, 'store'])->whereNumber('planId');
     Route::post('strategic-plans', [PlanCreationController::class, 'store']);
     Route::post('strategic-plans/{id}/copy', [PlanCreationController::class, 'copy'])
         ->whereNumber('id');

@@ -51,5 +51,11 @@ export function applyLocalObjectiveAssignments(objectives = []) {
 export function objectivesAssignedToOffice(objectives = [], office = '') {
     const officeName = normalize(office);
     if (!officeName) return [];
-    return objectives.filter(objective => normalize(objective.responsible_office_agency) === officeName);
+    return objectives.filter(objective => {
+        // The API's authoritative assignment is the related ResponsibleUnit.
+        // Keep the legacy text field as a fallback for older responses.
+        const assignedOffice = objective.responsible_unit_assignment?.responsible_unit?.responsible_office_agency
+            || objective.responsible_office_agency;
+        return normalize(assignedOffice) === officeName;
+    });
 }

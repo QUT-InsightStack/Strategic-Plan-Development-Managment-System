@@ -1,3 +1,4 @@
+import { pageForUrl, canOpenPage } from './navigation.js';
 import { routeRules } from './access-policy.js';
 import { can, createAccessSession, getAccessSession, saveAccessSession } from './access-session.js';
 import { startSessionTimeout } from '../session-timeout.js';
@@ -15,8 +16,9 @@ function recoverAccessSession(pathname) {
 
             const session = saveAccessSession(createAccessSession(payload.data));
             const rule = routeRules.find((candidate) => candidate.test.test(pathname));
+            const page = pageForUrl(window.location.href, session.roleName);
 
-            if (rule && ((rule.roles && !rule.roles.includes(session.roleName)) || (rule.permission && !can(rule.permission, session)))) {
+            if ((page && !canOpenPage(page, session)) || (rule && ((rule.roles && !rule.roles.includes(session.roleName)) || (rule.permission && !can(rule.permission, session) && !page)))) {
                 window.location.replace('/access-denied');
                 return;
             }
@@ -33,8 +35,9 @@ export function enforcePageAccess(pathname = window.location.pathname) {
         return false;
     }
     const rule = routeRules.find((candidate) => candidate.test.test(pathname));
-    if (rule && ((rule.roles && !rule.roles.includes(session.roleName)) || (rule.permission && !can(rule.permission, session)))) {
-        window.location.replace('/access-denied');
+    const page = pageForUrl(window.location.href, session.roleName);
+    if ((page && !canOpenPage(page, session)) || (rule && ((rule.roles && !rule.roles.includes(session.roleName)) || (rule.permission && !can(rule.permission, session) && !page)))) {
+        recoverAccessSession(pathname);
         return false;
     }
 

@@ -6,6 +6,7 @@ export default defineConfig({
     plugins: [
         laravel({
             input: [
+                'resources/css/progress-monitoring.css',
                 'resources/css/app.css',
                 'resources/css/create-user.css',
                 'resources/css/login.css',
@@ -18,7 +19,6 @@ export default defineConfig({
                 'resources/css/strategic-plan-finalize.css',
                 'resources/css/mappings.css',
                 'resources/css/strategic-objectives.css',
-                'resources/css/strategic-objectives-list.css',
                 'resources/css/role-management.css',
                 'resources/css/settings.css',
                 'resources/css/user-management.css',
@@ -33,6 +33,7 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/js/pages/technical-admin/create-user-app.js',
                 'resources/js/pages/shared/dashboard-app.js',
+                'resources/js/pages/planner/progress-monitoring-app.js',
                 'resources/js/pages/auth/login-app.js',
                 'resources/js/pages/auth/change-password-app.js',
                 'resources/js/pages/auth/forgot-password-app.js',
@@ -49,7 +50,6 @@ export default defineConfig({
                 'resources/js/pages/planner/strategic-plan-list-app.js',
                 'resources/js/pages/planner/approval-status-app.js',
                 'resources/css/workflow-notifications.css',
-                'resources/js/pages/shared/workflow-notifications-app.js',
                 'resources/js/pages/shared/workflow-notifications-app.js',
                 'resources/js/pages/planner/strategic-plan-edit-app.js',
                 'resources/js/pages/planner/strategic-plan-finalize-app.js',
