@@ -1,7 +1,8 @@
 import { getAccessSession } from '../access/access-session.js';
+import { apiRequest } from '../api/api-client.js';
 
 const h = React.createElement;
-const DOCUMENTS = ['pdf', 'doc', 'docx', 'xls', 'xlsx'];
+const DOCUMENTS = ['pdf', 'doc', 'docx', 'csv', 'xls', 'xlsx'];
 const VIDEOS = ['mp4', 'mov'];
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 100 * 1024 * 1024;
@@ -17,12 +18,10 @@ export function OfficeReferenceMaterials({ plan, allowed, back }) {
     const [dragging, setDragging] = React.useState('');
     const documentInput = React.useRef(null);
     const videoInput = React.useRef(null);
-    const reader = React.useRef(null);
-    const cancelled = React.useRef(false);
     const mounted = React.useRef(true);
     React.useEffect(() => {
         mounted.current = true;
-        return () => { mounted.current = false; cancelled.current = true; reader.current?.abort(); };
+        return () => { mounted.current = false; };
     }, []);
     const updateFile = (id, values) => {
         if (mounted.current) setFiles(current => current.map(item => item.id === id ? { ...item, ...values } : item));
@@ -44,32 +43,31 @@ export function OfficeReferenceMaterials({ plan, allowed, back }) {
         }
         setFiles(next); setError(errors.join(' ')); setMessage('');
     }
-    async function prepare(event) {
+    async function upload(event) {
         event.preventDefault();
         if (!allowed || busy || !files.length || !category || !level) return;
-        cancelled.current = false; setBusy(true); setError(''); setMessage('Preparing a local preview…');
-        let failed = false;
+        setBusy(true); setError(''); setMessage('Uploading selected files…');
+        const uploaded = [];
+        const errors = [];
         for (const item of files) {
-            if (cancelled.current) break;
-            updateFile(item.id, { progress: 0, status: 'reading' });
+            updateFile(item.id, { progress: 0, status: 'uploading' });
             try {
-                await new Promise((resolve, reject) => {
-                    const current = new FileReader(); reader.current = current;
-                    current.onprogress = event => { if (event.lengthComputable) updateFile(item.id, { progress: Math.round(event.loaded / event.total * 100) }); };
-                    current.onload = resolve;
-                    current.onerror = () => reject(new Error('File could not be read.'));
-                    current.onabort = () => reject(new Error('Preview cancelled.'));
-                    current.readAsArrayBuffer(item.file);
-                });
-                updateFile(item.id, { progress: 100, status: 'prepared' });
-            } catch {
-                failed = true;
-                updateFile(item.id, { progress: 0, status: cancelled.current ? 'ready' : 'error' });
-            } finally { reader.current = null; }
+                const body = new FormData();
+                body.append('document', item.file);
+                body.append('reference_level', level);
+                body.append('content_category', category);
+                await apiRequest(`/api/strategic-plans/${plan.record_id}/documents`, { method: 'POST', body });
+                uploaded.push(item.id);
+            } catch (err) {
+                updateFile(item.id, { status: 'error' });
+                errors.push(`${item.file.name}: ${err.message}`);
+            }
         }
         if (!mounted.current) return;
+        setFiles(current => current.filter(item => !uploaded.includes(item.id)));
         setBusy(false);
-        setMessage(cancelled.current ? 'Preview cancelled. Your selected files are still available.' : failed ? 'Some files could not be read. Remove them or try again.' : 'File preview is ready. No files have been uploaded.');
+        setMessage(uploaded.length ? `${uploaded.length} file${uploaded.length === 1 ? '' : 's'} uploaded successfully.` : 'No files were uploaded.');
+        if (errors.length) setError(errors.join(' '));
     }
     function dropzone(group, title, icon, formats, ref) {
         return h('section', { className: 'office-upload-group', key: group },
@@ -83,7 +81,7 @@ export function OfficeReferenceMaterials({ plan, allowed, back }) {
             }, h('i', { className: 'bi bi-cloud-arrow-up', 'aria-hidden': true }), h('strong', null, 'Click to select files'), h('span', null, 'or drag and drop them here')),
             h('p', { className: 'office-upload-support' }, `Supported formats: ${formats.join(', ').toUpperCase()} · Up to 50 MB per file`));
     }
-    return h('form', { onSubmit: prepare, className: 'office-materials-form' },
+    return h('form', { onSubmit: upload, className: 'office-materials-form' },
         h('section', { className: 'office-panel office-reference-category', 'aria-labelledby': 'reference-category-title' },
             h('h2', { id: 'reference-category-title' }, 'Select reference category'),
             h('div', { className: 'office-reference-fields' },
@@ -101,17 +99,16 @@ export function OfficeReferenceMaterials({ plan, allowed, back }) {
             h('aside', { className: 'office-selected-panel', 'aria-labelledby': 'selected-files-title' },
                 h('div', { className: 'office-panel office-selected-heading' }, h('h2', { id: 'selected-files-title' }, 'Selected files'), h('span', null, files.length)),
                 files.length ? h('ul', { className: 'office-selected-files' }, files.map(item => h('li', { className: 'office-panel office-selected-file', key: item.id },
-                    h('i', { className: `bi ${item.group === 'videos' ? 'bi-file-earmark-play' : item.extension === 'pdf' ? 'bi-file-earmark-pdf' : ['xls', 'xlsx'].includes(item.extension) ? 'bi-file-earmark-excel' : 'bi-file-earmark-word'} office-file-icon is-${item.extension}`, 'aria-hidden': true }),
+                    h('i', { className: `bi ${item.group === 'videos' ? 'bi-file-earmark-play' : item.extension === 'pdf' ? 'bi-file-earmark-pdf' : ['xls', 'xlsx', 'csv'].includes(item.extension) ? 'bi-file-earmark-excel' : 'bi-file-earmark-word'} office-file-icon is-${item.extension}`, 'aria-hidden': true }),
                     h('div', { className: 'office-file-copy' }, h('strong', { title: item.file.name }, item.file.name),
-                        h('span', null, `${item.status === 'prepared' ? 'Preview ready' : item.status === 'reading' ? 'Preparing preview' : item.status === 'error' ? 'Unable to read' : 'Selected'} · ${sizeLabel(item.file.size)}`),
-                        ['reading', 'prepared'].includes(item.status) && h('progress', { max: 100, value: item.progress, 'aria-label': `Local preview progress for ${item.file.name}` })),
+                        h('span', null, `${item.status === 'uploading' ? 'Uploading' : item.status === 'error' ? 'Upload failed' : 'Selected'} · ${sizeLabel(item.file.size)}`),
+                        item.status === 'uploading' && h('progress', { 'aria-label': `Uploading ${item.file.name}` })),
                     h('button', { type: 'button', className: 'office-file-remove', disabled: busy, 'aria-label': `Remove ${item.file.name}`, onClick: () => { setFiles(current => current.filter(file => file.id !== item.id)); setMessage(''); } }, h('i', { className: 'bi bi-x', 'aria-hidden': true })))))
                     : h('div', { className: 'office-panel office-files-empty' }, h('i', { className: 'bi bi-files', 'aria-hidden': true }), h('p', null, 'No files selected'), h('span', null, 'Your documents and videos will appear here.')),
-                h('div', { className: 'office-upload-note' }, h('i', { className: 'bi bi-info-circle', 'aria-hidden': true }), h('p', null, 'Attachment preview only. Selected files stay on this device and are not attached to your submitted planning input.')))),
+                h('div', { className: 'office-upload-note' }, h('i', { className: 'bi bi-info-circle', 'aria-hidden': true }), h('p', null, 'Files are saved to this strategic plan with the selected reference level and content category.')))),
         h('p', { className: 'office-upload-status', role: 'status', 'aria-live': 'polite' }, message),
         h('footer', { className: 'office-materials-actions' },
             h('span', null, `${files.length} files · ${sizeLabel(files.reduce((sum, item) => sum + item.file.size, 0))} total`),
-            busy ? h('button', { type: 'button', className: 'ui-button ui-button--secondary', onClick: () => { cancelled.current = true; reader.current?.abort(); } }, 'Cancel Preview') : h('a', { href: back, className: 'ui-button ui-button--secondary' }, 'Cancel'),
-            h('button', { type: 'submit', className: 'ui-button ui-button--primary office-materials-submit', disabled: !allowed || busy || !files.length || !category || !level }, h('i', { className: 'bi bi-cloud-arrow-up', 'aria-hidden': true }), busy ? 'Preparing…' : 'Preview Selected Files')));
+            h('a', { href: back, className: 'ui-button ui-button--secondary', 'aria-disabled': busy || undefined }, 'Cancel'),
+            h('button', { type: 'submit', className: 'ui-button ui-button--primary office-materials-submit', disabled: !allowed || busy || !files.length || !category || !level }, h('i', { className: 'bi bi-cloud-arrow-up', 'aria-hidden': true }), busy ? 'Uploading…' : 'Upload')));
 }
-

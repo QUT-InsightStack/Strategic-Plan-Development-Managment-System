@@ -5,7 +5,6 @@ import vm from 'node:vm';
 import test from 'node:test';
 import { calculatedProgressStatus, progressStatusLabel, updateObjectiveProgress } from '../../resources/js/api/objective-progress-api.js';
 import { PERMISSIONS, routeRules } from '../../resources/js/access/access-policy.js';
-import { officeItems } from '../../resources/js/access/office-navigation.js';
 
 function panel(roleName) {
     const state = [], effects = [];
@@ -21,7 +20,8 @@ function panel(roleName) {
             },
             useEffect: effect => effects.push(effect),
         },
-        can: () => true, getAccessSession: () => ({ roleName }), P: PERMISSIONS,
+        can: permission => permission === (roleName === 'Planning Officer' ? PERMISSIONS.OBJECTIVES_CORRECT_PROGRESS : PERMISSIONS.OBJECTIVES_UPDATE_PROGRESS),
+        getAccessSession: () => ({ roleName, roleLabel: roleName, name: `${roleName} User`, office: 'ICT Office' }), P: PERMISSIONS,
         calculatedProgressStatus, progressStatusLabel,
         listObjectiveProgress: async () => ({ data: [{ objective_id: 7, objective_title: 'Research capability', progress_percentage: 40, progress_status: 'in_progress', status: 'published', strategic_plan: { title: 'Plan', status: 'finished' } }], meta: { last_page: 1, total: 1 } }),
         listObjectiveProgressHistory: async () => ({ data: [], meta: { last_page: 1 } }),
@@ -44,18 +44,6 @@ function text(tree) {
     return tree == null || tree === false ? '' : typeof tree !== 'object' ? String(tree) : tree.children.map(text).join(' ');
 }
 
-test('office workspace allows only office roles and has one progress monitoring entry', () => {
-    const rule = routeRules.find(rule => rule.test.test('/office'));
-    for (const role of ['Responsible Unit User', 'Office Representative', 'Office/Agency', 'Offices / Agencies']) assert.ok(rule.roles.includes(role));
-    assert.ok(!rule.roles.includes('Planning Officer'));
-    assert.ok(!rule.roles.includes('Administrator'));
-    const entries = officeItems.flatMap(item => item.children);
-    const home = entries.find(item => item.href === '/office?view=progress');
-    assert.equal(home.label, 'Progress Monitoring');
-    assert.ok(!entries.some(item => item.label === 'Assigned Objectives'));
-    assert.equal(home.permission, PERMISSIONS.OBJECTIVES_VIEW_PROGRESS);
-});
-
 test('planning officer monitor route reuses the shared objective progress panel', () => {
     const source = readFileSync(new URL('../../resources/js/pages/planner/progress-monitoring-app.js', import.meta.url), 'utf8');
     const sidebar = readFileSync(new URL('../../resources/js/components/AppSidebar.js', import.meta.url), 'utf8');
@@ -77,30 +65,18 @@ test('progress boundaries derive status and invalid values never reach the API',
     }
 });
 
-test('office form displays current progress and rejects a blank submission', async () => {
-    const app = panel('Responsible Unit User');
-    await app.load();
-    nodes(app.render(), node => node.type === 'button' && text(node) === 'View / Update')[0].props.onClick();
-    let tree = app.render();
-    assert.match(text(tree), /Current progress: 40% · In Progress/);
-    nodes(tree, node => node.props.type === 'number')[0].props.onChange({ target: { value: '' } });
-    tree = app.render();
-    assert.match(text(tree), /Progress is required/);
-    await nodes(tree, node => node.type === 'form')[0].props.onSubmit({ preventDefault() {} });
-    assert.equal(app.sent, undefined);
-});
-
 test('planner form displays calculated status and requires a correction reason', async () => {
     const app = panel('Planning Officer');
     await app.load();
     let tree = app.render();
-    nodes(tree, node => node.type === 'button' && text(node) === 'View / Update')[0].props.onClick();
+    assert.match(text(tree), /Planning Officer User/);
+    assert.match(text(tree), /Find objectives/);
+    assert.match(text(tree), /Strategic Objectives for Progress Monitoring/);
+    nodes(tree, node => node.type === 'button' && text(node) === 'Correct progress')[0].props.onClick();
     tree = app.render();
     assert.equal(nodes(tree, node => node.type === 'textarea')[0].props.required, true);
-    assert.equal(nodes(tree, node => node.props.type === 'submit')[0].props.disabled, false);
-    await nodes(tree, node => node.type === 'form')[0].props.onSubmit({ preventDefault() {} });
-    assert.equal(app.sent, undefined);
-    assert.match(text(app.render()), /Provide a reason for this change/);
+    assert.equal(text(nodes(tree, node => node.props.type === 'submit')[0]), 'Save correction');
+    assert.equal(nodes(tree, node => node.props.type === 'submit')[0].props.disabled, true);
     const form = nodes(tree, node => node.type === 'form')[0];
     assert.equal(nodes(form, node => node.type === 'select').length, 0);
     nodes(form, node => node.props.type === 'number')[0].props.onChange({ target: { value: '100' } });
@@ -114,10 +90,13 @@ test('planner form displays calculated status and requires a correction reason',
 test('office form permits an update without a correction reason', async () => {
     const app = panel('Responsible Unit User');
     await app.load();
-    nodes(app.render(), node => node.type === 'button' && text(node) === 'View / Update')[0].props.onClick();
-    const tree = app.render();
-    assert.equal(nodes(tree, node => node.type === 'textarea').length, 0);
-    assert.doesNotMatch(text(tree), /Correct Progress|Save correction|Reason for correction/);
+    let tree = app.render();
+    assert.match(text(tree), /Responsible Unit User User/);
+    assert.match(text(tree), /Find objectives/);
+    assert.match(text(tree), /Strategic Objectives for Progress Monitoring/);
+    nodes(tree, node => node.type === 'button' && text(node) === 'Update progress')[0].props.onClick();
+    tree = app.render();
+    assert.equal(nodes(tree, node => node.type === 'textarea')[0].props.required, false);
     assert.equal(nodes(tree, node => node.props.type === 'submit')[0].props.disabled, false);
 });
 

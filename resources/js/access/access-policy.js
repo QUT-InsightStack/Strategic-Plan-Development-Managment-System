@@ -21,6 +21,9 @@ export const PERMISSIONS = Object.freeze({
     OBJECTIVES_ARCHIVE: 'strategic_objectives.archive',
     OBJECTIVES_VIEW: 'strategic_objectives.view',
     INPUTS_VIEW: 'implementation_inputs.view',
+    INPUTS_CREATE: 'implementation_inputs.create',
+    OBJECTIVE_COMMENTS_CREATE: 'objective_comments.create',
+    DOCUMENTS_UPLOAD: 'strategic_documents.upload',
     OBJECTIVES_CREATE: 'strategic_objectives.create',
     OBJECTIVES_UPDATE: 'strategic_objectives.update',
     OBJECTIVES_VIEW_PROGRESS: 'strategic_objectives.view_progress',
@@ -57,6 +60,19 @@ const fullPlanningPermissions = [
     PERMISSIONS.FOUNDATIONS_MANAGE,
     PERMISSIONS.MAPPINGS_MANAGE,
     PERMISSIONS.REPORTS_VIEW,
+];
+
+const managementPermissions = [
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.PLANS_VIEW,
+    PERMISSIONS.FOUNDATIONS_VIEW,
+    PERMISSIONS.OBJECTIVES_VIEW,
+    PERMISSIONS.OBJECTIVES_VIEW_PROGRESS,
+    PERMISSIONS.INPUTS_VIEW,
+    'relations.view',
+    'plan_core_values.view',
+    'strategic_documents.view',
+    'strategic_documents.download',
 ];
 
 const contributorPlanningPermissions = [
@@ -114,7 +130,7 @@ const rolePolicies = {
     'Administrative Administrator': { home: '/dashboard', permissions: administrativeAdminPermissions },
     'Technical Administrator': { home: '/dashboard', permissions: technicalAdminPermissions },
     'Technical Admin': { home: '/dashboard', permissions: technicalAdminPermissions },
-    test: { home: '/dashboard', permissions: technicalAdminPermissions },
+    test: { home: '/dashboard', permissions: ['*'] },
     'Planning Officer': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
     'Planner/Encoder': { home: '/strategic-plans', permissions: contributorPlanningPermissions },
     'Office Representative': { home: '/office', permissions: officePermissions },
@@ -122,10 +138,11 @@ const rolePolicies = {
     'Offices / Agencies': { home: '/office', permissions: officePermissions },
     'Responsible Unit User': { home: '/office', permissions: officePermissions },
     'Division Head': { home: '/strategic-plans', permissions: fullPlanningPermissions },
-    Management: { home: '/management-dashboard', permissions: fullPlanningPermissions },
-    Executive: { home: '/management-dashboard', permissions: fullPlanningPermissions },
-    'Management / Executive': { home: '/management-dashboard', permissions: fullPlanningPermissions },
+    Management: { home: '/management-dashboard', permissions: managementPermissions },
+    Executive: { home: '/management-dashboard', permissions: managementPermissions },
+    'Management / Executive': { home: '/management-dashboard', permissions: managementPermissions },
     Viewer: { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.REPORTS_VIEW] },
+    Office: { home: '/strategic-plans', permissions: [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW, PERMISSIONS.REPORTS_VIEW] },
 };
 
 export function normalizePermissionList(list) {
@@ -149,10 +166,10 @@ export const routeRules = [
     { test: /^\/progress-monitoring(?:\/|$)/, permission: PERMISSIONS.OBJECTIVES_VIEW_PROGRESS },
     { test: /^\/strategic-plans\/\d+\/approval-status(?:\/|$)/ },
     { test: /^\/consolidate-inputs(?:\/|$)/, permission: PERMISSIONS.INPUTS_VIEW },
-    { test: /^\/office(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW, roles: ['Office Representative', 'Office/Agency', 'Offices / Agencies', 'Responsible Unit User'] },
+    { test: /^\/office(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
     {
     test: /^\/workflow-configuration(?:\/|$)/,
-    roles: ['Administrator', 'Technical Administrator', 'Technical Admin'],
+    roles: ['Administrator', 'Technical Administrator', 'Technical Admin', 'test'],
 },
     { test: /^\/administrative-admin\/reference-data(?:\/|$)/, permission: PERMISSIONS.REFERENCE_DATA_MANAGE },
     { test: /^\/administrative-admin\/templates(?:\/|$)/, permission: PERMISSIONS.TEMPLATES_MANAGE },

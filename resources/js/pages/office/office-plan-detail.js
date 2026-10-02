@@ -61,7 +61,7 @@ export function OfficePlanDetail({ planId }) {
         error && h('div', { className: 'office-panel', role: 'alert' }, h('p', null, error), h('button', { onClick: () => setAttempt(attempt + 1) }, 'Retry')),
         plan && !loading && h('article', { className: 'office-panel office-detail-panel' },
             h('section', { 'aria-labelledby': 'plan-summary-title' },
-                h('div', { className: 'office-plan-toolbar' }, h('h2', { id: 'plan-summary-title' }, 'Plan Summary'), isDraft && can('strategic_objectives.create') && h('a', { className: 'office-action-link', href: '/office?plan=' + encodeURIComponent(planId) + '&view=inputs' }, 'Submit Input')),
+                h('div', { className: 'office-plan-toolbar' }, h('h2', { id: 'plan-summary-title' }, 'Plan Summary'), isDraft && can('strategic_documents.upload') && h('a', { className: 'office-action-link', href: '/office?plan=' + encodeURIComponent(planId) + '&view=inputs' }, 'Submit Planning Inputs')),
                 h('dl', { className: 'office-summary-grid' },
                     field('Plan ID', plan.record_id), field('Plan Title', plan.title),
                     field('Plan period', plan.planning_start_date && plan.planning_end_date ? `${dateLabel(plan.planning_start_date)} – ${dateLabel(plan.planning_end_date)}` : null),

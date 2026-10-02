@@ -3,12 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Management Dashboard | Strategic Planning Management System</title>
+    <title>Management Dashboard | SPDMS</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    @vite([
-        'resources/css/management-dashboard.css',
-        'resources/js/pages/management/management-dashboard-app.js'
-    ])
+    @vite(['resources/css/management-dashboard.css', 'resources/js/pages/management/management-dashboard-app.js'])
 </head>
 <body>
     <div id="root"></div>

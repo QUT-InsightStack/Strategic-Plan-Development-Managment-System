@@ -98,7 +98,7 @@ import { displayRoleName } from './access/role-labels.js';
             idField: 'role_id',
             displayColumns: ['role_id', 'role_name', 'description', 'created_at', 'updated_at'],
             fields: [
-                { name: 'role_name', label: 'Role Name', type: 'text', required: true, placeholder: 'Division Head' },
+                { name: 'role_name', label: 'Role Name', type: 'text', required: true, placeholder: 'Management' },
                 { name: 'description', label: 'Description', type: 'textarea', rows: 4, fullWidth: true },
             ],
         },

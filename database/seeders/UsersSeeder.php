@@ -20,10 +20,10 @@ class UsersSeeder extends Seeder
         $defaultPassword = env('SEEDER_DEFAULT_PASSWORD', '123456');
 
         $roleIds = Role::query()
-            ->whereIn('role_name', ['Administrator', 'Planning Officer', 'Viewer', 'test'])
+            ->whereIn('role_name', ['Administrator', 'Planning Officer', 'Office', 'test'])
             ->pluck('role_id', 'role_name');
 
-        foreach (['Administrator', 'Planning Officer', 'Viewer', 'test'] as $roleName) {
+        foreach (['Administrator', 'Planning Officer', 'Office', 'test'] as $roleName) {
             if (! $roleIds->has($roleName)) {
                 throw new RuntimeException(
                     "UsersSeeder requires the '{$roleName}' role to exist. Ensure RolesSeeder runs first."
@@ -60,14 +60,14 @@ class UsersSeeder extends Seeder
             ],
             [
                 'first_name' => 'Test',
-                'last_name' => 'Viewer',
+                'last_name' => 'Office',
                 'email' => 'testviewer@example.com',
                 'department' => 'Research Division',
                 'unit' => 'Monitoring Unit',
                 'office' => 'Records Office',
-                'position' => 'Viewer',
+                'position' => 'Office',
                 'password' => Hash::make($defaultPassword),
-                'role_id' => $roleIds['Viewer'],
+                'role_id' => $roleIds['Office'],
                 'status' => 'inactive',
             ],
             [

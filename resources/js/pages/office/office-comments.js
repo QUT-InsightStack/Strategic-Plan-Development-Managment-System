@@ -4,7 +4,7 @@ const h = React.createElement;
 export function OfficeComments({ plan }) {
  const [items, setItems] = React.useState([]), [notes, setNotes] = React.useState(''), [busy, setBusy] = React.useState(false), [message, setMessage] = React.useState(''), [page, setPage] = React.useState(1), [last, setLast] = React.useState(1), [refresh, setRefresh] = React.useState(0);
  React.useEffect(() => { let active = true; listOfficeUpdates(plan.record_id, page).then(result => { if (active) { setItems(result.data.data); setLast(result.data.last_page); } }).catch(error => { if (active) setMessage(error.message); }); return () => { active = false; }; }, [plan.record_id, page, refresh]);
- const allowed = plan.status === 'draft' && can('strategic_objectives.update');
+ const allowed = plan.status === 'draft' && can('objective_comments.create');
  async function submit(event) { event.preventDefault(); if (busy || !allowed) return; setBusy(true); setMessage(''); try { await saveOfficeUpdate(plan, { kind: 'comment', content: notes }, getAccessSession()); setNotes(''); setMessage('Comment submitted.'); setPage(1); setRefresh(refresh + 1); } catch (error) { setMessage(error.message); } finally { setBusy(false); } }
  return h('section', { className: 'office-detail-notes', id: 'office-comments' }, h('h2', null, 'Notes/Comment'),
   h('div', { role: 'status', 'aria-live': 'polite' }, message),

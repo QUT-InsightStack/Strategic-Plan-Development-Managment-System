@@ -21,13 +21,8 @@ return new class extends Migration
                 'module' => explode('.', $code)[0], 'created_at' => now(), 'updated_at' => now(),
             ]);
         }
-        if (! DB::table('tblroles')->where('role_name', 'Responsible Unit User')->exists()) {
-            DB::table('tblroles')->insert([
-                'role_name' => 'Responsible Unit User',
-                'description' => 'Submits implementation feedback for objectives assigned to their office.',
-                'is_assignable' => true, 'is_protected' => false, 'created_at' => now(), 'updated_at' => now(),
-            ]);
-        }
+        // RolesSeeder owns the default role catalog. Existing collaboration
+        // roles may still receive their original permissions below.
 
         $assignments = [
             'Administrator' => array_keys(self::PERMISSIONS),

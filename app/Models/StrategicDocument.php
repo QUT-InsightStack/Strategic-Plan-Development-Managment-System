@@ -15,6 +15,7 @@ class StrategicDocument extends Model
     protected $fillable = [
         'strategic_plan_id', 'objective_id', 'uploaded_by', 'original_filename',
         'stored_path', 'mime_type', 'extension', 'size_bytes', 'sha256',
+        'reference_level', 'content_category',
     ];
 
     public function plan()

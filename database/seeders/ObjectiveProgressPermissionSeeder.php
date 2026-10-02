@@ -21,8 +21,12 @@ class ObjectiveProgressPermissionSeeder extends Seeder
         }
         foreach ([
             'Administrator' => ['view_progress', 'correct_progress'],
+            'Management' => ['view_progress'],
+            'Executive' => ['view_progress'],
+            'Management / Executive' => ['view_progress'],
             'Planning Officer' => ['view_progress', 'correct_progress'],
             'Planner/Encoder' => ['view_progress', 'correct_progress'],
+            'Office' => ['view_progress', 'update_progress'],
             'Responsible Unit User' => ['view_progress', 'update_progress'],
             'Office Representative' => ['view_progress', 'update_progress'],
             'Office/Agency' => ['view_progress', 'update_progress'],

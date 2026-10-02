@@ -10,6 +10,7 @@ use App\Models\StrategicObjective;
 use App\Models\User;
 use App\Services\PlanCreationService;
 use App\Services\ResponsibleUnitService;
+use App\Services\StrategicPlanAuthorizationService;
 use Database\Seeders\ObjectiveProgressPermissionSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -153,6 +154,17 @@ class ObjectiveProgressTest extends TestCase
         $this->assertDatabaseCount('tblobjective_progress_updates', 0);
     }
 
+    public function test_test_role_can_correct_progress_but_still_requires_an_audit_reason(): void
+    {
+        $tester = $this->user('test', null, []);
+        $this->authenticateApiUser($tester);
+        $this->patchJson($this->url(), ['progress_percentage' => 50])->assertUnprocessable();
+        $this->patchJson($this->url(), ['progress_percentage' => 50, 'reason' => 'Testing correction'])->assertOk();
+        $this->assertDatabaseHas('tblobjective_progress_updates', [
+            'updated_by' => $tester->user_id, 'updater_role' => 'test', 'is_correction' => true,
+        ]);
+    }
+
     public function test_invalid_percentages_and_status_overrides_are_rejected_for_both_roles(): void
     {
         foreach ([$this->office, $this->planner] as $actor) {
@@ -198,11 +210,39 @@ class ObjectiveProgressTest extends TestCase
         $this->getJson('/api/strategic-objective-progress')->assertOk()->assertJsonPath('meta.total', 1)
             ->assertJsonPath('data.0.objective_id', $this->objective->objective_id);
         $this->getJson($this->historyUrl($other))->assertNotFound();
-        $viewer = $this->user('Viewer', null, ['view', 'update']);
+        $viewer = $this->user('Office', null, ['view', 'update']);
         $this->authenticateApiUser($viewer);
         $this->getJson('/api/strategic-objective-progress')->assertForbidden();
         $this->getJson($this->historyUrl())->assertForbidden();
         $this->patchJson($this->url(), ['progress_percentage' => 10])->assertForbidden();
+    }
+
+    public function test_office_plan_access_is_limited_to_plans_with_its_assigned_objectives(): void
+    {
+        $otherPlan = app(PlanCreationService::class)->create([
+            'level' => 'strategic_plan', 'title' => 'Research Office plan', 'mission' => 'Mission',
+            'vision' => 'Vision', 'core_values' => ['Integrity'], 'status' => 'draft',
+        ], $this->planner);
+        $otherObjective = StrategicObjective::create([
+            'strategic_plan_id' => $otherPlan->record_id, 'created_by' => $this->planner->user_id,
+            'objective_title' => 'Research Office objective', 'objective_description' => 'Description',
+            'expected_outcome' => 'Outcome', 'target' => 'Target', 'status' => 'draft',
+        ]);
+        app(ResponsibleUnitService::class)->assign([$otherObjective->objective_id],
+            ['responsible_office_agency' => 'Research Office'], $this->planner);
+
+        $authorization = app(StrategicPlanAuthorizationService::class);
+        $officePlanIds = $authorization->authorizedPlanIdsForListing($this->office)->map(fn ($id) => (int) $id)->all();
+        $plannerPlanIds = $authorization->authorizedPlanIdsForListing($this->planner)->map(fn ($id) => (int) $id)->all();
+
+        $this->assertSame([(int) $this->plan->record_id], $officePlanIds);
+        $this->assertContains((int) $otherPlan->record_id, $plannerPlanIds);
+        try {
+            $authorization->ensurePlanIsWithinAuthorizedScope($otherPlan, $this->office);
+            $this->fail('An Office/Unit must not open a plan without an objective assigned to its unit.');
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+        }
     }
 
     public function test_archived_objectives_remain_readable_but_cannot_be_updated(): void

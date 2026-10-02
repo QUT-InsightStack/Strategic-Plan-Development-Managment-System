@@ -30,8 +30,17 @@ return new class extends Migration
                 ->on('tblusers')->cascadeOnDelete();
             $table->index(['strategic_plan_id', 'created_at']);
             $table->index(['objective_id', 'created_at']);
-        });
-        DB::statement('ALTER TABLE tblstrategic_documents ADD CONSTRAINT strategic_document_parent_check CHECK ((strategic_plan_id IS NOT NULL AND objective_id IS NULL) OR (strategic_plan_id IS NULL AND objective_id IS NOT NULL))');
+            });
+
+            DB::statement(
+                'ALTER TABLE `tblstrategic_documents`
+                 ADD CONSTRAINT `strategic_documents_one_parent_check`
+                 CHECK (
+                     (`strategic_plan_id` IS NOT NULL AND `objective_id` IS NULL)
+                     OR
+                     (`strategic_plan_id` IS NULL AND `objective_id` IS NOT NULL)
+                 )'
+            );
     }
 
     public function down(): void

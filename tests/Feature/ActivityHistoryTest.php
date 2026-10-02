@@ -69,7 +69,7 @@ class ActivityHistoryTest extends TestCase
                 'logs.view', 'login_history.view', 'system_monitoring.view',
             ])->count());
         }
-        $this->assertFalse(Role::where('role_name', 'Viewer')->firstOrFail()
+        $this->assertFalse(Role::where('role_name', 'Office')->firstOrFail()
             ->permissions()->where('code', 'system_monitoring.view')->exists());
         $this->assertTrue(Role::where('role_name', 'Technical Administrator')->firstOrFail()->isPrivileged());
     }
@@ -78,7 +78,7 @@ class ActivityHistoryTest extends TestCase
     {
         Role::create(['role_name' => 'Existing custom role']);
         $this->seed(DatabaseSeeder::class);
-        foreach (['System Administrator' => 'Administrator', 'Planning Officer' => 'Planning Officer', 'Viewer' => 'Viewer'] as $position => $roleName) {
+        foreach (['System Administrator' => 'Administrator', 'Planning Officer' => 'Planning Officer', 'Office' => 'Office'] as $position => $roleName) {
             $this->assertSame($roleName, User::where('position', $position)->firstOrFail()->role->role_name);
         }
     }

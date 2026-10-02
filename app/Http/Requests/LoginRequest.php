@@ -17,25 +17,25 @@ class LoginRequest extends ApiFormRequest
 
     protected function prepareForValidation(): void
     {
-        if (is_string($this->input('email'))) {
-            $this->merge(['email' => mb_strtolower(trim($this->input('email')))]);
+        $email = $this->input('email');
+
+        if (is_string($email)) {
+            $this->merge([
+                'email' => mb_strtolower(trim($email)),
+            ]);
         }
     }
 
     public function rules(): array
     {
         return [
-            'email'    => AuthValidationRules::loginEmail(),
+            'email' => AuthValidationRules::loginEmail(),
             'password' => AuthValidationRules::loginPassword(),
         ];
     }
 
-    /**
-     * Friendly field names for error messages.
-     */
     public function attributes(): array
     {
         return ValidationAttributes::all();
     }
-
 }
