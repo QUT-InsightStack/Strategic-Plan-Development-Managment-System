@@ -11,6 +11,15 @@
 @import './layouts/sidebar.css';
 
 .reference-data-page { background: var(--color-background); }
+.reference-catalog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-5); }
+.reference-catalog-card { display: grid; align-content: start; justify-items: start; gap: var(--space-3); min-height: 210px; padding: var(--space-5); }
+.reference-catalog-card > i { color: var(--color-primary); font-size: 28px; }
+.reference-catalog-card h2, .reference-catalog-card p { margin: 0; }
+.reference-catalog-card h2 { color: var(--color-primary); font-size: var(--font-size-lg); }
+.reference-catalog-card code { color: var(--color-text-secondary); }
+.reference-catalog-empty { width: 100%; margin-top: auto !important; border: 1px dashed var(--color-border); border-radius: var(--radius-md); padding: var(--space-3); color: var(--color-text-secondary); text-align: center; }
+.reference-catalog-card .ui-button { align-self: end; margin-top: auto; }
+.reference-catalog-card--unavailable { border-style: dashed; }
 .reference-notice { margin-bottom: var(--space-4); }
 .reference-workspace { overflow: hidden; }
 .reference-tabs { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); min-height: 48px; border-bottom: 1px solid var(--color-border-subtle); background: var(--color-surface); }
@@ -26,7 +35,7 @@
 .reference-add-row { display: flex; justify-content: flex-end; padding: var(--space-4) var(--space-5) var(--space-3); }
 .reference-table-wrap { padding: 0 var(--space-5); }
 .reference-table { min-width: 900px; table-layout: fixed; border: 1px solid var(--color-border-subtle); }
-.reference-table th, .reference-table td { padding: 10px var(--space-3); font-size: var(--font-size-xs); vertical-align: middle; }
+.reference-table th, .reference-table td { padding: 10px var(--space-3); font-size: var(--font-size-table); vertical-align: middle; }
 .reference-table th:nth-child(1) { width: 110px; }
 .reference-table th:nth-child(2) { width: 240px; }
 .reference-table th:nth-child(3) { width: 145px; }
@@ -39,7 +48,7 @@
 .reference-action-cell .ui-button { min-width: 80px; border-radius: var(--radius-pill); }
 .admin-action-menu { display: grid; justify-items: stretch; gap: var(--space-1); min-width: 106px; }
 .admin-action-menu__trigger { width: 100%; }
-.admin-action-menu__trigger i { font-size: 10px; }
+.admin-action-menu__trigger i { font-size: 12px; }
 .admin-action-menu__items { display: grid; overflow: hidden; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-sm); }
 .admin-action-menu__item { display: flex; min-height: 34px; align-items: center; gap: var(--space-2); border: 0; border-bottom: 1px solid var(--color-border-subtle); padding: 7px 10px; color: var(--color-text); background: var(--color-surface); font-size: var(--font-size-xs); text-align: left; }
 .admin-action-menu__item:last-child { border-bottom: 0; }

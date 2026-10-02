@@ -13,6 +13,7 @@ function host(path, dependencies, planId = 7) {
     const context = vm.createContext({
         React: {
             Fragment: 'fragment',
+            useMemo: factory => factory(),
             createElement: (type, props, ...children) => ({ type, props: props || {}, children: children.flat(Infinity) }),
             useEffect: callback => { if (state.length === cursor) effects.push(callback); },
             useState(initial) {
@@ -23,6 +24,7 @@ function host(path, dependencies, planId = 7) {
         },
         ReactDOM: { createRoot: () => ({ render: element => { root = element; } }) },
         document: { getElementById: () => ({ dataset: { planId } }) },
+        mountProtectedPage: (_element, factory) => { root = factory(); },
         enforcePageAccess: () => {}, AppSidebar: 'aside', PageHeader: 'header',
         ...dependencies,
     });
@@ -161,8 +163,10 @@ test('notification inbox marks the selected notification as read through the aut
         },
     });
     const tree = await app.load();
-    assert.match(text(tree), /Officer resubmitted/);
-    await nodes(tree, node => node.type === 'button' && text(node) === 'Mark as read')[0].props.onClick();
+    const cardElement = nodes(tree, node => typeof node.type === 'function' && node.type.name === 'WorkflowNotificationCard')[0];
+    const card = cardElement.type(cardElement.props);
+    assert.match(text(card), /Officer\s+resubmitted/);
+    await nodes(card, node => node.type === 'button' && text(node).trim() === 'Mark as read')[0].props.onClick();
     assert.deepEqual(requests.at(-1), { url: '/api/workflow-notifications/3/read', method: 'PATCH' });
 });
 

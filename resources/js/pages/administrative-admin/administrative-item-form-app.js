@@ -1,10 +1,13 @@
 import { AdministrativeAdminSidebar } from '../../components/AdministrativeAdminSidebar.js';
+import { apiRequest } from '../../api/api-client.js';
+import { can, getAccessSession } from '../../access/access-session.js';
+import { PERMISSIONS } from '../../access/access-policy.js';
 
 const { useState } = React;
 
 const formConfigs = {
     agenda: {
-        active: 'Reference Data',
+        active: 'Agenda',
         title: 'Data Management--Agenda Item',
         subtitle: 'Create a new Presidential Agenda reference item for use across the system. All tabs use this form when editing or viewing an item.',
         cancelUrl: '/administrative-admin/reference-data',
@@ -13,9 +16,8 @@ const formConfigs = {
             { name: 'code', label: 'Code', type: 'text', placeholder: 'e.g. PA-01', help: 'Unique ID for the item', required: true },
             { name: 'title', label: 'Title', type: 'text', placeholder: 'Enter the title', help: 'Official title of the item', required: true },
             { name: 'description', label: 'Description', type: 'textarea', help: 'Brief summary (max 200 characters)', required: true, maxLength: 200 },
-            { name: 'status', label: 'Status', type: 'select', help: 'Set the current status of the item', required: true },
-            { name: 'effective_date', label: 'Effective Date', type: 'date', help: 'Set the effective date of the item', required: true },
-            { name: 'note', label: 'Note', type: 'text', placeholder: 'Input your comment', required: true },
+            { name: 'effective_date', label: 'Effective Date', type: 'date', help: 'Optional effective date', required: false },
+            { name: 'note', label: 'Note', type: 'text', placeholder: 'Optional note', required: false },
         ],
     },
     template: {
@@ -35,29 +37,12 @@ const formConfigs = {
     },
 };
 
-function initialValues(config, itemType, itemId) {
+function initialValues(config) {
     const values = config.fields.reduce((result, field) => ({
         ...result,
-        [field.name]: field.type === 'select' ? 'active' : field.type === 'date' ? '2025-05-02' : '',
+        [field.name]: field.type === 'select' ? 'active' : '',
     }), {});
-
-    if (!itemId) return values;
-
-    return itemType === 'template'
-        ? {
-            ...values,
-            template_id: itemId,
-            template_name: itemId === 'TPL-01' ? 'Strategic Plan Template' : 'Planning Template',
-            purpose: 'Reusable template for consistent planning and reporting workflows.',
-            note: 'Review the current version before publishing changes.',
-        }
-        : {
-            ...values,
-            code: itemId,
-            title: itemId === 'PA-08' ? 'Improve R&D capacity' : 'Presidential Agenda Item',
-            description: 'Reference item used across strategic planning and alignment workflows.',
-            note: 'Review the effective date before saving changes.',
-        };
+    return values;
 }
 
 function Guidelines({ inactiveGuidance }) {
@@ -116,16 +101,30 @@ export function AdministrativeItemFormApp({ itemType = 'agenda' }) {
     const reviewMode = new URLSearchParams(window.location.search).get('mode') === 'review';
     const itemIdMatch = window.location.pathname.match(/\/([^/]+)\/edit$/);
     const itemId = itemIdMatch ? decodeURIComponent(itemIdMatch[1]) : '';
-    const [values, setValues] = useState(() => initialValues(config, itemType, itemId));
+    const canManageAgenda = itemType === 'agenda' && can(PERMISSIONS.PRESIDENTIAL_AGENDA_MANAGE, getAccessSession());
+    const [values, setValues] = useState(() => initialValues(config));
     const [errors, setErrors] = useState({});
     const [notice, setNotice] = useState(reviewMode ? { type: 'info', message: 'Review mode is read-only. Choose Update from the Actions menu to edit this item.' } : { type: '', message: '' });
+    const [loading, setLoading] = useState(Boolean(itemId));
+    const [saving, setSaving] = useState(false);
+
+    React.useEffect(() => {
+        if (!itemId || itemType !== 'agenda') return;
+        apiRequest(`/api/presidential-agenda/${encodeURIComponent(itemId)}`)
+            .then((payload) => {
+                const item = payload.data || {};
+                setValues({ code: item.code || '', title: item.title || '', description: item.description || '', status: item.status || 'active', effective_date: item.effective_date || '', note: item.note || '' });
+            })
+            .catch((error) => setNotice({ type: 'error', message: error.message }))
+            .finally(() => setLoading(false));
+    }, [itemId, itemType]);
 
     function updateValue(name, value) {
         setValues((current) => ({ ...current, [name]: value }));
         setErrors((current) => ({ ...current, [name]: '' }));
     }
 
-    function submit(event) {
+    async function submit(event) {
         event.preventDefault();
         const nextErrors = config.fields.reduce((result, field) => {
             if (field.required && !String(values[field.name] || '').trim()) result[field.name] = `${field.label} is required.`;
@@ -138,7 +137,20 @@ export function AdministrativeItemFormApp({ itemType = 'agenda' }) {
             return;
         }
 
-        setNotice({ type: 'info', message: 'The form is valid. Saving will be connected after the backend data model is approved.' });
+        setSaving(true);
+        try {
+            const payload = { ...values };
+            if (!payload.effective_date) payload.effective_date = null;
+            if (!payload.note) payload.note = null;
+            const result = itemId
+                ? await apiRequest(`/api/presidential-agenda/${encodeURIComponent(itemId)}`, { method: 'PUT', body: JSON.stringify(payload) })
+                : await apiRequest('/api/presidential-agenda', { method: 'POST', body: JSON.stringify(payload) });
+            setNotice({ type: 'success', message: result.message || 'Presidential Agenda item saved.' });
+            window.setTimeout(() => { window.location.href = '/administrative-admin/reference-data?tab=agenda'; }, 500);
+        } catch (error) {
+            setErrors(error.errors || {});
+            setNotice({ type: 'error', message: error.message });
+        } finally { setSaving(false); }
     }
 
     return React.createElement(React.Fragment, null,
@@ -153,7 +165,11 @@ export function AdministrativeItemFormApp({ itemType = 'agenda' }) {
                     React.createElement('p', { className: 'ui-page-subtitle' }, config.subtitle)
                 ),
                 notice.message ? React.createElement('div', { className: `ui-status ui-status--${notice.type}`, role: 'status' }, notice.message) : null,
-                React.createElement('form', { className: 'admin-item-form', onSubmit: submit, noValidate: true },
+                itemType === 'template'
+                    ? React.createElement('div', { className: 'ui-status ui-status--info', role: 'status' }, 'Template management is not connected: no template table or API exists in the current backend.')
+                    : loading
+                    ? React.createElement('p', { className: 'ui-help', role: 'status' }, 'Loading agenda item…')
+                    : React.createElement('form', { className: 'admin-item-form', onSubmit: submit, noValidate: true },
                     React.createElement('section', { className: 'ui-card admin-form-panel', 'aria-labelledby': 'information-title' },
                         React.createElement('h2', { id: 'information-title' }, 'Information'),
                         React.createElement('div', { className: 'admin-form-fields' },
@@ -163,7 +179,7 @@ export function AdministrativeItemFormApp({ itemType = 'agenda' }) {
                     React.createElement(Guidelines, { inactiveGuidance: config.inactiveGuidance }),
                     React.createElement('div', { className: 'admin-form-actions' },
                         React.createElement('a', { className: 'ui-button ui-button--secondary', href: config.cancelUrl }, reviewMode ? 'Back' : 'Cancel'),
-                        reviewMode ? null : React.createElement('button', { className: 'ui-button ui-button--primary', type: 'submit' }, 'Save')
+                        reviewMode || !canManageAgenda ? null : React.createElement('button', { className: 'ui-button ui-button--primary', type: 'submit', disabled: saving }, saving ? 'Saving…' : 'Save')
                     )
                 )
             )

@@ -98,7 +98,7 @@ class StrategicPlanAuthorizationService
         return $user;
     }
 
-    public function authorizedPlanIdsForListing(?User $user = null, array $excludedStatuses = ['archived', 'deleted']): Collection
+    public function authorizedPlanIdsForListing(?User $user = null, array $excludedStatuses = ['archived', 'deleted'], bool $includeAllOfficePlans = false): Collection
     {
         $user = $this->permissionAuthorizationService->resolveUser($user);
 
@@ -106,16 +106,16 @@ class StrategicPlanAuthorizationService
             ->select('record_id')
             ->whereNotIn('status', $excludedStatuses);
 
-        $this->applyApprovedListingScopeHook($query, $user);
+        $this->applyApprovedListingScopeHook($query, $user, $includeAllOfficePlans);
 
         return $query->pluck('record_id');
     }
 
-    public function ensurePlanIsWithinAuthorizedScope(Strategic $plan, ?User $user = null, string $message = 'You are not authorized to view this strategic plan.'): User
+    public function ensurePlanIsWithinAuthorizedScope(Strategic $plan, ?User $user = null, string $message = 'You are not authorized to view this strategic plan.', bool $includeAllOfficePlans = false): User
     {
         $user = $this->permissionAuthorizationService->resolveUser($user);
 
-        if (in_array($user->role?->role_name, self::OFFICE_ROLES, true)) {
+        if (in_array($user->role?->role_name, self::OFFICE_ROLES, true) && ! $includeAllOfficePlans) {
             $unit = $this->activeOfficeUnit($user);
             abort_unless($unit && $plan->objectives()
                 ->whereHas('responsibleUnitAssignment', fn (Builder $query) => $query->where('responsible_unit_id', $unit->responsible_unit_id))
@@ -125,9 +125,9 @@ class StrategicPlanAuthorizationService
         return $user;
     }
 
-    private function applyApprovedListingScopeHook(Builder $query, User $user): void
+    private function applyApprovedListingScopeHook(Builder $query, User $user, bool $includeAllOfficePlans = false): void
     {
-        if (! in_array($user->role?->role_name, self::OFFICE_ROLES, true)) {
+        if (! in_array($user->role?->role_name, self::OFFICE_ROLES, true) || $includeAllOfficePlans) {
             return;
         }
 

@@ -1,581 +1,213 @@
-import { getStrategicPlan } from '../../api/strategic-plans-api.js';
+import { getStrategicPlan, updateStrategicPlan } from '../../api/strategic-plans-api.js';
 import {
-    createStrategicObjective,
-    deleteStrategicObjective,
-    listStrategicObjectives,
-    assignResponsibleUnit,
-    listResponsibleUnits,
-    updateStrategicObjective,
-    updateStrategicObjectiveStatus,
+    createStrategicObjective, updateStrategicObjective, deleteStrategicObjective,
+    listStrategicObjectives, assignResponsibleUnit, listResponsibleUnits, updateStrategicObjectiveStatus,
 } from '../../api/strategic-objectives-api.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { AppDialog } from '../../components/AppDialog.js';
 import { PageHeader } from '../../components/PageHeader.js';
 import { ObjectiveProgressPanel } from '../../strategic-objectives/ObjectiveProgressPanel.js';
 import { ObjectiveFormDialog } from '../../strategic-objectives/ObjectiveFormDialog.js';
-import { enforcePageAccess } from '../../access/access-guard.js';
-import { PERMISSIONS } from '../../access/access-policy.js';
+import { AssignUnitDialog } from '../../strategic-objectives/AssignUnitDialog.js';
+import { mountProtectedPage } from '../../access/mount-protected-page.js';
+import { PERMISSIONS as P } from '../../access/access-policy.js';
 import { can, getAccessSession } from '../../access/access-session.js';
 import { getAssignableUnits } from '../../objective-assignment-storage.js';
 
-enforcePageAccess();
-const canCreateObjectives = can(PERMISSIONS.OBJECTIVES_CREATE);
-
-const canUpdateObjectives = can(PERMISSIONS.OBJECTIVES_UPDATE);
-
-const canArchiveObjectives = can(PERMISSIONS.OBJECTIVES_ARCHIVE);
-
-const canDeleteObjectives = can(PERMISSIONS.OBJECTIVES_DELETE);
-
-const hasObjectiveActions =
-    canUpdateObjectives ||
-    canArchiveObjectives ||
-    canDeleteObjectives;
-
+const h = React.createElement;
 const { useEffect, useState } = React;
 const root = document.getElementById('root');
 const planId = root.dataset.planId;
 const pageSize = 10;
+const errorText = error => [error.message, ...Object.values(error.errors || {}).flat()].filter(Boolean).join(' ');
 function formatDate(value) {
-    if (!value) return '';
-
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) return '';
-
-    return date.toLocaleDateString(undefined, {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-    });
+    const date = value ? new Date(value) : null;
+    return date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 }
-function displayName(user) {
-    if (!user) return '';
-
-    return user.name ||
-        [user.first_name, user.last_name]
-            .filter(Boolean)
-            .join(' ');
-}
-
-function formatPlanPeriod(plan) {
-    if (!plan) return '—';
-
-    const startDate =
-        plan.planning_start_date ||
-        plan.start_date;
-
-    const endDate =
-        plan.planning_end_date ||
-        plan.end_date;
-
-    if (startDate || endDate) {
-        return [formatDate(startDate), formatDate(endDate)]
-            .filter(Boolean)
-            .join(' – ');
-    }
-
-    return plan.planning_period || 'Not available';
-}
+function displayName(user) { return user?.name || [user?.first_name, user?.last_name].filter(Boolean).join(' '); }
 
 function StrategicObjectivesApp() {
-    const [plan, setPlan] = useState(null);
-    const [objectives, setObjectives] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
-    const [editing, setEditing] = useState(null);
-    const [assigning, setAssigning] = useState(null);
-    const [selectedUnit, setSelectedUnit] = useState('');
-    const [responsibleUnits, setResponsibleUnits] = useState([]);
-    const [assignmentError, setAssignmentError] = useState('');
-    const [formOpen, setFormOpen] = useState(false);
-    const [formErrors, setFormErrors] = useState({});
-    const [page, setPage] = useState(1);
-    const [status, setStatus] = useState({ type: '', message: '' });
-    const [dialog, setDialog] = useState({
-    open: false,
-    variant: 'success',
-    title: '',
-    message: '',
-    objective: null,
-    action: null,
-});
+    const canCreate = can(P.OBJECTIVES_CREATE), canUpdate = can(P.OBJECTIVES_UPDATE);
+    const canArchive = can(P.OBJECTIVES_ARCHIVE), canDelete = can(P.OBJECTIVES_DELETE);
+    const canMap = can('strategic_records.view') && can('strategic_objectives.view') && (can('relations.manage') || can('relations.create'));
+    const [plan, setPlan] = useState(null), [objectives, setObjectives] = useState([]);
+    const [loading, setLoading] = useState(true), [loadError, setLoadError] = useState('');
+    const [busy, setBusy] = useState(false), [status, setStatus] = useState({ type: '', message: '' });
+    const [notes, setNotes] = useState(''), [savedNotes, setSavedNotes] = useState('');
+    const [form, setForm] = useState({ open: false, objective: null, readOnly: false });
+    const [formErrors, setFormErrors] = useState({}), [formError, setFormError] = useState('');
+    const [assigning, setAssigning] = useState(null), [assignmentError, setAssignmentError] = useState('');
+    const [units, setUnits] = useState([]), [page, setPage] = useState(1);
+    const [confirmation, setConfirmation] = useState(null);
+    const navigating = React.useRef(false);
+    const mutable = Boolean(plan && !['archived', 'deleted'].includes(plan.status));
+    const canSaveNotes = plan?.status === 'draft' && can(P.PLANS_UPDATE);
+    const notesDirty = notes !== savedNotes;
+    const pageCount = Math.max(1, Math.ceil(objectives.length / pageSize));
+    const currentPage = Math.min(page, pageCount);
+    const visible = objectives.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
     async function load() {
-        setLoading(true);
+        setLoading(true); setLoadError('');
         try {
-            const [planPayload, objectivesPayload, unitsPayload] = await Promise.all([
-                getStrategicPlan(planId),
-                listStrategicObjectives(planId),
-                listResponsibleUnits({ per_page: 100 }),
-            ]);
-            const assignedObjectives = objectivesPayload.data || [];
-            setPlan(planPayload.data); setObjectives(assignedObjectives);
-            setResponsibleUnits((unitsPayload.data || []).map(unit => unit.responsible_office_agency));
-            const editId = new URLSearchParams(window.location.search).get('edit');
-            if (editId && canUpdateObjectives) {
-                const objectiveToEdit = assignedObjectives.find((item) => String(item.objective_id) === editId);
-                if (objectiveToEdit) { setEditing(objectiveToEdit); setFormOpen(true); }
-                window.history.replaceState({}, '', window.location.pathname);
+            const [planResult, objectiveResult] = await Promise.all([getStrategicPlan(planId), listStrategicObjectives(planId)]);
+            const loaded = planResult.data;
+            const items = objectiveResult.data || [];
+            setPlan(loaded); setObjectives(items);
+            setNotes(loaded.description || ''); setSavedNotes(loaded.description || '');
+            const url = new URL(window.location.href);
+            const editId = url.searchParams.get('edit');
+            const editablePlan = !['archived', 'deleted'].includes(loaded.status);
+            if (editId) {
+                const objective = items.find(item => String(item.objective_id) === editId);
+                if (objective) setForm({ open: true, objective, readOnly: !canUpdate || !editablePlan || objective.status === 'archived' });
+                else setStatus({ type: 'error', message: 'This objective is not available in the selected plan.' });
+            } else if (url.searchParams.get('create') === '1' && canCreate && editablePlan) {
+                setForm({ open: true, objective: null, readOnly: false });
             }
-        } catch (error) { setStatus({ type: 'error', message: error.message }); }
+            url.searchParams.delete('edit'); url.searchParams.delete('create');
+            window.history.replaceState({}, '', url.pathname + url.search);
+        } catch (error) { setLoadError(errorText(error)); }
         finally { setLoading(false); }
     }
-
-    useEffect(() => { load(); }, []);
-
+    useEffect(() => {
+        load();
+        if (canUpdate) listResponsibleUnits({ per_page: 100 }).then(result => setUnits((result.data || []).map(unit => unit.responsible_office_agency)))
+            .catch(error => setStatus({ type: 'info', message: `Office suggestions could not load: ${error.message}. You can still enter the exact Office / Agency name.` }));
+    }, []);
+    useEffect(() => {
+        if (!notesDirty) return;
+        const warn = event => { if (navigating.current) return; event.preventDefault(); event.returnValue = ''; };
+        window.addEventListener('beforeunload', warn);
+        return () => window.removeEventListener('beforeunload', warn);
+    }, [notesDirty]);
+    async function refreshObjectives() {
+        const result = await listStrategicObjectives(planId);
+        setObjectives(result.data || []);
+        return result.data || [];
+    }
+    function openObjective(objective = null) {
+        setFormErrors({}); setFormError('');
+        setForm({ open: true, objective, readOnly: objective ? !canUpdate || !mutable || objective.status === 'archived' : false });
+    }
     async function saveObjective(data) {
-        if ((editing && !canUpdateObjectives) || (!editing && !canCreateObjectives)) return;
-        setSubmitting(true); setFormErrors({});
+        if (!mutable || busy || form.readOnly || (form.objective ? !canUpdate : !canCreate)) return;
+        setBusy(true); setFormErrors({}); setFormError('');
         try {
-            const payload = editing
-                ? await updateStrategicObjective(editing.objective_id, data)
+            const editing = form.objective;
+            const result = editing ? await updateStrategicObjective(editing.objective_id, data)
                 : await createStrategicObjective({ ...data, strategic_plan_id: Number(planId) });
-            setFormOpen(false); setEditing(null); await load();
-            if (!editing) setPage(Math.ceil((objectives.length + 1) / pageSize));
-            setDialog({ open: true, variant: 'success', title: 'Operation successful', message: editing ? 'Strategic Objective updated successfully.' : 'Strategic Objective added successfully.', objective: null });
-            return payload;
-        } catch (error) { setFormErrors(error.errors || {}); setStatus({ type: 'error', message: error.message }); }
-        finally { setSubmitting(false); }
+            setForm({ open: false, objective: null, readOnly: false });
+            setStatus({ type: 'success', message: editing ? 'Objective updated.' : 'Objective added to this plan.' });
+            try {
+                const items = await refreshObjectives();
+                const index = items.findIndex(item => item.objective_id === result.data?.objective_id);
+                if (index >= 0) setPage(Math.floor(index / pageSize) + 1);
+            } catch (error) { setStatus({ type: 'error', message: `The objective was saved, but the list could not refresh: ${error.message}` }); }
+        } catch (error) { setFormErrors(error.errors || {}); setFormError(error.message); }
+        finally { setBusy(false); }
     }
-
-   function requestDelete(objective) {
-    if (!canDeleteObjectives) return;
-
-    setDialog({
-        open: true,
-        variant: 'danger',
-        title: 'Delete Strategic Objective?',
-        message: `Delete “${objective.objective_title || 'Untitled objective'}”? This action cannot be undone.`,
-        objective,
-        action: 'delete',
-    });
-}
-
-function requestArchiveChange(objective) {
-    if (!canArchiveObjectives || archived) return;
-
-    const restoring = objective.status === 'archived';
-
-    setDialog({
-        open: true,
-        variant: restoring ? 'success' : 'danger',
-        title: restoring
-            ? 'Restore Strategic Objective?'
-            : 'Archive Strategic Objective?',
-        message: restoring
-            ? `Restore “${objective.objective_title || 'Untitled objective'}”?`
-            : `Archive “${objective.objective_title || 'Untitled objective'}”? The objective will remain stored and can be restored later.`,
-        objective,
-        action: restoring ? 'restore' : 'archive',
-    });
-}
-
-async function confirmDelete() {
-    const objective = dialog.objective;
-
-    setDialog((current) => ({ ...current, open: false }));
-    setSubmitting(true);
-
-    try {
-        await deleteStrategicObjective(objective.objective_id);
-        await load();
-
-        setDialog({
-            open: true,
-            variant: 'success',
-            title: 'Operation successful',
-            message: 'Strategic Objective deleted successfully.',
-            objective: null,
-            action: null,
-        });
-    } catch (error) {
-        setDialog({
-            open: true,
-            variant: 'error',
-            title: 'Delete failed',
-            message: error.message,
-            objective: null,
-            action: null,
-        });
-    } finally {
-        setSubmitting(false);
-    }
-}
-
-async function confirmArchiveChange() {
-    const objective = dialog.objective;
-    const restoring = dialog.action === 'restore';
-
-    setDialog((current) => ({ ...current, open: false }));
-    setSubmitting(true);
-
-    try {
-        await updateStrategicObjectiveStatus(
-            objective.objective_id,
-            restoring ? 'restored' : 'archived'
-        );
-
-        await load();
-
-        setDialog({
-            open: true,
-            variant: 'success',
-            title: 'Operation successful',
-            message: restoring
-                ? 'Strategic Objective restored successfully.'
-                : 'Strategic Objective archived successfully.',
-            objective: null,
-            action: null,
-        });
-    } catch (error) {
-        setDialog({
-            open: true,
-            variant: 'error',
-            title: restoring ? 'Restore failed' : 'Archive failed',
-            message: error.message,
-            objective: null,
-            action: null,
-        });
-    } finally {
-        setSubmitting(false);
-    }
-}
-    const archived = plan?.status === 'archived';
-    const availableUnits = getAssignableUnits(objectives, [getAccessSession()?.office, ...responsibleUnits]);
-
-    async function assignUnit() {
-        if (!assigning || !canUpdateObjectives || !selectedUnit.trim()) return;
-        setSubmitting(true);
-        setAssignmentError('');
+    async function assignUnit(unit) {
+        if (!canUpdate || !mutable || busy || !assigning) return;
+        setBusy(true); setAssignmentError('');
         try {
-            const payload = await assignResponsibleUnit(assigning.objective_id, selectedUnit.trim());
-            const updated = payload.data;
-            setObjectives(current => current.map(objective => objective.objective_id === updated.objective_id ? updated : objective));
-            setAssigning(null);
-            setStatus({ type: 'success', message: `Objective assigned to ${selectedUnit}. It is now available in that Office / Agency view.` });
-        } catch (error) {
-            setAssignmentError(error.message || 'Unable to assign Responsible Unit.');
-        } finally {
-            setSubmitting(false);
-        }
+            const result = await assignResponsibleUnit(assigning.objective_id, unit);
+            setObjectives(items => items.map(item => item.objective_id === result.data.objective_id ? result.data : item));
+            setAssigning(null); setStatus({ type: 'success', message: `Objective assigned to ${unit}.` });
+        } catch (error) { setAssignmentError(errorText(error)); }
+        finally { setBusy(false); }
     }
-const planYear = plan?.created_at
-    ? new Date(plan.created_at).getFullYear()
-    : new Date().getFullYear();
-
-const updatedBy =
-    displayName(plan?.updater) ||
-    displayName(plan?.creator);
-
-
-    const totalPages = Math.max(
-    1,
-    Math.ceil(objectives.length / pageSize)
-);
-
-const currentPage = Math.min(page, totalPages);
-
-const visibleObjectives = objectives.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-);
-
-useEffect(() => {
-    if (page > totalPages) {
-        setPage(totalPages);
+    async function confirmAction() {
+        if (!confirmation || busy || !mutable) return;
+        const { objective, action } = confirmation;
+        if ((action === 'delete' && !canDelete) || (action !== 'delete' && !canArchive)) return;
+        setBusy(true);
+        try {
+            if (action === 'delete') await deleteStrategicObjective(objective.objective_id);
+            else await updateStrategicObjectiveStatus(objective.objective_id, action === 'restore' ? 'restored' : 'archived');
+            setConfirmation(null);
+            setStatus({ type: 'success', message: `Objective ${action === 'delete' ? 'deleted' : action === 'restore' ? 'restored' : 'archived'}.` });
+            try { await refreshObjectives(); }
+            catch (error) { setStatus({ type: 'error', message: `The change was saved, but the list could not refresh: ${error.message}` }); }
+        } catch (error) { setConfirmation(null); setStatus({ type: 'error', message: errorText(error) }); }
+        finally { setBusy(false); }
     }
-}, [page, totalPages]);
-
-    return React.createElement(React.Fragment, null,
-        React.createElement(AppSidebar, { onNotice: (message) => setStatus({ type: 'info', message }) }),
-        React.createElement('main', { className: 'app-shell-main objectives-page' }, React.createElement('div', { className: 'app-shell-container' },
-            React.createElement(PageHeader, { className: 'objectives-header', section: 'Strategic Planning', title: 'Manage Objectives', subtitle: 'Create strategic objectives and assign responsible offices and agencies.' }),
-            can(PERMISSIONS.OBJECTIVES_VIEW_PROGRESS) && React.createElement('details', null,
-                React.createElement('summary', null, 'Monitor and update progress'),
-                React.createElement(ObjectiveProgressPanel, { planId })),
-            status.message ? React.createElement('div', { className: `ui-status ui-status--${status.type}`, role: 'status' }, status.message) : null,
-            archived ? React.createElement('div', { className: 'ui-status ui-status--error' }, 'This Strategic Plan is archived. Restore it before changing its objectives.') : null,
-            React.createElement('section', { className: 'ui-card plan-summary', 'aria-labelledby': 'plan-summary-title' }, React.createElement('div', { className: 'ui-card__header' }, React.createElement('h2', { className: 'ui-card__title', id: 'plan-summary-title' }, 'Plan Summary')), React.createElement('div', { className: 'ui-card__body plan-summary-grid' },
-                React.createElement(
-    'div',
-    { className: 'plan-summary-item' },
-    React.createElement('span', null, 'Plan ID'),
-    React.createElement(
-        'strong',
-        null,
-        plan
-            ? `SP-${planYear}-${String(plan.record_id).padStart(3, '0')}`
-            : '—'
-    )
-),
-
-React.createElement(
-    'div',
-    { className: 'plan-summary-item' },
-    React.createElement('span', null, 'Plan Title'),
-    React.createElement(
-        'strong',
-        null,
-        plan?.title || (loading ? 'Loading…' : '—')
-    )
-),
-
-React.createElement(
-    'div',
-    { className: 'plan-summary-item' },
-    React.createElement('span', null, 'Plan Period'),
-    React.createElement(
-        'strong',
-        null,
-        formatPlanPeriod(plan)
-    )
-),
-
-React.createElement(
-    'div',
-    { className: 'plan-summary-item' },
-    React.createElement('span', null, 'Department/Agency'),
-    React.createElement(
-        'strong',
-        null,
-        plan?.department_agency ||
-            plan?.creator?.department ||
-            plan?.creator?.office ||
-            'Not available'
-    )
-),
-
-React.createElement(
-    'div',
-    { className: 'plan-summary-item' },
-    React.createElement('span', null, 'Last Updated'),
-    React.createElement(
-        'strong',
-        null,
-        formatDate(plan?.updated_at) || '—',
-        updatedBy
-            ? React.createElement(
-                'small',
-                null,
-                `by ${updatedBy}`
-            )
-            : null
-    )
-)
-            )),
-            React.createElement('section', { className: 'ui-card objectives-card', 'aria-labelledby': 'objectives-title' },
-                React.createElement('div', { className: 'objectives-heading' }, React.createElement('h2', { id: 'objectives-title' }, 'Strategic Objectives'), canCreateObjectives ? React.createElement('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', disabled: archived || loading, onClick: () => { setEditing(null); setFormOpen(true); } }, React.createElement('i', { className: 'bi bi-plus-lg' }), 'Add Objective') : null),
-                React.createElement('div', { className: 'ui-card__body' }, loading ? React.createElement('div', { className: 'ui-empty' }, 'Loading Strategic Objectives…') : objectives.length === 0 ? React.createElement('div', { className: 'ui-empty' }, 'No Strategic Objectives have been added yet.') : React.createElement('div', { className: 'ui-table-wrap' }, React.createElement('table', { className: 'ui-table objectives-table' },
-                    React.createElement('thead', null, React.createElement('tr', null, ['No.', 'Strategic Objective', 'Expected Outcome', 'Indicator', 'Responsible Unit', 'Actions']
-                        .map((heading) => React.createElement('th', { key: heading }, heading)))),
-                    React.createElement('tbody', null, visibleObjectives.map((objective, index) => React.createElement('tr', { key: objective.objective_id }, React.createElement(
-    'td',
-    null,
-    ((currentPage - 1) * pageSize) + index + 1
-), React.createElement('td', null, objective.objective_title || 'Untitled objective'), React.createElement('td', null, objective.expected_outcome || '—'), React.createElement('td', null, objective.indicator || '—'), React.createElement('td', null, objective.responsible_office_agency || 'Unassigned'),
-
-React.createElement(
-    'td',
-    null,
-    hasObjectiveActions
-        ? React.createElement(
-            'div',
-            { className: 'objectives-table__actions' },
-            canUpdateObjectives && objective.status !== 'archived'
-                ? React.createElement('button', {
-                    className: 'ui-button ui-button--secondary ui-button--sm',
-                    type: 'button', disabled: archived || submitting,
-                    onClick: () => { setAssigning(objective); setSelectedUnit(objective.responsible_office_agency || ''); setAssignmentError(''); },
-                    'aria-label': `Assign Responsible Unit to ${objective.objective_title || 'strategic objective'}`,
-                }, 'Assign') : null,
-
-            canUpdateObjectives &&
-            objective.status !== 'archived'
-                ? React.createElement(
-                    'button',
-                    {
-                        className:
-                            'ui-button ui-button--secondary ui-button--sm',
-                        type: 'button',
-                        disabled: archived,
-                        onClick: () => {
-                            setEditing(objective);
-                            setFormOpen(true);
-                        },
-                        'aria-label':
-                            `Update ${objective.objective_title || 'strategic objective'}`,
-                    },
-                    React.createElement('i', {
-                        className: 'bi bi-pencil',
-                    })
-                )
-                : null,
-
-            canArchiveObjectives
-                ? React.createElement(
-                    'button',
-                    {
-                        className:
-                            'ui-button ui-button--secondary ui-button--sm',
-                        type: 'button',
-                        disabled: archived,
-                        onClick: () =>
-                            requestArchiveChange(objective),
-                        'aria-label':
-                            `${objective.status === 'archived' ? 'Restore' : 'Archive'} ${objective.objective_title || 'strategic objective'}`,
-                    },
-                    React.createElement('i', {
-                        className:
-                            objective.status === 'archived'
-                                ? 'bi bi-arrow-counterclockwise'
-                                : 'bi bi-archive',
-                    })
-                )
-                : null,
-
-            canDeleteObjectives
-                ? React.createElement(
-                    'button',
-                    {
-                        className:
-                            'ui-button ui-button--danger ui-button--sm',
-                        type: 'button',
-                        disabled: archived,
-                        onClick: () =>
-                            requestDelete(objective),
-                        'aria-label':
-                            `Delete ${objective.objective_title || 'strategic objective'}`,
-                    },
-                    React.createElement('i', {
-                        className: 'bi bi-trash3',
-                    })
-                )
-                : null
-        )
-        : React.createElement(
-            'span',
-            { className: 'ui-help' },
-            'Review only'
-        )
-)
-
-)))
-                ))), React.createElement(
-    'div',
-    { className: 'objectives-footer' },
-
-    React.createElement(
-        'span',
-        null,
-        `${objectives.length} Strategic Objective(s)`
-    ),
-
-    React.createElement(
-        'nav',
-        {
-            className: 'objectives-pagination',
-            'aria-label': 'Objectives pages',
-        },
-
-        React.createElement(
-            'button',
-            {
-                className: 'ui-button ui-button--secondary ui-button--sm',
-                type: 'button',
-                disabled: currentPage === 1,
-                onClick: () =>
-                    setPage((value) => Math.max(1, value - 1)),
-                'aria-label': 'Previous page',
-            },
-            React.createElement('i', {
-                className: 'bi bi-chevron-left',
-            })
-        ),
-
-        React.createElement(
-            'span',
-            { 'aria-live': 'polite' },
-            `${currentPage} / ${totalPages}`
-        ),
-
-        React.createElement(
-            'button',
-            {
-                className: 'ui-button ui-button--secondary ui-button--sm',
-                type: 'button',
-                disabled: currentPage === totalPages,
-                onClick: () =>
-                    setPage((value) =>
-                        Math.min(totalPages, value + 1)
-                    ),
-                'aria-label': 'Next page',
-            },
-            React.createElement('i', {
-                className: 'bi bi-chevron-right',
-            })
-        )
-    )
-)
-            ),
-            (canCreateObjectives || canUpdateObjectives) ? React.createElement('div', { className: 'objectives-page-actions' }, React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: () => setStatus({ type: 'info', message: 'Strategic Mapping is reserved for the next module.' }) }, 'Next: Strategic Mapping')) : null
-        )),
-        assigning ? React.createElement('div', { className: 'objective-modal-backdrop' },
-            React.createElement('section', { className: 'objective-modal ui-card', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'assign-unit-title', onKeyDown: (event) => { if (event.key === 'Escape' && !submitting) setAssigning(null); } },
-                React.createElement('div', { className: 'objective-modal__header' },
-                    React.createElement('h2', { id: 'assign-unit-title' }, 'Assign Responsible Unit'),
-                    React.createElement('button', { type: 'button', disabled: submitting, onClick: () => setAssigning(null), 'aria-label': 'Close assignment' }, '?')),
-                React.createElement('div', { className: 'objective-modal__body' },
-                    React.createElement('p', null, assigning.objective_title),
-                    React.createElement('label', { className: 'ui-label', htmlFor: 'responsible-unit' }, 'Responsible Unit'),
-                    React.createElement('input', { id: 'responsible-unit', className: 'ui-input', value: selectedUnit, list: 'responsible-unit-options', placeholder: 'Select or type the exact Office / Agency name', autoFocus: true, disabled: submitting, onChange: (event) => setSelectedUnit(event.target.value) }),
-                    React.createElement('datalist', { id: 'responsible-unit-options' }, availableUnits.map((unit) => React.createElement('option', { key: unit, value: unit }))),
-                    React.createElement('small', { className: 'ui-help' }, 'Use the exact Office / Agency account name to sync this objective.'),
-                    assignmentError ? React.createElement('p', { className: 'ui-error', role: 'alert' }, assignmentError) : null),
-                React.createElement('div', { className: 'objective-modal__actions' },
-                    React.createElement('button', { type: 'button', className: 'ui-button ui-button--secondary', disabled: submitting, onClick: () => setAssigning(null) }, 'Cancel'),
-                    React.createElement('button', { type: 'button', className: 'ui-button ui-button--primary', disabled: submitting || !selectedUnit, onClick: assignUnit }, submitting ? 'Assigning?' : 'Assign')))) : null,
-        React.createElement(ObjectiveFormDialog, {
-    open: formOpen,
-    objective: editing,
-    submitting,
-    serverErrors: formErrors,
-    onSave: saveObjective,
-    onClose: () => {
-        setFormOpen(false);
-        setEditing(null);
-    },
-}),
-       React.createElement(AppDialog, {
-    open: dialog.open,
-    variant: dialog.variant,
-    title: dialog.title,
-    message: dialog.message,
-    confirmLabel:
-        dialog.action === 'delete'
-            ? 'Confirm Delete'
-            : dialog.action === 'archive'
-                ? 'Confirm Archive'
-                : dialog.action === 'restore'
-                    ? 'Confirm Restore'
-                    : 'Continue',
-    onConfirm:
-        dialog.action === 'delete'
-            ? confirmDelete
-            : dialog.action === 'archive' ||
-                dialog.action === 'restore'
-                ? confirmArchiveChange
-                : () =>
-                    setDialog((current) => ({
-                        ...current,
-                        open: false,
-                    })),
-    onCancel: () =>
-        setDialog((current) => ({
-            ...current,
-            open: false,
-        })),
-}) );
+    async function saveDraft(goNext = false) {
+        if (busy || !plan || (goNext && !canMap)) return;
+        if (!canSaveNotes && !goNext) return;
+        setBusy(true); setStatus({ type: '', message: '' });
+        try {
+            if (canSaveNotes && (!goNext || notesDirty)) {
+                // The existing update endpoint replaces the plan payload. Preserve fresh MVC and dates.
+                const { data: latest } = await getStrategicPlan(planId);
+                if (latest.status !== 'draft') throw new Error('This plan is no longer a draft. Reload it before saving notes.');
+                const result = await updateStrategicPlan(planId, {
+                    title: latest.title, level: latest.level, description: notes.trim() || null,
+                    mission: latest.mission_foundation?.content || '', vision: latest.vision_foundation?.content || '',
+                    core_values: (latest.core_values || []).map(value => value.content),
+                    planning_start_date: latest.planning_start_date, planning_end_date: latest.planning_end_date,
+                    department_agency: latest.department_agency, status: 'draft',
+                });
+                setPlan(result.data); setNotes(result.data.description || ''); setSavedNotes(result.data.description || '');
+                setStatus({ type: 'success', message: 'Draft notes saved. Objectives are saved when you submit each objective form.' });
+            }
+            if (goNext) { navigating.current = true; window.location.assign(`/mappings?plan_id=${planId}`); }
+        } catch (error) { setStatus({ type: 'error', message: errorText(error) }); }
+        finally { setBusy(false); }
+    }
+    const summary = (label, value) => h('div', { className: 'plan-summary-item', key: label }, h('span', null, label), h('strong', null, value || '—'));
+    const iconButton = (label, icon, onClick, danger = false, disabled = false) => h('button', {
+        type: 'button', className: `ui-button ui-button--${danger ? 'danger' : 'secondary'} ui-button--sm`, title: label, 'aria-label': label,
+        onClick, disabled: busy || disabled,
+    }, h('i', { className: `bi ${icon}`, 'aria-hidden': true }));
+    const updatedBy = displayName(plan?.updater) || displayName(plan?.creator);
+    const planYear = plan?.created_at ? new Date(plan.created_at).getFullYear() : new Date().getFullYear();
+    return h(React.Fragment, null, h(AppSidebar),
+        h('main', { className: 'app-shell-main objectives-page' }, h('div', { className: 'app-shell-container' },
+            h('a', { className: 'objectives-back', href: '/strategic-objectives' }, '← Choose another plan'),
+            h(PageHeader, { className: 'objectives-header', section: 'Strategic Planning', title: 'Add Strategic Objectives', subtitle: 'Define strategic objectives, expected outcomes, indicators, and targets for the plan.' }),
+            status.message && h('div', { className: `ui-status ui-status--${status.type}`, role: status.type === 'error' ? 'alert' : 'status' }, status.message),
+            loadError && h('div', { className: 'ui-status ui-status--error', role: 'alert' }, loadError, ' ', h('button', { type: 'button', className: 'ui-button ui-button--secondary', onClick: load }, 'Retry')),
+            loading && h('p', { role: 'status' }, 'Loading plan and objectives…'),
+            plan && h(React.Fragment, null,
+                !mutable && h('p', { className: 'ui-status ui-status--info' }, 'This plan is read-only. Restore an archived plan before editing its objectives.'),
+                h('section', { className: 'ui-card plan-summary', 'aria-labelledby': 'plan-summary-title' },
+                    h('div', { className: 'ui-card__header' }, h('h2', { className: 'ui-card__title', id: 'plan-summary-title' }, 'Plan Summary')),
+                    h('div', { className: 'ui-card__body plan-summary-grid' },
+                        summary('Plan ID', `SP-${planYear}-${String(plan.record_id).padStart(3, '0')}`), summary('Plan Title', plan.title),
+                        summary('Plan period', `${formatDate(plan.planning_start_date)} – ${formatDate(plan.planning_end_date)}`),
+                        summary('Department/Agency', plan.department_agency || plan.creator?.department || plan.creator?.office),
+                        summary('Last Updated', h(React.Fragment, null, formatDate(plan.updated_at), updatedBy && h('small', null, `by ${updatedBy}`))))),
+                h('section', { className: 'ui-card objectives-card', 'aria-labelledby': 'objectives-title' },
+                    h('div', { className: 'objectives-heading' }, h('h2', { id: 'objectives-title' }, 'Strategic Objectives'),
+                        canCreate && h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', disabled: !mutable || loading || busy, onClick: () => openObjective() }, h('i', { className: 'bi bi-plus-lg', 'aria-hidden': true }), 'Add Objective')),
+                    h('div', { className: 'ui-card__body' }, h('div', { className: 'ui-table-wrap' }, h('table', { className: 'ui-table objectives-table' },
+                        h('thead', null, h('tr', null, ['No.', 'Objectives', 'Expected outcome', 'Indicator', 'Target', 'Responsible Office/Agency', 'Actions'].map(label => h('th', { key: label, scope: 'col' }, label)))),
+                        h('tbody', null, !visible.length ? h('tr', null, h('td', { colSpan: 7 }, 'No objectives yet. Add an objective to this plan.')) : visible.map((objective, index) => h('tr', { key: objective.objective_id },
+                            h('td', null, (currentPage - 1) * pageSize + index + 1),
+                            h('td', null, objective.objective_title || 'Untitled objective', objective.status === 'archived' && h('small', { className: 'ui-help' }, ' · Archived')),
+                            h('td', null, objective.expected_outcome || '—'), h('td', null, objective.indicator || '—'), h('td', null, objective.target || '—'),
+                            h('td', null, objective.responsible_office_agency || 'Unassigned'),
+                            h('td', null, h('div', { className: 'objectives-table__actions' },
+                                iconButton(`${canUpdate && mutable && objective.status !== 'archived' ? 'Edit' : 'Review'} ${objective.objective_title}`, canUpdate && mutable && objective.status !== 'archived' ? 'bi-pencil' : 'bi-eye', () => openObjective(objective)),
+                                canUpdate && iconButton(`Assign ${objective.objective_title}`, 'bi-person-plus', () => { setAssigning(objective); setAssignmentError(''); }, false, !mutable || objective.status === 'archived'),
+                                canArchive && iconButton(`${objective.status === 'archived' ? 'Restore' : 'Archive'} ${objective.objective_title}`, objective.status === 'archived' ? 'bi-arrow-counterclockwise' : 'bi-archive', () => setConfirmation({ objective, action: objective.status === 'archived' ? 'restore' : 'archive' }), false, !mutable),
+                                canDelete && iconButton(`Delete ${objective.objective_title}`, 'bi-trash3', () => setConfirmation({ objective, action: 'delete' }), true, !mutable)))))))),
+                        h('div', { className: 'objectives-notes ui-field' }, h('label', { className: 'ui-label', htmlFor: 'plan-notes' }, 'Notes/Comment'),
+                            h('textarea', { id: 'plan-notes', className: 'ui-textarea', rows: 3, value: notes, readOnly: !canSaveNotes, disabled: busy, placeholder: 'Input description or notes for this plan', onChange: event => setNotes(event.target.value) }),
+                            h('small', { className: 'ui-help' }, canSaveNotes ? 'Saved with the plan’s Description/Notes. Objective changes are saved separately.' : 'Plan notes are read-only for this plan or account.')),
+                        h('div', { className: 'objectives-footer' }, h('span', null, `${objectives.length} objective(s)`),
+                            h('nav', { className: 'objectives-pagination', 'aria-label': 'Objectives pages' },
+                                iconButton('Previous page', 'bi-chevron-left', () => setPage(currentPage - 1), false, currentPage <= 1),
+                                h('span', { 'aria-live': 'polite' }, `${currentPage} / ${pageCount}`),
+                                iconButton('Next page', 'bi-chevron-right', () => setPage(currentPage + 1), false, currentPage >= pageCount))))),
+                h('div', { className: 'objectives-page-actions' },
+                    h('button', { className: 'ui-button ui-button--secondary', type: 'button', disabled: busy || loading || !canSaveNotes, onClick: () => saveDraft() }, busy ? 'Saving…' : 'Save as a draft'),
+                    h('button', { className: 'ui-button ui-button--primary', type: 'button', disabled: busy || loading || !mutable || !canMap, onClick: () => saveDraft(true) }, 'Next: Strategic Mapping')),
+                can(P.OBJECTIVES_VIEW_PROGRESS) && h('details', { className: 'objectives-progress' }, h('summary', null, 'Monitor and update progress'), h(ObjectiveProgressPanel, { planId }))))),
+        h(ObjectiveFormDialog, { open: form.open, objective: form.objective, readOnly: form.readOnly, submitting: busy, serverErrors: formErrors, submitError: formError, planLabel: plan?.title, onSave: saveObjective, onClose: () => { if (!busy) setForm({ open: false, objective: null, readOnly: false }); } }),
+        h(AssignUnitDialog, { objective: assigning, submitting: busy, error: assignmentError, availableUnits: getAssignableUnits(objectives, [getAccessSession()?.office, ...units]), onAssign: assignUnit, onClose: () => { if (!busy) setAssigning(null); } }),
+        h(AppDialog, { open: Boolean(confirmation), variant: confirmation?.action === 'restore' ? 'success' : 'danger', title: `${confirmation?.action || ''} objective?`, message: confirmation ? `${confirmation.action === 'delete' ? 'Permanently delete' : confirmation.action} “${confirmation.objective.objective_title}”?` : '', confirmLabel: busy ? 'Saving…' : 'Confirm', onConfirm: confirmAction, onCancel: () => { if (!busy) setConfirmation(null); } }));
 }
 
-ReactDOM.createRoot(root).render(React.createElement(StrategicObjectivesApp));
+mountProtectedPage(root, () => h(StrategicObjectivesApp));

@@ -1,8 +1,7 @@
 const { useEffect, useState } = React;
 
-const emptyObjective = { objective_title: '', objective_description: '', expected_outcome: '', indicator: '' };
+const emptyObjective = { objective_title: '', objective_description: '', expected_outcome: '', indicator: '', target: '', responsible_office_agency: '' };
 const emptyErrors = {};
-const emptyPlans = [];
 
 function ObjectiveField({
     label,
@@ -91,25 +90,18 @@ export function ObjectiveFormDialog({
     submitting = false,
     serverErrors = emptyErrors,
     submitError = '',
-    plans = emptyPlans,
-    requirePlan = false,
-    selectedPlanId = '',
+    planLabel = '',
     readOnly = false,
     onSave,
     onClose,
 }) {
     const [form, setForm] = useState(emptyObjective);
     const [errors, setErrors] = useState({});
-    const [planId, setPlanId] = useState('');
-    const selectablePlans = plans.filter((plan) => !['archived', 'deleted'].includes(plan.status));
-    const selectPlan = requirePlan && !objective && !readOnly;
-
     useEffect(() => {
         if (!open) return;
         setForm(Object.fromEntries(Object.keys(emptyObjective).map((key) => [key, objective?.[key] ?? ''])));
-        setPlanId(String(selectedPlanId ?? ''));
         setErrors({});
-    }, [open, objective, selectedPlanId]);
+    }, [open, objective]);
     useEffect(() => { setErrors((current) => ({ ...current, ...serverErrors })); }, [serverErrors]);
 
     if (!open) return null;
@@ -120,45 +112,21 @@ export function ObjectiveFormDialog({
         const next = {};
         if (!form.objective_title.trim()) next.objective_title = 'Strategic Objective is required.';
         if (!form.expected_outcome.trim()) next.expected_outcome = 'Expected Outcome is required.';
-        if (selectPlan && !selectablePlans.some((plan) => String(plan.record_id) === planId)) {
-            next.strategic_plan_id = 'Select an available Strategic Plan.';
-        }
         setErrors(next);
         if (Object.keys(next).length) return;
         const payload = Object.fromEntries(Object.keys(emptyObjective).map((key) => [key, form[key]]));
-        if (selectPlan) payload.strategic_plan_id = Number(planId);
         onSave(payload);
     }
 
     return React.createElement('div', { className: 'objective-modal-backdrop' },
         React.createElement('section', { className: 'objective-modal ui-card', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'objective-dialog-title', onKeyDown: (event) => { if (event.key === 'Escape' && !submitting) onClose(); } },
+            planLabel && React.createElement('p', { className: 'ui-status ui-status--info' }, 'Strategic Plan: ', planLabel),
             React.createElement('div', { className: 'objective-modal__header' }, React.createElement('h2', { id: 'objective-dialog-title' }, readOnly ? 'Review Strategic Objective' : (objective ? 'Update Strategic Objective' : 'Add Strategic Objective')), React.createElement('button', { type: 'button', onClick: onClose, disabled: submitting, 'aria-label': 'Close objective form' }, '×')),
             React.createElement(
     'div',
     { className: 'objective-modal__body ui-form-grid' },
 
     submitError ? React.createElement('p', { className: 'ui-error', role: 'alert' }, submitError) : null,
-
-    selectPlan ? React.createElement('div', { className: `ui-field${errors.strategic_plan_id ? ' is-invalid' : ''}` },
-        React.createElement('label', { className: 'ui-label', htmlFor: 'objective-strategic-plan' }, 'Strategic Plan', React.createElement('span', { className: 'ui-required' }, ' *')),
-        React.createElement('select', {
-            id: 'objective-strategic-plan',
-            name: 'strategic_plan_id',
-            className: 'ui-input',
-            value: planId,
-            required: true,
-            disabled: submitting,
-            'aria-invalid': Boolean(errors.strategic_plan_id),
-            onChange: (event) => {
-                setPlanId(event.target.value);
-                setErrors((current) => ({ ...current, strategic_plan_id: '' }));
-            },
-        },
-        React.createElement('option', { value: '', disabled: true }, 'Select a Strategic Plan'),
-        selectablePlans.map((plan) => React.createElement('option', { key: plan.record_id, value: String(plan.record_id) }, `${plan.title || 'Untitled Strategic Plan'} (#${plan.record_id})`))),
-        errors.strategic_plan_id ? React.createElement('p', { className: 'ui-error', role: 'alert' }, Array.isArray(errors.strategic_plan_id) ? errors.strategic_plan_id[0] : errors.strategic_plan_id) : null,
-        !selectablePlans.length ? React.createElement('p', null, 'No available Strategic Plans.') : null
-    ) : null,
 
     React.createElement(ObjectiveField, {
         label: 'Strategic Objective',
@@ -205,14 +173,18 @@ export function ObjectiveFormDialog({
             disabled: readOnly || submitting,
             placeholder: 'How progress will be measured',
         }),
-        readOnly ? React.createElement(ObjectiveField, {
+        React.createElement(ObjectiveField, {
+            label: 'Target', name: 'target', value: form.target, onChange: change, error: errors.target,
+            disabled: readOnly || submitting, placeholder: 'e.g. 50 projects by 2032',
+        }),
+        React.createElement(ObjectiveField, {
             label: 'Responsible Office/Agency',
             name: 'responsible_office_agency',
-            value: objective?.responsible_office_agency || 'Unassigned',
-            disabled: true,
-        }) : null
+            value: form.responsible_office_agency, onChange: change, error: errors.responsible_office_agency,
+            disabled: readOnly || submitting, placeholder: 'Exact Office / Agency name',
+        })
 ),
-            React.createElement('div', { className: 'objective-modal__actions' }, React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', onClick: onClose, disabled: submitting }, readOnly ? 'Close' : 'Cancel'), readOnly ? null : React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: submit, disabled: submitting || (selectPlan && !selectablePlans.length) }, submitting ? 'Saving…' : (objective ? 'Save Changes' : 'Add Objective')))
+            React.createElement('div', { className: 'objective-modal__actions' }, React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', onClick: onClose, disabled: submitting }, readOnly ? 'Close' : 'Cancel'), readOnly ? null : React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: submit, disabled: submitting }, submitting ? 'Saving…' : (objective ? 'Save Changes' : 'Add Objective')))
         )
     );
 }

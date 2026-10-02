@@ -16,6 +16,7 @@ function page(entries) {
     const context = vm.createContext({
         React: {
             Fragment: 'fragment',
+            useMemo: factory => factory(),
             createElement: (type, props, ...children) => ({ type, props: props || {}, children: children.flat(Infinity) }),
             useEffect: () => {},
             useState(initial) {
@@ -26,6 +27,7 @@ function page(entries) {
         },
         ReactDOM: { createRoot: () => ({ render: (element) => { root = element; } }) },
         document: { getElementById: () => ({}) },
+        mountProtectedPage: (_element, factory) => { root = factory(); },
         enforcePageAccess: () => {},
         getAccessSession: () => ({ roleName: 'Technical Administrator' }),
         AdministrativeAdminSidebar: 'aside', TechnicalAdminSidebar: 'aside', PageHeader: 'header',

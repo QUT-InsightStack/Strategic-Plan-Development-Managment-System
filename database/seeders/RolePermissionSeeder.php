@@ -59,6 +59,15 @@ class RolePermissionSeeder extends Seeder
             'relations.view', 'plan_core_values.view',
         ];
 
+        $administrativeAdminPermissions = [
+            'dashboard.view',
+            'reference_data.manage',
+            'pdp_chapters.manage', 'pdp_chapters.archive', 'pdp_chapters.delete',
+            'presidential_agenda.view', 'presidential_agenda.manage',
+            'presidential_agenda.archive', 'presidential_agenda.delete',
+            'templates.manage', 'monitoring.view', 'reports.view', 'logs.view',
+        ];
+
         $viewOnlyPermissions = [
             'dashboard.view',
             'strategic_records.view', 'strategic_foundations.view', 'strategic_objectives.view',
@@ -70,10 +79,20 @@ class RolePermissionSeeder extends Seeder
             'Administrator' => $permissionsByCode->keys()->all(),
             'test' => $permissionsByCode->keys()->all(),
             'Technical Administrator' => $technicalPermissions,
+            'Administrative Admin' => $administrativeAdminPermissions,
             'Management' => $managementPermissions,
             'Planning Officer' => $planningPermissions,
             'Office' => array_merge($viewOnlyPermissions, ['strategic_documents.upload']),
         ];
+
+        // Office accounts use several legacy role names in existing data. Keep
+        // their page visibility and progress-update grants aligned as well.
+        foreach (['Office', 'Responsible Unit User', 'Office Representative', 'Office/Agency', 'Offices / Agencies'] as $roleName) {
+            $assignments[$roleName] = array_values(array_unique(array_merge(
+                $viewOnlyPermissions,
+                ['strategic_documents.upload', 'strategic_objectives.view_progress', 'strategic_objectives.update_progress']
+            )));
+        }
 
         foreach ($assignments as $roleName => $codes) {
             $role = Role::query()->where('role_name', $roleName)->first();

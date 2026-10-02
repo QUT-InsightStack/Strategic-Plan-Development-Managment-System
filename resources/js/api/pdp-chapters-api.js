@@ -23,16 +23,7 @@ export function deletePdpChapter(id) {
     return apiRequest(`${baseUrl}/${id}`, { method: 'DELETE' });
 }
 
-/**
- * Archive a chapter.
- *
- * Contract expected of the backend:
- *   POST /api/pdp-chapters/{id}/archive
- *   200 { success: true, message: string }
- *   404 when the chapter does not exist or is already archived
- *
- * Until that endpoint exists the request fails and the caller reports it.
- */
+/** Archive a chapter using the backend's PATCH lifecycle endpoint. */
 export function archivePdpChapter(id) {
-    return apiRequest(`${baseUrl}/${id}/archive`, { method: 'POST' });
+    return apiRequest(`${baseUrl}/${id}/archive`, { method: 'PATCH' });
 }

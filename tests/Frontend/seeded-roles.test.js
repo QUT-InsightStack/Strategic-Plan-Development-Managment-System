@@ -7,14 +7,28 @@ import { isOfficeRole } from '../../resources/js/access/office-navigation.js';
 import { assignUserRole } from '../../resources/js/api/users-api.js';
 
 test('renamed roles keep their previous navigation and fallback permissions', () => {
-    assert.deepEqual(policyForRole('Office'), policyForRole('Viewer'));
+    assert.equal(policyForRole('Office').home, '/office');
     const session = createAccessSession({ role_name: 'Office', permissions: ['strategic_records.view'] });
-    assert.equal(session.home, '/strategic-plans');
+    assert.equal(session.home, '/office');
     assert.equal(can(PERMISSIONS.PLANS_VIEW, session), true);
     assert.equal(can(PERMISSIONS.PLANS_CREATE, session), false);
     assert.equal(isOfficeRole('Office'), true); // The upgraded Office role uses Office navigation.
     const management = createAccessSession({ role_name: 'Management', permissions: ['strategic_records.view'] });
     assert.equal(can(PERMISSIONS.PLANS_DELETE, management), false);
+});
+
+test('Office role can navigate to plans, objective proposals, comments, inputs, and assigned progress', () => {
+    const session = createAccessSession({ role_name: 'Office' });
+    assert.equal(session.home, '/office');
+    assert.equal(isOfficeRole('Office'), true);
+    for (const permission of [
+        PERMISSIONS.PLANS_VIEW,
+        PERMISSIONS.INPUTS_CREATE,
+        PERMISSIONS.OBJECTIVE_COMMENTS_CREATE,
+        PERMISSIONS.DOCUMENTS_UPLOAD,
+        PERMISSIONS.OBJECTIVES_VIEW_PROGRESS,
+        PERMISSIONS.OBJECTIVES_UPDATE_PROGRESS,
+    ]) assert.equal(can(permission, session), true);
 });
 
 test('Management has its own read-only oversight dashboard permissions', () => {

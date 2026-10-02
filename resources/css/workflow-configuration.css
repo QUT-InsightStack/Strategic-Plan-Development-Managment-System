@@ -105,7 +105,7 @@ body {
 
 .field-error {
     color: var(--color-danger);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: var(--font-weight-medium);
 }
 

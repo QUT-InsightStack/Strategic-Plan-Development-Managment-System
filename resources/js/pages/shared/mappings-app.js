@@ -1,3 +1,4 @@
+import { DataSourceNotice } from '../../components/DataSourceNotice.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { apiRequest } from '../../api/api-client.js';
 import { listStrategicPlans } from '../../api/strategic-plans-api.js';
@@ -78,7 +79,31 @@ function MappingApp({ session }) {
     const [agencyItem, setAgencyItem] = useState(''), [details, setDetails] = useState(blankDetails), [selectedMappingId, setSelectedMappingId] = useState('');
     const [loading, setLoading] = useState(true), [busy, setBusy] = useState(false), [message, setMessage] = useState({ type: '', text: '' });
 
-    useEffect(() => { listStrategicPlans({ per_page: 100 }).then(result => { const available = (result.data || []).filter(plan => !['archived', 'deleted'].includes(plan.status)); setPlans(available); if (available.length) setPlanId(String(available[0].record_id)); else setLoading(false); }).catch(error => { setMessage({ type: 'error', text: errorText(error) }); setLoading(false); }); }, []);
+    useEffect(() => {
+        let active = true;
+        async function loadPlans() {
+            try {
+                const available = [];
+                let page = 1, last = 1;
+                do {
+                    const result = await listStrategicPlans({ per_page: 100, page });
+                    available.push(...(result.data || []).filter(plan => !['archived', 'deleted'].includes(plan.status)));
+                    last = result.meta?.last_page || 1;
+                    page++;
+                } while (active && page <= last);
+                if (!active) return;
+                setPlans(available);
+                const requested = new URLSearchParams(location.search).get('plan_id');
+                if (requested && !available.some(plan => String(plan.record_id) === requested)) {
+                    setMessage({ type: 'error', text: 'The requested plan is unavailable in your mapping scope. Select an available plan.' });
+                    setLoading(false);
+                } else if (available.length) setPlanId(requested || String(available[0].record_id));
+                else setLoading(false);
+            } catch (error) { if (active) { setMessage({ type: 'error', text: errorText(error) }); setLoading(false); } }
+        }
+        loadPlans();
+        return () => { active = false; };
+    }, []);
     useEffect(() => {
         if (!planId) return;
         let active = true; setLoading(true); setMessage({ type: '', text: '' });
@@ -131,12 +156,13 @@ function MappingApp({ session }) {
                 h('option', { value: '' }, selected.dost.length ? 'Select the Agency assigned to this DOST objective' : 'Select DOST objectives first'),
                 agencyChoices.map(item => h('option', { value: item.value, key: item.value }, item.label))));
 
-    return h(React.Fragment, null, h(AppSidebar, { active: 'Mapping Module', onNotice: text => setMessage({ type: 'info', text }) }), h('main', { className: 'app-shell-main mapping-page' }, h('div', { className: 'app-shell-container mapping-container' },
+    return h(React.Fragment, null, h(AppSidebar, { active: 'Mapping Module', onNotice: text => setMessage({ type: 'info', text }) }), h('main', { className: 'app-shell-main mapping-page' }, h('div', { className: 'app-shell-container mapping-container' }, h(DataSourceNotice),
         h('header', { className: 'mapping-header' }, h('h1', null, officeMode ? 'View/Add Mapping' : 'Create Reference Mapping'), h('p', null, officeMode ? 'View the hierarchy and submit your Agency input.' : 'Map Presidential Agenda → PDP Chapter → DOST Objective → Agency in one workflow, then link reference sections.')),
         message.text && h('div', { className: `ui-status ui-status--${message.type}`, role: message.type === 'error' ? 'alert' : 'status' }, message.text),
         h('section', { className: 'ui-card mapping-context' },
             h('label', { className: 'ui-field' }, h('span', { className: 'ui-label' }, 'Strategic Plan'),
                 h('select', { className: 'ui-select', value: planId, onChange: event => setPlanId(event.target.value) },
+                    h('option', { value: '', disabled: true }, 'Select a strategic plan'),
                     plans.map(plan => h('option', { value: plan.record_id, key: plan.record_id }, plan.title))),
             ),
             agencySelector,

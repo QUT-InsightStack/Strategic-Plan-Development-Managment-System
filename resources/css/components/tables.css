@@ -1,7 +1,7 @@
 .ui-table-wrap { width: 100%; overflow-x: auto; }
-.ui-table { width: 100%; border-collapse: collapse; background: var(--color-surface); }
+.ui-table { width: 100%; border-collapse: collapse; background: var(--color-surface); font-size: var(--font-size-table); }
 .ui-table th, .ui-table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border-subtle); text-align: left; vertical-align: middle; }
-.ui-table th { color: var(--color-primary); background: var(--color-surface-header); font-size: var(--font-size-xs); font-weight: var(--font-weight-bold); letter-spacing: .015em; white-space: nowrap; }
+.ui-table th { color: var(--color-primary); background: var(--color-surface-header); font-size: var(--font-size-table); font-weight: var(--font-weight-bold); letter-spacing: .015em; white-space: nowrap; }
 .ui-table td { color: var(--color-gray-800); }
 .ui-table tbody tr:hover { background: var(--color-primary-soft); }
 .ui-table__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }

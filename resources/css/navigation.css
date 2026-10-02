@@ -1,0 +1,15 @@
+.app-sidebar__subitem { display: flex; align-items: center; gap: 8px; }
+.app-sidebar__subitem small { margin-left: auto; font-size: 12px; }
+.navigation-locked { opacity: .65; cursor: not-allowed; }
+.module-hub { max-width: 1400px; margin: 0 auto; }
+.module-hub__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 16px 0 28px; }
+.module-hub__card { padding: 20px; border: 1px solid #dce3eb; border-radius: 8px; background: white; }
+.module-hub__card h3 { margin-top: 0; }
+.module-hub__card p { color: #536477; }
+.data-source-notice { padding: 14px 18px; margin: 16px 0; background: #fff6df; border: 1px solid #dcc27b; border-radius: 6px; color: #55430d; }
+
+.office-plan-input-actions { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+.office-plan-input-panel { padding: 18px; border: 1px solid #dce3eb; border-radius: 8px; margin: 16px 0; }
+.office-plan-input-panel form { display: grid; gap: 12px; }
+.office-plan-input-panel textarea { box-sizing: border-box; }
+.office-detail-notes details { margin-top: 20px; }

@@ -1,9 +1,9 @@
-import { enforcePageAccess } from '../../access/access-guard.js';
+import { mountProtectedPage } from '../../access/mount-protected-page.js';
 import { AdministrativeItemFormApp } from './administrative-item-form-app.js';
 import { ReferenceDataManagementApp } from './reference-data-management-app.js';
 import { TemplateManagementApp } from './template-management-app.js';
 
-if (enforcePageAccess()) {
+mountProtectedPage(document.getElementById('root'), () => {
     const rootElement = document.getElementById('root');
     const pathname = window.location.pathname;
     let PageComponent = ReferenceDataManagementApp;
@@ -21,5 +21,5 @@ if (enforcePageAccess()) {
         PageComponent = TemplateManagementApp;
     }
 
-    ReactDOM.createRoot(rootElement).render(React.createElement(PageComponent, pageProps));
-}
+    return React.createElement(PageComponent, pageProps);
+});

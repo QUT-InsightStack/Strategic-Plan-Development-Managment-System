@@ -240,6 +240,22 @@ class ObjectiveCollaborationTest extends TestCase
         $this->getJson($url)->assertOk()->assertJsonCount(2, 'data');
     }
 
+    public function test_office_can_propose_an_objective_for_an_unassigned_draft_plan_without_gaining_objective_input_access(): void
+    {
+        $otherPlan = $this->plan();
+        $otherObjective = $this->objective($otherPlan);
+        $this->office->role->update(['role_name' => 'Office']);
+        $this->login($this->office);
+        $url = '/api/strategic-plans/'.$otherPlan->record_id.'/inputs';
+
+        $this->postJson($url, $this->input('change_request'))
+            ->assertCreated()->assertJsonPath('data.objective_id', null);
+        $this->getJson($url)->assertOk()->assertJsonCount(1, 'data');
+        $this->postJson($url, $this->input('progress_update'))->assertForbidden();
+        $this->postJson('/api/strategic-objectives/'.$otherObjective->objective_id.'/inputs', $this->input('change_request'))
+            ->assertForbidden();
+    }
+
     public function test_finalized_content_accepts_progress_but_rejects_change_requests(): void
     {
         $this->login($this->office);

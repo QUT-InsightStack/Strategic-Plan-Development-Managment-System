@@ -2,23 +2,22 @@ import { copyStrategicPlan, deleteStrategicPlan, listStrategicPlans, updateStrat
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { AppDialog } from '../../components/AppDialog.js';
 import { PageHeader } from '../../components/PageHeader.js';
-import { enforcePageAccess } from '../../access/access-guard.js';
+import { mountProtectedPage } from '../../access/mount-protected-page.js';
 import { PERMISSIONS } from '../../access/access-policy.js';
 import { can } from '../../access/access-session.js';
-
-enforcePageAccess();
-const canCreatePlans = can(PERMISSIONS.PLANS_CREATE);
-const canUpdatePlans = can(PERMISSIONS.PLANS_UPDATE);
-const canSubmitPlans = can(PERMISSIONS.PLANS_UPDATE);
-const canArchivePlans = can(PERMISSIONS.PLANS_ARCHIVE);
-const canDeletePlans = can(PERMISSIONS.PLANS_DELETE);
-const canSelectPlans = canCreatePlans || canDeletePlans;
-const hasPlanActions = canUpdatePlans || canArchivePlans || canDeletePlans;
 
 const { useEffect, useState } = React;
 const currentYear = new Date().getFullYear();
 
 function StrategicPlanListApp() {
+    const canCreatePlans = can(PERMISSIONS.PLANS_CREATE);
+    const canUpdatePlans = can(PERMISSIONS.PLANS_UPDATE);
+    const canSubmitPlans = can(PERMISSIONS.PLANS_UPDATE);
+    const canArchivePlans = can(PERMISSIONS.PLANS_ARCHIVE);
+    const canDeletePlans = can(PERMISSIONS.PLANS_DELETE);
+    const canSelectPlans = canCreatePlans || canDeletePlans;
+    const hasPlanActions = canUpdatePlans || canArchivePlans || canDeletePlans;
+
     const [plans, setPlans] = useState([]);
     const [filters, setFilters] = useState({ search: '', office: '', level: '', status: '', year: '' });
     const [page, setPage] = useState(1);
@@ -332,4 +331,4 @@ plan.approval_status === 'under_approval'
     );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(StrategicPlanListApp));
+mountProtectedPage(document.getElementById('root'), () => React.createElement(StrategicPlanListApp));
