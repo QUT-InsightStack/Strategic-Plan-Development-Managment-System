@@ -198,19 +198,42 @@ class BackupService
             chmod($defaultsFile, 0600);
             file_put_contents($defaultsFile, $this->mysqlDefaults($config));
 
+
+            $processEnvironment = [];
+
+            if (PHP_OS_FAMILY === 'Windows') {
+                $systemRoot = getenv('SystemRoot')
+                    ?: getenv('WINDIR')
+                    ?: ($_SERVER['SystemRoot'] ?? null)
+                    ?: ($_SERVER['WINDIR'] ?? null);
+
+                if (! is_string($systemRoot) || $systemRoot === '') {
+                    throw new RuntimeException(
+                        'The Windows SystemRoot environment variable is unavailable to PHP.'
+                    );
+                }
+
+                $processEnvironment = [
+                    'SystemRoot' => $systemRoot,
+                    'WINDIR' => $systemRoot,
+                ];
+            }
+
             // Array form, so no argument is ever parsed by a shell.
-            $result = Process::timeout(self::TIMEOUT)->run([
-                'mysqldump',
-                '--defaults-extra-file=' . $defaultsFile,
-                '--single-transaction',
-                '--skip-lock-tables',
-                '--routines',
-                '--triggers',
-                '--events',
-                '--no-tablespaces',
-                '--result-file=' . $path,
-                $config['database'],
-            ]);
+            $result = Process::env($processEnvironment)
+                ->timeout(self::TIMEOUT)
+                ->run([
+                    (string) config('backup.mysqldump_path', 'mysqldump'),
+                    '--defaults-extra-file=' . $defaultsFile,
+                    '--single-transaction',
+                    '--skip-lock-tables',
+                    '--routines',
+                    '--triggers',
+                    '--events',
+                    '--no-tablespaces',
+                    '--result-file=' . $path,
+                    $config['database'],
+                ]);
 
             if (! $result->successful()) {
                 throw new RuntimeException(
