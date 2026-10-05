@@ -73,6 +73,7 @@ const managementPermissions = [
     PERMISSIONS.PLANS_VIEW,
     PERMISSIONS.FOUNDATIONS_VIEW,
     PERMISSIONS.OBJECTIVES_VIEW,
+    PERMISSIONS.OBJECTIVE_COMMENTS_CREATE,
     PERMISSIONS.OBJECTIVES_VIEW_PROGRESS,
     PERMISSIONS.INPUTS_VIEW,
     'relations.view',
@@ -176,8 +177,9 @@ export function hasRolePolicy(roleName) {
 }
 
 export const routeRules = [
-    { test: /^\/management-dashboard(?:\/|$)/, roles: ['Management', 'Executive', 'Management / Executive'] },
-    { test: /^\/management-plan-review(?:\/|$)/, roles: ['Management', 'Executive', 'Management / Executive'], permission: PERMISSIONS.PLANS_VIEW },
+    { test: /^\/management-dashboard(?:\/|$)/, permission: PERMISSIONS.DASHBOARD_VIEW },
+    { test: /^\/management-approvals(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
+    { test: /^\/management-plan-review(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
     { test: /^\/progress-monitoring(?:\/|$)/, permission: PERMISSIONS.OBJECTIVES_VIEW_PROGRESS },
     { test: /^\/strategic-plans\/\d+\/approval-status(?:\/|$)/ },
     { test: /^\/consolidate-inputs(?:\/|$)/, permission: PERMISSIONS.INPUTS_VIEW },

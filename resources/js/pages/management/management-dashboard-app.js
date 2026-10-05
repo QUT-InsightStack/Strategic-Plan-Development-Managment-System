@@ -8,9 +8,9 @@ import { createAccessSession, saveAccessSession, can } from '../../access/access
 import { PERMISSIONS as P } from '../../access/access-policy.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
 import { ManagementReferenceDocuments } from './management-plan-review.js';
+import { isManagementSession } from '../../access/management-access.js';
 
 const h = React.createElement;
-const roles = ['Management', 'Executive', 'Management / Executive'];
 const tabs = [
     { id: 'dashboard', label: 'Progress Overview', permission: P.PLANS_VIEW },
     { id: 'alignment', label: 'Alignment Monitoring', permission: 'relations.view' },
@@ -83,7 +83,11 @@ function labelFor(items, fields) {
 function downloadCsv(filename, rows) {
     if (!rows.length) return;
     const headings = Object.keys(rows[0]);
-    const escape = value => `"${String(value ?? '').replaceAll('"', '""')}"`;
+    const escape = value => {
+        const raw = String(value ?? '');
+        const safe = /^[\s]*[=+\-@]/.test(raw) ? `'${raw}` : raw;
+        return `"${safe.replaceAll('"', '""')}"`;
+    };
     const content = [headings, ...rows.map(row => headings.map(key => row[key]))]
         .map(row => row.map(escape).join(',')).join('\r\n');
     const url = URL.createObjectURL(new Blob(['\ufeff', content], { type: 'text/csv;charset=utf-8' }));
@@ -99,6 +103,8 @@ function ManagementDashboard({ session }) {
     const [activeTab, setActiveTab] = React.useState(tabs.some(tab => tab.id === queryTab && can(tab.permission, session)) ? queryTab : 'dashboard');
     const [alignmentSection, setAlignmentSection] = React.useState(new URLSearchParams(window.location.search).get('section') === 'documents' ? 'documents' : 'mapping');
     const [reportingPeriod, setReportingPeriod] = React.useState('all');
+    const [selectedPlanId, setSelectedPlanId] = React.useState('');
+    const [activeReport, setActiveReport] = React.useState('');
     const [plans, setPlans] = React.useState([]);
     const [objectives, setObjectives] = React.useState([]);
     const [reviews, setReviews] = React.useState([]);
@@ -157,18 +163,36 @@ function ManagementDashboard({ session }) {
     const filteredInputs = inputs;
     const completed = filteredObjectives.filter(item => objectiveStatus(item) === 'completed').length;
     const ongoing = filteredObjectives.filter(item => objectiveStatus(item) === 'in_progress').length;
-    const alignedCount = filteredObjectives.filter(item => (item.presidential_agenda_items || []).length || (item.pdp_chapters || []).length).length;
+    const alignedCount = filteredObjectives.filter(item => (item.presidential_agenda_items || []).length && (item.pdp_chapters || []).length).length;
     const alignmentCoverage = filteredObjectives.length ? Math.round(alignedCount * 100 / filteredObjectives.length) : 0;
     const plansById = new Map(filteredPlans.map(plan => [String(plan.record_id), plan]));
     const delayed = filteredObjectives.filter(objective => isDelayed(objective, plansById)).length;
 
+    const childrenByParent = new Map();
+    filteredPlans.forEach(plan => (plan.parents || []).forEach(parent => {
+        const key = String(parent.record_id);
+        childrenByParent.set(key, [...(childrenByParent.get(key) || []), String(plan.record_id)]);
+    }));
+    function planTreeIds(planId) {
+        const visited = new Set();
+        const queue = [String(planId)];
+        while (queue.length) {
+            const id = queue.shift();
+            if (visited.has(id)) continue;
+            visited.add(id);
+            queue.push(...(childrenByParent.get(id) || []));
+        }
+        return visited;
+    }
     const progressByPlan = filteredPlans.map(plan => {
-        const planObjectives = filteredObjectives.filter(item => Number(item.strategic_plan_id) === Number(plan.record_id));
+        const tree = planTreeIds(plan.record_id);
+        const planObjectives = filteredObjectives.filter(item => tree.has(String(item.strategic_plan_id)));
         const counts = { completed: 0, in_progress: 0, not_started: 0 };
         planObjectives.forEach(item => { counts[objectiveStatus(item)] = (counts[objectiveStatus(item)] || 0) + 1; });
         const average = planObjectives.length ? Math.round(planObjectives.reduce((sum, item) => sum + percent(item), 0) / planObjectives.length) : 0;
         return { plan, objectives: planObjectives, counts, average };
     });
+    const selectedProgress = progressByPlan.find(item => String(item.plan.record_id) === selectedPlanId);
 
     const reportRows = {
         plans: filteredPlans.map(plan => ({ plan_id: plan.record_id, plan: plan.title, status: plan.status, planning_start_date: plan.planning_start_date, planning_end_date: plan.planning_end_date })),
@@ -183,7 +207,7 @@ function ManagementDashboard({ session }) {
         { label: 'Ongoing Objectives', value: loading ? '—' : ongoing, detail: 'In progress', icon: 'bi-bar-chart-line-fill', tone: 'blue' },
         { label: 'Completed Objectives', value: loading ? '—' : completed, detail: 'On track', icon: 'bi-check-lg', tone: 'green' },
         { label: 'Delayed Objectives', value: loading ? '—' : delayed, detail: 'Incomplete after plan end date', icon: 'bi-hourglass-split', tone: 'red' },
-        { label: 'Alignment Coverage', value: loading ? '—' : `${alignmentCoverage}%`, detail: 'Strategic alignment', icon: 'bi-bullseye', tone: 'purple' },
+        { label: 'Alignment Coverage', value: loading ? '—' : `${alignmentCoverage}%`, detail: 'Objectives linked to Agenda and PDP', icon: 'bi-bullseye', tone: 'purple' },
     ];
 
     const tabButtons = tabs.filter(tab => can(tab.permission, session)).map(tab => h('button', {
@@ -213,12 +237,26 @@ function ManagementDashboard({ session }) {
             h('div', { className: 'management-legend' },
                 [['is-completed', 'Completed'], ['is-ongoing', 'In Progress'], ['is-not-started', 'Not Started']].map(([tone, label]) => h('span', { key: tone }, h('i', { className: tone }), label)))),
         h('section', { className: 'management-card management-table-card' },
-            h('div', { className: 'management-card__heading' }, h('div', null, h('h2', null, 'Progress Breakdown'), h('p', null, `${filteredPlans.length} plan(s) · ${filteredObjectives.length} objective(s)`))),
+            h('div', { className: 'management-card__heading' }, h('div', null, h('h2', null, 'Progress Breakdown'), h('p', null, `${filteredPlans.length} plan(s) · ${filteredObjectives.length} objective(s). Parent plans include objectives from their child plans.`))),
             h('div', { className: 'management-table-scroll' }, h('table', null,
-                h('thead', null, h('tr', null, ['Strategic Plan', 'Objectives', 'Completed', 'In Progress', 'Not Started', 'Average Progress'].map(label => h('th', { key: label, scope: 'col' }, label)))),
-                h('tbody', null, loading ? h('tr', null, h('td', { colSpan: 6 }, 'Loading plan progress…')) : progressByPlan.length ? progressByPlan.map(item => h('tr', { key: item.plan.record_id },
-                    h('td', null, item.plan.title), h('td', null, item.objectives.length), h('td', null, item.counts.completed), h('td', null, item.counts.in_progress), h('td', null, item.counts.not_started),
-                    h('td', null, h('div', { className: 'management-progress-cell' }, h('span', null, `${item.average}%`), h('span', { className: 'management-progress-track' }, h('i', { style: { width: `${item.average}%` } })))))) : h('tr', null, h('td', { colSpan: 6 }, 'No strategic plans found.')))))));
+                h('thead', null, h('tr', null, ['Strategic Plan', 'Level / Parent', 'Objectives', 'Completed', 'In Progress', 'Not Started', 'Average Progress', 'Action'].map(label => h('th', { key: label, scope: 'col' }, label)))),
+                h('tbody', null, loading ? h('tr', null, h('td', { colSpan: 8 }, 'Loading plan progress…')) : progressByPlan.length ? progressByPlan.map(item => h('tr', { key: item.plan.record_id },
+                    h('th', { scope: 'row' }, item.plan.title),
+                    h('td', null, [item.plan.level?.replaceAll('_', ' '), (item.plan.parents || []).map(parent => parent.title).join(', ')].filter(Boolean).join(' · ') || '—'),
+                    h('td', null, item.objectives.length), h('td', null, item.counts.completed), h('td', null, item.counts.in_progress), h('td', null, item.counts.not_started),
+                    h('td', null, h('div', { className: 'management-progress-cell' }, h('span', null, `${item.average}%`), h('span', { className: 'management-progress-track' }, h('i', { style: { width: `${item.average}%` } })))),
+                    h('td', null, h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setSelectedPlanId(String(item.plan.record_id)) }, 'View objectives')))) : h('tr', null, h('td', { colSpan: 8 }, 'No strategic plans found.'))))),
+            selectedProgress ? h('div', { className: 'management-monitor-detail' },
+                h('div', { className: 'management-card__heading' }, h('div', null, h('h3', null, selectedProgress.plan.title), h('p', null, `${selectedProgress.objectives.length} objective(s) · ${selectedProgress.average}% average progress`)),
+                    h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setSelectedPlanId('') }, 'Close')),
+                h('div', { className: 'management-table-scroll' }, h('table', null,
+                    h('thead', null, h('tr', null, ['Objective', 'Plan', 'Responsible office', 'Progress', 'Status', 'Last update'].map(label => h('th', { key: label, scope: 'col' }, label)))),
+                    h('tbody', null, selectedProgress.objectives.length ? selectedProgress.objectives.map(objective => h('tr', { key: objective.objective_id },
+                        h('th', { scope: 'row' }, objective.objective_title || `Objective ${objective.objective_id}`),
+                        h('td', null, plansById.get(String(objective.strategic_plan_id))?.title || '—'),
+                        h('td', null, objective.responsible_unit_assignment?.responsible_unit?.name || objective.responsible_office_agency || '—'),
+                        h('td', null, `${percent(objective)}%`), h('td', null, statusLabels[objectiveStatus(objective)] || objectiveStatus(objective)),
+                        h('td', null, formatDate(objective.progress_updated_at)))) : h('tr', null, h('td', { colSpan: 6 }, 'No objectives under this plan.')))))) : null));
 
     const alignmentMappingContent = h('section', { className: 'management-card management-table-card' },
         h('div', { className: 'management-card__heading' }, h('div', null, h('h2', null, 'Agenda / PDP Alignment'), h('p', null, 'Presidential Agenda → PDP Chapter → Strategic Objective → Responsible Agency')),
@@ -251,12 +289,26 @@ function ManagementDashboard({ session }) {
         { id: 'inputs', title: 'Agency Input Report', description: 'Submitted agency implementation updates, review status and submission date.', icon: 'bi-building-check', count: filteredInputs.length, label: 'agency inputs', rows: reportRows.inputs },
         { id: 'reviews', title: 'Assigned Approval Queue', description: 'Plan approvals assigned to your account and their current workflow stage.', icon: 'bi-clipboard-check', count: reviews.length, label: 'pending reviews', rows: reportRows.reviews },
     ];
-    const reportsContent = h('section', { className: 'management-report-grid', 'aria-label': 'Reports and summaries' }, reports.filter(report => report.id !== 'inputs' || can(P.INPUTS_VIEW, session)).map(report => h('article', { className: 'management-card management-report-card', key: report.id },
-        h('span', { className: 'management-report-card__icon' }, h('i', { className: `bi ${report.icon}` })),
-        h('div', null, h('h2', null, report.title), h('p', null, report.description), h('small', null, `${loading ? '—' : report.count} ${report.label}`)),
-        h('div', { className: 'management-report-card__actions' },
-            h('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: report.id === 'inputs' ? '/consolidate-inputs' : report.id === 'alignment' ? '/mappings?mode=view' : report.id === 'reviews' ? '/strategic-plan-reviews' : report.id === 'plans' ? '/strategic-plans' : '/office?view=progress' }, 'View'),
-            h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', disabled: loading || !report.rows.length, onClick: () => downloadCsv(`${report.id}-report.csv`, report.rows) }, 'Export CSV')))));
+    const visibleReports = reports.filter(report => report.id !== 'inputs' || can(P.INPUTS_VIEW, session));
+    const selectedReport = visibleReports.find(report => report.id === activeReport);
+    const reportsContent = h('section', { className: 'management-card management-table-card', 'aria-label': 'Reports and summaries' },
+        h('div', { className: 'management-card__heading' }, h('div', null,
+            h('h2', null, selectedReport ? selectedReport.title : 'Reports & Summary'),
+            h('p', null, selectedReport ? selectedReport.description : 'Browse reporting datasets, inspect records and export CSV files.')),
+            selectedReport ? h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setActiveReport('') }, 'Back to reports') : null),
+        selectedReport
+            ? h(React.Fragment, null,
+                h('div', { className: 'management-report-detail__actions' }, h('span', null, `${selectedReport.rows.length} ${selectedReport.label}`),
+                    h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', disabled: !selectedReport.rows.length, onClick: () => downloadCsv(`${selectedReport.id}-report.csv`, selectedReport.rows) }, 'Export CSV')),
+                h('div', { className: 'management-table-scroll' }, h('table', null,
+                    h('thead', null, h('tr', null, (selectedReport.rows.length ? Object.keys(selectedReport.rows[0]) : ['No records']).map(key => h('th', { key, scope: 'col' }, key.replaceAll('_', ' '))))),
+                    h('tbody', null, selectedReport.rows.length ? selectedReport.rows.map((row, index) => h('tr', { key: index }, Object.keys(row).map(key => h('td', { key }, String(row[key] ?? '—'))))) : h('tr', null, h('td', null, 'No records available.'))))))
+            : h('div', { className: 'management-report-list' }, visibleReports.map(report => h('article', { className: 'management-report-list__row', key: report.id },
+                h('span', { className: 'management-report-card__icon' }, h('i', { className: `bi ${report.icon}`, 'aria-hidden': true })),
+                h('div', { className: 'management-report-list__copy' }, h('h3', null, report.title), h('p', null, report.description), h('small', null, `${loading ? '—' : report.count} ${report.label}`)),
+                h('div', { className: 'management-report-card__actions' },
+                    h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setActiveReport(report.id) }, 'View'),
+                    h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', disabled: loading || !report.rows.length, onClick: () => downloadCsv(`${report.id}-report.csv`, report.rows) }, 'Export CSV'))))));
 
     const pendingContent = h('section', { className: 'management-card management-table-card' },
         h('div', { className: 'management-card__heading' }, h('div', null, h('h2', null, 'Approval List'), h('p', null, 'Approval items currently assigned to your account.')),
@@ -290,6 +342,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(h('p', { role: 'status' }, 'Loading Management access…'));
 apiRequest('/api/auth/me').then(payload => {
     const session = saveAccessSession(createAccessSession(payload.data));
-    if (!roles.includes(session.roleName)) { window.location.replace('/access-denied'); return; }
-    if (enforcePageAccess()) root.render(h(ManagementDashboard, { session }));
+    if (!enforcePageAccess()) return;
+    if (!isManagementSession(session)) { window.location.replace('/access-denied'); return; }
+    root.render(h(ManagementDashboard, { session }));
 }).catch(error => root.render(h('p', { role: 'alert' }, error.message)));

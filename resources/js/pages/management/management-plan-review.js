@@ -1,4 +1,4 @@
-import { getStrategicPlan } from '../../api/strategic-plans-api.js';
+import { getStrategicPlan, listStrategicPlanComments, addStrategicPlanComment } from '../../api/strategic-plans-api.js';
 import { listStrategicObjectives } from '../../api/strategic-objectives-api.js';
 import { apiRequest } from '../../api/api-client.js';
 
@@ -15,16 +15,21 @@ function field(label, value) {
     return h('div', { className: 'office-summary-field', key: label }, h('dt', null, label), h('dd', null, value || 'Not provided'));
 }
 
-export function ManagementPlanReview({ plans, planId, onOpenPlan, onBack }) {
+export function ManagementPlanReview({ plans, planId, canComment = false, onOpenPlan, onBack }) {
     const [plan, setPlan] = useState(null);
     const [objectives, setObjectives] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [comments, setComments] = useState([]);
+    const [commentText, setCommentText] = useState('');
+    const [commentError, setCommentError] = useState('');
+    const [savingComment, setSavingComment] = useState(false);
 
     useEffect(() => {
         if (!planId) { setPlan(null); setObjectives([]); setError(''); return undefined; }
         let active = true;
         setLoading(true); setError('');
+        setComments([]); setCommentError(''); setCommentText('');
         Promise.all([getStrategicPlan(planId), listStrategicObjectives(planId)])
             .then(([planPayload, objectivePayload]) => {
                 if (!active) return;
@@ -33,8 +38,28 @@ export function ManagementPlanReview({ plans, planId, onOpenPlan, onBack }) {
             })
             .catch(reason => { if (active) setError(reason.message || 'Unable to load plan details.'); })
             .finally(() => { if (active) setLoading(false); });
+        if (canComment) listStrategicPlanComments(planId).then(payload => {
+            if (active) setComments(payload.data || []);
+        }).catch(reason => { if (active) setCommentError(reason.message || 'Comments could not be loaded.'); });
         return () => { active = false; };
-    }, [planId]);
+    }, [planId, canComment]);
+
+    async function submitComment(event) {
+        event.preventDefault();
+        const content = commentText.trim();
+        if (!content || !canComment || savingComment) return;
+        setSavingComment(true);
+        setCommentError('');
+        try {
+            const payload = await addStrategicPlanComment(planId, content);
+            setComments(rows => [...rows, payload.data]);
+            setCommentText('');
+        } catch (reason) {
+            setCommentError(reason.message || 'Comment could not be saved.');
+        } finally {
+            setSavingComment(false);
+        }
+    }
 
     if (!planId) return h('section', { className: 'management-card management-table-card' },
         h('div', { className: 'management-card__heading' }, h('div', null, h('h2', null, 'Strategic Plans for Review'), h('p', null, 'Review plan foundations and objectives using the authorized plans available to your role.'))),
@@ -69,7 +94,15 @@ export function ManagementPlanReview({ plans, planId, onOpenPlan, onBack }) {
             h('h2', { id: 'management-objectives-title' }, 'Strategic Objectives'),
             h('div', { className: 'office-table-scroll' }, h('table', null,
                 h('thead', null, h('tr', null, ['No.', 'Objective', 'Expected outcome', 'Indicator', 'Target', 'Responsible Office / Agency', 'Progress'].map(label => h('th', { key: label, scope: 'col' }, label)))),
-                h('tbody', null, objectiveRows))))) : null;
+                h('tbody', null, objectiveRows)))),
+        canComment ? h('section', { className: 'management-plan-comments', 'aria-labelledby': 'management-plan-comments-title' },
+            h('h2', { id: 'management-plan-comments-title' }, 'Plan comments'),
+            commentError ? h('p', { className: 'management-dashboard__errors', role: 'alert' }, commentError) : null,
+            comments.length ? h('ul', null, comments.map(comment => h('li', { key: comment.plan_comment_id },
+                h('p', null, comment.content), h('small', null, `${comment.submitter_name || 'Reviewer'} · ${dateLabel(comment.submitted_at)}`)))) : h('p', { className: 'management-empty' }, 'No comments yet.'),
+            h('form', { onSubmit: submitComment },
+                h('label', null, h('span', null, 'Add a comment'), h('textarea', { value: commentText, onChange: event => setCommentText(event.target.value), rows: 3, maxLength: 10000, required: true })),
+                h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'submit', disabled: savingComment || !commentText.trim() }, savingComment ? 'Saving…' : 'Post comment'))) : null) : null;
     return h('div', { className: 'management-plan-review' },
         h('button', { className: 'ui-button ui-button--secondary ui-button--sm management-plan-review__back', type: 'button', onClick: onBack }, h('i', { className: 'bi bi-chevron-left', 'aria-hidden': true }), ' Back to plans'),
         loading ? h('p', { role: 'status' }, 'Loading plan review…') : null,

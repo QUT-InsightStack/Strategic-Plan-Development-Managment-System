@@ -7,7 +7,7 @@ export function navigationRole(role) {
     if (['Administrator', 'Technical Administrator', 'Technical Admin', 'test'].includes(role)) return 'technical';
     if (['Administrative Admin', 'Administrative Administrator'].includes(role)) return 'administrative';
     if (isOfficeRole(role)) return 'office';
-    if (['Management', 'Executive', 'Management / Executive'].includes(role)) return 'management';
+    if (['Management', 'Executive', 'Management / Executive', 'Division Head'].includes(role)) return 'management';
     return 'planner';
 }
 const review = page('office-review', 'Plan Review', '/office', ['strategic_records.view']);
@@ -53,11 +53,11 @@ export const roleNavigation = {
         page('edit-objectives', 'Edit Objectives', '/office?view=edit', ['strategic_records.view', 'strategic_objectives.update']),
     ]), group('mapping', 'Agency Mapping', [{ ...mapping, label: 'Add Agency to Mapping' }, alignment], 'bi-map'),
     group('monitoring', 'Monitoring', [{ ...progress, label: 'Progress Updates' }, pending('office-monitoring', 'Monitoring Dashboard'), pending('office-reports', 'Reports')], 'bi-graph-up')],
-    management: [page('approval-list', 'Approval List', '/strategic-plan-reviews'),
-        group('planning', 'Planning', [page('plan-review', 'Plan Review', '/management-plan-review', ['strategic_records.view'])]),
-        group('alignment', 'Alignment Review', [page('alignment-review', 'Agenda / PDP Alignment', '/management-dashboard?tab=alignment', ['relations.view']), { ...inputs, label: 'Agency Input Review' }, page('documents', 'Reference Documents', '/management-dashboard?tab=alignment&section=documents', ['strategic_documents.view'])], 'bi-diagram-3'),
-        group('monitoring', 'Monitoring', [page('monitoring', 'Progress Summary', '/management-dashboard?tab=dashboard', ['strategic_records.view']), page('reports', 'Reports', '/management-dashboard?tab=reports', ['strategic_records.view']), progress], 'bi-graph-up'),
-        group('additional', 'More Functions', [page('finalize', 'Finalize Plans', '/strategic-plans/finalize', ['strategic_records.update'], { hideWhenDenied: true })]),
+    management: [page('approval-list', 'Approve List', '/management-approvals', ['strategic_records.view']),
+        group('planning', 'Planning Module', [page('plan-review', 'Plan Review', '/management-plan-review', ['strategic_records.view']), page('objectives-review', 'Objectives Review', '/management-plan-review?view=objectives', ['strategic_records.view', 'strategic_objectives.view'])]),
+        group('alignment', 'Alignment Review', [page('alignment-review', 'Strategic Alignment Review', '/mappings?mode=view', ['relations.view']), { ...inputs, label: 'Agency Input Review' }], 'bi-diagram-3'),
+        group('monitoring', 'Monitoring', [page('monitoring', 'Plan and Objective Progress', '/management-dashboard?tab=dashboard', ['strategic_records.view'])], 'bi-graph-up'),
+        group('reports', 'Reports & Summary', [page('reports', 'Browse Reports', '/management-dashboard?tab=reports', ['strategic_records.view'])], 'bi-file-earmark-bar-graph'),
     ],
 };
 export const dashboardLabels = { technical: 'Technical Administration Dashboard', administrative: 'Administrative Dashboard', planner: 'Planning Dashboard', office: 'Office/Agency Dashboard', management: 'Executive Dashboard' };

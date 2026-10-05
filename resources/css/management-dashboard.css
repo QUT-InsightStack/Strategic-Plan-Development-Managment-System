@@ -72,6 +72,9 @@
 .management-status.is-completed { color: #167245; background: #e5f6ec; }
 .management-status.is-in_progress { color: #1767a1; background: #e5f2ff; }
 .management-status.is-not_started { color: #5e6871; background: #eef0f2; }
+.management-status.is-approved { color: #167245; background: #e5f6ec; }
+.management-status.is-pending { color: #995800; background: #fff1d6; }
+.management-status.is-returned { color: #a43c32; background: #fff0ec; }
 .management-report-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: var(--space-4); }
 .management-report-card { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: start; gap: 10px 13px; padding: 16px; }
 .management-report-card__icon { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 9px; color: #2364ad; background: #ebf3ff; font-size: 19px; }
@@ -92,6 +95,29 @@
 .management-alignment-sections__item { display: inline-flex; min-height: 38px; align-items: center; border: 0; border-bottom: 3px solid transparent; padding: 7px 12px; color: var(--color-text-secondary); background: transparent; font: inherit; font-size: var(--font-size-sm); font-weight: 650; text-decoration: none; cursor: pointer; }
 .management-alignment-sections__item:hover { color: var(--color-primary); background: #edf5ff; }
 .management-alignment-sections__item.is-active { border-bottom-color: var(--color-brand-cyan); color: var(--color-primary); }
+.management-monitor-detail { border-top: 1px solid #dce5ef; background: #f8fbff; }
+.management-monitor-detail h3 { margin: 0; color: var(--color-primary); font-size: var(--font-size-sm); }
+.management-report-list { display: grid; }
+.management-report-list__row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 14px; border-top: 1px solid #e4eaf1; padding: 16px; }
+.management-report-list__row:first-child { border-top: 0; }
+.management-report-list__copy h3 { margin: 0; color: var(--color-primary); font-size: var(--font-size-sm); }
+.management-report-list__copy p { margin: 3px 0; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+.management-report-list__copy small { color: var(--color-text-secondary); }
+.management-report-list__row .management-report-card__actions { grid-column: auto; white-space: nowrap; }
+.management-report-detail__actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+.management-approvals__search { display: grid; gap: 4px; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+.management-approvals__search input { width: min(260px, 70vw); min-height: 36px; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 7px 10px; font: inherit; }
+.management-approvals__search input:focus-visible { outline: var(--focus-ring); }
+.management-plan-comments { border-top: 1px solid #dce5ef; padding-top: 16px; }
+.management-plan-comments h2 { margin: 0 0 12px; color: var(--color-primary); font-size: var(--font-size-md); }
+.management-plan-comments ul { display: grid; gap: 8px; margin: 0 0 14px; padding: 0; list-style: none; }
+.management-plan-comments li { border: 1px solid #dce5ef; border-radius: var(--radius-md); padding: 10px 12px; background: #f8fbff; }
+.management-plan-comments li p { margin: 0 0 5px; white-space: pre-wrap; }
+.management-plan-comments li small { color: var(--color-text-secondary); }
+.management-plan-comments form { display: grid; justify-items: start; gap: 10px; }
+.management-plan-comments label { display: grid; width: min(100%, 700px); gap: 5px; font-size: var(--font-size-sm); font-weight: 650; }
+.management-plan-comments textarea { width: 100%; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 10px; font: inherit; }
 @media (max-width: 1180px) { .management-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .management-dashboard__content { padding: var(--space-4); } .management-dashboard__header { align-items: stretch; flex-direction: column; } .management-dashboard__controls { align-items: stretch; } .management-dashboard__controls label { flex: 1; } .management-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .management-report-grid { grid-template-columns: 1fr; } .management-dashboard__panel { padding: 10px; } }
 @media (max-width: 480px) { .management-dashboard__controls { flex-direction: column; } .management-dashboard__controls label { min-width: 0; } .management-kpis { grid-template-columns: 1fr 1fr; gap: 7px; } .management-kpi { align-items: flex-start; flex-direction: column; padding: 9px; } .management-card__heading { align-items: flex-start; flex-direction: column; } .management-bar-row { grid-template-columns: minmax(80px, 1fr) minmax(90px, 2fr) 36px; gap: 7px; } }
+@media (max-width: 760px) { .management-report-list__row { grid-template-columns: 44px minmax(0, 1fr); } .management-report-list__row .management-report-card__actions { grid-column: 2; flex-wrap: wrap; } }

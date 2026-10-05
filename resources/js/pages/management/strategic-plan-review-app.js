@@ -170,11 +170,11 @@ function DecisionDialog({
         dialog.decision === 'reject';
 
     const title = rejecting
-        ? 'Reject Strategic Plan?'
+        ? 'Return Strategic Plan for correction?'
         : 'Approve Strategic Plan?';
 
     const description = rejecting
-        ? 'Provide a reason for rejecting this Strategic Plan. The current approval cycle will stop and the plan will require correction and resubmission.'
+        ? 'Add a comment explaining the corrections needed. The current approval cycle will end and the plan can be resubmitted.'
         : 'Confirm that you have reviewed the Strategic Plan and want to approve it at the current workflow stage.';
 
     return h(
@@ -245,7 +245,7 @@ function DecisionDialog({
                         className: 'ui-label',
                     },
                     rejecting
-                        ? 'Reason for rejection *'
+                        ? 'Correction comment *'
                         : 'Approval comment (optional)'
                 ),
 
@@ -325,7 +325,7 @@ function DecisionDialog({
                     processing
                         ? 'Processing…'
                         : rejecting
-                            ? 'Confirm Rejection'
+                            ? 'Return for correction'
                             : 'Confirm Approval'
                 )
             )
@@ -488,7 +488,7 @@ async function confirmDecision() {
         !comment
     ) {
         setDecisionError(
-            'Enter a reason before rejecting the Strategic Plan.'
+            'Enter a correction comment before returning the Strategic Plan.'
         );
         return;
     }
@@ -518,7 +518,7 @@ async function confirmDecision() {
             setNotice({
                 type: 'success',
                 message:
-                    'The Strategic Plan was rejected. The current approval cycle has ended and the rejection reason was recorded.',
+                    'The Strategic Plan was returned for correction. The current approval cycle has ended and your comment was recorded.',
             });
 
             return;
@@ -1609,7 +1609,7 @@ h(
                     null,
                     submission?.status ===
                     'rejected'
-                        ? 'Plan rejected'
+                        ? 'Returned for correction'
                         : submission?.status ===
                             'approved'
                             ? 'Final approval completed'
@@ -1648,7 +1648,7 @@ h(
                     h(
                         'p',
                         null,
-                        'Approval advances the plan to the next stage. Rejection ends the current approval cycle and requires a reason.'
+                        'Approval advances the plan to the next stage. Returning it ends the current cycle and requires a correction comment.'
                     )
                 ),
 
@@ -1677,7 +1677,7 @@ h(
                                 'bi bi-x-lg',
                             'aria-hidden': 'true',
                         }),
-                        'Reject'
+                        'Return for correction'
                     ),
 
                     h(

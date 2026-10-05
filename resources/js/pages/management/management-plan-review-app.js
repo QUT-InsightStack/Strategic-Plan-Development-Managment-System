@@ -5,9 +5,9 @@ import { ManagementPlanReview } from './management-plan-review.js';
 import { createAccessSession, saveAccessSession, can } from '../../access/access-session.js';
 import { PERMISSIONS } from '../../access/access-policy.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
+import { isManagementSession } from '../../access/management-access.js';
 
 const h = React.createElement;
-const allowedRoles = ['Management', 'Executive', 'Management / Executive'];
 
 async function allAuthorizedPlans() {
     const plans = [];
@@ -23,8 +23,10 @@ async function allAuthorizedPlans() {
 }
 
 function PlanReviewPage({ session }) {
+    const query = new URLSearchParams(window.location.search);
+    const objectivesMode = query.get('view') === 'objectives';
     const [plans, setPlans] = React.useState([]);
-    const [selectedPlanId, setSelectedPlanId] = React.useState('');
+    const [selectedPlanId, setSelectedPlanId] = React.useState(query.get('plan') || '');
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState('');
     const [attempt, setAttempt] = React.useState(0);
@@ -43,11 +45,11 @@ function PlanReviewPage({ session }) {
         h('main', { className: 'app-shell-main' }, h('div', { className: 'management-dashboard__content' },
             h('header', { className: 'management-dashboard__header' },
                 h('div', null, h('p', { className: 'management-dashboard__eyebrow' }, 'Management / Executive · Planning Module'),
-                    h('h1', null, 'Plan Review'),
-                    h('p', null, 'Review strategic plan summaries, foundations and objectives.'))),
+                    h('h1', null, objectivesMode ? 'Objectives Review' : 'Plan Review'),
+                    h('p', null, objectivesMode ? 'Choose a plan to inspect its objective summary and progress.' : 'Review strategic plan summaries, foundations and objectives.'))),
             error ? h('div', { className: 'management-dashboard__errors', role: 'alert' }, error, ' ', h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setAttempt(value => value + 1) }, 'Retry')) : null,
             loading ? h('p', { role: 'status', className: 'management-empty' }, 'Loading authorized plans…') : can(PERMISSIONS.PLANS_VIEW, session)
-                ? h(ManagementPlanReview, { plans, planId: selectedPlanId, onOpenPlan: id => setSelectedPlanId(String(id)), onBack: () => setSelectedPlanId('') })
+                ? h(ManagementPlanReview, { plans, planId: selectedPlanId, canComment: can(PERMISSIONS.OBJECTIVE_COMMENTS_CREATE, session), onOpenPlan: id => setSelectedPlanId(String(id)), onBack: () => setSelectedPlanId('') })
                 : h('div', { className: 'management-dashboard__errors', role: 'alert' }, 'You do not have permission to review strategic plans.'),
             h('footer', { className: 'management-dashboard__footer' }, '© 2026 Strategic Planning Management System. All rights reserved.'))));
 }
@@ -56,6 +58,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(h('p', { role: 'status' }, 'Loading Management access…'));
 apiRequest('/api/auth/me').then(payload => {
     const session = saveAccessSession(createAccessSession(payload.data));
-    if (!allowedRoles.includes(session.roleName)) { window.location.replace('/access-denied'); return; }
-    if (enforcePageAccess()) root.render(h(PlanReviewPage, { session }));
+    if (!enforcePageAccess()) return;
+    if (!isManagementSession(session)) { window.location.replace('/access-denied'); return; }
+    root.render(h(PlanReviewPage, { session }));
 }).catch(error => root.render(h('p', { role: 'alert' }, error.message)));

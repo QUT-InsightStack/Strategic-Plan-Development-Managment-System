@@ -1,129 +1,23 @@
-# Management Dashboard (SPDM-50)
+# Management interface on `codex/management-dashboard-restructure`
 
-The Management dashboard gives Management and Executive users one page to
-monitor strategic plans, objective progress, alignment, approvals and office
-performance within their assigned scope.
+This branch starts from `develop` and incorporates the navigation, dashboard and read-only plan review from Meng Sun's `076dbc0` commit. The management experience uses the four sections in the Figma reference: progress, alignment, reports and pending review.
 
-- Page: `/management-dashboard`
-- Blade view: `resources/views/pages/management-dashboard.blade.php`
-- Page script: `resources/js/pages/management/management-dashboard-app.js`
-- Summaries: `resources/js/data/management-dashboard-data.js`
-- Access rules: `resources/js/access/management-access.js`
-- Styles: `resources/css/management-dashboard.css`
+## What changed
 
-## For Management users
+- **Approve List** (`/management-approvals`) separates pending, approved and returned-for-correction plans. It lists plans within the account's authorised scope. Only a review assigned to the current user links to the decision page. The existing decision API performs `approve` or `reject`; the interface describes `reject` as returning the plan for correction because a rejected submission can be resubmitted.
+- **Planning Module** links to the existing read-only plan and objective summary. The plan review page also shows plan comments when the account has `objective_comments.create`.
+- **Alignment Review** links directly to the existing read-only mapping page and agency input page. No second mapping implementation was added.
+- **Monitoring** keeps the original per-plan progress view and adds plan level, parent plan and an expandable objective breakdown. It reads progress fields from the objective API.
+- **Reports & Summary** presents a list of report datasets. A reviewer can open rows in the page and export each dataset as CSV.
+- The existing management permission helper is retained. The local-storage-based dashboard aggregation, which was unused after the redesign, was removed.
 
-Management and Executive users land on the dashboard after signing in, and
-**Home** in the sidebar opens it.
+## APIs and backend changes
 
-| Section | What it shows |
-| --- | --- |
-| Key figures | Plans in scope, average objective progress, alignment coverage, plans awaiting approval, and overdue or at-risk items |
-| Strategic Plan status | Plans by planning status (draft or finished) and by approval status |
-| Objective progress | Average reported progress and objectives by progress status (not started, in progress, blocked, completed) |
-| Strategic alignment coverage | Share of active objectives mapped to the Presidential Agenda and PDP chapters |
-| Inputs and consolidation | Office and agency inputs by review status, with review and consolidation rates |
-| Office / Unit performance | Objectives, reporting, average progress, completions and blocked items per responsible office or unit |
-| Plans awaiting approval | Current stage, assigned approver and how long each plan has waited |
-| Approved, returned and rejected plans | The most recent approval outcomes and their notes |
-| Overdue or at-risk items | Items that need attention (see below) |
-| Management controls | Links to management tools, shown only for permissions assigned to you |
+- Existing APIs: `GET /api/strategic-plans`, `GET /api/strategic-objectives`, `GET /api/plan-reviews`, `GET /api/strategic-plans/{id}/approval`, `POST /api/strategic-plans/{id}/approval/decision`, and plan comment endpoints.
+- A migration makes `responsible_unit_id` nullable on plan comments and grants management roles `objective_comments.create`. This lets management users comment without being assigned an agency unit. Deploying the comment feature requires applying this migration.
+- The approval backend has statuses `under_approval`, `approved`, `rejected`. There is no distinct `returned` status or `return` decision. If the project needs "returned" to differ from "rejected" in workflow rules or reports, extend the schema, service, API, and tracking UI together.
+- `GET /api/plan-reviews` only returns currently assigned pending submissions. The approved and returned tabs therefore show the current status of all authorised plans, not a history of decisions personally made by the current reviewer. A reviewer-specific history endpoint would be needed for that view.
 
-### Filters
+## Data notes
 
-Filter by Strategic Plan, planning period, office or unit, plan status,
-objective status and approval status. Filters apply to every section at once.
-**Clear filters** resets them.
-
-### Approving plans
-
-A **Review** button appears only on plans where you are an assigned reviewer
-for the current stage; other plans are marked *View only*. It opens the plan
-review page (`/strategic-plan-reviews/{id}`), where the approval decision is
-recorded. The dashboard itself does not record decisions.
-
-### Quick links
-
-Cards link to Assigned Plan Reviews, Strategic Plans, Agenda and PDP
-Alignment, Agency Input Review and Objective Progress. Each card appears only
-with its permission.
-
-### Overdue and at-risk items
-
-Planning records do not have due dates yet, so the dashboard flags:
-
-- **Overdue:** plans waiting 14 or more days at an approval stage, and inputs
-  pending review for 7 or more days.
-- **At risk:** objectives reported as blocked, and objectives with no progress
-  update in 30 or more days.
-
-You can change these limits in `RISK_THRESHOLDS`.
-
-## Technical notes
-
-### Access and scope
-
-- The route requires `dashboard.view`, enforced by `routeRules` in
-  `access-policy.js`.
-- The page also requires a management level (`isManagementSession`):
-  - the roles `Management`, `Executive`, `Management / Executive` or
-    `Division Head`;
-  - any role granted `management_dashboard.view`, so access can be configured
-    without a code change;
-  - Administrator (`*`).
-
-  Everyone else, including Technical Administrators, is sent to
-  `/access-denied`.
-- Scope is enforced by the API. `/api/strategic-plans` and
-  `/api/strategic-objectives` only return records inside the user's authorised
-  scope, and the dashboard summarises only what they return. If the API
-  refuses objectives (403), objective, alignment and unit summaries are
-  reduced and a notice explains why.
-- Management and Executive roles now land on `/management-dashboard` after
-  sign-in instead of `/strategic-plans`.
-
-### Controls and permissions
-
-| Control | Permission |
-| --- | --- |
-| Review | Assigned reviewer for the current stage (`isSubmissionAssignedToReviewer` in `plan-approval-api.js`) |
-| Manage or delete plans | `strategic_records.delete` |
-| Manage or delete objectives | `strategic_objectives.delete` |
-| Manage alignment mappings | `relations.manage` |
-| Manage reference data | `reference_data.manage` |
-| Manage user accounts | `users.manage` |
-| Manage roles and permissions | `roles.manage` |
-| Edit planning content | `strategic_records.update` |
-
-Technical security, system configuration, backup, restore and maintenance
-screens are never linked from this dashboard.
-
-### Data sources
-
-| Data | Source |
-| --- | --- |
-| Plans | `GET /api/strategic-plans` (all pages, 100 per page, up to 1,000) |
-| Objectives | `GET /api/strategic-objectives` (same paging) |
-| Plan approval status | `approval_status` on each plan |
-| Current stage and history | `GET /api/plan-reviews` (submissions assigned to you) |
-| Agency inputs, progress updates | `data/office-demo-storage.js` (browser storage, frontend demo) |
-| Alignment mappings | `mapping-storage.js` (browser storage, frontend demo) |
-
-All summaries are pure functions in `management-dashboard-data.js`. Building
-the dashboard only reads records; the page writes nothing.
-
-When backend endpoints exist for inputs, progress and mappings,
-replace the browser-storage readers in `loadDashboardData`. The summary
-functions will not need to change.
-
-### Tests
-
-```
-npm run test:frontend
-```
-
-The tests in `tests/Frontend/management-dashboard.test.js` cover:
-
-- the summaries and filters, and that building the dashboard does not change
-  the loaded records;
-- management access checks.
+The dashboard uses objective `progress_percentage`, `progress_status`, `progress_updated_at`, Agenda/PDP relations, and plan `parents` supplied by the backend. It no longer derives management summaries from browser local storage. Reporting-period filters apply to objective progress dates, while plan counts include all authorised plans.
