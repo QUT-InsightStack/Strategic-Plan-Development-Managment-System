@@ -30,6 +30,13 @@ function PlanReviewPage({ session }) {
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState('');
     const [attempt, setAttempt] = React.useState(0);
+    function choosePlan(id) {
+        setSelectedPlanId(String(id));
+        const url = new URL(window.location.href);
+        if (id) url.searchParams.set('plan', String(id));
+        else url.searchParams.delete('plan');
+        window.history.replaceState({}, '', url);
+    }
 
     React.useEffect(() => {
         let active = true;
@@ -49,7 +56,7 @@ function PlanReviewPage({ session }) {
                     h('p', null, objectivesMode ? 'Choose a plan to inspect its objective summary and progress.' : 'Review strategic plan summaries, foundations and objectives.'))),
             error ? h('div', { className: 'management-dashboard__errors', role: 'alert' }, error, ' ', h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setAttempt(value => value + 1) }, 'Retry')) : null,
             loading ? h('p', { role: 'status', className: 'management-empty' }, 'Loading authorized plans…') : can(PERMISSIONS.PLANS_VIEW, session)
-                ? h(ManagementPlanReview, { plans, planId: selectedPlanId, canComment: can(PERMISSIONS.OBJECTIVE_COMMENTS_CREATE, session), onOpenPlan: id => setSelectedPlanId(String(id)), onBack: () => setSelectedPlanId('') })
+                ? h(ManagementPlanReview, { plans, planId: selectedPlanId, mode: objectivesMode ? 'objectives' : 'plans', canComment: can(PERMISSIONS.OBJECTIVE_COMMENTS_CREATE, session), onOpenPlan: choosePlan, onBack: () => choosePlan('') })
                 : h('div', { className: 'management-dashboard__errors', role: 'alert' }, 'You do not have permission to review strategic plans.'),
             h('footer', { className: 'management-dashboard__footer' }, '© 2026 Strategic Planning Management System. All rights reserved.'))));
 }

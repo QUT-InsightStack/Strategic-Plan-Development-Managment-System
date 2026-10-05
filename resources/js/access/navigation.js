@@ -53,17 +53,18 @@ export const roleNavigation = {
         page('edit-objectives', 'Edit Objectives', '/office?view=edit', ['strategic_records.view', 'strategic_objectives.update']),
     ]), group('mapping', 'Agency Mapping', [{ ...mapping, label: 'Add Agency to Mapping' }, alignment], 'bi-map'),
     group('monitoring', 'Monitoring', [{ ...progress, label: 'Progress Updates' }, pending('office-monitoring', 'Monitoring Dashboard'), pending('office-reports', 'Reports')], 'bi-graph-up')],
-    management: [page('approval-list', 'Approve List', '/management-approvals', ['strategic_records.view']),
+    management: [page('approval-list', 'Approve List', '/management-approvals', ['strategic_records.view'], { icon: 'bi-clipboard-check' }),
         group('planning', 'Planning Module', [page('plan-review', 'Plan Review', '/management-plan-review', ['strategic_records.view']), page('objectives-review', 'Objectives Review', '/management-plan-review?view=objectives', ['strategic_records.view', 'strategic_objectives.view'])]),
-        group('alignment', 'Alignment Review', [page('alignment-review', 'Strategic Alignment Review', '/mappings?mode=view', ['relations.view']), { ...inputs, label: 'Agency Input Review' }], 'bi-diagram-3'),
-        group('monitoring', 'Monitoring', [page('monitoring', 'Plan and Objective Progress', '/management-dashboard?tab=dashboard', ['strategic_records.view'])], 'bi-graph-up'),
-        group('reports', 'Reports & Summary', [page('reports', 'Browse Reports', '/management-dashboard?tab=reports', ['strategic_records.view'])], 'bi-file-earmark-bar-graph'),
+        group('alignment', 'Alignment Review', [page('alignment-review', 'Strategic Alignment Review', '/management-dashboard?tab=alignment', ['relations.view']), { ...inputs, label: 'Agency Input Review' }], 'bi-diagram-3'),
+        page('monitoring', 'Monitoring', '/management-dashboard?tab=dashboard', ['strategic_records.view'], { icon: 'bi-graph-up' }),
+        page('reports', 'Reports & Summary', '/management-dashboard?tab=reports', ['strategic_records.view'], { icon: 'bi-file-earmark-bar-graph' }),
     ],
 };
 export const dashboardLabels = { technical: 'Technical Administration Dashboard', administrative: 'Administrative Dashboard', planner: 'Planning Dashboard', office: 'Office/Agency Dashboard', management: 'Executive Dashboard' };
 export function navigationFor(role) {
     const kind = navigationRole(role);
-    return [page('home', 'Dashboard', kind === 'management' ? '/management-dashboard' : '/dashboard', [], { icon: 'bi-speedometer2' }), ...roleNavigation[kind], group('account', 'Account and Help', common, 'bi-person-circle')];
+    const home = kind === 'management' ? [] : [page('home', 'Dashboard', '/dashboard', [], { icon: 'bi-speedometer2' })];
+    return [...home, ...roleNavigation[kind], group('account', 'Account and Help', common, 'bi-person-circle')];
 }
 export function flattenNavigation(items) { return items.flatMap(item => item.children ? flattenNavigation(item.children) : [item]); }
 export function canOpenPage(item, session) {
@@ -81,6 +82,8 @@ export function isCurrentPage(item, input) {
     const target = new URL(item.href, 'http://localhost');
     if (item.id === 'objectives' && /^\/strategic-plans\/\d+\/objectives$/.test(current.pathname)) return true;
     if (current.pathname !== target.pathname) return false;
+    if (item.id === 'monitoring' && current.pathname === '/management-dashboard' && !current.searchParams.has('tab')) return true;
+    if (item.id === 'alignment-review' && current.pathname === '/management-dashboard' && current.searchParams.get('tab') === 'alignment') return true;
     const keys = ['view', 'section', 'tab', 'feature', 'mode'];
     return keys.every(key => (current.searchParams.get(key) || '') === (target.searchParams.get(key) || ''));
 }

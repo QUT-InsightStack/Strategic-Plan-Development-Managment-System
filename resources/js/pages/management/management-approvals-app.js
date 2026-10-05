@@ -5,11 +5,12 @@ import { listAssignedPlanSubmissions } from '../../api/plan-approval-api.js';
 import { createAccessSession, saveAccessSession } from '../../access/access-session.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
 import { isManagementSession } from '../../access/management-access.js';
+import { ManagementPagination, pageRows } from '../../components/ManagementPagination.js';
 
 const h = React.createElement;
 const sections = [
-    { id: 'pending', label: 'Pending approval', icon: 'bi-hourglass-split' },
     { id: 'approved', label: 'Approved', icon: 'bi-check-circle' },
+    { id: 'pending', label: 'Pending approval', icon: 'bi-hourglass-split' },
     { id: 'returned', label: 'Returned for correction', icon: 'bi-arrow-return-left' },
 ];
 
@@ -36,6 +37,7 @@ function ApprovalsPage({ session }) {
     const requested = new URLSearchParams(window.location.search).get('status');
     const [section, setSection] = React.useState(sections.some(item => item.id === requested) ? requested : 'pending');
     const [search, setSearch] = React.useState('');
+    const [page, setPage] = React.useState(1);
     const [state, setState] = React.useState({ plans: [], assigned: [], loading: true, error: '' });
 
     React.useEffect(() => {
@@ -59,9 +61,11 @@ function ApprovalsPage({ session }) {
         returned: state.plans.filter(plan => plan.approval_status === 'rejected'),
     };
     const visible = groups[section].filter(plan => `${plan.record_id} ${plan.title || ''} ${plan.department_agency || ''}`.toLowerCase().includes(search.trim().toLowerCase()));
+    const pagedVisible = pageRows(visible, page);
 
     function selectSection(id) {
         setSection(id);
+        setPage(1);
         const url = new URL(window.location.href);
         url.searchParams.set('status', id);
         window.history.replaceState({}, '', url);
@@ -75,20 +79,29 @@ function ApprovalsPage({ session }) {
                 h('h1', null, 'Approve List'),
                 h('p', null, `Review plans within your access. Decisions are available only when the current stage is assigned to ${session.name || 'you'}.`))),
             state.error ? h('p', { className: 'management-dashboard__errors', role: 'alert' }, state.error) : null,
+            h('section', { className: 'management-kpis', 'aria-label': 'Approval summary' }, [
+                { label: 'Plans in scope', value: state.plans.length, icon: 'bi-files', tone: 'blue' },
+                { label: 'Pending approval', value: groups.pending.length, icon: 'bi-hourglass-split', tone: 'blue' },
+                { label: 'Approved', value: groups.approved.length, icon: 'bi-check-circle', tone: 'green' },
+                { label: 'Returned', value: groups.returned.length, icon: 'bi-arrow-return-left', tone: 'red' },
+                { label: 'Assigned to me', value: state.assigned.length, icon: 'bi-person-check', tone: 'purple' },
+            ].map(item => h('article', { className: `management-kpi is-${item.tone}`, key: item.label },
+                h('span', { className: 'management-kpi__icon' }, h('i', { className: `bi ${item.icon}`, 'aria-hidden': true })),
+                h('span', { className: 'management-kpi__copy' }, h('small', null, item.label), h('strong', null, state.loading ? '—' : item.value))))),
             h('nav', { className: 'management-dashboard__tabs', 'aria-label': 'Approval status' }, sections.map(item => h('button', {
                 key: item.id, type: 'button', className: `management-dashboard__tab${section === item.id ? ' is-active' : ''}`,
                 'aria-current': section === item.id ? 'page' : undefined, onClick: () => selectSection(item.id),
             }, h('i', { className: `bi ${item.icon}`, 'aria-hidden': true }), ` ${item.label} (${groups[item.id].length})`))),
-            h('section', { className: 'management-card management-table-card' },
+            h('section', { className: 'management-card management-table-card management-approvals__panel' },
                 h('div', { className: 'management-card__heading' }, h('div', null,
                     h('h2', null, sections.find(item => item.id === section).label),
                     h('p', null, section === 'returned' ? 'The current backend records returned-for-correction decisions as rejected submissions; the submitting team can correct and resubmit.' : 'Open a plan to review its details and current workflow status.')),
                 h('label', { className: 'management-approvals__search' }, h('span', null, 'Search plans'), h('input', {
-                    type: 'search', value: search, onChange: event => setSearch(event.target.value), placeholder: 'Plan title, ID or agency',
+                    type: 'search', value: search, onChange: event => { setSearch(event.target.value); setPage(1); }, placeholder: 'Plan title, ID or agency',
                 }))),
                 h('div', { className: 'management-table-scroll' }, h('table', null,
                     h('thead', null, h('tr', null, ['Strategic plan', 'Agency / Office', 'Current stage', 'Submitted / Updated', 'Status', 'Action'].map(label => h('th', { key: label, scope: 'col' }, label)))),
-                    h('tbody', null, state.loading ? h('tr', null, h('td', { colSpan: 6 }, 'Loading plans…')) : visible.length ? visible.map(plan => {
+                    h('tbody', null, state.loading ? h('tr', null, h('td', { colSpan: 6 }, 'Loading plans…')) : pagedVisible.length ? pagedVisible.map(plan => {
                         const review = assigned.get(String(plan.record_id));
                         return h('tr', { key: plan.record_id },
                             h('th', { scope: 'row' }, plan.title || `Plan ${plan.record_id}`),
@@ -97,7 +110,8 @@ function ApprovalsPage({ session }) {
                             h('td', null, dateLabel(review?.submittedAt || plan.updated_at)),
                             h('td', null, h('span', { className: `management-status is-${section}` }, sections.find(item => item.id === section).label)),
                             h('td', null, h('a', { className: 'ui-button ui-button--primary ui-button--sm', href: review && section === 'pending' ? `/strategic-plan-reviews/${plan.record_id}` : `/management-plan-review?plan=${plan.record_id}` }, review && section === 'pending' ? 'Review / decide' : 'View plan')));
-                    }) : h('tr', null, h('td', { colSpan: 6 }, 'No plans in this category.')))))))));
+                    }) : h('tr', null, h('td', { colSpan: 6 }, 'No plans in this category.'))))),
+                h(ManagementPagination, { page, total: visible.length, onChange: setPage, label: 'plans' })))));
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
