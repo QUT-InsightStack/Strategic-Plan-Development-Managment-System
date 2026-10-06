@@ -14,6 +14,26 @@ import { filterManagementRows, officeName, officePerformance, objectiveRisk, pla
 const h = React.createElement;
 const statusLabels = { completed: 'Completed', in_progress: 'Ongoing', not_started: 'Not Started' };
 
+class ManagementErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { failed: false };
+    }
+
+    static getDerivedStateFromError() {
+        return { failed: true };
+    }
+
+    render() {
+        if (!this.state.failed) return this.props.children;
+        return h('main', { className: 'management-dashboard__content' },
+            h('div', { className: 'management-dashboard__errors', role: 'alert' },
+                h('h1', null, 'Management page could not be displayed'),
+                h('p', null, 'Refresh the page to try again. If the problem continues, check the browser console for details.'),
+                h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', onClick: () => window.location.reload() }, 'Reload page')));
+    }
+}
+
 function rowsFrom(payload) {
     return Array.isArray(payload?.data) ? payload.data : [];
 }
@@ -288,7 +308,7 @@ function ManagementDashboard({ session }) {
             h('thead', null, h('tr', null, ['Agency / Office', 'Strategic Plan', 'Strategic Objective', 'Presidential Agenda', 'PDP Chapter', 'Progress'].map(label => h('th', { key: label, scope: 'col' }, label)))),
             h('tbody', null, loading ? h('tr', null, h('td', { colSpan: 6 }, 'Loading agency mapping…')) : agencyObjectives.length ? pageRows(agencyObjectives, agencyPage).map(item =>
                 h('tr', { key: item.objective_id },
-                    h('th', { scope: 'row' }, agencyName(item)),
+                    h('th', { scope: 'row' }, officeName(item)),
                     h('td', null, item.strategic_plan?.title || plansById.get(String(item.strategic_plan_id))?.title || '—'),
                     h('td', null, item.objective_title || `Objective ${item.objective_id}`),
                     h('td', null, labelFor(item.presidential_agenda_items, ['title', 'item_title', 'agenda_title', 'name'])),
@@ -379,5 +399,5 @@ apiRequest('/api/auth/me').then(payload => {
     const session = saveAccessSession(createAccessSession(payload.data));
     if (!enforcePageAccess()) return;
     if (!isManagementSession(session)) { window.location.replace('/access-denied'); return; }
-    root.render(h(ManagementDashboard, { session }));
+    root.render(h(ManagementErrorBoundary, null, h(ManagementDashboard, { session })));
 }).catch(error => root.render(h('p', { role: 'alert' }, error.message)));
