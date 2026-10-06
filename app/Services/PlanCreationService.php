@@ -227,6 +227,12 @@ class PlanCreationService
             return $this->find($plan->record_id) ?? $plan;
         }
 
+        if ($status === 'archived' && $plan->approval_status === 'under_approval') {
+            throw ValidationException::withMessages([
+                'status' => ['Plans under approval cannot be archived. Complete or return the current review first.'],
+            ]);
+        }
+
         $fromStatus = $plan->status;
         $before = $this->planSnapshot($plan);
         $this->assertStatusTransitionAllowed($plan, $status);

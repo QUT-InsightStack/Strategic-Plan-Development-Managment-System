@@ -543,8 +543,9 @@ async function confirmDecision() {
                 `The Strategic Plan was approved at this stage and advanced to “${updatedSubmission.currentStage.name}”, assigned to ${updatedSubmission.currentStage.approver}.`,
         });
     } catch (error) {
+        const details = Object.values(error.errors || {}).flat().join(' ');
         setDecisionError(
-            error.message ||
+            details || error.message ||
             'The approval decision could not be processed.'
         );
     } finally {
