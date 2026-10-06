@@ -55,7 +55,7 @@ function PlanReviewPage({ session }) {
                     h('h1', null, objectivesMode ? 'Objectives Review' : 'Plan Review'),
                     h('p', null, objectivesMode ? 'Choose a plan to inspect its objective summary and progress.' : 'Review strategic plan summaries, foundations and objectives.'))),
             error ? h('div', { className: 'management-dashboard__errors', role: 'alert' }, error, ' ', h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setAttempt(value => value + 1) }, 'Retry')) : null,
-            loading ? h('p', { role: 'status', className: 'management-empty' }, 'Loading authorized plans…') : can(PERMISSIONS.PLANS_VIEW, session)
+            error ? null : loading ? h('p', { role: 'status', className: 'management-empty' }, 'Loading authorized plans…') : can(PERMISSIONS.PLANS_VIEW, session)
                 ? h(ManagementPlanReview, { plans, planId: selectedPlanId, mode: objectivesMode ? 'objectives' : 'plans', canComment: can(PERMISSIONS.OBJECTIVE_COMMENTS_CREATE, session), onOpenPlan: choosePlan, onBack: () => choosePlan('') })
                 : h('div', { className: 'management-dashboard__errors', role: 'alert' }, 'You do not have permission to review strategic plans.'),
             h('footer', { className: 'management-dashboard__footer' }, '© 2026 Strategic Planning Management System. All rights reserved.'))));

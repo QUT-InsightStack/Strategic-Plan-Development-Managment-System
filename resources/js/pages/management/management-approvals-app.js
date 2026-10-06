@@ -1,11 +1,12 @@
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { apiRequest } from '../../api/api-client.js';
 import { listStrategicPlans } from '../../api/strategic-plans-api.js';
-import { listAssignedPlanSubmissions } from '../../api/plan-approval-api.js';
+import { listAssignedPlanSubmissions, isSubmissionAssignedToReviewer } from '../../api/plan-approval-api.js';
 import { createAccessSession, saveAccessSession } from '../../access/access-session.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
 import { isManagementSession } from '../../access/management-access.js';
 import { ManagementPagination, pageRows } from '../../components/ManagementPagination.js';
+import { planningYears } from './management-insights.js';
 
 const h = React.createElement;
 const sections = [
@@ -37,6 +38,9 @@ function ApprovalsPage({ session }) {
     const requested = new URLSearchParams(window.location.search).get('status');
     const [section, setSection] = React.useState(sections.some(item => item.id === requested) ? requested : 'pending');
     const [search, setSearch] = React.useState('');
+    const [office, setOffice] = React.useState('');
+    const [year, setYear] = React.useState('');
+    const [planStatus, setPlanStatus] = React.useState('');
     const [page, setPage] = React.useState(1);
     const [state, setState] = React.useState({ plans: [], assigned: [], loading: true, error: '' });
 
@@ -60,7 +64,12 @@ function ApprovalsPage({ session }) {
         approved: state.plans.filter(plan => plan.approval_status === 'approved'),
         returned: state.plans.filter(plan => plan.approval_status === 'rejected'),
     };
-    const visible = groups[section].filter(plan => `${plan.record_id} ${plan.title || ''} ${plan.department_agency || ''}`.toLowerCase().includes(search.trim().toLowerCase()));
+    const visible = groups[section].filter(plan =>
+        `${plan.record_id} ${plan.title || ''} ${plan.department_agency || ''}`.toLowerCase().includes(search.trim().toLowerCase())
+        && (!office || plan.department_agency === office)
+        && (!planStatus || plan.status === planStatus)
+        && (!year || (Number(String(plan.planning_start_date || '').slice(0, 4)) <= Number(year)
+            && Number(String(plan.planning_end_date || '').slice(0, 4)) >= Number(year))));
     const pagedVisible = pageRows(visible, page);
 
     function selectSection(id) {
@@ -90,10 +99,15 @@ function ApprovalsPage({ session }) {
                 h('label', { className: 'management-approvals__search' }, h('span', null, 'Search plans'), h('input', {
                     type: 'search', value: search, onChange: event => { setSearch(event.target.value); setPage(1); }, placeholder: 'Plan title, ID or agency',
                 }))),
+                h('div', { className: 'management-scope-filters', 'aria-label': 'Approval list filters' },
+                    h('label', null, h('span', null, 'Planning period'), h('select', { value: year, onChange: event => { setYear(event.target.value); setPage(1); } }, h('option', { value: '' }, 'All periods'), planningYears(state.plans).map(item => h('option', { key: item, value: String(item) }, item)))),
+                    h('label', null, h('span', null, 'Office / Unit'), h('select', { value: office, onChange: event => { setOffice(event.target.value); setPage(1); } }, h('option', { value: '' }, 'All offices'), [...new Set(state.plans.map(plan => plan.department_agency).filter(Boolean))].sort().map(item => h('option', { key: item, value: item }, item)))),
+                    h('label', null, h('span', null, 'Plan status'), h('select', { value: planStatus, onChange: event => { setPlanStatus(event.target.value); setPage(1); } }, h('option', { value: '' }, 'All statuses'), [...new Set(state.plans.map(plan => plan.status).filter(Boolean))].sort().map(item => h('option', { key: item, value: item }, item.replaceAll('_', ' ')))))),
                 h('div', { className: 'management-table-scroll' }, h('table', null,
                     h('thead', null, h('tr', null, ['Strategic plan', 'Agency / Office', 'Current stage', 'Submitted / Updated', 'Status', 'Action'].map(label => h('th', { key: label, scope: 'col' }, label)))),
                     h('tbody', null, state.loading ? h('tr', null, h('td', { colSpan: 6 }, 'Loading plans…')) : pagedVisible.length ? pagedVisible.map(plan => {
-                        const review = assigned.get(String(plan.record_id));
+                        const assignedReview = assigned.get(String(plan.record_id));
+                        const review = isSubmissionAssignedToReviewer(assignedReview, session) ? assignedReview : null;
                         return h('tr', { key: plan.record_id },
                             h('th', { scope: 'row' }, plan.title || `Plan ${plan.record_id}`),
                             h('td', null, plan.department_agency || '—'),
@@ -101,7 +115,7 @@ function ApprovalsPage({ session }) {
                             h('td', null, dateLabel(review?.submittedAt || plan.updated_at)),
                             h('td', null, h('span', { className: `management-status is-${section}` }, sections.find(item => item.id === section).label)),
                             h('td', null, h('a', { className: 'ui-button ui-button--primary ui-button--sm', href: review && section === 'pending' ? `/strategic-plan-reviews/${plan.record_id}` : `/management-plan-review?plan=${plan.record_id}` }, review && section === 'pending' ? 'Review / decide' : 'View plan')));
-                    }) : h('tr', null, h('td', { colSpan: 6 }, 'No plans in this category.'))))),
+                    }) : h('tr', null, h('td', { colSpan: 6 }, groups[section].length ? 'No plans match these filters.' : 'No plans in this category.'))))),
                 h(ManagementPagination, { page, total: visible.length, onChange: setPage, label: 'plans' })))));
 }
 

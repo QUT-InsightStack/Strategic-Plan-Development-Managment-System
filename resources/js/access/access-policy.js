@@ -76,6 +76,7 @@ const managementPermissions = [
     PERMISSIONS.OBJECTIVE_COMMENTS_CREATE,
     PERMISSIONS.OBJECTIVES_VIEW_PROGRESS,
     PERMISSIONS.INPUTS_VIEW,
+    'implementation_inputs.view_all',
     'relations.view',
     'plan_core_values.view',
     'strategic_documents.view',

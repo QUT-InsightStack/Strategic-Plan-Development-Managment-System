@@ -1,6 +1,7 @@
 import { getStrategicPlan, listStrategicPlanComments, addStrategicPlanComment } from '../../api/strategic-plans-api.js';
 import { listStrategicObjectives } from '../../api/strategic-objectives-api.js';
 import { ManagementPagination, pageRows } from '../../components/ManagementPagination.js';
+import { planningYears } from './management-insights.js';
 
 const h = React.createElement;
 const { useEffect, useState } = React;
@@ -24,6 +25,10 @@ export function ManagementPlanReview({ plans, planId, mode = 'plans', canComment
     const [commentError, setCommentError] = useState('');
     const [savingComment, setSavingComment] = useState(false);
     const [search, setSearch] = useState('');
+    const [year, setYear] = useState('');
+    const [office, setOffice] = useState('');
+    const [status, setStatus] = useState('');
+    const [approvalStatus, setApprovalStatus] = useState('');
     const [page, setPage] = useState(1);
     const [objectivePage, setObjectivePage] = useState(1);
 
@@ -64,19 +69,31 @@ export function ManagementPlanReview({ plans, planId, mode = 'plans', canComment
         }
     }
 
-    const visiblePlans = plans.filter(item => `${item.record_id} ${item.title || ''} ${item.department_agency || ''}`.toLowerCase().includes(search.trim().toLowerCase()));
+    const visiblePlans = plans.filter(item => `${item.record_id} ${item.title || ''} ${item.department_agency || ''}`.toLowerCase().includes(search.trim().toLowerCase())
+        && (!year || (Number(String(item.planning_start_date || '').slice(0, 4)) <= Number(year) && Number(String(item.planning_end_date || '').slice(0, 4)) >= Number(year)))
+        && (!office || item.department_agency === office) && (!status || item.status === status)
+        && (!approvalStatus || item.approval_status === approvalStatus));
     if (!planId) return h('section', { className: 'management-card management-table-card' },
         h('div', { className: 'management-card__heading' }, h('div', null,
             h('h2', null, mode === 'objectives' ? 'Choose a plan for Objectives Review' : 'Strategic Plans for Review'),
             h('p', null, mode === 'objectives' ? 'Open a plan to see its objective list, owners and progress.' : 'Open a plan to review its summary, foundations and comments.')),
             h('label', { className: 'management-approvals__search' }, h('span', null, 'Search plans'), h('input', { type: 'search', value: search, onChange: event => { setSearch(event.target.value); setPage(1); }, placeholder: 'Plan title, ID or agency' }))),
+        h('div', { className: 'management-scope-filters', 'aria-label': 'Plan review filters' },
+            h('label', null, h('span', null, 'Planning period'), h('select', { value: year, onChange: event => { setYear(event.target.value); setPage(1); } }, h('option', { value: '' }, 'All periods'), planningYears(plans).map(item => h('option', { key: item, value: String(item) }, item)))),
+            h('label', null, h('span', null, 'Office / Unit'), h('select', { value: office, onChange: event => { setOffice(event.target.value); setPage(1); } }, h('option', { value: '' }, 'All offices'), [...new Set(plans.map(item => item.department_agency).filter(Boolean))].sort().map(item => h('option', { key: item, value: item }, item)))),
+            h('label', null, h('span', null, 'Plan status'), h('select', { value: status, onChange: event => { setStatus(event.target.value); setPage(1); } },
+                h('option', { value: '' }, 'All statuses'),
+                [...new Set(plans.map(item => item.status).filter(Boolean))].sort().map(item => h('option', { key: item, value: item }, item.replaceAll('_', ' '))))),
+            h('label', null, h('span', null, 'Approval status'), h('select', { value: approvalStatus, onChange: event => { setApprovalStatus(event.target.value); setPage(1); } },
+                h('option', { value: '' }, 'All approvals'),
+                [['not_submitted', 'Not submitted'], ['under_approval', 'Awaiting approval'], ['approved', 'Approved'], ['rejected', 'Returned / rejected']].map(([value, label]) => h('option', { key: value, value }, label))))),
         h('div', { className: 'management-table-scroll' }, h('table', null,
             h('thead', null, h('tr', null, ['Plan ID', 'Strategic Plan', 'Department / Agency', 'Period', 'Status', 'Action'].map(label => h('th', { key: label, scope: 'col' }, label)))),
             h('tbody', null, visiblePlans.length ? pageRows(visiblePlans, page).map(item => h('tr', { key: item.record_id },
                 h('td', null, item.record_id), h('td', null, item.title), h('td', null, item.department_agency || '—'),
                 h('td', null, `${dateLabel(item.planning_start_date)} – ${dateLabel(item.planning_end_date)}`), h('td', null, item.status || '—'),
                 h('td', null, h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => onOpenPlan(item.record_id) }, mode === 'objectives' ? 'View objectives' : 'View summary'))))
-                : h('tr', null, h('td', { colSpan: 6 }, 'No plans are available for review.'))))),
+                : h('tr', null, h('td', { colSpan: 6 }, plans.length ? 'No plans match these filters.' : 'No plans are available for review.'))))),
         h(ManagementPagination, { page, total: visiblePlans.length, onChange: setPage, label: 'plans' }),
         h('p', { className: 'management-plan-review__count' }, `${visiblePlans.length} of ${plans.length} plan(s)`));
 

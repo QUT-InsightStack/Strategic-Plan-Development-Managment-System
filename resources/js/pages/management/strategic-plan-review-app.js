@@ -1659,7 +1659,8 @@ h(
                             'plan-review-decision-actions',
                     },
 
-                    h(
+                    !isSubmissionAssignedToReviewer(submission, session) ? h('p', { className: 'office-muted' }, 'Only the reviewer assigned to this stage can record a decision.') : null,
+                    isSubmissionAssignedToReviewer(submission, session) ? h(
                         'button',
                         {
                             className:
@@ -1678,9 +1679,9 @@ h(
                             'aria-hidden': 'true',
                         }),
                         'Return for correction'
-                    ),
+                    ) : null,
 
-                    h(
+                    isSubmissionAssignedToReviewer(submission, session) ? h(
                         'button',
                         {
                             className:
@@ -1699,7 +1700,7 @@ h(
                             'aria-hidden': 'true',
                         }),
                         'Approve'
-                    )
+                    ) : null
                 )
             )
     )

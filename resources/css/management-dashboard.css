@@ -92,9 +92,6 @@
 .management-plan-review .office-detail-panel { display: grid; gap: 18px; }
 .management-plan-review .office-plan-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .management-plan-review .office-detail-objectives h2 { margin: 0 0 10px; color: var(--color-primary); font-size: var(--font-size-md); }
-.management-agency-filter { display: grid; min-width: min(240px, 100%); gap: 4px; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
-.management-agency-filter select { min-height: 36px; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 6px 10px; color: var(--color-text); background: #fff; font: inherit; }
-.management-agency-filter select:focus-visible { outline: var(--focus-ring); }
 .management-monitor-detail { border-top: 1px solid #dce5ef; background: #f8fbff; }
 .management-monitor-detail h3 { margin: 0; color: var(--color-primary); font-size: var(--font-size-sm); }
 .management-report-list { display: grid; }
@@ -128,6 +125,15 @@
 .management-monitor-filters label { display: grid; min-width: min(220px, 100%); gap: 5px; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
 .management-monitor-filters input, .management-monitor-filters select { min-height: 36px; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 6px 10px; color: var(--color-text); background: #fff; font: inherit; }
 .management-monitor-filters input:focus-visible, .management-monitor-filters select:focus-visible { outline: var(--focus-ring); }
+.management-scope-filters { display: flex; align-items: end; flex-wrap: wrap; gap: 10px; margin-bottom: var(--space-4); border: 1px solid #dce5ef; border-radius: var(--radius-md); padding: 12px 14px; background: #fff; }
+.management-scope-filters label { display: grid; flex: 1 1 155px; max-width: 250px; gap: 4px; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+.management-scope-filters select { width: 100%; min-height: 36px; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 6px 10px; color: var(--color-text); background: #fff; font: inherit; }
+.management-scope-filters select:focus-visible { outline: var(--focus-ring); }
+.management-oversight { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
+.management-oversight article { border: 1px solid #dce5ef; border-radius: var(--radius-md); padding: 12px 14px; background: #fff; }
+.management-oversight h2 { margin: 0 0 5px; color: var(--color-primary); font-size: var(--font-size-sm); }
+.management-oversight p { margin: 0; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+@media (max-width: 900px) { .management-oversight { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 1180px) { .management-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .management-dashboard__content { padding: var(--space-4); } .management-dashboard__header { align-items: stretch; flex-direction: column; } .management-dashboard__controls { align-items: stretch; } .management-dashboard__controls label { flex: 1; } .management-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .management-report-grid { grid-template-columns: 1fr; } .management-dashboard__panel { padding: 10px; } }
 @media (max-width: 480px) { .management-dashboard__controls { flex-direction: column; } .management-dashboard__controls label { min-width: 0; } .management-kpis { grid-template-columns: 1fr 1fr; gap: 7px; } .management-kpi { align-items: flex-start; flex-direction: column; padding: 9px; } .management-card__heading { align-items: flex-start; flex-direction: column; } .management-bar-row { grid-template-columns: minmax(80px, 1fr) minmax(90px, 2fr) 36px; gap: 7px; } }

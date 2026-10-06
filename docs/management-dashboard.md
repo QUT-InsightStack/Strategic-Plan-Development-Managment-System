@@ -9,18 +9,22 @@ This branch starts from `develop` and incorporates the navigation, dashboard and
 - **Alignment Review** and **Agency Input Review** are separate top-level sidebar links into the existing objective API alignment summary. The agency view filters the same Agenda/PDP/objective associations by responsible office. The older `/mappings?mode=view` page uses browser-local mappings and is not the management summary.
 - **Monitoring** keeps the original per-plan progress view and adds plan level, parent plan, plan search, level filtering, pagination and an expandable objective breakdown. Parent rows include objectives under child plans. It reads progress fields from the objective API.
 - **Reports & Summary** presents a list of report datasets. A reviewer can open paginated rows in the page and export each complete dataset as CSV.
+- Management filters use authorised plan data: plan, planning year, Office/Unit, plan lifecycle status, objective progress status and approval status. Review lists also have period, Office/Unit and status filters.
+- Reports include plan approvals, objective progress and alignment, Office/Unit performance, agency input consolidation, assigned approval queue and overdue/at-risk objectives. An objective is **overdue** when incomplete after its plan end date; it is **at risk** when below 75% within 30 days of that date. Those thresholds are a frontend summary rule, not a backend workflow state.
 - Management sidebar links are flat and open their corresponding content directly. The redundant horizontal dashboard tabs were removed; the five strategic-planning KPI cards appear only in Reports & Summary.
 - The existing management permission helper is retained. The local-storage-based dashboard aggregation, which was unused after the redesign, was removed.
 
 ## APIs and backend changes
 
 - Existing APIs: `GET /api/strategic-plans`, `GET /api/strategic-objectives`, `GET /api/plan-reviews`, `GET /api/strategic-plans/{id}/approval`, `POST /api/strategic-plans/{id}/approval/decision`, and plan comment endpoints.
+- Management can read submitted agency inputs through the existing `GET /api/implementation-inputs` endpoint only with `implementation_inputs.view` and `implementation_inputs.view_all`. Migration `2026_10_06_000002_grant_management_input_read` grants those permissions to Management, Executive, Management / Executive, and Division Head roles; it was applied to the local database on 6 October 2026. The backend limits those inputs to authorised plans. Management does not receive input-review permission.
 - A migration makes `responsible_unit_id` nullable on plan comments and grants management roles `objective_comments.create`. This lets management users comment without being assigned an agency unit. Deploying the comment feature requires applying this migration.
 - The approval backend has statuses `under_approval`, `approved`, `rejected`. There is no distinct `returned` status or `return` decision. If the project needs "returned" to differ from "rejected" in workflow rules or reports, extend the schema, service, API, and tracking UI together.
 - `GET /api/plan-reviews` only returns currently assigned pending submissions. The approved and returned tabs therefore show the current status of all authorised plans, not a history of decisions personally made by the current reviewer. A reviewer-specific history endpoint would be needed for that view.
+- Approval and return buttons render only for the current stage's assigned reviewer. Management oversight pages contain no delete, user administration, approval governance or technical maintenance controls. Those remain on existing pages behind their own permissions.
 
 ## Data notes
 
-The pages use objective `progress_percentage`, `progress_status`, `progress_updated_at`, Agenda/PDP relations, and plan `parents` supplied by the backend. They no longer derive management summaries from browser local storage. Reporting-period filters apply to Monitoring and Reports & Summary objective progress dates; alignment review always shows all authorised mappings, while plan counts include all authorised plans.
+The pages use objective `progress_percentage`, `progress_status`, `progress_updated_at`, Agenda/PDP relations, and plan `parents` supplied by the backend. They no longer derive management summaries from browser local storage. Planning-period filters select plans whose date range includes the chosen year; other filters apply to the displayed records and exported CSV.
 
 Agenda and PDP are separate objective relations in the current backend. The alignment summary lists those associations on one objective row; it cannot certify a specific Agenda → PDP pair without an explicit combined mapping relation/API.

@@ -56,6 +56,7 @@ class RolePermissionSeeder extends Seeder
             'dashboard.view',
             'strategic_records.view', 'strategic_foundations.view', 'strategic_objectives.view',
             'objective_comments.create',
+            'implementation_inputs.view', 'implementation_inputs.view_all',
             'strategic_documents.view', 'strategic_documents.download',
             'relations.view', 'plan_core_values.view',
         ];
