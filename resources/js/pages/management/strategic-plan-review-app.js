@@ -66,7 +66,7 @@ function coreValueLabel(value) {
 function responsibleUnitName(objective) {
     return (
         objective?.responsible_unit_assignment
-            ?.responsible_unit?.name ||
+            ?.responsible_unit?.responsible_office_agency ||
         objective?.responsible_unit_assignment
             ?.responsible_unit?.unit_name ||
         objective?.responsible_office_agency ||
@@ -170,11 +170,11 @@ function DecisionDialog({
         dialog.decision === 'reject';
 
     const title = rejecting
-        ? 'Reject Strategic Plan?'
+        ? 'Return Strategic Plan for correction?'
         : 'Approve Strategic Plan?';
 
     const description = rejecting
-        ? 'Provide a reason for rejecting this Strategic Plan. The current approval cycle will stop and the plan will require correction and resubmission.'
+        ? 'Add a comment explaining the corrections needed. The current approval cycle will end and the plan can be resubmitted.'
         : 'Confirm that you have reviewed the Strategic Plan and want to approve it at the current workflow stage.';
 
     return h(
@@ -245,7 +245,7 @@ function DecisionDialog({
                         className: 'ui-label',
                     },
                     rejecting
-                        ? 'Reason for rejection *'
+                        ? 'Correction comment *'
                         : 'Approval comment (optional)'
                 ),
 
@@ -325,7 +325,7 @@ function DecisionDialog({
                     processing
                         ? 'Processing…'
                         : rejecting
-                            ? 'Confirm Rejection'
+                            ? 'Return for correction'
                             : 'Confirm Approval'
                 )
             )
@@ -488,7 +488,7 @@ async function confirmDecision() {
         !comment
     ) {
         setDecisionError(
-            'Enter a reason before rejecting the Strategic Plan.'
+            'Enter a correction comment before returning the Strategic Plan.'
         );
         return;
     }
@@ -518,7 +518,7 @@ async function confirmDecision() {
             setNotice({
                 type: 'success',
                 message:
-                    'The Strategic Plan was rejected. The current approval cycle has ended and the rejection reason was recorded.',
+                    'The Strategic Plan was returned for correction. The current approval cycle has ended and your comment was recorded.',
             });
 
             return;
@@ -909,7 +909,7 @@ async function confirmDecision() {
                                 className:
                                     'ui-button ui-button--primary',
                                 href:
-                                    '/strategic-plan-reviews',
+                                    '/management-approvals?status=pending',
                             },
                             'Return to Assigned Reviews'
                         )
@@ -967,7 +967,7 @@ h(
                         'a',
                         {
                             href:
-                                '/strategic-plan-reviews',
+                                '/management-approvals?status=pending',
                         },
                         'Assigned Plan Reviews'
                     ),
@@ -1021,7 +1021,7 @@ h(
                             className:
                                 'ui-button ui-button--secondary',
                             href:
-                                '/strategic-plan-reviews',
+                                '/management-approvals?status=pending',
                         },
                         h('i', {
                             className:
@@ -1609,7 +1609,7 @@ h(
                     null,
                     submission?.status ===
                     'rejected'
-                        ? 'Plan rejected'
+                        ? 'Returned for correction'
                         : submission?.status ===
                             'approved'
                             ? 'Final approval completed'
@@ -1648,7 +1648,7 @@ h(
                     h(
                         'p',
                         null,
-                        'Approval advances the plan to the next stage. Rejection ends the current approval cycle and requires a reason.'
+                        'Approval advances the plan to the next stage. Returning it ends the current cycle and requires a correction comment.'
                     )
                 ),
 
@@ -1659,7 +1659,8 @@ h(
                             'plan-review-decision-actions',
                     },
 
-                    h(
+                    !isSubmissionAssignedToReviewer(submission, session) ? h('p', { className: 'office-muted' }, 'Only the reviewer assigned to this stage can record a decision.') : null,
+                    isSubmissionAssignedToReviewer(submission, session) ? h(
                         'button',
                         {
                             className:
@@ -1677,10 +1678,10 @@ h(
                                 'bi bi-x-lg',
                             'aria-hidden': 'true',
                         }),
-                        'Reject'
-                    ),
+                        'Return for correction'
+                    ) : null,
 
-                    h(
+                    isSubmissionAssignedToReviewer(submission, session) ? h(
                         'button',
                         {
                             className:
@@ -1699,7 +1700,7 @@ h(
                             'aria-hidden': 'true',
                         }),
                         'Approve'
-                    )
+                    ) : null
                 )
             )
     )

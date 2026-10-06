@@ -7,7 +7,7 @@ export function navigationRole(role) {
     if (['Administrator', 'Technical Administrator', 'Technical Admin', 'test'].includes(role)) return 'technical';
     if (['Administrative Admin', 'Administrative Administrator'].includes(role)) return 'administrative';
     if (isOfficeRole(role)) return 'office';
-    if (['Management', 'Executive', 'Management / Executive'].includes(role)) return 'management';
+    if (['Management', 'Executive', 'Management / Executive', 'Division Head'].includes(role)) return 'management';
     return 'planner';
 }
 const review = page('office-review', 'Plan Review', '/office', ['strategic_records.view']);
@@ -45,7 +45,7 @@ export const roleNavigation = {
         page('submission-status', 'Submission Status', '/strategic-plans', ['strategic_records.view'], { dashboardOnly: true, description: 'Open a plan to view its submission status.' }),
     ]), group('mapping', 'Mapping', [mapping, alignment, page('pdp-read', 'PDP Chapters', '/pdp-chapters', ['strategic_records.view'])], 'bi-map'),
     group('monitoring', 'Monitoring', [progress, pending('planner-monitoring', 'Monitoring Dashboard'), pending('planner-reports', 'Reports')], 'bi-graph-up'),
-    group('reviews', 'Reviews', [page('reviews', 'Plan Reviews', '/strategic-plan-reviews')])],
+    group('reviews', 'Reviews', [page('reviews', 'Plan Reviews', '/management-approvals')])],
     office: [group('planning', 'Planning', [review, upload,
         page('proposals', 'Proposed Objectives', '/office?view=proposal', ['strategic_records.view', 'implementation_inputs.create']),
         page('comments', 'Plan Comments', '/office?view=comments', ['strategic_records.view', 'objective_comments.create']),
@@ -53,17 +53,20 @@ export const roleNavigation = {
         page('edit-objectives', 'Edit Objectives', '/office?view=edit', ['strategic_records.view', 'strategic_objectives.update']),
     ]), group('mapping', 'Agency Mapping', [{ ...mapping, label: 'Add Agency to Mapping' }, alignment], 'bi-map'),
     group('monitoring', 'Monitoring', [{ ...progress, label: 'Progress Updates' }, pending('office-monitoring', 'Monitoring Dashboard'), pending('office-reports', 'Reports')], 'bi-graph-up')],
-    management: [page('approval-list', 'Approval List', '/strategic-plan-reviews'),
-        group('planning', 'Planning', [page('plan-review', 'Plan Review', '/management-plan-review', ['strategic_records.view'])]),
-        group('alignment', 'Alignment Review', [page('alignment-review', 'Agenda / PDP Alignment', '/management-dashboard?tab=alignment', ['relations.view']), { ...inputs, label: 'Agency Input Review' }, page('documents', 'Reference Documents', '/management-dashboard?tab=alignment&section=documents', ['strategic_documents.view'])], 'bi-diagram-3'),
-        group('monitoring', 'Monitoring', [page('monitoring', 'Progress Summary', '/management-dashboard?tab=dashboard', ['strategic_records.view']), page('reports', 'Reports', '/management-dashboard?tab=reports', ['strategic_records.view']), progress], 'bi-graph-up'),
-        group('additional', 'More Functions', [page('finalize', 'Finalize Plans', '/strategic-plans/finalize', ['strategic_records.update'], { hideWhenDenied: true })]),
+    management: [page('approval-list', 'Approve List', '/management-approvals', [], { icon: 'bi-clipboard-check' }),
+        page('plan-review', 'Plan Review', '/management-plan-review', ['strategic_records.view'], { icon: 'bi-journal-text' }),
+        page('objectives-review', 'Objectives Review', '/management-plan-review?view=objectives', ['strategic_records.view', 'strategic_objectives.view'], { icon: 'bi-list-check' }),
+        page('alignment-review', 'Strategic Alignment Review', '/management-dashboard?tab=alignment', ['relations.view'], { icon: 'bi-diagram-3' }),
+        page('agency-input-review', 'Agency Input Review', '/management-dashboard?tab=alignment&section=agency', ['relations.view', 'strategic_objectives.view'], { icon: 'bi-building-check' }),
+        page('monitoring', 'Monitoring', '/management-dashboard?tab=dashboard', ['strategic_records.view'], { icon: 'bi-graph-up' }),
+        page('reports', 'Reports & Summary', '/management-dashboard?tab=reports', ['strategic_records.view'], { icon: 'bi-file-earmark-bar-graph' }),
     ],
 };
 export const dashboardLabels = { technical: 'Technical Administration Dashboard', administrative: 'Administrative Dashboard', planner: 'Planning Dashboard', office: 'Office/Agency Dashboard', management: 'Executive Dashboard' };
 export function navigationFor(role) {
     const kind = navigationRole(role);
-    return [page('home', 'Dashboard', kind === 'management' ? '/management-dashboard' : '/dashboard', [], { icon: 'bi-speedometer2' }), ...roleNavigation[kind], group('account', 'Account and Help', common, 'bi-person-circle')];
+    const home = kind === 'management' ? [] : [page('home', 'Dashboard', '/dashboard', [], { icon: 'bi-speedometer2' })];
+    return [...home, ...roleNavigation[kind], ...(kind === 'management' ? common : [group('account', 'Account and Help', common, 'bi-person-circle')])];
 }
 export function flattenNavigation(items) { return items.flatMap(item => item.children ? flattenNavigation(item.children) : [item]); }
 export function canOpenPage(item, session) {
@@ -81,6 +84,8 @@ export function isCurrentPage(item, input) {
     const target = new URL(item.href, 'http://localhost');
     if (item.id === 'objectives' && /^\/strategic-plans\/\d+\/objectives$/.test(current.pathname)) return true;
     if (current.pathname !== target.pathname) return false;
+    if (item.id === 'monitoring' && current.pathname === '/management-dashboard' && !current.searchParams.has('tab')) return true;
+    if (item.id === 'alignment-review' && current.pathname === '/management-dashboard' && current.searchParams.get('tab') === 'alignment') return current.searchParams.get('section') !== 'agency';
     const keys = ['view', 'section', 'tab', 'feature', 'mode'];
     return keys.every(key => (current.searchParams.get(key) || '') === (target.searchParams.get(key) || ''));
 }

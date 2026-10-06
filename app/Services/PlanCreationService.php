@@ -23,7 +23,7 @@ class PlanCreationService
 
     public function paginate(array $filters, ?Collection $authorizedPlanIds = null): LengthAwarePaginator
     {
-        $query = Strategic::with(['creator', 'missionFoundation', 'visionFoundation', 'coreValues']);
+        $query = Strategic::with(['creator', 'missionFoundation', 'visionFoundation', 'coreValues', 'parents']);
 
         if ($authorizedPlanIds !== null) {
             $query->whereIn('record_id', $authorizedPlanIds->all());
@@ -67,7 +67,7 @@ class PlanCreationService
 
     public function find(int $id): ?Strategic
     {
-        return Strategic::with(['creator', 'missionFoundation', 'visionFoundation', 'coreValues'])
+        return Strategic::with(['creator', 'missionFoundation', 'visionFoundation', 'coreValues', 'parents'])
             ->where('status', '!=', 'deleted')
             ->find($id);
     }
@@ -103,6 +103,7 @@ class PlanCreationService
                 'level' => $data['level'],
                 'title' => $data['title'] !== '' ? $data['title'] : 'Untitled Strategic Plan',
                 'description' => $data['description'],
+                'department_agency' => $data['department_agency'],
                 'planning_start_date' => $data['planning_start_date'],
                 'planning_end_date' => $data['planning_end_date'],
                 'status' => 'draft',
@@ -210,6 +211,7 @@ class PlanCreationService
             'title' => Str::limit($source->title . ' (Copy)', 255, ''),
             'level' => $source->level,
             'description' => $source->description,
+            'department_agency' => $source->department_agency,
             'planning_start_date' => $source->planning_start_date?->format('Y-m-d'),
             'planning_end_date' => $source->planning_end_date?->format('Y-m-d'),
             'mission' => $source->missionFoundation?->content ?? '',
@@ -262,6 +264,7 @@ class PlanCreationService
             'title' => trim((string) ($data['title'] ?? '')),
             'level' => $data['level'],
             'description' => $this->normalizeNullableString($data['description'] ?? null),
+            'department_agency' => $this->normalizeNullableString($data['department_agency'] ?? null),
             'planning_start_date' => $data['planning_start_date'] ?? null,
             'planning_end_date' => $data['planning_end_date'] ?? null,
             'mission' => trim((string) ($data['mission'] ?? '')),
@@ -406,6 +409,7 @@ class PlanCreationService
             'level' => $data['level'],
             'title' => $data['title'] !== '' ? $data['title'] : 'Untitled Strategic Plan',
             'description' => $data['description'],
+            'department_agency' => $data['department_agency'],
             'planning_start_date' => $data['planning_start_date'],
             'planning_end_date' => $data['planning_end_date'],
             'status' => $status,
@@ -749,6 +753,7 @@ class PlanCreationService
             'title' => $plan->title,
             'level' => $plan->level,
             'description' => $plan->description,
+            'department_agency' => $plan->department_agency,
             'planning_start_date' => $plan->planning_start_date?->format('Y-m-d'),
             'planning_end_date' => $plan->planning_end_date?->format('Y-m-d'),
             'status' => $plan->status,

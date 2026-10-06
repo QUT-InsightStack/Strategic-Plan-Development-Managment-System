@@ -35,9 +35,6 @@ class PlanCreationController extends Controller
             'message' => 'Strategic plan created.',
             'record_id' => $plan->record_id,
             'data' => $plan,
-            'pending_database_fields' => [
-                'department_agency' => $data['department_agency'] ?? null,
-            ],
         ], 201);
     }
 
@@ -97,7 +94,6 @@ class PlanCreationController extends Controller
             'success' => true,
             'message' => 'Strategic plan updated.',
             'data' => $updated,
-            'pending_database_fields' => $request->safe()->only(['department_agency']),
         ]);
     }
 
