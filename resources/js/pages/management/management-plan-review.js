@@ -1,6 +1,5 @@
 import { getStrategicPlan, listStrategicPlanComments, addStrategicPlanComment } from '../../api/strategic-plans-api.js';
 import { listStrategicObjectives } from '../../api/strategic-objectives-api.js';
-import { apiRequest } from '../../api/api-client.js';
 import { ManagementPagination, pageRows } from '../../components/ManagementPagination.js';
 
 const h = React.createElement;
@@ -11,7 +10,6 @@ function dateLabel(value) {
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? 'Not provided' : date.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
 }
-
 function field(label, value) {
     return h('div', { className: 'office-summary-field', key: label }, h('dt', null, label), h('dd', null, value || 'Not provided'));
 }
@@ -119,34 +117,4 @@ export function ManagementPlanReview({ plans, planId, mode = 'plans', canComment
         loading ? h('p', { role: 'status' }, 'Loading plan review…') : null,
         error ? h('div', { className: 'management-dashboard__errors', role: 'alert' }, error) : null,
         detail);
-}
-
-export function ManagementReferenceDocuments({ plans }) {
-    const [documents, setDocuments] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-
-    useEffect(() => {
-        let active = true;
-        setLoading(true); setError('');
-        Promise.all(plans.map(async plan => {
-            const result = await apiRequest(`/api/strategic-plans/${encodeURIComponent(plan.record_id)}/documents?per_page=100`);
-            return (result.data || []).map(document => ({ ...document, plan }));
-        }))
-            .then(groups => { if (active) setDocuments(groups.flat()); })
-            .catch(reason => { if (active) setError(reason.message || 'Unable to load reference documents.'); })
-            .finally(() => { if (active) setLoading(false); });
-        return () => { active = false; };
-    }, [plans]);
-
-    return h('section', { className: 'management-card management-table-card' },
-        h('div', { className: 'management-card__heading' }, h('div', null, h('h2', null, 'Reference Documents'), h('p', null, 'Supporting files uploaded to authorized strategic plans.'))),
-        error ? h('p', { className: 'management-dashboard__errors', role: 'alert' }, error) : null,
-        h('div', { className: 'management-table-scroll' }, h('table', null,
-            h('thead', null, h('tr', null, ['Document', 'Strategic Plan', 'Category', 'Uploaded', 'Action'].map(label => h('th', { key: label, scope: 'col' }, label)))),
-            h('tbody', null, loading ? h('tr', null, h('td', { colSpan: 5 }, 'Loading reference documents…')) : documents.length ? documents.map(document => h('tr', { key: `${document.plan.record_id}-${document.document_id}` },
-                h('td', null, document.original_filename || 'Reference document'),
-                h('td', null, document.plan.title), h('td', null, document.content_category || document.reference_level || '—'), h('td', null, dateLabel(document.created_at)),
-                h('td', null, h('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: `/api/strategic-documents/${encodeURIComponent(document.document_id)}/download`, target: '_blank', rel: 'noreferrer' }, 'Open'))))
-                : h('tr', null, h('td', { colSpan: 5 }, 'No reference documents are attached to the available plans.'))))));
 }

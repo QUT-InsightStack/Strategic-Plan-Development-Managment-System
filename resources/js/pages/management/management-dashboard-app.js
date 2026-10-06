@@ -7,17 +7,10 @@ import { listSubmittedInputs } from '../../api/implementation-inputs-api.js';
 import { createAccessSession, saveAccessSession, can } from '../../access/access-session.js';
 import { PERMISSIONS as P } from '../../access/access-policy.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
-import { ManagementReferenceDocuments } from './management-plan-review.js';
 import { isManagementSession } from '../../access/management-access.js';
 import { ManagementPagination, pageRows } from '../../components/ManagementPagination.js';
 
 const h = React.createElement;
-const tabs = [
-    { id: 'dashboard', label: 'Progress Overview', permission: P.PLANS_VIEW },
-    { id: 'alignment', label: 'Alignment Monitoring', permission: 'relations.view' },
-    { id: 'reports', label: 'Reports & Summaries', permission: P.PLANS_VIEW },
-    { id: 'pending', label: 'Pending Review', permission: P.PLANS_VIEW },
-];
 const statusLabels = { completed: 'Completed', in_progress: 'Ongoing', not_started: 'Not Started' };
 
 function rowsFrom(payload) {
@@ -101,8 +94,8 @@ function downloadCsv(filename, rows) {
 
 function ManagementDashboard({ session }) {
     const queryTab = new URLSearchParams(window.location.search).get('tab');
-    const [activeTab, setActiveTab] = React.useState(tabs.some(tab => tab.id === queryTab && can(tab.permission, session)) ? queryTab : 'dashboard');
-    const [alignmentSection, setAlignmentSection] = React.useState(new URLSearchParams(window.location.search).get('section') === 'documents' ? 'documents' : 'mapping');
+    const activeTab = queryTab === 'alignment' && can('relations.view', session) ? 'alignment' : queryTab === 'reports' ? 'reports' : 'dashboard';
+    const alignmentSection = new URLSearchParams(window.location.search).get('section') === 'agency' ? 'agency' : 'mapping';
     const [reportingPeriod, setReportingPeriod] = React.useState('all');
     const [planSearch, setPlanSearch] = React.useState('');
     const [planLevel, setPlanLevel] = React.useState('');
@@ -111,8 +104,9 @@ function ManagementDashboard({ session }) {
     const [planPage, setPlanPage] = React.useState(1);
     const [monitorObjectivePage, setMonitorObjectivePage] = React.useState(1);
     const [alignmentPage, setAlignmentPage] = React.useState(1);
+    const [agencyPage, setAgencyPage] = React.useState(1);
+    const [agencyFilter, setAgencyFilter] = React.useState('');
     const [reportPage, setReportPage] = React.useState(1);
-    const [reviewPage, setReviewPage] = React.useState(1);
     const [plans, setPlans] = React.useState([]);
     const [objectives, setObjectives] = React.useState([]);
     const [reviews, setReviews] = React.useState([]);
@@ -149,24 +143,10 @@ function ManagementDashboard({ session }) {
         return () => { active = false; };
     }, [refreshCount, session]);
 
-    function selectTab(tabId) {
-        setActiveTab(tabId);
-        const params = new URLSearchParams(window.location.search);
-        params.set('tab', tabId);
-        if (tabId !== 'alignment') params.delete('section');
-        else { params.delete('section'); setAlignmentSection('mapping'); }
-        window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
-    }
-
-    function selectAlignmentSection(section) {
-        setAlignmentSection(section);
-        const params = new URLSearchParams(window.location.search);
-        params.set('tab', 'alignment');
-        if (section === 'documents') params.set('section', 'documents'); else params.delete('section');
-        window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
-    }
-
     const filteredObjectives = objectives.filter(objective => withinPeriod(objective, reportingPeriod));
+    const agencyName = objective => objective.responsible_unit_assignment?.responsible_unit?.name || objective.responsible_office_agency || 'Unassigned';
+    const agencies = [...new Set(objectives.map(agencyName))].sort();
+    const agencyObjectives = agencyFilter ? objectives.filter(objective => agencyName(objective) === agencyFilter) : objectives;
     const filteredPlans = plans;
     const filteredInputs = inputs;
     const completed = filteredObjectives.filter(item => objectiveStatus(item) === 'completed').length;
@@ -222,13 +202,6 @@ function ManagementDashboard({ session }) {
         { label: 'Alignment Coverage', value: loading ? '—' : `${alignmentCoverage}%`, detail: 'Objectives linked to Agenda and PDP', icon: 'bi-bullseye', tone: 'purple' },
     ];
 
-    const tabButtons = tabs.filter(tab => can(tab.permission, session)).map(tab => h('button', {
-        key: tab.id, type: 'button', role: 'tab', id: `management-tab-${tab.id}`,
-        'aria-selected': activeTab === tab.id, 'aria-controls': 'management-tab-panel',
-        className: `management-dashboard__tab${activeTab === tab.id ? ' is-active' : ''}`,
-        onClick: () => selectTab(tab.id),
-    }, tab.label));
-
     const kpiCards = kpis.map(card => h('article', { className: `management-kpi is-${card.tone}`, key: card.label },
         h('span', { className: 'management-kpi__icon' }, h('i', { className: `bi ${card.icon}`, 'aria-hidden': 'true' })),
         h('span', { className: 'management-kpi__copy' }, h('small', null, card.label), h('strong', null, card.value), h('span', null, card.detail))));
@@ -278,12 +251,10 @@ function ManagementDashboard({ session }) {
                 h(ManagementPagination, { page: monitorObjectivePage, total: selectedProgress.objectives.length, label: 'objectives', onChange: setMonitorObjectivePage })) : null));
 
     const alignmentMappingContent = h('section', { className: 'management-card management-table-card' },
-        h('div', { className: 'management-card__heading' }, h('div', null, h('h2', null, 'Strategic Alignment Review'), h('p', null, 'Agenda and PDP associations for each objective, with its responsible office.')),
-            h('div', { className: 'management-card__actions' },
-                can(P.INPUTS_VIEW, session) ? h('a', { className: 'ui-button ui-button--primary ui-button--sm', href: '/consolidate-inputs' }, 'Agency Input Review') : null)),
+        h('div', { className: 'management-card__heading' }, h('div', null, h('h2', null, 'Strategic Alignment Review'), h('p', null, 'Agenda and PDP associations for each objective, with its responsible office.'))),
         h('div', { className: 'management-table-scroll' }, h('table', null,
             h('thead', null, h('tr', null, ['Presidential Agenda', 'PDP Chapter', 'Strategic Objective', 'Agency / Office', 'Progress', 'Status'].map(label => h('th', { key: label, scope: 'col' }, label)))),
-            h('tbody', null, loading ? h('tr', null, h('td', { colSpan: 6 }, 'Loading alignment data…')) : filteredObjectives.length ? pageRows(filteredObjectives, alignmentPage).map(item => {
+            h('tbody', null, loading ? h('tr', null, h('td', { colSpan: 6 }, 'Loading alignment data…')) : objectives.length ? pageRows(objectives, alignmentPage).map(item => {
                 const status = objectiveStatus(item);
                 const agenda = labelFor(item.presidential_agenda_items, ['title', 'item_title', 'agenda_title', 'name']);
                 const chapter = labelFor(item.pdp_chapters, ['chapter_title', 'title', 'name']);
@@ -292,14 +263,28 @@ function ManagementDashboard({ session }) {
                     h('td', null, h('div', { className: 'management-progress-cell' }, h('span', null, `${percent(item)}%`), h('span', { className: 'management-progress-track' }, h('i', { style: { width: `${percent(item)}%` } })))),
                     h('td', null, h('span', { className: `management-status is-${status}` }, statusLabels[status] || status)));
             }) : h('tr', null, h('td', { colSpan: 6 }, 'No strategic objectives are available.'))))),
-        h(ManagementPagination, { page: alignmentPage, total: filteredObjectives.length, label: 'objectives', onChange: setAlignmentPage }));
+        h(ManagementPagination, { page: alignmentPage, total: objectives.length, label: 'objectives', onChange: setAlignmentPage }));
 
-    const alignmentContent = h(React.Fragment, null,
-        h('nav', { className: 'management-alignment-sections', 'aria-label': 'Alignment review sections' },
-            h('button', { type: 'button', className: `management-alignment-sections__item${alignmentSection === 'mapping' ? ' is-active' : ''}`, onClick: () => selectAlignmentSection('mapping') }, 'Agenda / PDP Alignment'),
-            can(P.INPUTS_VIEW, session) ? h('a', { className: 'management-alignment-sections__item', href: '/consolidate-inputs' }, 'Agency Input') : null,
-            can('strategic_documents.view', session) ? h('button', { type: 'button', className: `management-alignment-sections__item${alignmentSection === 'documents' ? ' is-active' : ''}`, onClick: () => selectAlignmentSection('documents') }, 'Reference Documents') : null),
-        alignmentSection === 'documents' ? h(ManagementReferenceDocuments, { plans }) : alignmentMappingContent);
+    const agencyMappingContent = h('section', { className: 'management-card management-table-card' },
+        h('div', { className: 'management-card__heading' }, h('div', null,
+            h('h2', null, 'Agency Input Review'),
+            h('p', null, 'Review the mapping summary for objectives assigned to each agency or office.')),
+            h('label', { className: 'management-agency-filter' }, h('span', null, 'Agency / Office'),
+                h('select', { value: agencyFilter, onChange: event => { setAgencyFilter(event.target.value); setAgencyPage(1); } },
+                    h('option', { value: '' }, 'All agencies'), agencies.map(name => h('option', { key: name, value: name }, name))))),
+        h('div', { className: 'management-table-scroll' }, h('table', null,
+            h('thead', null, h('tr', null, ['Agency / Office', 'Strategic Plan', 'Strategic Objective', 'Presidential Agenda', 'PDP Chapter', 'Progress'].map(label => h('th', { key: label, scope: 'col' }, label)))),
+            h('tbody', null, loading ? h('tr', null, h('td', { colSpan: 6 }, 'Loading agency mapping…')) : agencyObjectives.length ? pageRows(agencyObjectives, agencyPage).map(item =>
+                h('tr', { key: item.objective_id },
+                    h('th', { scope: 'row' }, agencyName(item)),
+                    h('td', null, item.strategic_plan?.title || plansById.get(String(item.strategic_plan_id))?.title || '—'),
+                    h('td', null, item.objective_title || `Objective ${item.objective_id}`),
+                    h('td', null, labelFor(item.presidential_agenda_items, ['title', 'item_title', 'agenda_title', 'name'])),
+                    h('td', null, labelFor(item.pdp_chapters, ['chapter_title', 'title', 'name'])),
+                    h('td', null, `${percent(item)}%`))) : h('tr', null, h('td', { colSpan: 6 }, 'No mapped objectives match this agency.'))))),
+        h(ManagementPagination, { page: agencyPage, total: agencyObjectives.length, label: 'objectives', onChange: setAgencyPage }));
+
+    const alignmentContent = alignmentSection === 'agency' ? agencyMappingContent : alignmentMappingContent;
 
     const reports = [
         { id: 'plans', title: 'Strategic Plan Register', description: 'Plan title, lifecycle status and planning period.', icon: 'bi-journal-text', count: plans.length, label: 'plans', rows: reportRows.plans },
@@ -330,32 +315,24 @@ function ManagementDashboard({ session }) {
                     h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => { setActiveReport(report.id); setReportPage(1); } }, 'View'),
                     h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', disabled: loading || !report.rows.length, onClick: () => downloadCsv(`${report.id}-report.csv`, report.rows) }, 'Export CSV'))))));
 
-    const pendingContent = h('section', { className: 'management-card management-table-card' },
-        h('div', { className: 'management-card__heading' }, h('div', null, h('h2', null, 'Approval List'), h('p', null, 'Approval items currently assigned to your account.')),
-            h('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: '/management-approvals?status=pending' }, 'Open Approve List')),
-        h('div', { className: 'management-table-scroll' }, h('table', null,
-            h('thead', null, h('tr', null, ['Strategic Plan', 'Workflow Stage', 'Submitted', 'Action'].map(label => h('th', { key: label, scope: 'col' }, label)))),
-            h('tbody', null, loading ? h('tr', null, h('td', { colSpan: 4 }, 'Loading assigned reviews…')) : reviews.length ? pageRows(reviews, reviewPage).map(item => h('tr', { key: item.id },
-                h('td', null, item.plan_snapshot?.title || `Strategic Plan ${item.planId}`), h('td', null, item.currentStage?.name || 'Awaiting assignment'), h('td', null, formatDate(item.submittedAt)),
-                h('td', null, h('a', { className: 'ui-button ui-button--primary ui-button--sm', href: `/strategic-plan-reviews/${item.planId}` }, 'Review')))) : h('tr', null, h('td', { colSpan: 4 }, 'No plans are currently assigned to you for review.'))))),
-        h(ManagementPagination, { page: reviewPage, total: reviews.length, label: 'reviews', onChange: setReviewPage }));
-
-    const contentByTab = { dashboard: dashboardContent, alignment: alignmentContent, reports: reportsContent, pending: pendingContent };
+    const pageContent = activeTab === 'alignment' ? alignmentContent : activeTab === 'reports' ? reportsContent : dashboardContent;
+    const pageTitle = activeTab === 'alignment' ? alignmentSection === 'agency' ? 'Agency Input Review' : 'Strategic Alignment Review' : activeTab === 'reports' ? 'Reports & Summary' : 'Monitoring';
+    const pageDescription = activeTab === 'alignment' ? 'Review Agenda, PDP and objective associations by plan or agency.' : activeTab === 'reports' ? 'Inspect and export strategic planning summaries.' : 'Monitor plan hierarchy and objective progress.';
 
     return h('div', { className: 'app-shell management-dashboard' },
         h(AppSidebar),
         h('main', { className: 'app-shell-main' }, h('div', { className: 'management-dashboard__content' },
             h('header', { className: 'management-dashboard__header' },
-                h('div', null, h('p', { className: 'management-dashboard__eyebrow' }, 'Management / Executive'), h('h1', null, 'Management Dashboard'), h('p', null, `Welcome, ${session.name || 'Management'}. Monitor plan delivery, alignments and assigned approvals.`)),
+                h('div', null, h('p', { className: 'management-dashboard__eyebrow' }, 'Management / Executive'), h('h1', null, pageTitle), h('p', null, pageDescription)),
                 h('div', { className: 'management-dashboard__controls' },
-                    h('label', null, h('span', null, 'Reporting period'), h('select', { value: reportingPeriod, onChange: event => { setReportingPeriod(event.target.value); setAlignmentPage(1); setReportPage(1); } },
-                        h('option', { value: 'all' }, 'All reporting dates'), h('option', { value: '7' }, 'Last 7 days'), h('option', { value: '30' }, 'Last 30 days'), h('option', { value: '365' }, 'Last 12 months'))),
-                    h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', onClick: () => downloadCsv('management-dashboard-progress.csv', reportRows.progress), disabled: loading || !reportRows.progress.length }, h('i', { className: 'bi bi-cloud-arrow-down-fill' }), 'Export Dashboard'),
+                    activeTab !== 'alignment' ? h('label', null, h('span', null, 'Reporting period'), h('select', { value: reportingPeriod, onChange: event => { setReportingPeriod(event.target.value); setReportPage(1); } },
+                        h('option', { value: 'all' }, 'All reporting dates'), h('option', { value: '7' }, 'Last 7 days'), h('option', { value: '30' }, 'Last 30 days'), h('option', { value: '365' }, 'Last 12 months'))) : null,
+                    activeTab === 'reports' ? h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', onClick: () => downloadCsv('management-dashboard-progress.csv', reportRows.progress), disabled: loading || !reportRows.progress.length }, h('i', { className: 'bi bi-cloud-arrow-down-fill' }), 'Export Dashboard') : null,
                     h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setRefreshCount(value => value + 1), disabled: loading, 'aria-label': 'Refresh dashboard data' }, h('i', { className: 'bi bi-arrow-clockwise' })))),
             errors.length ? h('div', { className: 'management-dashboard__errors', role: 'alert' }, errors.map(error => h('p', { key: error }, error))) : null,
-            h('section', { className: 'management-kpis', 'aria-label': 'Strategic planning summary' }, kpiCards),
-            h('nav', { className: 'management-dashboard__tabs', role: 'tablist', 'aria-label': 'Management dashboard sections' }, tabButtons),
-            h('section', { id: 'management-tab-panel', role: 'tabpanel', 'aria-labelledby': `management-tab-${activeTab}`, className: 'management-dashboard__panel' }, contentByTab[activeTab] || dashboardContent),
+            h('section', { className: 'management-dashboard__panel management-dashboard__panel--standalone', 'aria-label': pageTitle },
+                activeTab === 'reports' ? h('section', { className: 'management-kpis', 'aria-label': 'Strategic planning summary' }, kpiCards) : null,
+                pageContent),
             h('footer', { className: 'management-dashboard__footer' }, '© 2026 Strategic Planning Management System. All rights reserved.'))));
 }
 

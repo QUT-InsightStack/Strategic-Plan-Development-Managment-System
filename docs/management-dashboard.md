@@ -1,14 +1,15 @@
 # Management interface on `codex/management-dashboard-restructure`
 
-This branch starts from `develop` and incorporates the navigation, dashboard and read-only plan review from Meng Sun's `076dbc0` commit. The management experience uses the four sections in the Figma reference: progress, alignment, reports and pending review.
+This branch starts from `develop` and incorporates the navigation, dashboard and read-only plan review from Meng Sun's `076dbc0` commit. Management pages open directly from the sidebar.
 
 ## What changed
 
 - **Approve List** (`/management-approvals`) separates pending, approved and returned-for-correction plans. It lists plans within the account's authorised scope with search and pagination. Only a review assigned to the current user links to the decision page. The existing decision API performs `approve` or `reject`; the interface describes `reject` as returning the plan for correction because a rejected submission can be resubmitted.
 - **Planning Module** opens the same existing plan list with distinct plan-summary and objective-summary views. Both lists are searchable and paginated. The plan review page also shows plan comments when the account has `objective_comments.create`.
-- **Alignment Review** opens the dashboard's read-only alignment summary backed by objective API relations, while Agency Input Review links to the existing backend-powered input list. The older `/mappings?mode=view` page uses browser-local mappings and is not the management summary.
+- **Alignment Review** and **Agency Input Review** are separate top-level sidebar links into the existing objective API alignment summary. The agency view filters the same Agenda/PDP/objective associations by responsible office. The older `/mappings?mode=view` page uses browser-local mappings and is not the management summary.
 - **Monitoring** keeps the original per-plan progress view and adds plan level, parent plan, plan search, level filtering, pagination and an expandable objective breakdown. Parent rows include objectives under child plans. It reads progress fields from the objective API.
 - **Reports & Summary** presents a list of report datasets. A reviewer can open paginated rows in the page and export each complete dataset as CSV.
+- Management sidebar links are flat and open their corresponding content directly. The redundant horizontal dashboard tabs were removed; the five strategic-planning KPI cards appear only in Reports & Summary.
 - The existing management permission helper is retained. The local-storage-based dashboard aggregation, which was unused after the redesign, was removed.
 
 ## APIs and backend changes
@@ -20,6 +21,6 @@ This branch starts from `develop` and incorporates the navigation, dashboard and
 
 ## Data notes
 
-The dashboard uses objective `progress_percentage`, `progress_status`, `progress_updated_at`, Agenda/PDP relations, and plan `parents` supplied by the backend. It no longer derives management summaries from browser local storage. Reporting-period filters apply to objective progress dates, while plan counts include all authorised plans.
+The pages use objective `progress_percentage`, `progress_status`, `progress_updated_at`, Agenda/PDP relations, and plan `parents` supplied by the backend. They no longer derive management summaries from browser local storage. Reporting-period filters apply to Monitoring and Reports & Summary objective progress dates; alignment review always shows all authorised mappings, while plan counts include all authorised plans.
 
 Agenda and PDP are separate objective relations in the current backend. The alignment summary lists those associations on one objective row; it cannot certify a specific Agenda → PDP pair without an explicit combined mapping relation/API.

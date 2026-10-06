@@ -6,6 +6,7 @@ import { ManagementPagination, pageRows } from '../../resources/js/components/Ma
 const management = () => flattenNavigation(navigationFor('Management'));
 
 test('management menu opens the matching review, alignment, monitoring and report content', () => {
+    assert.ok(navigationFor('Management').every(item => !item.children), 'Management sidebar links are all top-level');
     const items = management();
     const byId = id => items.find(item => item.id === id);
     assert.equal(byId('home'), undefined);
@@ -13,11 +14,12 @@ test('management menu opens the matching review, alignment, monitoring and repor
     assert.equal(byId('plan-review').href, '/management-plan-review');
     assert.equal(byId('objectives-review').href, '/management-plan-review?view=objectives');
     assert.equal(byId('alignment-review').href, '/management-dashboard?tab=alignment');
-    assert.equal(byId('inputs').href, '/consolidate-inputs');
+    assert.equal(byId('agency-input-review').href, '/management-dashboard?tab=alignment&section=agency');
     assert.equal(byId('monitoring').href, '/management-dashboard?tab=dashboard');
     assert.equal(byId('reports').href, '/management-dashboard?tab=reports');
     assert.equal(pageForUrl('/management-dashboard?tab=alignment', 'Management').id, 'alignment-review');
     assert.equal(pageForUrl('/management-dashboard?tab=alignment&section=documents', 'Management').id, 'alignment-review');
+    assert.equal(pageForUrl('/management-dashboard?tab=alignment&section=agency', 'Management').id, 'agency-input-review');
     assert.equal(pageForUrl('/management-dashboard', 'Management').id, 'monitoring');
     assert.equal(pageForUrl('/management-dashboard?tab=reports', 'Management').id, 'reports');
     assert.equal(pageForUrl('/management-plan-review?view=objectives&plan=7', 'Management').id, 'objectives-review');

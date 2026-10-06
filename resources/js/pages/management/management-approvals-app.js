@@ -79,15 +79,6 @@ function ApprovalsPage({ session }) {
                 h('h1', null, 'Approve List'),
                 h('p', null, `Review plans within your access. Decisions are available only when the current stage is assigned to ${session.name || 'you'}.`))),
             state.error ? h('p', { className: 'management-dashboard__errors', role: 'alert' }, state.error) : null,
-            h('section', { className: 'management-kpis', 'aria-label': 'Approval summary' }, [
-                { label: 'Plans in scope', value: state.plans.length, icon: 'bi-files', tone: 'blue' },
-                { label: 'Pending approval', value: groups.pending.length, icon: 'bi-hourglass-split', tone: 'blue' },
-                { label: 'Approved', value: groups.approved.length, icon: 'bi-check-circle', tone: 'green' },
-                { label: 'Returned', value: groups.returned.length, icon: 'bi-arrow-return-left', tone: 'red' },
-                { label: 'Assigned to me', value: state.assigned.length, icon: 'bi-person-check', tone: 'purple' },
-            ].map(item => h('article', { className: `management-kpi is-${item.tone}`, key: item.label },
-                h('span', { className: 'management-kpi__icon' }, h('i', { className: `bi ${item.icon}`, 'aria-hidden': true })),
-                h('span', { className: 'management-kpi__copy' }, h('small', null, item.label), h('strong', null, state.loading ? '—' : item.value))))),
             h('nav', { className: 'management-dashboard__tabs', 'aria-label': 'Approval status' }, sections.map(item => h('button', {
                 key: item.id, type: 'button', className: `management-dashboard__tab${section === item.id ? ' is-active' : ''}`,
                 'aria-current': section === item.id ? 'page' : undefined, onClick: () => selectSection(item.id),
