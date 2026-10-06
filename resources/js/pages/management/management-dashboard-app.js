@@ -9,7 +9,7 @@ import { can, createAccessSession, saveAccessSession } from '../../access/access
 import { isManagementSession, managementLevel } from '../../access/management-access.js';
 import { isSubmissionAssignedToReviewer, listAssignedPlanSubmissions } from '../../api/plan-approval-api.js';
 import { listAllLocalAgencyInputs, listAllLocalProgressUpdates } from '../../data/office-demo-storage.js';
-import { listAllLocalMappings } from '../../mappings/mapping-storage.js';
+import { mappingsFromObjectives } from '../../api/strategic-alignments-api.js';
 import {
     APPROVAL_LABELS,
     INPUT_STATUS_LABELS,
@@ -110,7 +110,7 @@ async function loadDashboardData() {
             objectives,
             inputs: readLocal(listAllLocalAgencyInputs),
             progressUpdates: readLocal(listAllLocalProgressUpdates),
-            mappings: readLocal(listAllLocalMappings),
+            mappings: mappingsFromObjectives(objectives),
         },
         warnings,
         loadedAt: new Date(),

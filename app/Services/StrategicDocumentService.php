@@ -20,7 +20,7 @@ class StrategicDocumentService
         return StrategicDocument::query()->where($column, $id)->latest()->paginate($perPage);
     }
 
-    public function store(UploadedFile $file, User $user, string $column, int $id, string $referenceLevel, string $contentCategory): StrategicDocument
+    public function store(UploadedFile $file, User $user, string $column, int $id, string $referenceLevel = 'Agency', string $contentCategory = 'Supporting Evidence'): StrategicDocument
     {
         $extension = strtolower($file->extension());
         $storedPath = self::DIRECTORY.'/'.Str::uuid().'.'.$extension;

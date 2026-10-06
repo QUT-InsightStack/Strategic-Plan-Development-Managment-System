@@ -10,9 +10,9 @@ import { apiRequest } from '../api/api-client.js';
 const { useEffect, useMemo, useState } = React;
 
 const SECURITY_FIELDS = [
-    { key: 'session_timeout_minutes', label: 'Session Inactivity Timeout', hint: 'Minutes without activity before a user is automatically logged out.', unit: 'minutes' },
-    { key: 'max_failed_login_attempts', label: 'Maximum Failed Login Attempts', hint: 'Failed passwords allowed before the account is locked.', unit: 'attempts' },
-    { key: 'lockout_duration_minutes', label: 'Account Lockout Duration', hint: 'Minutes an account remains locked after reaching the limit.', unit: 'minutes' },
+    { key: 'session_idle_timeout_minutes', min: 5, max: 120, label: 'Session Inactivity Timeout', hint: 'Minutes without activity before a user is automatically logged out.', unit: 'minutes' },
+    { key: 'login_attempt_limit', min: 3, max: 10, label: 'Maximum Failed Login Attempts', hint: 'Failed passwords allowed before the account is locked.', unit: 'attempts' },
+    { key: 'login_lockout_minutes', min: 1, max: 1440, label: 'Account Lockout Duration', hint: 'Minutes an account remains locked after reaching the limit.', unit: 'minutes' },
 ];
 
 export function SecuritySettings() {
@@ -25,7 +25,7 @@ export function SecuritySettings() {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        apiRequest('/api/security-settings')
+        apiRequest('/api/settings')
             .then((response) => { setSaved(response.data); setValues(response.data); })
             .catch((error) => setStatus({ message: error.message, type: 'error' }));
     }, []);
@@ -49,9 +49,9 @@ export function SecuritySettings() {
 
     function validate(payload) {
         const errors = {};
-        SECURITY_FIELDS.forEach(({ key, label }) => {
-            if (!Number.isInteger(payload[key]) || payload[key] < 1) {
-                errors[key] = `${label} must be a whole number of at least 1.`;
+        SECURITY_FIELDS.forEach(({ key, label, min, max }) => {
+            if (!Number.isInteger(payload[key]) || payload[key] < min || payload[key] > max) {
+                errors[key] = `${label} must be a whole number from ${min} to ${max}.`;
             }
         });
         return errors;
@@ -74,7 +74,7 @@ export function SecuritySettings() {
         setStatus({ message: '', type: 'info' });
 
         try {
-            const response = await apiRequest('/api/security-settings', { method: 'PUT', body: JSON.stringify(payload) });
+            const response = await apiRequest('/api/settings', { method: 'PATCH', body: JSON.stringify(payload) });
             setSaved(response.data);
             setValues(response.data);
             setStatus({ message: response.message, type: 'success' });
@@ -102,7 +102,7 @@ export function SecuritySettings() {
             ? React.createElement('div', { className: 'role-panel__body security-settings__loading' },
                 statusBanner || 'Loading security settings…')
             : React.createElement('form', { className: 'role-panel__body security-settings__form', onSubmit: save },
-                ...SECURITY_FIELDS.map(({ key, label, hint, unit }) => {
+                ...SECURITY_FIELDS.map(({ key, label, hint, unit, min, max }) => {
                     const inputId = `security-${key}`;
                     const hintId = `${inputId}-hint`;
                     const errorId = `${inputId}-error`;
@@ -116,7 +116,8 @@ export function SecuritySettings() {
                                 id: inputId,
                                 className: 'ui-input',
                                 type: 'number',
-                                min: '1',
+                                min,
+                                max,
                                 step: '1',
                                 inputMode: 'numeric',
                                 value: values[key],

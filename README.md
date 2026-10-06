@@ -372,6 +372,16 @@ DB_PASSWORD=your_password
 
 ## 10. Run Database Migrations
 
+For an existing installation, apply schema and permission updates without resetting demo account passwords:
+
+```shell
+php artisan spdms:upgrade
+```
+
+Use `--force` for an intentional production upgrade. Permission changes may require users to sign in again. See [the compatibility fixes and final API routes](docs/compatibility-fixes-2026-10-06.zh-CN.md).
+
+For a fresh local installation:
+
 php artisan migrate
 
 # Local development only: seed manual test data.

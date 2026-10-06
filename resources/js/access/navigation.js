@@ -13,8 +13,8 @@ export function navigationRole(role) {
 const review = page('office-review', 'Plan Review', '/office', ['strategic_records.view']);
 const upload = page('office-upload', 'Upload Planning Files', '/office?view=inputs', ['strategic_records.view', 'strategic_documents.upload']);
 const progress = page('progress', 'Objective Progress', '/office?view=progress', ['strategic_records.view'], { anyPermissions: ['strategic_objectives.view_progress', 'strategic_objectives.update_progress', 'strategic_objectives.correct_progress'] });
-const mapping = page('mapping', 'Strategic Mapping', '/mappings', ['strategic_records.view', 'strategic_objectives.view'], { anyPermissions: ['relations.manage', 'relations.create'], source: 'local' });
-const alignment = page('alignment', 'View Strategic Alignment', '/mappings?mode=view', ['strategic_records.view', 'relations.view'], { source: 'local' });
+const mapping = page('mapping', 'Strategic Mapping', '/mappings', ['strategic_records.view', 'strategic_objectives.view'], { anyPermissions: ['strategic_objectives.update', 'strategic_alignments.archive', 'strategic_alignments.delete'] });
+const alignment = page('alignment', 'View Strategic Alignment', '/mappings?mode=view', ['strategic_records.view', 'strategic_objectives.view']);
 const inputs = page('inputs', 'Consolidate Inputs', '/consolidate-inputs', ['implementation_inputs.view']);
 const common = [page('notifications', 'Notifications', '/workflow-notifications'), page('profile', 'Profile', '/profile'), pending('faq', 'FAQ')];
 export const roleNavigation = {
@@ -29,7 +29,7 @@ export const roleNavigation = {
         page('audit', 'Audit Logs', '/audit-logs', ['logs.view']),
         page('security-settings', 'Security Settings', '/settings', ['settings.manage']),
         page('maintenance', 'Backups', '/manual-backup', ['backups.view']),
-    ], 'bi-shield-check')],
+    ], 'bi-shield-check'), group('alignment', 'Alignment Administration', [mapping], 'bi-map')],
     administrative: [group('references', 'Planning Preparation', [
         page('agenda', 'Presidential Agenda', '/administrative-admin/reference-data?tab=agenda', ['reference_data.manage', 'presidential_agenda.view']),
         page('pdp', 'PDP Chapters', '/pdp-chapters/manage', ['pdp_chapters.manage']),
@@ -51,7 +51,7 @@ export const roleNavigation = {
         page('comments', 'Plan Comments', '/office?view=comments', ['strategic_records.view', 'objective_comments.create']),
         page('input-status', 'Input Submission Status', '/consolidate-inputs', ['implementation_inputs.view']),
         page('edit-objectives', 'Edit Objectives', '/office?view=edit', ['strategic_records.view', 'strategic_objectives.update']),
-    ]), group('mapping', 'Agency Mapping', [{ ...mapping, label: 'Add Agency to Mapping' }, alignment], 'bi-map'),
+    ]), group('mapping', 'Agency Mapping', [mapping, alignment], 'bi-map'),
     group('monitoring', 'Monitoring', [{ ...progress, label: 'Progress Updates' }, pending('office-monitoring', 'Monitoring Dashboard'), pending('office-reports', 'Reports')], 'bi-graph-up')],
     management: [page('approval-list', 'Approval List', '/strategic-plan-reviews'),
         group('planning', 'Planning', [page('plan-review', 'Plan Review', '/management-plan-review', ['strategic_records.view'])]),

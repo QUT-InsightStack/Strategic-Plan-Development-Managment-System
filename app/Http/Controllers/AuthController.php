@@ -208,6 +208,7 @@ class AuthController extends Controller
             'success' => true,
             'data'    => [
                 ...$user->toArray(),
+                'session_idle_timeout_minutes' => app(\App\Services\SystemSettingsService::class)->current()->session_idle_timeout_minutes,
                 'permissions' => $user->role?->permissions?->pluck('code')->values()->all() ?? [],
             ],
         ]);

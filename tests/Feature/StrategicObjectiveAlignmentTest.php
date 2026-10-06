@@ -360,7 +360,7 @@ class StrategicObjectiveAlignmentTest extends TestCase
 
     private function createAgenda(array $overrides = []): PresidentialAgendaItem
     {
-        return PresidentialAgendaItem::create(array_merge([
+        $agenda = (new PresidentialAgendaItem)->forceFill(array_merge([
             'code' => fake()->unique()->bothify('PA-####'),
             'title' => fake()->unique()->sentence(),
             'description' => 'Agenda description',
@@ -369,6 +369,8 @@ class StrategicObjectiveAlignmentTest extends TestCase
             'note' => 'Reference note',
             'created_by' => $this->officer->user_id,
         ], $overrides));
+        $agenda->save();
+        return $agenda->refresh();
     }
 
     private function link(StrategicObjective $objective, PdpChapter $chapter, PresidentialAgendaItem $agenda): void

@@ -390,10 +390,14 @@ class ObjectiveCollaborationTest extends TestCase
         $this->plan = $this->plan();
         $this->objective = $this->objective($this->plan);
         $this->objective->update(['responsible_office_agency' => 'ICT Office']);
+        // Roll back dependants first, matching Laravel's reverse migration order.
+        $planComments = require database_path('migrations/2026_09_30_000001_create_strategic_plan_comments_table.php');
+        $planComments->down();
         $migration = require database_path('migrations/2026_09_14_000001_create_objective_collaboration_tables.php');
         $migration->down();
         $this->assertFalse(Schema::hasTable('tblobjective_comments'));
         $migration->up();
+        $planComments->up();
         $this->assertDatabaseHas('tblobjective_responsible_units', ['objective_id' => $this->objective->objective_id]);
         $this->assertDatabaseCount('tblresponsible_units', 1);
         $this->login($this->office);

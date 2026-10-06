@@ -2,8 +2,7 @@ import { BrandLogo } from '../brand-logo.js';
 import { LogoutButton } from './LogoutButton.js';
 import { displayRoleName } from '../access/role-labels.js';
 import { useAccessSession } from '../access/use-access-session.js';
-import { navigationFor, navigationRole, canOpenPage, isCurrentPage } from '../access/navigation.js';
-import { canDeleteMappings } from '../mappings/mapping-eligibility.js';
+import { navigationFor, canOpenPage, isCurrentPage } from '../access/navigation.js';
 import '../../css/navigation.css';
 
 export function AppSidebar() {
@@ -12,10 +11,6 @@ export function AppSidebar() {
     const h = React.createElement;
     const items = session ? navigationFor(session.roleName) : [];
     const href = window.location.href;
-    // Technical Administrators can permanently delete strategic alignment
-    // mappings (SPDM-42); this link is their way to the page.
-    const showAlignmentMappings = Boolean(session) && navigationRole(session.roleName) === 'technical' && !['Administrator', 'test'].includes(session.roleName) && canDeleteMappings(session);
-    const onMappingsPage = window.location.pathname === '/mappings';
     function leaf(item, nested = false) {
         const allowed = canOpenPage(item, session);
         if (!allowed && item.hideWhenDenied) return null;
@@ -41,7 +36,6 @@ export function AppSidebar() {
                     h('button', { type: 'button', className: `app-sidebar__item app-sidebar__toggle${current ? ' active' : ''}`, 'aria-expanded': expanded, 'aria-controls': `nav-${item.id}`, onClick: () => setOpen(value => ({ ...value, [item.id]: !expanded })) },
                         h('i', { className: `bi ${item.icon}`, 'aria-hidden': true }), h('span', null, item.label), h('i', { className: `bi bi-chevron-${expanded ? 'up' : 'down'} app-sidebar__chevron`, 'aria-hidden': true })),
                     expanded && h('div', { id: `nav-${item.id}`, className: 'app-sidebar__submenu' }, children.map(child => leaf(child, true))));
-            }),
-            showAlignmentMappings && h('a', { key: 'alignment-mappings', href: '/mappings', className: `app-sidebar__item${onMappingsPage ? ' active' : ''}`, 'aria-current': onMappingsPage ? 'page' : undefined }, h('span', null, 'Alignment Mappings'))),
+            })),
         h(LogoutButton, { className: 'app-sidebar__item app-sidebar__logout', label: 'Log Out', iconClass: 'bi bi-box-arrow-left' }));
 }

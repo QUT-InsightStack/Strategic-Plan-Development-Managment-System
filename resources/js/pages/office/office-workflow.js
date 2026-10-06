@@ -3,7 +3,7 @@ import { listStrategicObjectives } from '../../api/strategic-objectives-api.js';
 import { submitPlanInput } from '../../api/implementation-inputs-api.js';
 import { ObjectiveProgressPanel } from '../../strategic-objectives/ObjectiveProgressPanel.js';
 import { getAccessSession } from '../../access/access-session.js';
-import { listLocalMappings } from '../../mappings/mapping-storage.js';
+import { listPlanAlignments } from '../../api/strategic-alignments-api.js';
 import { objectivesAssignedToOffice } from '../../objective-assignment-storage.js';
 
 const h = React.createElement;
@@ -51,7 +51,8 @@ function OfficeDraftWorkflow({ view }) {
                 if (active) {
                     setPlans(all);
                     if (['mapping', 'alignment'].includes(view)) {
-                        setRelations(all.flatMap(plan => listLocalMappings(plan.record_id, getAccessSession()?.office || '')));
+                        const alignments = await Promise.all(all.map(plan => listPlanAlignments(plan.record_id)));
+                        if (active) setRelations(alignments.flatMap(result => result.data || []).filter(item => item.status === 'active'));
                     }
                 }
             } catch (error) {
@@ -135,7 +136,7 @@ function OfficeDraftWorkflow({ view }) {
 
     return h('section', { className: 'office-panel' },
         ['mapping', 'alignment'].includes(view) && h('aside', { className: 'data-source-notice' },
-            h('p', null, 'Legacy mapping preview. These mappings are stored in this browser. This old form has no mapping save integration.'),
+            h('p', null, 'View the saved alignments below, or open the mapping page to manage them.'),
             h('a', { href: view === 'alignment' ? '/mappings?mode=view' : '/mappings' }, 'Open the current mapping page')),
         h('div', { role: 'status', 'aria-live': 'polite' }, loading ? 'Loading…' : message),
         !loading && view !== 'alignment' && h('form', { onSubmit: submit },
@@ -166,8 +167,8 @@ function OfficeDraftWorkflow({ view }) {
                     : view === 'mapping' ? 'Save mapping' : 'Submit Objective Proposal'))),
         ['mapping', 'alignment'].includes(view) && h('div', { className: 'office-table-scroll' },
             h('h2', null, 'Plan alignment'), h('table', null,
-                h('thead', null, h('tr', null, h('th', null, 'Plan'), h('th', null, 'Parent plan'))),
-                h('tbody', null, relations.length ? relations.map(relation => h('tr', { key: relation.relation_id },
-                    h('td', null, relation.record?.title || relation.record_id), h('td', null, relation.parent?.title || relation.parent_id)))
+                h('thead', null, h('tr', null, h('th', null, 'Objective'), h('th', null, 'Reference'))),
+                h('tbody', null, relations.length ? relations.map(relation => h('tr', { key: relation.id },
+                    h('td', null, relation.objective_title), h('td', null, relation.reference_title)))
                     : h('tr', null, h('td', { colSpan: 2 }, 'No alignments available.')))))));
 }

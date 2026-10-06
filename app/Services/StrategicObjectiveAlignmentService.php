@@ -11,42 +11,17 @@ use Illuminate\Validation\ValidationException;
 
 class StrategicObjectiveAlignmentService
 {
-    /**
-     * Plan states in which active mappings may be created, replaced, or
-     * archived. Submission moves a plan to finished + under_approval, so
-     * finalized, submitted, under-review, approved, and rejected plans are
-     * excluded until an authorised workflow explicitly permits changes.
-     */
-    public const MUTABLE_PLAN_STATUSES = ['draft'];
+    // Finished plans cannot return to draft. Permit preparation/revision while
+    // keeping submitted snapshots immutable and blocking live approval changes.
+    public const MUTABLE_PLAN_STATUSES = ['draft', 'finished'];
+    public const MUTABLE_APPROVAL_STATUSES = ['not_submitted', 'rejected'];
 
-    public const MUTABLE_APPROVAL_STATUSES = ['not_submitted'];
-
-    /**
-     * The caller must hold the plan lock inside the transaction.
-     */
     public function ensurePlanPermitsAlignmentChanges(Strategic $plan): void
     {
-        $message = match (true) {
-            $plan->status === 'deleted' =>
-                'Deleted strategic plans cannot be changed.',
-            $plan->status === 'archived' =>
-                'Archived strategic plans must be restored before their alignment mappings can be changed.',
-            $plan->approval_status === 'under_approval' =>
-                'Alignment mappings cannot be changed while the strategic plan is under approval.',
-            $plan->approval_status === 'approved' =>
-                'Alignment mappings cannot be changed after the strategic plan has been approved.',
-            $plan->approval_status === 'rejected' =>
-                'Alignment mappings cannot be changed for a rejected strategic plan unless an authorised revision workflow allows modification.',
-            ! in_array($plan->approval_status, self::MUTABLE_APPROVAL_STATUSES, true) =>
-                'The strategic plan approval state does not permit alignment changes.',
-            ! in_array($plan->status, self::MUTABLE_PLAN_STATUSES, true) =>
-                'Alignment mappings cannot be changed after the strategic plan has been finalized.',
-            default => null,
-        };
-
-        if ($message !== null) {
+        if (! in_array($plan->status, self::MUTABLE_PLAN_STATUSES, true)
+            || ! in_array($plan->approval_status, self::MUTABLE_APPROVAL_STATUSES, true)) {
             throw ValidationException::withMessages([
-                'strategic_plan_id' => [$message],
+                'strategic_plan_id' => ['Only draft or finished plans outside active approval can change alignments. Archived, deleted, under-approval and approved plans are locked.'],
             ]);
         }
     }
@@ -69,69 +44,37 @@ class StrategicObjectiveAlignmentService
         );
     }
 
-    /**
-     * Adds mappings to supplied lists only. Active mappings are never removed
-     * here: removal must go through the archive action, which requires its
-     * own permission and preserves the mapping row. The caller must lock the
-     * objective in a transaction.
-     */
+    /** Replace the active selection; omitted links are archived, never discarded. */
     public function update(StrategicObjective $objective, array $data): array
     {
-        $relations = [
-            'pdp_chapter_ids' => $objective->pdpChapters(),
-            'presidential_agenda_item_ids' => $objective->presidentialAgendaItems(),
-        ];
-
-        $additions = [];
-        $errors = [];
-
-        // Validate both lists before changing either one.
-        foreach ($relations as $field => $relation) {
+        $actor = app(PermissionAuthorizationService::class)->resolveUser();
+        $changes = [];
+        foreach ([
+            'pdp_chapter_ids' => [$objective->pdpChaptersWithArchived(), 'pdp-chapter'],
+            'presidential_agenda_item_ids' => [$objective->presidentialAgendaItemsWithArchived(), 'presidential-agenda'],
+        ] as $field => [$relation, $type]) {
             if (! array_key_exists($field, $data)) {
                 continue;
             }
-
             $requested = array_map('intval', $data[$field]);
-
-            // newPivotQuery() applies wherePivot('status', 'active').
-            $existingActive = array_map('intval', $relation->newPivotQuery()
-                ->lockForUpdate()
-                ->pluck($relation->getRelatedPivotKeyName())
-                ->all());
-
-            $omitted = array_values(array_diff($existingActive, $requested));
-
-            if ($omitted !== []) {
-                $errors[$field] = [
-                    'Active mappings cannot be removed by replacing the alignment list. '
-                    .'Use the archive action for reference ID(s): '.implode(', ', $omitted).'.',
-                ];
-
-                continue;
+            $statuses = $relation->newPivotQuery()->lockForUpdate()->pluck('status', $relation->getRelatedPivotKeyName());
+            $active = $statuses->filter(fn ($status) => $status === 'active')->keys()->map(fn ($id) => (int) $id)->all();
+            $removed = array_values(array_diff($active, $requested));
+            $added = array_values(array_diff($requested, $active));
+            $new = array_diff($requested, $statuses->keys()->all());
+            $restored = array_values(array_intersect($added, $statuses->keys()->all()));
+            // All operations share the controller's transaction and parent locks.
+            $this->attachNewMappings($relation, $field, $new, activeOnly: $field === 'presidential_agenda_item_ids');
+            foreach ($removed as $referenceId) {
+                app(StrategicAlignmentArchiveService::class)->archive($objective->objective_id, $type, $referenceId, $actor);
             }
-
-            $additions[$field] = array_values(array_diff($requested, $existingActive));
-        }
-
-        if ($errors !== []) {
-            throw ValidationException::withMessages($errors);
-        }
-
-        $changes = [];
-
-        foreach ($additions as $field => $added) {
-            $this->attachNewMappings(
-                $relations[$field],
-                $field,
-                $added,
-                activeOnly: $field === 'presidential_agenda_item_ids'
-            );
-
-            if ($added !== []) {
-                $changes[$field] = ['added' => $added];
+            foreach ($restored as $referenceId) {
+                app(StrategicAlignmentLifecycleService::class)->restore($objective->objective_id, $type, $referenceId, $actor);
+            }
+            if ($added !== [] || $removed !== []) {
+                $changes[$field] = ['added' => $added, 'removed' => $removed];
             }
         }
-
         return $changes;
     }
 

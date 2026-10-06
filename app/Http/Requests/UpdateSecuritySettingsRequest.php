@@ -2,19 +2,26 @@
 
 namespace App\Http\Requests;
 
-class UpdateSecuritySettingsRequest extends ApiFormRequest
+class UpdateSecuritySettingsRequest extends UpdateSystemSettingsRequest
 {
-    public function authorize(): bool
+    protected function prepareForValidation(): void
     {
-        return true;
-    }
-
-    public function rules(): array
-    {
-        return [
-            'session_timeout_minutes' => ['required', 'integer', 'min:1'],
-            'max_failed_login_attempts' => ['required', 'integer', 'min:1'],
-            'lockout_duration_minutes' => ['required', 'integer', 'min:1'],
+        $aliases = [
+            'session_timeout_minutes' => 'session_idle_timeout_minutes',
+            'max_failed_login_attempts' => 'login_attempt_limit',
+            'lockout_duration_minutes' => 'login_lockout_minutes',
         ];
+        $input = $this->all();
+        foreach ($aliases as $old => $new) {
+            if (! array_key_exists($old, $input)) {
+                continue;
+            }
+            if (array_key_exists($new, $input) && $input[$new] !== $input[$old]) {
+                throw \Illuminate\Validation\ValidationException::withMessages([$old => ['Conflicting setting values.']]);
+            }
+            $input[$new] = $input[$old];
+            unset($input[$old]);
+        }
+        $this->replace($input);
     }
 }

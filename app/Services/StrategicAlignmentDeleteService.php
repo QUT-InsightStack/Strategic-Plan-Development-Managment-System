@@ -146,6 +146,9 @@ class StrategicAlignmentDeleteService
             // Require draft + not_submitted, under the plan lock. Submission
             // takes that same lock before writing its snapshot.
             $this->alignmentService->ensurePlanPermitsAlignmentChanges($plan);
+            if ($plan->status !== 'draft' || $plan->approval_status !== 'not_submitted') {
+                throw ValidationException::withMessages(['strategic_plan_id' => ['Permanent deletion requires an unsubmitted draft plan. Use archive to retain history.']]);
+            }
 
             $deletedAt = now();
 
