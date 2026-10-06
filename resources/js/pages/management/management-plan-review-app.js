@@ -1,6 +1,6 @@
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { apiRequest } from '../../api/api-client.js';
-import { listStrategicPlans } from '../../api/strategic-plans-api.js';
+import { listAuthorizedManagementPlans } from './management-data.js';
 import { ManagementPlanReview } from './management-plan-review.js';
 import { createAccessSession, saveAccessSession, can } from '../../access/access-session.js';
 import { PERMISSIONS } from '../../access/access-policy.js';
@@ -8,19 +8,6 @@ import { enforcePageAccess } from '../../access/access-guard.js';
 import { isManagementSession } from '../../access/management-access.js';
 
 const h = React.createElement;
-
-async function allAuthorizedPlans() {
-    const plans = [];
-    let page = 1;
-    let lastPage = 1;
-    do {
-        const result = await listStrategicPlans({ page, per_page: 100 });
-        plans.push(...(result.data || []));
-        lastPage = Number(result.meta?.last_page || result.last_page || 1);
-        page += 1;
-    } while (page <= lastPage);
-    return plans;
-}
 
 function PlanReviewPage({ session }) {
     const query = new URLSearchParams(window.location.search);
@@ -41,7 +28,7 @@ function PlanReviewPage({ session }) {
     React.useEffect(() => {
         let active = true;
         setLoading(true); setError('');
-        allAuthorizedPlans().then(rows => { if (active) setPlans(rows); })
+        listAuthorizedManagementPlans().then(rows => { if (active) setPlans(rows); })
             .catch(reason => { if (active) setError(reason.message || 'Unable to load authorized plans.'); })
             .finally(() => { if (active) setLoading(false); });
         return () => { active = false; };

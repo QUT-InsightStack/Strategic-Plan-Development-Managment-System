@@ -66,7 +66,7 @@ function coreValueLabel(value) {
 function responsibleUnitName(objective) {
     return (
         objective?.responsible_unit_assignment
-            ?.responsible_unit?.name ||
+            ?.responsible_unit?.responsible_office_agency ||
         objective?.responsible_unit_assignment
             ?.responsible_unit?.unit_name ||
         objective?.responsible_office_agency ||
@@ -909,7 +909,7 @@ async function confirmDecision() {
                                 className:
                                     'ui-button ui-button--primary',
                                 href:
-                                    '/strategic-plan-reviews',
+                                    '/management-approvals?status=pending',
                             },
                             'Return to Assigned Reviews'
                         )
@@ -967,7 +967,7 @@ h(
                         'a',
                         {
                             href:
-                                '/strategic-plan-reviews',
+                                '/management-approvals?status=pending',
                         },
                         'Assigned Plan Reviews'
                     ),
@@ -1021,7 +1021,7 @@ h(
                             className:
                                 'ui-button ui-button--secondary',
                             href:
-                                '/strategic-plan-reviews',
+                                '/management-approvals?status=pending',
                         },
                         h('i', {
                             className:

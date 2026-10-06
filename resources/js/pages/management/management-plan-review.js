@@ -2,15 +2,12 @@ import { getStrategicPlan, listStrategicPlanComments, addStrategicPlanComment } 
 import { listStrategicObjectives } from '../../api/strategic-objectives-api.js';
 import { ManagementPagination, pageRows } from '../../components/ManagementPagination.js';
 import { planningYears } from './management-insights.js';
+import { loadAllManagementPages, managementDateLabel } from './management-data.js';
 
 const h = React.createElement;
 const { useEffect, useState } = React;
 
-function dateLabel(value) {
-    if (!value) return 'Not provided';
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? 'Not provided' : date.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
-}
+const dateLabel = value => managementDateLabel(value, 'Not provided');
 function field(label, value) {
     return h('div', { className: 'office-summary-field', key: label }, h('dt', null, label), h('dd', null, value || 'Not provided'));
 }
@@ -46,8 +43,8 @@ export function ManagementPlanReview({ plans, planId, mode = 'plans', canComment
             })
             .catch(reason => { if (active) setError(reason.message || 'Unable to load plan details.'); })
             .finally(() => { if (active) setLoading(false); });
-        if (canComment) listStrategicPlanComments(planId).then(payload => {
-            if (active) setComments(payload.data || []);
+        if (canComment) loadAllManagementPages(params => listStrategicPlanComments(planId, params)).then(rows => {
+            if (active) setComments(rows);
         }).catch(reason => { if (active) setCommentError(reason.message || 'Comments could not be loaded.'); });
         return () => { active = false; };
     }, [planId, canComment]);

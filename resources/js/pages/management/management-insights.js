@@ -9,7 +9,7 @@ export function progressStatus(objective) {
 }
 
 export function officeName(objective) {
-    return objective.responsible_unit_assignment?.responsible_unit?.name
+    return objective.responsible_unit_assignment?.responsible_unit?.responsible_office_agency
         || objective.responsible_office_agency || 'Unassigned';
 }
 

@@ -1,6 +1,5 @@
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { apiRequest } from '../../api/api-client.js';
-import { listStrategicPlans } from '../../api/strategic-plans-api.js';
 import { listAllStrategicObjectives } from '../../api/strategic-objectives-api.js';
 import { listAssignedPlanSubmissions } from '../../api/plan-approval-api.js';
 import { listSubmittedInputs } from '../../api/implementation-inputs-api.js';
@@ -9,7 +8,8 @@ import { PERMISSIONS as P } from '../../access/access-policy.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
 import { isManagementSession } from '../../access/management-access.js';
 import { ManagementPagination, pageRows } from '../../components/ManagementPagination.js';
-import { filterManagementRows, officeName, officePerformance, objectiveRisk, planningYears } from './management-insights.js';
+import { filterManagementRows, officeName, officePerformance, objectiveRisk, planningYears, progressPercent, progressStatus } from './management-insights.js';
+import { listAuthorizedManagementPlans, loadAllManagementPages, managementDateLabel } from './management-data.js';
 
 const h = React.createElement;
 const statusLabels = { completed: 'Completed', in_progress: 'Ongoing', not_started: 'Not Started' };
@@ -32,45 +32,6 @@ class ManagementErrorBoundary extends React.Component {
                 h('p', null, 'Refresh the page to try again. If the problem continues, check the browser console for details.'),
                 h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', onClick: () => window.location.reload() }, 'Reload page')));
     }
-}
-
-function rowsFrom(payload) {
-    return Array.isArray(payload?.data) ? payload.data : [];
-}
-
-async function loadAllPages(loader) {
-    const rows = [];
-    let page = 1;
-    let lastPage = 1;
-    do {
-        const payload = await loader({ page, per_page: 100 });
-        rows.push(...rowsFrom(payload));
-        lastPage = Number(payload?.meta?.last_page || payload?.last_page || 1);
-        page += 1;
-    } while (page <= lastPage);
-    return rows;
-}
-
-function formatDate(value) {
-    if (!value) return '—';
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-function objectiveStatus(objective) {
-    return objective.progress_status || (Number(objective.progress_percentage) >= 100 ? 'completed' : Number(objective.progress_percentage) > 0 ? 'in_progress' : 'not_started');
-}
-
-function percent(objective) {
-    return Math.max(0, Math.min(100, Number(objective.progress_percentage) || 0));
-}
-
-function isDelayed(objective, plansById) {
-    if (objectiveStatus(objective) === 'completed') return false;
-    const plan = plansById.get(String(objective.strategic_plan_id));
-    if (!plan?.planning_end_date) return false;
-    const end = new Date(`${plan.planning_end_date}T23:59:59`);
-    return !Number.isNaN(end.getTime()) && end < new Date();
 }
 
 function labelFor(items, fields) {
@@ -125,10 +86,10 @@ function ManagementDashboard({ session }) {
             setLoading(true);
             setErrors([]);
             const results = await Promise.allSettled([
-                loadAllPages(params => listStrategicPlans(params)),
-                loadAllPages(params => listAllStrategicObjectives(params)),
+                listAuthorizedManagementPlans(),
+                loadAllManagementPages(listAllStrategicObjectives),
                 can(P.PLANS_VIEW, session) ? listAssignedPlanSubmissions() : Promise.resolve([]),
-                canViewInputs ? loadAllPages(params => listSubmittedInputs(params)) : Promise.resolve([]),
+                canViewInputs ? loadAllManagementPages(listSubmittedInputs) : Promise.resolve([]),
             ]);
             if (!active) return;
             const nextErrors = [];
@@ -158,12 +119,12 @@ function ManagementDashboard({ session }) {
         && (!scopeFilters.office || input.responsible_office_agency === scopeFilters.office)
         && (!scopeFilters.objectiveStatus || allowedObjectiveIds.has(String(input.objective_id))));
     const filteredReviews = reviews.filter(review => allowedPlanIds.has(String(review.planId)));
-    const completed = filteredObjectives.filter(item => objectiveStatus(item) === 'completed').length;
-    const ongoing = filteredObjectives.filter(item => objectiveStatus(item) === 'in_progress').length;
+    const completed = filteredObjectives.filter(item => progressStatus(item) === 'completed').length;
+    const ongoing = filteredObjectives.filter(item => progressStatus(item) === 'in_progress').length;
     const alignedCount = filteredObjectives.filter(item => (item.presidential_agenda_items || []).length && (item.pdp_chapters || []).length).length;
     const alignmentCoverage = filteredObjectives.length ? Math.round(alignedCount * 100 / filteredObjectives.length) : 0;
     const plansById = new Map(filteredPlans.map(plan => [String(plan.record_id), plan]));
-    const delayed = filteredObjectives.filter(objective => isDelayed(objective, plansById)).length;
+    const delayed = filteredObjectives.filter(objective => objectiveRisk(objective, plansById.get(String(objective.strategic_plan_id))) === 'Overdue').length;
     const pendingPlans = filteredPlans.filter(plan => plan.approval_status === 'under_approval');
     const approvedPlans = filteredPlans.filter(plan => plan.approval_status === 'approved');
     const returnedPlans = filteredPlans.filter(plan => plan.approval_status === 'rejected');
@@ -204,8 +165,8 @@ function ManagementDashboard({ session }) {
         const tree = planTreeIds(plan.record_id);
         const planObjectives = filteredObjectives.filter(item => tree.has(String(item.strategic_plan_id)));
         const counts = { completed: 0, in_progress: 0, not_started: 0 };
-        planObjectives.forEach(item => { counts[objectiveStatus(item)] = (counts[objectiveStatus(item)] || 0) + 1; });
-        const average = planObjectives.length ? Math.round(planObjectives.reduce((sum, item) => sum + percent(item), 0) / planObjectives.length) : 0;
+        planObjectives.forEach(item => { counts[progressStatus(item)] = (counts[progressStatus(item)] || 0) + 1; });
+        const average = planObjectives.length ? Math.round(planObjectives.reduce((sum, item) => sum + progressPercent(item), 0) / planObjectives.length) : 0;
         return { plan, objectives: planObjectives, counts, average };
     });
     const availableLevels = [...new Set(filteredPlans.map(plan => plan.level).filter(Boolean))].sort();
@@ -216,12 +177,12 @@ function ManagementDashboard({ session }) {
 
     const reportRows = {
         plans: filteredPlans.map(plan => ({ plan_id: plan.record_id, plan: plan.title, status: plan.status, approval_status: plan.approval_status || 'not_submitted', office: plan.department_agency || '', planning_start_date: plan.planning_start_date, planning_end_date: plan.planning_end_date })),
-        progress: filteredObjectives.map(item => ({ plan: item.strategic_plan?.title || '', objective: item.objective_title, responsible_office: item.responsible_unit_assignment?.responsible_unit?.name || item.responsible_office_agency || '', progress_percent: percent(item), status: statusLabels[objectiveStatus(item)], updated_at: item.progress_updated_at || '' })),
-        alignment: filteredObjectives.map(item => ({ plan: item.strategic_plan?.title || '', presidential_agenda: labelFor(item.presidential_agenda_items, ['title', 'item_title', 'agenda_title', 'name']), pdp_chapter: labelFor(item.pdp_chapters, ['chapter_title', 'title', 'name']), objective: item.objective_title, agency: item.responsible_unit_assignment?.responsible_unit?.name || item.responsible_office_agency || '' })),
+        progress: filteredObjectives.map(item => ({ plan: item.strategic_plan?.title || '', objective: item.objective_title, responsible_office: officeName(item), progress_percent: progressPercent(item), status: statusLabels[progressStatus(item)], updated_at: item.progress_updated_at || '' })),
+        alignment: filteredObjectives.map(item => ({ plan: item.strategic_plan?.title || '', presidential_agenda: labelFor(item.presidential_agenda_items, ['title', 'item_title', 'agenda_title', 'name']), pdp_chapter: labelFor(item.pdp_chapters, ['chapter_title', 'title', 'name']), objective: item.objective_title, agency: officeName(item) })),
         reviews: filteredReviews.map(item => ({ plan_id: item.planId, plan: item.plan_snapshot?.title || `Strategic Plan ${item.planId}`, stage: item.currentStage?.name || '', submitted_at: item.submittedAt || '', workflow: item.workflowName || '' })),
         inputs: filteredInputs.map(item => ({ plan: item.strategic_plan?.title || '', objective: item.objective?.objective_title || '', office: item.responsible_office_agency || '', input_type: item.input_type, status: item.review_status, submitted_at: item.submitted_at || '', content: item.content || '' })),
         offices: performanceRows,
-        risks: riskRows.map(({ objective, plan, risk }) => ({ plan: plan?.title || '', objective: objective.objective_title || '', office: officeName(objective), progress_percent: percent(objective), planning_end_date: plan?.planning_end_date || '', risk })),
+        risks: riskRows.map(({ objective, plan, risk }) => ({ plan: plan?.title || '', objective: objective.objective_title || '', office: officeName(objective), progress_percent: progressPercent(objective), planning_end_date: plan?.planning_end_date || '', risk })),
         approvals: filteredPlans.filter(plan => ['under_approval', 'approved', 'rejected'].includes(plan.approval_status)).map(plan => ({ plan_id: plan.record_id, plan: plan.title, approval_status: plan.approval_status, decision_display: plan.approval_status === 'rejected' ? 'Returned for correction (backend: rejected)' : plan.approval_status, office: plan.department_agency || '' })),
         consolidation: consolidationRows,
     };
@@ -278,10 +239,10 @@ function ManagementDashboard({ session }) {
                     h('tbody', null, selectedProgress.objectives.length ? pageRows(selectedProgress.objectives, monitorObjectivePage).map(objective => h('tr', { key: objective.objective_id },
                         h('th', { scope: 'row' }, objective.objective_title || `Objective ${objective.objective_id}`),
                         h('td', null, plansById.get(String(objective.strategic_plan_id))?.title || '—'),
-                        h('td', null, objective.responsible_unit_assignment?.responsible_unit?.name || objective.responsible_office_agency || '—'),
-                        h('td', null, `${percent(objective)}%`), h('td', null, statusLabels[objectiveStatus(objective)] || objectiveStatus(objective)),
+                        h('td', null, officeName(objective)),
+                        h('td', null, `${progressPercent(objective)}%`), h('td', null, statusLabels[progressStatus(objective)] || progressStatus(objective)),
                         h('td', null, objectiveRisk(objective, plansById.get(String(objective.strategic_plan_id))) || '—'),
-                        h('td', null, formatDate(objective.progress_updated_at)))) : h('tr', null, h('td', { colSpan: 7 }, 'No objectives under this plan.'))))),
+                        h('td', null, managementDateLabel(objective.progress_updated_at)))) : h('tr', null, h('td', { colSpan: 7 }, 'No objectives under this plan.'))))),
                 h(ManagementPagination, { page: monitorObjectivePage, total: selectedProgress.objectives.length, label: 'objectives', onChange: setMonitorObjectivePage })) : null));
 
     const alignmentMappingContent = h('section', { className: 'management-card management-table-card' },
@@ -289,13 +250,13 @@ function ManagementDashboard({ session }) {
         h('div', { className: 'management-table-scroll' }, h('table', null,
             h('thead', null, h('tr', null, ['Presidential Agenda', 'PDP Chapter', 'Strategic Objective', 'Agency / Office', 'Alignment', 'Progress', 'Status'].map(label => h('th', { key: label, scope: 'col' }, label)))),
             h('tbody', null, loading ? h('tr', null, h('td', { colSpan: 7 }, 'Loading alignment data…')) : filteredObjectives.length ? pageRows(filteredObjectives, alignmentPage).map(item => {
-                const status = objectiveStatus(item);
+                const status = progressStatus(item);
                 const agenda = labelFor(item.presidential_agenda_items, ['title', 'item_title', 'agenda_title', 'name']);
                 const chapter = labelFor(item.pdp_chapters, ['chapter_title', 'title', 'name']);
-                const office = item.responsible_unit_assignment?.responsible_unit?.name || item.responsible_office_agency || 'Unassigned';
+                const office = officeName(item);
                 const alignmentState = agenda !== '—' && chapter !== '—' ? 'Complete' : agenda !== '—' || chapter !== '—' ? 'Partial' : 'Unmapped';
                 return h('tr', { key: item.objective_id }, h('td', null, agenda), h('td', null, chapter), h('td', null, item.objective_title), h('td', null, office), h('td', null, alignmentState),
-                    h('td', null, h('div', { className: 'management-progress-cell' }, h('span', null, `${percent(item)}%`), h('span', { className: 'management-progress-track' }, h('i', { style: { width: `${percent(item)}%` } })))),
+                    h('td', null, h('div', { className: 'management-progress-cell' }, h('span', null, `${progressPercent(item)}%`), h('span', { className: 'management-progress-track' }, h('i', { style: { width: `${progressPercent(item)}%` } })))),
                     h('td', null, h('span', { className: `management-status is-${status}` }, statusLabels[status] || status)));
             }) : h('tr', null, h('td', { colSpan: 7 }, 'No strategic objectives match these filters.'))))),
         h(ManagementPagination, { page: alignmentPage, total: filteredObjectives.length, label: 'objectives', onChange: setAlignmentPage }));
@@ -313,7 +274,7 @@ function ManagementDashboard({ session }) {
                     h('td', null, item.objective_title || `Objective ${item.objective_id}`),
                     h('td', null, labelFor(item.presidential_agenda_items, ['title', 'item_title', 'agenda_title', 'name'])),
                     h('td', null, labelFor(item.pdp_chapters, ['chapter_title', 'title', 'name'])),
-                    h('td', null, `${percent(item)}%`))) : h('tr', null, h('td', { colSpan: 6 }, 'No objectives match these filters.'))))),
+                    h('td', null, `${progressPercent(item)}%`))) : h('tr', null, h('td', { colSpan: 6 }, 'No objectives match these filters.'))))),
         h(ManagementPagination, { page: agencyPage, total: agencyObjectives.length, label: 'objectives', onChange: setAgencyPage }));
 
     const alignmentContent = alignmentSection === 'agency' ? agencyMappingContent : alignmentMappingContent;

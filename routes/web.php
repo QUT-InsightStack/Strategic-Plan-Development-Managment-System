@@ -91,10 +91,8 @@ Route::view('/management-dashboard', 'pages.management-dashboard')
 |
 */
 
-Route::view(
-    '/strategic-plan-reviews',
-    'pages.strategic-plans.reviews'
-)->name('strategic-plan-reviews.index');
+Route::redirect('/strategic-plan-reviews', '/management-approvals?status=pending')
+    ->name('strategic-plan-reviews.index');
 
 Route::get('/strategic-plan-reviews/{id}', function (int $id) {
     return view('pages.strategic-plans.review', [
