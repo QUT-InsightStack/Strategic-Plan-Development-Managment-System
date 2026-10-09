@@ -21,7 +21,8 @@ export function AppSidebar() {
         if (!allowed && item.hideWhenDenied) return null;
         const current = isCurrentPage(item, href);
         const className = `${nested ? 'app-sidebar__subitem' : 'app-sidebar__item'}${current ? ' active' : ''}`;
-        const content = [h('span', { key: 'label' }, item.label), item.placeholder && h('small', { key: 'state' }, 'Planned')];
+        const content = [!nested && item.icon ? h('i', { key: 'icon', className: `bi ${item.icon}`, 'aria-hidden': true }) : null,
+            h('span', { key: 'label' }, item.label), item.placeholder && h('small', { key: 'state' }, 'Planned')];
         return allowed ? h('a', { key: item.id, href: item.href, className, 'aria-current': current ? 'page' : undefined }, ...content)
             : h('span', { key: item.id, className: className + ' navigation-locked', 'aria-disabled': true, title: 'Your account does not have the permissions required to open this page.' }, ...content, h('small', null, 'No access'));
     }

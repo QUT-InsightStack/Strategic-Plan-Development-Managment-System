@@ -14,7 +14,8 @@ Route::get('/reset-password/{token}', function (string $token, Request $request)
     ]);
 })->name('password.reset');
 Route::view('/dashboard', 'pages.dashboard')->name('dashboard');
-Route::view('/management-dashboard', 'pages.management-dashboard')->name('management-dashboard');
+Route::view('/management-plan-review', 'pages.management-plan-review')->name('management-plan-review');
+Route::view('/management-approvals', 'pages.management-approvals')->name('management-approvals');
 Route::view('/administrative-admin/reference-data', 'pages.reference-data')
     ->name('administrative-admin.reference-data');
 Route::view('/administrative-admin/reference-data/agenda/create', 'pages.reference-data')
@@ -90,10 +91,8 @@ Route::view('/management-dashboard', 'pages.management-dashboard')
 |
 */
 
-Route::view(
-    '/strategic-plan-reviews',
-    'pages.strategic-plans.reviews'
-)->name('strategic-plan-reviews.index');
+Route::redirect('/strategic-plan-reviews', '/management-approvals?status=pending')
+    ->name('strategic-plan-reviews.index');
 
 Route::get('/strategic-plan-reviews/{id}', function (int $id) {
     return view('pages.strategic-plans.review', [

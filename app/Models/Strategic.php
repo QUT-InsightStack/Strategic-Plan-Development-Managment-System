@@ -19,6 +19,7 @@ class Strategic extends Model
         'level',
         'title',
         'description',
+        'department_agency',
         'planning_start_date',
         'planning_end_date',
         'status',

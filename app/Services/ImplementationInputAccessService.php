@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 class ImplementationInputAccessService
 {
     private const OFFICE_ROLES = ['Office', 'Responsible Unit User', 'Office Representative', 'Office/Agency', 'Offices / Agencies'];
+    private const MANAGEMENT_ROLES = ['Management', 'Executive', 'Management / Executive', 'Division Head'];
 
     public function __construct(private readonly PermissionAuthorizationService $permissions) {}
 
@@ -27,7 +28,8 @@ class ImplementationInputAccessService
     {
         return ! in_array($actor->role?->role_name, self::OFFICE_ROLES, true)
             && (in_array($actor->role?->role_name, ['Administrator', 'Planning Officer', 'test'], true)
-                || $this->permissions->userPermissionCodes($actor)->contains('implementation_inputs.view_all'));
+                || $this->permissions->userPermissionCodes($actor)->contains('implementation_inputs.view_all')
+                || ($this->isManagement($actor) && $this->permissions->userPermissionCodes($actor)->contains('implementation_inputs.view_all')));
     }
 
     public function office(User $actor): ResponsibleUnit
@@ -45,6 +47,10 @@ class ImplementationInputAccessService
         $query = Strategic::where('level', 'strategic_plan')->where('status', '!=', 'deleted');
         if ($actor->role?->hasFullAccess()) {
             return $query;
+        }
+        if ($this->isManagement($actor) && $this->permissions->userPermissionCodes($actor)->contains('implementation_inputs.view_all')) {
+            return $query->whereIn('record_id', app(StrategicPlanAuthorizationService::class)
+                ->authorizedPlanIdsForListing($actor));
         }
         if ($this->viewsPlanningScope($actor)) {
             return $query->whereIn('record_id', DB::table('tblimplementation_input_scopes')
@@ -79,5 +85,10 @@ class ImplementationInputAccessService
         return $actor->status === 'active' && in_array($actor->role?->role_name, ['Planning Officer', 'test'], true)
             && $this->permissions->userPermissionCodes($actor)->contains('implementation_inputs.review')
             && $this->viewsPlanningScope($actor);
+    }
+
+    private function isManagement(User $actor): bool
+    {
+        return in_array($actor->role?->role_name, self::MANAGEMENT_ROLES, true);
     }
 }

@@ -38,15 +38,16 @@ class StrategicPlanCommentController extends Controller
         $actor = $this->permissions->ensureHasPermission('objective_comments.create', $request->user('api'));
         $plan = $this->plan($planId, $actor);
         $data = $request->validate(['content' => ['required', 'string', 'max:10000', 'regex:/\S/u']]);
-        $unit = ResponsibleUnit::where('name_key', ResponsibleUnit::nameKey($actor->office ?? ''))
+        $management = in_array($actor->role?->role_name, ['Management', 'Executive', 'Management / Executive', 'Division Head'], true);
+        $unit = $management ? null : ResponsibleUnit::where('name_key', ResponsibleUnit::nameKey($actor->office ?? ''))
             ->where('is_active', true)->firstOrFail();
 
         $comment = DB::transaction(function () use ($actor, $data, $plan, $unit) {
             $comment = StrategicPlanComment::create([
                 'strategic_plan_id' => $plan->record_id,
-                'responsible_unit_id' => $unit->responsible_unit_id,
+                'responsible_unit_id' => $unit?->responsible_unit_id,
                 'submitted_by' => $actor->user_id,
-                'responsible_office_agency' => $unit->responsible_office_agency,
+                'responsible_office_agency' => $unit?->responsible_office_agency ?? 'Management',
                 'submitter_name' => $actor->name,
                 'content' => trim($data['content']),
                 'submitted_at' => now(),

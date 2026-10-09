@@ -25,7 +25,7 @@ Keep page entries in their existing role directories. Shared UI belongs in `comp
 | Input status / consolidation | `/consolidate-inputs` |
 | Mapping / read-only mapping | `/mappings` / `/mappings?mode=view` |
 | Management plan review | `/management-plan-review` |
-| Approval list | `/strategic-plan-reviews` |
+| Approval list | `/management-approvals` (`/strategic-plan-reviews` redirects here) |
 
 Old `view=agency-input` upload links normalize to `view=inputs`, retaining the selected plan. Existing objective comments and local comment history remain in clearly labeled expandable compatibility sections. The previous generic dashboard is accessible through `/dashboard?view=legacy`.
 

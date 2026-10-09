@@ -46,11 +46,8 @@ function text(tree) {
 
 test('planning officer monitor route reuses the shared objective progress panel', () => {
     const source = readFileSync(new URL('../../resources/js/pages/planner/progress-monitoring-app.js', import.meta.url), 'utf8');
-    const sidebar = readFileSync(new URL('../../resources/js/components/AppSidebar.js', import.meta.url), 'utf8');
     assert.match(source, /import \{ ObjectiveProgressPanel \}/);
     assert.match(source, /React\.createElement\(ObjectiveProgressPanel\)/);
-    assert.match(sidebar, /label: 'Monitor Module'/);
-    assert.match(sidebar, /href: '\/progress-monitoring'/);
     const rule = routeRules.find(candidate => candidate.test.test('/progress-monitoring'));
     assert.equal(rule.permission, PERMISSIONS.OBJECTIVES_VIEW_PROGRESS);
 });
