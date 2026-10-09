@@ -94,14 +94,14 @@ class StrategicObjectiveAlignmentUpdateTest extends TestCase
             ['tblobjective_pdp_chapter', 'chapter_id', $this->chapter->chapter_id, $addedChapter->chapter_id],
             ['tblobjective_presidential_agenda', 'agenda_id', $this->agenda->agenda_id, $addedAgenda->agenda_id],
         ] as [$table, $key, $removed, $added]) {
-            $this->assertDatabaseHas($table, ['objective_id' => $this->objective->objective_id, $key => $removed, 'status' => 'archived', 'archived_by' => $this->officer->user_id]);
+            $this->assertDatabaseMissing($table, ['objective_id' => $this->objective->objective_id, $key => $removed]);
             $this->assertDatabaseHas($table, ['objective_id' => $this->objective->objective_id, $key => $added, 'created_at' => now()->toDateTimeString()]);
             foreach ($before[$table] as $row) {
                 if ($row->objective_id !== $this->objective->objective_id || $row->{$key} !== $removed) {
                     $this->assertDatabaseHas($table, (array) $row);
                 }
             }
-            $this->assertDatabaseCount($table, 7);
+            $this->assertDatabaseCount($table, 6);
         }
         $this->assertEquals($otherObjectives, DB::table('tblstrategic_objectives')->where('objective_id', '!=', $this->objective->objective_id)->get()->all());
         $this->assertSame($before['objective']['created_by'], $this->objective->fresh()->created_by);
@@ -143,8 +143,7 @@ class StrategicObjectiveAlignmentUpdateTest extends TestCase
         $before = $this->snapshot();
         $this->authenticateApiUser($this->officer);
         $this->putJson($this->endpoint(), [$field => []])->assertOk();
-        $this->assertSame(0, DB::table($cleared)->where('status', 'active')->count());
-        $this->assertDatabaseHas($cleared, ['objective_id' => $this->objective->objective_id, 'status' => 'archived']);
+        $this->assertDatabaseCount($cleared, 0);
         $this->assertEquals($before[$retained], $this->snapshot()[$retained]);
         $this->assertNotNull($this->chapter->fresh());
         $this->assertNotNull($this->agenda->fresh());
@@ -155,8 +154,8 @@ class StrategicObjectiveAlignmentUpdateTest extends TestCase
         $this->authenticateApiUser($this->officer);
         $this->putJson($this->endpoint(), ['pdp_chapter_ids' => [], 'presidential_agenda_item_ids' => []])
             ->assertOk()->assertJsonPath('data.pdp_chapters', [])->assertJsonPath('data.presidential_agenda_items', []);
-        $this->assertDatabaseHas('tblobjective_pdp_chapter', ['objective_id' => $this->objective->objective_id, 'status' => 'archived']);
-        $this->assertDatabaseHas('tblobjective_presidential_agenda', ['objective_id' => $this->objective->objective_id, 'status' => 'archived']);
+        $this->assertDatabaseCount('tblobjective_pdp_chapter', 0);
+        $this->assertDatabaseCount('tblobjective_presidential_agenda', 0);
         $clearedAt = $this->objective->fresh()->getRawOriginal('updated_at');
         $this->travel(1)->minutes();
         $this->putJson($this->endpoint(), $this->payload())->assertOk()
@@ -208,9 +207,9 @@ class StrategicObjectiveAlignmentUpdateTest extends TestCase
 
     public function test_inactive_existing_agenda_can_be_retained_or_removed_but_cannot_be_added(): void
     {
-        $this->agenda->forceFill(['status' => 'inactive'])->save();
+        $this->agenda->update(['status' => 'inactive']);
         $inactive = $this->createAgenda();
-        $inactive->forceFill(['status' => 'inactive'])->save();
+        $inactive->update(['status' => 'inactive']);
         $this->authenticateApiUser($this->officer);
         $this->putJson($this->endpoint(), [
             'pdp_chapter_ids' => [$this->createChapter()->chapter_id],
@@ -223,7 +222,7 @@ class StrategicObjectiveAlignmentUpdateTest extends TestCase
         ])->assertUnprocessable()->assertJsonValidationErrors('presidential_agenda_item_ids.1');
         $this->assertEquals($before, $this->snapshot());
         $this->putJson($this->endpoint(), ['presidential_agenda_item_ids' => []])->assertOk();
-        $this->assertDatabaseHas('tblobjective_presidential_agenda', ['objective_id' => $this->objective->objective_id, 'status' => 'archived']);
+        $this->assertDatabaseCount('tblobjective_presidential_agenda', 0);
     }
 
     public static function unauthorizedActors(): array
@@ -306,7 +305,7 @@ class StrategicObjectiveAlignmentUpdateTest extends TestCase
             'expected_outcome' => 'Outcome', 'target' => 'Target', 'responsible_office_agency' => 'Planning Office']);
         $this->authenticateApiUser($this->officer);
         $this->putJson($this->endpoint(), ['pdp_chapter_ids' => []])->assertOk()->assertJsonPath('data.status', 'published');
-        $this->assertDatabaseHas('tblobjective_pdp_chapter', ['objective_id' => $this->objective->objective_id, 'status' => 'archived']);
+        $this->assertDatabaseCount('tblobjective_pdp_chapter', 0);
     }
 
     public function test_audit_failure_rolls_back_additions_removals_and_objective_metadata(): void

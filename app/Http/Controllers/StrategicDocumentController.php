@@ -39,9 +39,6 @@ class StrategicDocumentController extends Controller
 
     public function storeForObjective(StrategicObjective $objective, StoreStrategicDocumentRequest $request): JsonResponse
     {
-        $plan = Strategic::where('status', '!=', 'deleted')->findOrFail($objective->strategic_plan_id);
-        abort_if($objective->status === 'deleted', 404);
-        $this->planAuthorization->ensureCanViewPlan($plan, Auth::guard('api')->user());
         return $this->store('objective_id', $objective->objective_id, $request);
     }
 

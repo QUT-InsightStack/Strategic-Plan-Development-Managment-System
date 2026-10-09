@@ -3,34 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateSecuritySettingsRequest;
-use App\Services\SystemSettingsService;
+use App\Services\SecuritySettingsService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\JsonResponse;
 
 class SecuritySettingsController extends Controller
 {
-    public function __construct(private readonly SystemSettingsService $settings) {}
+    public function __construct(private readonly SecuritySettingsService $settings) {}
 
     public function show(): JsonResponse
     {
-        return response()->json(['success' => true, 'data' => $this->legacyValues($this->settings->show())]);
+        abort_unless($this->settings->technicalAdmin(Auth::guard('api')->user()), 403);
+        return response()->json(['success' => true, 'data' => $this->settings->all()]);
     }
 
     public function update(UpdateSecuritySettingsRequest $request): JsonResponse
     {
-        $result = $this->settings->update($request->validated());
+        abort_unless($this->settings->technicalAdmin(Auth::guard('api')->user()), 403);
         return response()->json([
             'success' => true,
             'message' => 'Security settings updated successfully.',
-            'data' => $this->legacyValues($result['settings']),
+            'data' => $this->settings->update($request->validated()),
         ]);
-    }
-
-    private function legacyValues(\App\Models\SystemSetting $settings): array
-    {
-        return [
-            'session_timeout_minutes' => $settings->session_idle_timeout_minutes,
-            'max_failed_login_attempts' => $settings->login_attempt_limit,
-            'lockout_duration_minutes' => $settings->login_lockout_minutes,
-        ];
     }
 }

@@ -15,14 +15,14 @@ class SeededRolesTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_complete_seeding_is_repeatable_and_provisions_the_seven_defaults(): void
+    public function test_complete_seeding_is_repeatable_and_provisions_only_the_six_defaults(): void
     {
         $this->seed(DatabaseSeeder::class);
         $grantCount = DB::table('tblrole_permissions')->count();
         $this->seed(DatabaseSeeder::class);
 
         $this->assertEqualsCanonicalizing([
-            'Administrator', 'test', 'Planning Officer', 'Management', 'Office', 'Technical Administrator', 'Administrative Admin',
+            'Administrator', 'test', 'Planning Officer', 'Management', 'Office', 'Technical Administrator',
         ], Role::pluck('role_name')->all());
         $this->assertSame($grantCount, DB::table('tblrole_permissions')->count());
         $this->assertDatabaseCount('tblusers', 4);
@@ -33,12 +33,7 @@ class SeededRolesTest extends TestCase
             'strategic_documents.view', 'strategic_documents.download', 'relations.view', 'plan_core_values.view',
         ];
         foreach (['Management', 'Office'] as $name) {
-            $codes = Role::where('role_name', $name)->firstOrFail()->permissions->pluck('code')->all();
-            $this->assertEmpty(array_diff($readOnlyCodes, $codes));
-            $this->assertContains('implementation_inputs.view', $codes);
-            foreach (['strategic_records.create', 'strategic_objectives.update', 'strategic_alignments.delete', 'roles.manage'] as $denied) {
-                $this->assertNotContains($denied, $codes);
-            }
+            $this->assertEqualsCanonicalizing($readOnlyCodes, Role::where('role_name', $name)->firstOrFail()->permissions->pluck('code')->all());
         }
 
         $test = Role::where('role_name', 'test')->firstOrFail();
@@ -124,8 +119,7 @@ class SeededRolesTest extends TestCase
             $this->getJson('/api/strategic-plans')->assertOk();
             $this->getJson('/api/roles')->assertForbidden();
             $this->getJson('/api/approval-workflow')->assertForbidden();
-            // Office has view permission but still needs an active unit scope.
-            $this->getJson('/api/implementation-inputs')->assertStatus($name === 'Office' ? 403 : 200);
+            $this->getJson('/api/implementation-inputs')->assertForbidden();
             $this->postJson('/api/strategic-plans', ['level' => 'strategic_plan', 'title' => 'Not permitted'])->assertForbidden();
         }
     }

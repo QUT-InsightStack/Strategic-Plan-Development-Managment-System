@@ -24,15 +24,9 @@ class StrategicAlignmentLifecycleService
     public function restore(int $id, string $type, int $referenceId, User $actor): array
     {
         $this->permissions->ensureHasPermission('strategic_alignments.archive', $actor);
-        return $this->change($id, $type, $referenceId, $actor, function ($mapping, $objective, $definition) use ($type, $referenceId) {
+        return $this->change($id, $type, $referenceId, $actor, function ($mapping) {
             if ($mapping->status !== 'archived') {
                 throw ValidationException::withMessages(['status' => ['Only archived mappings can be restored.']]);
-            }
-            $reference = $type === 'pdp-chapter'
-                ? \App\Models\PdpChapter::sharedLock()->find($referenceId)
-                : \App\Models\PresidentialAgendaItem::sharedLock()->find($referenceId);
-            if (! $reference || $reference->status !== 'active') {
-                throw ValidationException::withMessages(['reference_id' => ['Restore the referenced item before restoring its mapping.']]);
             }
             return ['status' => 'active', 'archived_at' => null, 'archived_by' => null];
         }, 'strategic_alignment.restored');
@@ -68,7 +62,7 @@ class StrategicAlignmentLifecycleService
             abort_if($plan->status === 'deleted' || $objective->status === 'deleted', 404);
             $this->plans->ensurePlanIsWithinAuthorizedScope($plan, $actor);
             $this->alignments->ensurePlanPermitsAlignmentChanges($plan);
-            if ($objective->status === 'archived') {
+            if ($event !== 'strategic_alignment.restored' && $objective->status === 'archived') {
                 throw ValidationException::withMessages(['status' => ['Restore the objective before changing its mappings.']]);
             }
             $mapping = $this->repository->findForUpdate($type, $id, $referenceId);

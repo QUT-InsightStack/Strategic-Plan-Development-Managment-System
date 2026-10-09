@@ -3,11 +3,10 @@ import assert from 'node:assert/strict';
 
 import { mappingArchiveBlockReason, mappingChangeLockReason } from '../../resources/js/mappings/mapping-eligibility.js';
 
-test('draft and finished plans allow preparation and revision outside active approval', () => {
-    for (const status of ['draft', 'finished']) {
-        for (const approval_status of ['not_submitted', 'rejected']) {
-            assert.equal(mappingChangeLockReason({ status, approval_status }), null);
-        }
+test('only draft and not-submitted plans allow mapping changes', () => {
+    assert.equal(mappingChangeLockReason({ status: 'draft', approval_status: 'not_submitted' }), null);
+    for (const [status, approval_status] of [['draft', 'rejected'], ['finished', 'not_submitted'], ['finished', 'rejected']]) {
+        assert.ok(mappingChangeLockReason({ status, approval_status }));
     }
     assert.match(mappingChangeLockReason({ status: 'draft' }), /approval state/);
     assert.match(mappingChangeLockReason({ status: 'archived' }), /archived/);
@@ -21,5 +20,5 @@ test('a mapping must exist and be active to be archived', () => {
     assert.equal(mappingArchiveBlockReason({ status: 'active' }, plan), null);
     assert.match(mappingArchiveBlockReason({ status: 'archived' }, plan), /already archived/);
     assert.match(mappingArchiveBlockReason(undefined, plan), /no longer exists/);
-    assert.equal(mappingArchiveBlockReason({ status: 'active' }, { status: 'finished', approval_status: 'rejected' }), null);
+    assert.match(mappingArchiveBlockReason({ status: 'active' }, { status: 'finished', approval_status: 'rejected' }), /finalised/);
 });

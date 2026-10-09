@@ -115,8 +115,7 @@ class StrategicPlanAuthorizationService
     {
         $user = $this->permissionAuthorizationService->resolveUser($user);
 
-        if (in_array($user->role?->role_name, self::OFFICE_ROLES, true) && ! $includeAllOfficePlans
-            && (int) $plan->created_by !== (int) $user->user_id) {
+        if (in_array($user->role?->role_name, self::OFFICE_ROLES, true) && ! $includeAllOfficePlans) {
             $unit = $this->activeOfficeUnit($user);
             abort_unless($unit && $plan->objectives()
                 ->whereHas('responsibleUnitAssignment', fn (Builder $query) => $query->where('responsible_unit_id', $unit->responsible_unit_id))
@@ -133,13 +132,13 @@ class StrategicPlanAuthorizationService
         }
 
         $unit = $this->activeOfficeUnit($user);
-        $query->where(function (Builder $scope) use ($user, $unit) {
-            $scope->where('created_by', $user->user_id);
-            if ($unit) {
-                $scope->orWhereHas('objectives.responsibleUnitAssignment', fn (Builder $assignment) =>
-                    $assignment->where('responsible_unit_id', $unit->responsible_unit_id));
-            }
-        });
+        if (! $unit) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        $query->whereHas('objectives.responsibleUnitAssignment', fn (Builder $assignment) =>
+            $assignment->where('responsible_unit_id', $unit->responsible_unit_id));
     }
 
     private function activeOfficeUnit(User $user): ?ResponsibleUnit

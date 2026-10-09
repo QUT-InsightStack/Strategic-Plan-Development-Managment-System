@@ -150,10 +150,8 @@ Route::middleware(['auth:api','auth.version', 'auth.session','system.available',
 */
 
 Route::middleware(['auth:api','auth.version','auth.session','system.available',])->group(function () {
-    Route::get('security-settings', [\App\Http\Controllers\SecuritySettingsController::class, 'show'])
-        ->middleware('permission:settings.view');
-    Route::put('security-settings', [\App\Http\Controllers\SecuritySettingsController::class, 'update'])
-        ->middleware('permission:settings.manage');
+    Route::get('security-settings', [\App\Http\Controllers\SecuritySettingsController::class, 'show']);
+    Route::put('security-settings', [\App\Http\Controllers\SecuritySettingsController::class, 'update']);
    
 
     Route::get('pdp-chapters', [PdpChapterController::class, 'index']);

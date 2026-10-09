@@ -4,8 +4,7 @@ import { displayRoleName } from '../access/role-labels.js';
  * Whether a Strategic Plan currently allows its alignment mappings to be
  * archived or restored.
  *
- * Draft and finished plans allow preparation or revision outside active
- * approval. Submitted snapshots remain immutable. Returns a
+ * Only draft, not-submitted plans allow alignment changes. Returns a
  * user-facing reason when changes are locked, or null when they are allowed.
  */
 const LOCKED_APPROVAL_STATUSES = {
@@ -17,8 +16,8 @@ export function mappingChangeLockReason(plan) {
     if (!plan) return 'Select a Strategic Plan first.';
     if (LOCKED_APPROVAL_STATUSES[plan.approval_status]) return LOCKED_APPROVAL_STATUSES[plan.approval_status];
     if (plan.status === 'archived') return 'This plan is archived. Restore the plan before changing its mappings.';
-    if (!['draft', 'finished'].includes(plan.status)) return 'This plan is unavailable for mapping changes.';
-    if (!['not_submitted', 'rejected'].includes(plan.approval_status)) return 'This plan approval state does not allow mapping changes.';
+    if (plan.status !== 'draft') return 'This plan has been finalised, so its mappings are locked.';
+    if (plan.approval_status !== 'not_submitted') return 'This plan approval state does not allow mapping changes.';
     return null;
 }
 
@@ -55,7 +54,5 @@ export function mappingDeleteBlockReason(mapping, plan) {
     if (!mapping) return 'This mapping no longer exists.';
     if (mapping.status === 'archived') return 'Archived mappings are kept as historical records and cannot be permanently deleted.';
     const locked = mappingChangeLockReason(plan);
-    if (locked) return `${locked} It must be kept as part of the plan record.`;
-    if (plan.status !== 'draft' || plan.approval_status !== 'not_submitted') return 'Finalised or previously submitted mappings must be kept as part of the plan record.';
-    return null;
+    return locked ? `${locked} It must be kept as part of the plan record.` : null;
 }

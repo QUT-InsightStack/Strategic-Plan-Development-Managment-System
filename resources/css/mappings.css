@@ -10,11 +10,6 @@
 
 .mapping-page { background: var(--color-background); }
 .mapping-container { max-width: 1440px; }
-.mapping-container > .ui-field { margin-bottom: var(--space-4); }
-.mapping-container form.mapping-step { display: grid; gap: var(--space-4); padding: var(--space-5); }
-.mapping-container form.mapping-step h2 { margin: 0; }
-.mapping-container form.mapping-step > button { justify-self: start; }
-.mapping-container .mapping-tabs { margin-bottom: var(--space-4); flex-wrap: wrap; }
 .mapping-header h1 { margin: 0; color: var(--color-primary); font-size: var(--font-size-3xl); }
 .mapping-header p { margin: var(--space-1) 0 var(--space-5); color: var(--color-text-secondary); font-size: var(--font-size-sm); }
 .mapping-context { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); padding: var(--space-4); margin-bottom: var(--space-4); }

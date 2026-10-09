@@ -9,19 +9,6 @@ class StoreStrategicDocumentRequest extends ApiFormRequest
         return ['strategic_documents.upload'];
     }
 
-    protected function prepareForValidation(): void
-    {
-        // Pre-metadata clients remain supported. Explicit invalid values still fail.
-        $defaults = [];
-        if (! $this->exists('reference_level')) {
-            $defaults['reference_level'] = 'Agency';
-        }
-        if (! $this->exists('content_category')) {
-            $defaults['content_category'] = 'Supporting Evidence';
-        }
-        $this->merge($defaults);
-    }
-
     public function rules(): array
     {
         return [

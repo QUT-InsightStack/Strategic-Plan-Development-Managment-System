@@ -91,7 +91,7 @@ class AuthenticationLoginService
 
                 if ($state->failed_attempts >= $limit) {
                     $state->locked_until = $now->copy()->addMinutes(
-                        (int) ($this->settings->current()->login_lockout_minutes ?? config('security.login_lockout_minutes', 15))
+                        (int) config('security.login_lockout_minutes', 15)
                     );
                 }
 

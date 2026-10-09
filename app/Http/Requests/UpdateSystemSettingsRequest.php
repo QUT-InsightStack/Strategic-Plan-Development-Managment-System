@@ -15,7 +15,6 @@ class UpdateSystemSettingsRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'login_lockout_minutes' => ['sometimes', 'required', 'integer', 'between:1,1440'],
             'session_idle_timeout_minutes' => [
                 'sometimes',
                 'required',
@@ -94,7 +93,6 @@ class UpdateSystemSettingsRequest extends ApiFormRequest
             foreach ([
                 'session_idle_timeout_minutes',
                 'login_attempt_limit',
-                'login_lockout_minutes',
                 'password_min_length',
             ] as $key) {
                 if (array_key_exists($key, $input) && ! is_int($input[$key])) {

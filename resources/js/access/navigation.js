@@ -29,7 +29,7 @@ export const roleNavigation = {
         page('audit', 'Audit Logs', '/audit-logs', ['logs.view']),
         page('security-settings', 'Security Settings', '/settings', ['settings.manage']),
         page('maintenance', 'Backups', '/manual-backup', ['backups.view']),
-    ], 'bi-shield-check'), group('alignment', 'Alignment Administration', [mapping], 'bi-map')],
+    ], 'bi-shield-check')],
     administrative: [group('references', 'Planning Preparation', [
         page('agenda', 'Presidential Agenda', '/administrative-admin/reference-data?tab=agenda', ['reference_data.manage', 'presidential_agenda.view']),
         page('pdp', 'PDP Chapters', '/pdp-chapters/manage', ['pdp_chapters.manage']),
@@ -51,7 +51,7 @@ export const roleNavigation = {
         page('comments', 'Plan Comments', '/office?view=comments', ['strategic_records.view', 'objective_comments.create']),
         page('input-status', 'Input Submission Status', '/consolidate-inputs', ['implementation_inputs.view']),
         page('edit-objectives', 'Edit Objectives', '/office?view=edit', ['strategic_records.view', 'strategic_objectives.update']),
-    ]), group('mapping', 'Agency Mapping', [mapping, alignment], 'bi-map'),
+    ]), group('mapping', 'Agency Mapping', [{ ...mapping, label: 'Add Agency to Mapping' }, alignment], 'bi-map'),
     group('monitoring', 'Monitoring', [{ ...progress, label: 'Progress Updates' }, pending('office-monitoring', 'Monitoring Dashboard'), pending('office-reports', 'Reports')], 'bi-graph-up')],
     management: [page('approval-list', 'Approval List', '/strategic-plan-reviews'),
         group('planning', 'Planning', [page('plan-review', 'Plan Review', '/management-plan-review', ['strategic_records.view'])]),

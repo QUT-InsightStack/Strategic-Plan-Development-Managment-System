@@ -12,7 +12,10 @@ use App\Models\Strategic;
 use App\Models\PdpChapter;
 use App\Models\PresidentialAgendaItem;
 use App\Models\PlanSubmission;
+use App\Models\ResponsibleUnit;
+use App\Models\User;
 use App\Services\StrategicAlignmentLifecycleService;
+use App\Services\StrategicObjectiveAlignmentService;
 use App\Services\StrategicPlanAuthorizationService;
 use App\Services\PermissionAuthorizationService;
 
@@ -30,8 +33,8 @@ class StrategicObjectiveAlignmentController extends Controller
         $plan = Strategic::where('status', '!=', 'deleted')->findOrFail($planId);
         $access->ensureCanViewPlan($plan, $actor);
         $has = fn ($code) => $actor->role?->hasFullAccess() || $permissions->userPermissionCodes($actor)->contains($code);
-        $mutable = in_array($plan->status, ['draft', 'finished'], true)
-            && in_array($plan->approval_status, ['not_submitted', 'rejected'], true);
+        $mutable = in_array($plan->status, StrategicObjectiveAlignmentService::MUTABLE_PLAN_STATUSES, true)
+            && in_array($plan->approval_status, StrategicObjectiveAlignmentService::MUTABLE_APPROVAL_STATUSES, true);
         $deleteRoles = ['Administrator', 'Technical Administrator', 'Management'];
         if (app()->environment(['local', 'testing'])) {
             $deleteRoles[] = 'test';
@@ -45,7 +48,14 @@ class StrategicObjectiveAlignmentController extends Controller
                 && $has('strategic_alignments.delete') && in_array($actor->role?->role_name, $deleteRoles, true)
                 && ! PlanSubmission::where('plan_id', $planId)->exists(),
         ];
-        $objectives = $plan->objectives()->with(['pdpChaptersWithArchived', 'presidentialAgendaItemsWithArchived'])->get();
+        $objectives = $plan->objectives();
+        if (in_array($actor->role?->role_name, ['Office', 'Responsible Unit User', 'Office Representative', 'Office/Agency', 'Offices / Agencies'], true)) {
+            $unit = ResponsibleUnit::where('name_key', ResponsibleUnit::nameKey((string) $actor->office))
+                ->where('is_active', true)->first();
+            $objectives->whereHas('responsibleUnitAssignment', fn ($assignment) =>
+                $assignment->where('responsible_unit_id', $unit?->responsible_unit_id));
+        }
+        $objectives = $objectives->with(['pdpChaptersWithArchived', 'presidentialAgendaItemsWithArchived'])->get();
         $rows = [];
         foreach ($objectives as $objective) {
             foreach (['pdp-chapter' => $objective->pdpChaptersWithArchived, 'presidential-agenda' => $objective->presidentialAgendaItemsWithArchived] as $type => $references) {
@@ -65,6 +75,12 @@ class StrategicObjectiveAlignmentController extends Controller
                 }
             }
         }
+        $archivers = User::whereIn('user_id', array_column($rows, 'archived_by'))->get()->keyBy('user_id');
+        foreach ($rows as &$row) {
+            $archiver = $archivers->get($row['archived_by']);
+            $row['archived_by_name'] = $archiver ? trim($archiver->first_name.' '.$archiver->last_name) : null;
+        }
+        unset($row);
         return response()->json(['success' => true, 'data' => $rows, 'meta' => [
             'plan' => $plan->only(['record_id', 'title', 'status', 'approval_status']),
             'capabilities' => $capabilities,
@@ -85,8 +101,10 @@ class StrategicObjectiveAlignmentController extends Controller
     public function reference(Request $request, int $id, string $type, int $referenceId, StrategicAlignmentLifecycleService $lifecycle): JsonResponse
     {
         $data = $request->validate([
-            'document_id' => ['nullable', 'integer', 'min:1'],
-            'section' => ['nullable', 'string', 'max:255'],
+            'document_id' => ['required', 'integer', 'min:1'],
+            'reference_section' => ['required_without:section', 'string'],
+            'section' => ['required_without:reference_section', 'string'],
+            'page_paragraph' => ['nullable', 'string'],
             'note' => ['nullable', 'string', 'max:2000'],
         ]);
         return response()->json(['success' => true, 'message' => 'Reference saved.',

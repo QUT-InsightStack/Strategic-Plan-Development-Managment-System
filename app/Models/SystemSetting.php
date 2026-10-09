@@ -13,7 +13,6 @@ class SystemSetting extends Model
     public const EDITABLE = [
         'session_idle_timeout_minutes',
         'login_attempt_limit',
-        'login_lockout_minutes',
         'maintenance_enabled',
         'password_min_length',
         'password_require_mixed_case',
@@ -28,7 +27,6 @@ class SystemSetting extends Model
         return [
             'session_idle_timeout_minutes' => 'integer',
             'login_attempt_limit' => 'integer',
-            'login_lockout_minutes' => 'integer',
             'maintenance_enabled' => 'boolean',
             'password_min_length' => 'integer',
             'password_require_mixed_case' => 'boolean',

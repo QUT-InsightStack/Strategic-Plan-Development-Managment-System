@@ -17,7 +17,7 @@ test('alignment actions use persisted routes and send the deletion reason', asyn
     await api.replaceAlignments(7, { pdp_chapter_ids: [] });
     await api.archiveAlignment(mapping);
     await api.restoreAlignment(mapping);
-    await api.updateAlignmentReference(mapping, { note: 'Source', document_id: null });
+    await api.updateAlignmentReference(mapping, { note: 'Source', document_id: 9, reference_section: 'Chapter 1', page_paragraph: 'Page 3' });
     await api.deleteAlignment(mapping, 'Incorrect link');
     assert.deepEqual(calls.map(call => [call.method || 'GET', call.url]), [
         ['GET', '/api/strategic-plans/4/alignments'],
@@ -32,13 +32,13 @@ test('alignment actions use persisted routes and send the deletion reason', asyn
     assert.ok(calls.every(call => call.credentials === 'include'));
 });
 
-function page({ capabilities = {}, failArchive = false } = {}) {
+function page({ capabilities = {}, failArchive = false, mappingStatus = 'active', search = '?plan_id=4' } = {}) {
     const values = [], effects = [], pending = [];
-    let cursor = 0, calls = 0;
+    let cursor = 0, calls = 0, restoreCalls = 0, listCalls = 0;
     const mapping = { id: '7:pdp-chapter:3', objective_id: 7, type: 'pdp-chapter', reference_id: 3,
-        objective_title: 'Research', reference_title: 'Chapter 3', status: 'active', reference_status: 'active', objective_status: 'draft' };
+        objective_title: 'Research', reference_title: 'Chapter 3', status: mappingStatus, reference_status: 'archived', objective_status: 'draft', archived_at: '2026-10-01T00:00:00Z', archived_by_name: 'Planner' };
     const context = vm.createContext({
-        URLSearchParams, location: { search: '?plan_id=4' }, document: { getElementById: () => ({}) },
+        URLSearchParams, location: { search }, document: { getElementById: () => ({}) },
         AppSidebar: 'sidebar', AppDialog: 'dialog', mountProtectedPage: () => {},
         React: {
             Fragment: 'fragment',
@@ -58,7 +58,8 @@ function page({ capabilities = {}, failArchive = false } = {}) {
             },
         },
         listStrategicPlans: async () => ({ data: [{ record_id: 4, title: 'Plan' }], meta: { last_page: 1 } }),
-        listPlanAlignments: async () => ({ data: [{ ...mapping }], meta: { capabilities, objectives: [], catalog: {} } }),
+        listPlanAlignments: async () => { listCalls++; return { data: [{ ...mapping }], meta: { capabilities, objectives: [], catalog: {} } }; },
+        restoreAlignment: async () => { restoreCalls++; mapping.status = 'active'; },
         archiveAlignment: async () => {
             calls++;
             if (failArchive) throw new Error('Approval started; mapping is locked.');
@@ -74,6 +75,8 @@ function page({ capabilities = {}, failArchive = false } = {}) {
             return this.render();
         },
         get calls() { return calls; },
+        get restoreCalls() { return restoreCalls; },
+        get listCalls() { return listCalls; },
     };
 }
 function nodes(tree, predicate) {
@@ -117,4 +120,38 @@ test('server read-only capabilities hide mapping mutation actions', async () => 
         assert.equal(button(tree, label), undefined);
     }
     assert.match(text(tree), /read-only/);
+});
+
+
+test('restoring still requires confirmation and does not require an active reference', async () => {
+    const app = page({ capabilities: { archive: true, restore: true }, mappingStatus: 'archived' });
+    let tree = await app.settle();
+    button(tree, 'Archived (1)').props.onClick();
+    tree = app.render();
+    assert.match(text(tree), /Planner/);
+    button(tree, 'Restore').props.onClick();
+    assert.equal(app.restoreCalls, 0);
+    let dialog = nodes(app.render(), node => node.type === 'dialog')[0];
+    assert.equal(dialog.props.open, true);
+    dialog.props.onCancel();
+    assert.equal(app.restoreCalls, 0);
+    button(app.render(), 'Restore').props.onClick();
+    dialog = nodes(app.render(), node => node.type === 'dialog')[0];
+    dialog.props.onConfirm();
+    await app.settle();
+    assert.equal(app.restoreCalls, 1);
+});
+
+test('an unavailable requested plan is not silently replaced', async () => {
+    const app = page({ search: '?plan_id=99' });
+    const tree = await app.settle();
+    assert.match(text(tree), /requested plan is unavailable/);
+    assert.equal(app.listCalls, 0);
+});
+
+test('view-only mappings do not expose archived records', async () => {
+    const app = page({ capabilities: { archive: true, restore: true }, mappingStatus: 'archived', search: '?plan_id=4&mode=view' });
+    const tree = await app.settle();
+    assert.equal(button(tree, 'Archived (1)'), undefined);
+    assert.doesNotMatch(text(tree), /Chapter 3/);
 });

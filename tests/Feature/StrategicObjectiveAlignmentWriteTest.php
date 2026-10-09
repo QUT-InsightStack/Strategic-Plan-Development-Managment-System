@@ -222,7 +222,7 @@ class StrategicObjectiveAlignmentWriteTest extends TestCase
 
     public function test_inactive_agenda_rejects_the_entire_batch(): void
     {
-        $this->agenda->forceFill(['status' => 'inactive'])->save();
+        $this->agenda->update(['status' => 'inactive']);
         $this->authenticateOfficer();
         $this->postJson($this->endpoint(), $this->payload())->assertUnprocessable()
             ->assertJsonValidationErrors('presidential_agenda_item_ids.0');

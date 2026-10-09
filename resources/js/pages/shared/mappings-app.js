@@ -26,7 +26,7 @@ export function MappingApp() {
     const [action, setAction] = React.useState(null);
     const [reason, setReason] = React.useState('');
     const [editing, setEditing] = React.useState(null);
-    const [details, setDetails] = React.useState({ document_id: '', section: '', note: '' });
+    const [details, setDetails] = React.useState({ document_id: '', reference_section: '', page_paragraph: '', note: '' });
     const [documents, setDocuments] = React.useState([]);
 
     React.useEffect(() => {
@@ -36,12 +36,17 @@ export function MappingApp() {
                 const rows = []; let page = 1; let last = 1;
                 do {
                     const result = await listStrategicPlans({ page, per_page: 100 });
-                    rows.push(...(result.data || [])); last = result.meta?.last_page || 1; page++;
+                    rows.push(...(result.data || []).filter(plan => !['archived', 'deleted'].includes(plan.status))); last = result.meta?.last_page || 1; page++;
                 } while (page <= last);
                 if (!active) return;
                 setPlans(rows);
                 const requested = new URLSearchParams(location.search).get('plan_id');
-                setPlanId(String(rows.find(plan => String(plan.record_id) === requested)?.record_id || rows[0]?.record_id || ''));
+                if (requested && !rows.some(plan => String(plan.record_id) === requested)) {
+                    setError('The requested plan is unavailable in your mapping scope. Select an available plan.');
+                    setLoading(false);
+                    return;
+                }
+                setPlanId(requested || String(rows[0]?.record_id || ''));
                 if (!rows.length) setLoading(false);
             } catch (err) { if (active) { setError(describe(err)); setLoading(false); } }
         })();
@@ -60,7 +65,8 @@ export function MappingApp() {
 
     const capabilities = data?.meta?.capabilities || {};
     const allowed = name => !readOnly && Boolean(capabilities[name]);
-    const rows = (data?.data || []).filter(mapping => mapping.status === status);
+    const showArchived = status === 'archived' && (allowed('archive') || allowed('delete'));
+    const rows = (data?.data || []).filter(mapping => mapping.status === (showArchived ? 'archived' : 'active'));
     const choices = type === 'pdp-chapter' ? data?.meta?.catalog?.pdp_chapters || [] : data?.meta?.catalog?.presidential_agenda || [];
     const canChange = mapping => !['archived', 'deleted'].includes(mapping.objective_status);
 
@@ -81,17 +87,20 @@ export function MappingApp() {
         let active = true;
         setDocuments([]);
         (async () => { try {
-            const rows = []; let page = 1; let last = 1;
-            do {
-                const result = await apiRequest(`/api/strategic-plans/${planId}/documents?page=${page}`);
-                rows.push(...(result.data || [])); last = result.meta?.last_page || 1; page++;
-            } while (page <= last);
+            const rows = [];
+            for (const target of [`strategic-plans/${planId}`, `strategic-objectives/${editing.objective_id}`]) {
+                let page = 1; let last = 1;
+                do {
+                    const result = await apiRequest(`/api/${target}/documents?page=${page}`);
+                    rows.push(...(result.data || [])); last = result.meta?.last_page || 1; page++;
+                } while (page <= last);
+            }
             if (active) setDocuments(rows);
         } catch (err) { if (active) setError(describe(err)); } })();
         return () => { active = false; };
     }, [editing, planId]);
     function editReference(mapping) {
-        setEditing(mapping); setDetails({ document_id: '', section: '', note: '', ...mapping.reference_details });
+        setEditing(mapping); setDetails({ document_id: '', page_paragraph: '', note: '', ...mapping.reference_details, reference_section: mapping.reference_details?.reference_section || mapping.reference_details?.section || '' });
     }
     function confirm() {
         const selected = action; if (!selected || busy) return;
@@ -105,6 +114,7 @@ export function MappingApp() {
     return h(React.Fragment, null, h(AppSidebar), h('main', { className: 'app-shell-main mapping-page' }, h('div', { className: 'app-shell-container mapping-container' },
         h('header', { className: 'mapping-header' }, h('h1', null, 'Strategic Alignment Mappings'), h('p', null, 'Link objectives to PDP chapters and Presidential Agenda items.')),
         h('label', { className: 'ui-field' }, 'Strategic plan', h('select', { className: 'ui-select', value: planId, disabled: busy, onChange: event => { setPlanId(event.target.value); setObjectiveId(''); setReferenceId(''); setNotice(''); setError(''); setEditing(null); setAction(null); } },
+            h('option', { value: '', disabled: true }, 'Select a strategic plan'),
             plans.map(plan => h('option', { key: plan.record_id, value: plan.record_id }, plan.title)))),
         notice && h('p', { className: 'ui-status ui-status--success', role: 'status' }, notice),
         error && h('p', { className: 'ui-status ui-status--error', role: 'alert' }, error),
@@ -116,21 +126,23 @@ export function MappingApp() {
                 h('label', { className: 'ui-field' }, 'Reference type', h('select', { className: 'ui-select', value: type, disabled: busy, onChange: event => { setType(event.target.value); setReferenceId(''); } }, h('option', { value: 'pdp-chapter' }, 'PDP Chapter'), h('option', { value: 'presidential-agenda' }, 'Presidential Agenda'))),
                 h('label', { className: 'ui-field' }, 'Reference', h('select', { required: true, className: 'ui-select', value: referenceId, disabled: busy, onChange: event => setReferenceId(event.target.value) }, h('option', { value: '' }, 'Select reference'), choices.map(item => h('option', { key: item.chapter_id || item.agenda_id, value: item.chapter_id || item.agenda_id }, item.chapter_title || `${item.code} - ${item.title}`)))),
                 h('button', { className: 'ui-button ui-button--primary', disabled: busy || !objectiveId || !referenceId }, 'Add alignment')),
-            h('div', { className: 'mapping-tabs', role: 'group', 'aria-label': 'Mapping status' }, ['active', 'archived'].map(value => button(`${value === 'active' ? 'Active' : 'Archived'} (${(data?.data || []).filter(item => item.status === value).length})`, () => setStatus(value), status === value)), button('Refresh', () => refresh(value => value + 1))),
+            (allowed('archive') || allowed('delete')) && h('div', { className: 'mapping-tabs', role: 'group', 'aria-label': 'Mapping status' }, ['active', 'archived'].map(value => button(`${value === 'active' ? 'Active' : 'Archived'} (${(data?.data || []).filter(item => item.status === value).length})`, () => setStatus(value), status === value))),
             h('div', { className: 'ui-table-wrap' }, h('table', { className: 'ui-table' },
-                h('thead', null, h('tr', null, ['Objective', 'Type', 'Reference', 'Office / Unit', 'Reference notes', 'Actions'].map(label => h('th', { key: label }, label)))),
+                h('thead', null, h('tr', null, ['Objective', 'Type', 'Reference', 'Office / Unit', 'Reference notes', ...(showArchived ? ['Archived'] : []), 'Actions'].map(label => h('th', { key: label }, label)))),
                 h('tbody', null, rows.length ? rows.map(mapping => h('tr', { key: mapping.id },
                     h('td', null, mapping.objective_title), h('td', null, typeName(mapping.type)), h('td', null, mapping.reference_title), h('td', null, mapping.responsible_office_agency || 'Unassigned'),
-                    h('td', null, [mapping.reference_details?.section, mapping.reference_details?.note].filter(Boolean).join(' / ') || '-'),
-                    h('td', null, canChange(mapping) && h('div', { className: 'mapping-actions' },
-                        mapping.status === 'active' && allowed('archive') && actionButton(mapping, 'archive'),
-                        mapping.status === 'archived' && mapping.reference_status === 'active' && allowed('restore') && actionButton(mapping, 'restore'),
-                        mapping.status === 'active' && allowed('delete') && actionButton(mapping, 'delete'),
-                        mapping.status === 'active' && allowed('reference') && button('Reference details', () => editReference(mapping)))))) : h('tr', null, h('td', { colSpan: 6 }, `No ${status} mappings.`))))),
+                    h('td', null, [mapping.reference_details?.reference_section || mapping.reference_details?.section, mapping.reference_details?.page_paragraph, mapping.reference_details?.note].filter(Boolean).join(' / ') || '-'),
+                    showArchived && h('td', null, `${mapping.archived_at ? new Date(mapping.archived_at).toLocaleString() : '—'}${mapping.archived_by_name || mapping.archived_by ? ` by ${mapping.archived_by_name || mapping.archived_by}` : ''}`),
+                    h('td', null, h('div', { className: 'mapping-actions' },
+                        canChange(mapping) && mapping.status === 'active' && allowed('archive') && actionButton(mapping, 'archive'),
+                        mapping.status === 'archived' && allowed('restore') && actionButton(mapping, 'restore'),
+                        canChange(mapping) && mapping.status === 'active' && allowed('delete') && actionButton(mapping, 'delete'),
+                        canChange(mapping) && mapping.status === 'active' && allowed('reference') && button('Reference details', () => editReference(mapping)))))) : h('tr', null, h('td', { colSpan: showArchived ? 7 : 6 }, `No ${showArchived ? 'archived' : 'active'} mappings.`))))),
             editing && allowed('reference') && (data?.data || []).some(mapping => mapping.id === editing.id && mapping.status === 'active') && h('form', { className: 'ui-card mapping-step', onSubmit: event => { event.preventDefault(); mutate(() => updateAlignmentReference(editing, { ...details, document_id: details.document_id ? Number(details.document_id) : null }), 'Reference details saved.'); } },
                 h('h2', null, `Reference: ${editing.reference_title}`),
-                h('label', { className: 'ui-field' }, 'Uploaded document (optional)', h('select', { className: 'ui-select', disabled: busy, value: details.document_id || '', onChange: event => setDetails({ ...details, document_id: event.target.value }) }, h('option', { value: '' }, 'No document'), documents.map(document => h('option', { key: document.document_id, value: document.document_id }, document.original_filename)))),
-                h('label', { className: 'ui-field' }, 'Page / section', h('input', { className: 'ui-input', disabled: busy, maxLength: 255, value: details.section || '', onChange: event => setDetails({ ...details, section: event.target.value }) })),
+                h('label', { className: 'ui-field' }, 'Uploaded Reference File', h('select', { className: 'ui-select', required: true, disabled: busy, value: details.document_id || '', onChange: event => setDetails({ ...details, document_id: event.target.value }) }, h('option', { value: '' }, 'Select uploaded reference file'), documents.map(document => h('option', { key: document.document_id, value: document.document_id }, document.original_filename)))),
+                h('label', { className: 'ui-field' }, 'Reference Chapter / Section', h('input', { className: 'ui-input', required: true, disabled: busy, value: details.reference_section || '', onChange: event => setDetails({ ...details, reference_section: event.target.value }) })),
+                h('label', { className: 'ui-field' }, 'Page / Paragraph (Optional)', h('input', { className: 'ui-input', disabled: busy, value: details.page_paragraph || '', onChange: event => setDetails({ ...details, page_paragraph: event.target.value }) })),
                 h('label', { className: 'ui-field' }, 'Notes', h('textarea', { className: 'ui-textarea', disabled: busy, maxLength: 2000, value: details.note || '', onChange: event => setDetails({ ...details, note: event.target.value }) })),
                 h('button', { className: 'ui-button ui-button--primary', disabled: busy }, 'Save reference'), button('Cancel', () => setEditing(null)))
         ),

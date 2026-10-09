@@ -1,5 +1,5 @@
 import { apiRequest } from './api-client.js';
 
 export function getSecuritySettings() {
-    return apiRequest('/api/settings');
+    return apiRequest('/api/security-settings');
 }

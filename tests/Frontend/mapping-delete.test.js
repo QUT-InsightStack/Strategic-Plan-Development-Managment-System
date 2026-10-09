@@ -89,7 +89,7 @@ test('protected mappings must be kept instead of deleted', () => {
     const draft = { status: 'draft', approval_status: 'not_submitted' };
     assert.equal(mappingDeleteBlockReason({ status: 'active' }, draft), null);
     assert.match(mappingDeleteBlockReason({ status: 'archived' }, draft), /historical records/);
-    assert.match(mappingDeleteBlockReason({ status: 'active' }, { status: 'finished', approval_status: 'not_submitted' }), /Finalised.*plan record/);
+    assert.match(mappingDeleteBlockReason({ status: 'active' }, { status: 'finished', approval_status: 'not_submitted' }), /finalised.*plan record/);
     assert.match(mappingDeleteBlockReason({ status: 'active' }, { status: 'draft', approval_status: 'approved' }), /approved/);
     assert.match(mappingDeleteBlockReason(undefined, draft), /no longer exists/);
 });
