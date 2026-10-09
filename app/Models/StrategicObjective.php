@@ -76,7 +76,7 @@ class StrategicObjective extends Model
             'objective_id',
             'chapter_id'
         )
-            ->withPivot(['status', 'archived_at', 'archived_by'])
+            ->withPivot(['status', 'archived_at', 'archived_by', 'reference_details'])
             ->withTimestamps()
             ->orderBy('tblpdp_chapters.chapter_id');
     }
@@ -93,7 +93,7 @@ class StrategicObjective extends Model
             'objective_id',
             'agenda_id'
         )
-            ->withPivot(['status', 'archived_at', 'archived_by'])
+            ->withPivot(['status', 'archived_at', 'archived_by', 'reference_details'])
             ->withTimestamps()
             ->orderBy('tblpresidential_agenda_items.agenda_id');
     }

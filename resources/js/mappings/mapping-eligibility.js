@@ -4,9 +4,7 @@ import { displayRoleName } from '../access/role-labels.js';
  * Whether a Strategic Plan currently allows its alignment mappings to be
  * archived or restored.
  *
- * Only draft plans are open for mapping changes. Finalised (finished) plans
- * and plans in the approval workflow are locked so the alignment that was
- * submitted or approved cannot change underneath the approvers. Returns a
+ * Only draft, not-submitted plans allow alignment changes. Returns a
  * user-facing reason when changes are locked, or null when they are allowed.
  */
 const LOCKED_APPROVAL_STATUSES = {
@@ -19,6 +17,7 @@ export function mappingChangeLockReason(plan) {
     if (LOCKED_APPROVAL_STATUSES[plan.approval_status]) return LOCKED_APPROVAL_STATUSES[plan.approval_status];
     if (plan.status === 'archived') return 'This plan is archived. Restore the plan before changing its mappings.';
     if (plan.status !== 'draft') return 'This plan has been finalised, so its mappings are locked.';
+    if (plan.approval_status !== 'not_submitted') return 'This plan approval state does not allow mapping changes.';
     return null;
 }
 
@@ -35,15 +34,15 @@ export function mappingArchiveBlockReason(mapping, plan) {
  * instead, even if a role were given relations.delete by mistake. The server
  * still makes the final authorisation decision.
  */
-const DELETE_ROLE_LABELS = ['Management / Executive', 'Technical Admin'];
+const DELETE_ROLES = ['Management', 'Technical Administrator', 'Administrator', 'test'];
 const NEVER_DELETE_ROLE_LABELS = ['Planning Officer', 'Office/Agency'];
 
 export function canDeleteMappings(session) {
     if (!session) return false;
     const label = displayRoleName(session.roleName, '');
     if (NEVER_DELETE_ROLE_LABELS.includes(label)) return false;
-    if (session.permissions?.includes('*')) return true;
-    return DELETE_ROLE_LABELS.includes(label) || Boolean(session.permissions?.includes('relations.delete'));
+    return DELETE_ROLES.includes(session.roleName)
+        && Boolean(session.permissions?.some(code => ['*', 'strategic_alignments.delete'].includes(code)));
 }
 
 /*

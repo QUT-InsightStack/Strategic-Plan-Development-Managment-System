@@ -1,6 +1,4 @@
 import { getCurrentUser } from './api/auth-api.js';
-import { getSecuritySettings } from './api/security-settings-api.js';
-import { getAccessSession } from './access/access-session.js';
 
 /**
  * Idle session timeout.
@@ -21,7 +19,7 @@ import { getAccessSession } from './access/access-session.js';
 import { logout } from './auth-session.js';
 
 /**
- * Mirrors SecuritySettingsService::DEFAULTS. Used when the configured value
+ * Mirrors the system settings default. Used when the configured value
  * cannot be read - see resolveTimeoutMinutes below.
  */
 const DEFAULT_TIMEOUT_MINUTES = 30;
@@ -92,25 +90,13 @@ function recordActivity() {
     writeLastActivity(timestamp);
 }
 
-/**
- * Read the configured timeout.
- *
- * Only a Technical Administrator may read /api/security-settings, so for every
- * other role this falls back to the documented default. Exposing the value to
- * all authenticated users requires a backend change and is tracked separately.
- */
+/** Every authenticated role reads its enforced timeout from the current-user API. */
 async function resolveTimeoutMinutes() {
-    const session = getAccessSession();
-    if (!['Technical Administrator', 'Technical Admin', 'Administrator'].includes(session?.roleName)) {
-        return DEFAULT_TIMEOUT_MINUTES;
-    }
-
     try {
-        const payload = await getSecuritySettings();
-        const minutes = Number(payload?.data?.session_timeout_minutes);
-
+        const payload = await getCurrentUser();
+        const minutes = Number(payload?.data?.session_idle_timeout_minutes);
         return Number.isInteger(minutes) && minutes > 0 ? minutes : DEFAULT_TIMEOUT_MINUTES;
-    } catch (error) {
+    } catch {
         return DEFAULT_TIMEOUT_MINUTES;
     }
 }

@@ -150,6 +150,8 @@ Route::middleware(['auth:api','auth.version', 'auth.session','system.available',
 */
 
 Route::middleware(['auth:api','auth.version','auth.session','system.available',])->group(function () {
+    Route::get('security-settings', [\App\Http\Controllers\SecuritySettingsController::class, 'show']);
+    Route::put('security-settings', [\App\Http\Controllers\SecuritySettingsController::class, 'update']);
    
 
     Route::get('pdp-chapters', [PdpChapterController::class, 'index']);
@@ -326,6 +328,13 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
     )->whereNumber('planId');
 
     // Strategic objectives, including plan-filtered listing
+    Route::get('strategic-plans/{planId}/alignments', [StrategicObjectiveAlignmentController::class, 'index'])->whereNumber('planId');
+    Route::patch('strategic-objectives/{id}/alignments/{type}/{referenceId}/restore', [StrategicObjectiveAlignmentController::class, 'restore'])
+        ->whereNumber('id')->whereNumber('referenceId')->where('type', 'pdp-chapter|presidential-agenda')
+        ->middleware('permission:strategic_alignments.archive');
+    Route::patch('strategic-objectives/{id}/alignments/{type}/{referenceId}/reference', [StrategicObjectiveAlignmentController::class, 'reference'])
+        ->whereNumber('id')->whereNumber('referenceId')->where('type', 'pdp-chapter|presidential-agenda')
+        ->middleware('permission:strategic_objectives.update');
     Route::get('strategic-objective-progress', [\App\Http\Controllers\ObjectiveProgressController::class, 'index']);
     Route::get('strategic-objectives/{objective}/progress-history', [\App\Http\Controllers\ObjectiveProgressController::class, 'history'])->whereNumber('objective');
     Route::patch('strategic-objectives/{objective}/progress', [\App\Http\Controllers\ObjectiveProgressController::class, 'update'])->whereNumber('objective');
