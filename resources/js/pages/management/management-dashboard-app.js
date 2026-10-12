@@ -6,24 +6,10 @@ import { listSubmittedInputs } from '../../api/implementation-inputs-api.js';
 import { createAccessSession, saveAccessSession, can } from '../../access/access-session.js';
 import { PERMISSIONS as P } from '../../access/access-policy.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
-import { PERMISSIONS } from '../../access/access-policy.js';
-import { can, createAccessSession, saveAccessSession } from '../../access/access-session.js';
-import { isManagementSession, managementLevel } from '../../access/management-access.js';
-import { isSubmissionAssignedToReviewer, listAssignedPlanSubmissions } from '../../api/plan-approval-api.js';
-import { listAllLocalAgencyInputs, listAllLocalProgressUpdates } from '../../data/office-demo-storage.js';
-import { mappingsFromObjectives } from '../../api/strategic-alignments-api.js';
-import {
-    APPROVAL_LABELS,
-    INPUT_STATUS_LABELS,
-    OBJECTIVE_STATUS_LABELS,
-    PLAN_STATUS_LABELS,
-    PROGRESS_STATUS_LABELS,
-    RISK_THRESHOLDS,
-    buildDashboard,
-    emptyFilters,
-    filterOptions,
-    hasActiveFilters,
-} from '../../data/management-dashboard-data.js';
+import { isManagementSession } from '../../access/management-access.js';
+import { ManagementPagination, pageRows } from '../../components/ManagementPagination.js';
+import { filterManagementRows, officeName, officePerformance, objectiveRisk, planningYears, progressPercent, progressStatus } from './management-insights.js';
+import { listAuthorizedManagementPlans, loadAllManagementPages, managementDateLabel } from './management-data.js';
 
 const h = React.createElement;
 const statusLabels = { completed: 'Completed', in_progress: 'Ongoing', not_started: 'Not Started' };
@@ -38,63 +24,14 @@ class ManagementErrorBoundary extends React.Component {
         return { failed: true };
     }
 
-    if (plansResult.value.truncated) warnings.push(`Only the ${PAGE_SIZE * MAX_PAGES} most recently updated plans are summarised.`);
-
-    return {
-        data: {
-            plans: plansResult.value.rows.map((plan) => attachSubmission(plan, submissions.get(Number(plan.record_id)))),
-            objectives,
-            inputs: readLocal(listAllLocalAgencyInputs),
-            progressUpdates: readLocal(listAllLocalProgressUpdates),
-            mappings: mappingsFromObjectives(objectives),
-        },
-        warnings,
-        loadedAt: new Date(),
-    };
-}
-
-/* ---------- presentational pieces ---------- */
-
-function Panel({ id, title, subtitle, icon, className = '', actions = null, children }) {
-    return h('section', { className: `ui-card mgmt-panel ${className}`.trim(), 'aria-labelledby': `${id}-title` },
-        h('div', { className: 'ui-section-header' },
-            h('div', { className: 'ui-section-header__copy' },
-                h('h2', { id: `${id}-title` }, title),
-                subtitle ? h('p', null, subtitle) : null),
-            actions || (icon ? h('i', { className: `bi ${icon}`, 'aria-hidden': 'true' }) : null)),
-        h('div', { className: 'ui-card__body' }, children));
-}
-
-function Empty({ children }) {
-    return h('p', { className: 'mgmt-empty' }, children);
-}
-
-function Kpi({ label, value, detail, icon, tone = 'primary' }) {
-    return h('article', { className: `mgmt-kpi mgmt-kpi--${tone}` },
-        h('i', { className: `bi ${icon}`, 'aria-hidden': 'true' }),
-        h('div', null,
-            h('span', { className: 'mgmt-kpi__label' }, label),
-            h('strong', { className: 'mgmt-kpi__value' }, value),
-            detail ? h('small', null, detail) : null));
-}
-
-function BarList({ label, rows, total }) {
-    const max = Math.max(total || 0, ...rows.map((row) => row.value), 1);
-    return h('ul', { className: 'mgmt-bars', 'aria-label': label },
-        rows.map((row) => h('li', { key: row.key, className: `mgmt-bars__row is-${row.key}` },
-            h('span', { className: 'mgmt-bars__label' }, row.label),
-            h('span', { className: 'mgmt-bars__track', 'aria-hidden': 'true' },
-                h('span', { className: 'mgmt-bars__fill', style: { width: `${(row.value / max) * 100}%` } })),
-            h('strong', { className: 'mgmt-bars__value' }, row.value))));
-}
-
-function Meter({ value, label }) {
-    return h('div', { className: 'mgmt-meter', role: 'meter', 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': value, 'aria-label': label },
-        h('span', { className: 'mgmt-meter__fill', style: { width: `${value}%` } }));
-}
-
-function rowsFrom(labels, counts) {
-    return Object.entries(labels).map(([key, label]) => ({ key, label, value: counts[key] || 0 }));
+    render() {
+        if (!this.state.failed) return this.props.children;
+        return h('main', { className: 'management-dashboard__content' },
+            h('div', { className: 'management-dashboard__errors', role: 'alert' },
+                h('h1', null, 'Management page could not be displayed'),
+                h('p', null, 'Refresh the page to try again. If the problem continues, check the browser console for details.'),
+                h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', onClick: () => window.location.reload() }, 'Reload page')));
+    }
 }
 
 function labelFor(items, fields) {
