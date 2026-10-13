@@ -50,6 +50,8 @@ class RolePermissionSeeder extends Seeder
             'backups.download',
             'backups.restore',
             'strategic_alignments.delete',
+            'strategic_records.view', 'strategic_objectives.view',
+            'settings.view', 'settings.manage',
         ];
 
         $managementPermissions = [

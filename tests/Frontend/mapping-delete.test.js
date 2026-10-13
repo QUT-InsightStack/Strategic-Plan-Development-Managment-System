@@ -72,10 +72,12 @@ test('each deletion is recorded with the mapping, user and time', () => {
     assert.ok(entry.deleted_at);
 });
 
-test('only Management and Technical Administrators may delete mappings', () => {
-    assert.equal(canDeleteMappings({ roleName: 'Management / Executive', permissions: [] }), true);
-    assert.equal(canDeleteMappings({ roleName: 'Executive', permissions: [] }), true);
-    assert.equal(canDeleteMappings({ roleName: 'Technical Administrator', permissions: [] }), true);
+test('deletion requires an eligible role and the server alignment permission', () => {
+    assert.equal(canDeleteMappings({ roleName: 'Management', permissions: [] }), false);
+    assert.equal(canDeleteMappings({ roleName: 'Executive', permissions: [] }), false);
+    assert.equal(canDeleteMappings({ roleName: 'Technical Administrator', permissions: [] }), false);
+    assert.equal(canDeleteMappings({ roleName: 'Technical Administrator', permissions: ['strategic_alignments.delete'] }), true);
+    assert.equal(canDeleteMappings({ roleName: 'Management', permissions: ['strategic_alignments.delete'] }), true);
     assert.equal(canDeleteMappings({ roleName: 'Administrator', permissions: ['*'] }), true);
     assert.equal(canDeleteMappings({ roleName: 'Planning Officer', permissions: ['relations.manage', 'relations.delete'] }), false);
     assert.equal(canDeleteMappings({ roleName: 'Office/Agency', permissions: ['relations.delete'] }), false);
@@ -84,10 +86,10 @@ test('only Management and Technical Administrators may delete mappings', () => {
 });
 
 test('protected mappings must be kept instead of deleted', () => {
-    const draft = { status: 'draft' };
+    const draft = { status: 'draft', approval_status: 'not_submitted' };
     assert.equal(mappingDeleteBlockReason({ status: 'active' }, draft), null);
     assert.match(mappingDeleteBlockReason({ status: 'archived' }, draft), /historical records/);
-    assert.match(mappingDeleteBlockReason({ status: 'active' }, { status: 'finished' }), /finalised.*plan record/);
+    assert.match(mappingDeleteBlockReason({ status: 'active' }, { status: 'finished', approval_status: 'not_submitted' }), /finalised.*plan record/);
     assert.match(mappingDeleteBlockReason({ status: 'active' }, { status: 'draft', approval_status: 'approved' }), /approved/);
     assert.match(mappingDeleteBlockReason(undefined, draft), /no longer exists/);
 });
