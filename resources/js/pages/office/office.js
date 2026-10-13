@@ -25,7 +25,7 @@ const view = ['review', 'comments', 'inputs', 'agency-input', 'edit', 'proposal'
 const entryHref = view === 'review' ? '/office' : '/office?view=' + view;
 const entry = officeItems.flatMap(item => item.children).find(item => item.href === entryHref);
 const planLink = id => officePlanHref(id, view);
-const titles = { review: 'Plan Review', comments: 'Plan Comments', edit: 'Edit Assigned Draft Objectives', inputs: 'Submit Planning Inputs', 'agency-input': 'Submit Agency Input', proposal: 'Proposed Objectives', progress: 'Update and Monitor Progress', mapping: 'Agency Mapping', alignment: 'View Alignment' };
+const titles = { review: 'Plans & Objectives', comments: 'Plan Feedback', edit: 'Edit Assigned Draft Objectives', inputs: 'Submit Planning Inputs', 'agency-input': 'Submit Agency Input', proposal: 'Proposed Objectives', progress: 'Update and Monitor Progress', mapping: 'Agency Mapping', alignment: 'View Alignment' };
 function OfficeApp() {
  const [plans, setPlans] = useState([]);
  const [meta, setMeta] = useState({});
@@ -86,9 +86,9 @@ function OfficeApp() {
   h('main', { className: 'office-content' },
    h('header', null, h('h1', null, titles[view] || titles.review),
     h('p', null, view === 'comments'
-     ? 'Select a plan to review its contents and submit a plan comment.'
+     ? 'Select an assigned plan to submit feedback for review.'
      : view === 'proposal' ? 'Select a plan to review its contents and propose a strategic objective.'
-     : 'Select an Initial Strategic Plan to view its summary and objectives.')),
+     : 'Open an assigned plan to view your objectives, give feedback, or propose a new objective.')),
    notice && h('p', { role: 'status' }, notice),
    entry && !(view === 'progress'
     ? can(P.OBJECTIVES_VIEW_PROGRESS) || can(P.OBJECTIVES_UPDATE_PROGRESS) || can(P.OBJECTIVES_CORRECT_PROGRESS)

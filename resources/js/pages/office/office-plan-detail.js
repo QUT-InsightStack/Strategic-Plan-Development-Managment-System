@@ -1,6 +1,8 @@
+
 import { OfficeComments } from './office-comments.js';
 import { getStrategicPlan } from '../../api/strategic-plans-api.js';
 import { listStrategicObjectives } from '../../api/strategic-objectives-api.js';
+import { can } from '../../access/access-session.js';
 import { listObjectiveProgress } from '../../api/objective-progress-api.js';
 const h = React.createElement;
 const { useEffect, useState } = React;
@@ -48,8 +50,39 @@ export function OfficePlanDetail({ planId, mode = 'review', includeAllOfficePlan
     return h('main', { className: `office-content office-detail ${hasInputPanel ? 'office-detail--with-action' : ''}`, 'aria-busy': loading },
         h('div', { className: 'office-detail-scroll' },
         h('header', { className: 'office-detail-heading' },
-            h('a', { href: mode === 'review' ? '/office' : `/office?view=${mode}`, className: 'office-back', 'aria-label': 'Back to plan list' }, h('i', { className: 'bi bi-chevron-left', 'aria-hidden': true })),
+            h('a', { href: '/office', className: 'office-back', 'aria-label': 'Back to plan list' }, h('i', { className: 'bi bi-chevron-left', 'aria-hidden': true })),
             h('h1', null, plan ? `${plan.record_id} ${plan.title}` : 'Plan details')),
+            plan && !loading && h('nav', {
+    'aria-label': 'Plan actions',
+    style: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '12px',
+        marginBottom: '16px',
+    },
+},
+    h('a', {
+        href: `/office?plan=${encodeURIComponent(plan.record_id)}`,
+        className: 'ui-button ui-button--secondary',
+        'aria-current': mode === 'review' ? 'page' : undefined,
+    }, 'View Plan & Objectives'),
+
+    can('implementation_inputs.create')
+        && ['draft', 'finished'].includes(plan.status)
+        && h('a', {
+            href: `/office?plan=${encodeURIComponent(plan.record_id)}&view=comments`,
+            className: 'ui-button ui-button--secondary',
+            'aria-current': mode === 'comments' ? 'page' : undefined,
+        }, 'Give Plan Feedback'),
+
+    can('implementation_inputs.create')
+        && plan.status === 'draft'
+        && h('a', {
+            href: `/office?plan=${encodeURIComponent(plan.record_id)}&view=proposal`,
+            className: 'ui-button ui-button--secondary',
+            'aria-current': mode === 'proposal' ? 'page' : undefined,
+        }, 'Propose Objective')
+),
         loading && h('p', { role: 'status' }, 'Loading plan details...'),
         error && h('div', { className: 'office-panel', role: 'alert' }, h('p', null, error), h('button', { onClick: () => setAttempt(attempt + 1) }, 'Retry')),
         plan && !loading && h('article', { className: 'office-panel office-detail-panel' },
