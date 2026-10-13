@@ -1,3 +1,4 @@
+import { installSidebarNavigation } from '../navigation/sidebar-navigation.js';
 import { BrandLogo } from '../brand-logo.js';
 import { LogoutButton } from './LogoutButton.js';
 import { displayRoleName } from '../access/role-labels.js';
@@ -8,7 +9,14 @@ import '../../css/navigation.css';
 
 export function AppSidebar() {
     const { session, error, retry } = useAccessSession();
-    const [open, setOpen] = React.useState({});
+    const [open, setOpen] = React.useState(() => {
+        try { return JSON.parse(sessionStorage.getItem('sidebar-expanded') || '{}'); }
+        catch { return {}; }
+    });
+    React.useEffect(() => { installSidebarNavigation(); }, []);
+    React.useEffect(() => {
+        try { sessionStorage.setItem('sidebar-expanded', JSON.stringify(open)); } catch {}
+    }, [open]);
     const h = React.createElement;
     const items = session ? navigationFor(session.roleName) : [];
     const href = window.location.href;

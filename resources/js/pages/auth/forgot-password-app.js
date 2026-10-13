@@ -1,3 +1,4 @@
+import { createPageRoot } from '../../navigation/page-root.js';
 import { BrandLogo } from '../../brand-logo.js';
 
 const { useState } = React;
@@ -357,8 +358,7 @@ function ForgotPasswordApp() {
     );
 }
 
-ReactDOM
-    .createRoot(rootElement)
+createPageRoot(rootElement)
     .render(
         React.createElement(ForgotPasswordApp)
     );

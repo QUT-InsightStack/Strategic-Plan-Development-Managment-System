@@ -11,3 +11,6 @@
 .office-plan-input-panel form { display: grid; gap: 12px; }
 .office-plan-input-panel textarea { box-sizing: border-box; }
 .office-detail-notes details { margin-top: 20px; }
+
+.navigation-error { position: fixed; z-index: 1000; top: 16px; right: 16px; max-width: 420px; padding: 16px; border: 1px solid #c43b3b; border-radius: 8px; background: white; color: #842029; }
+.navigation-error button { margin-left: 12px; }

@@ -137,7 +137,11 @@ function UserManagementApp() {
         }
 
         window.addEventListener('beforeunload', warn);
-        return () => window.removeEventListener('beforeunload', warn);
+        window.addEventListener('app:before-navigate', warn);
+        return () => {
+            window.removeEventListener('beforeunload', warn);
+            window.removeEventListener('app:before-navigate', warn);
+        };
     }, [editOpen, editDirty]);
 
     async function loadUsers(page = 1, nextFilters = appliedFilters) {

@@ -1,10 +1,11 @@
+import { createPageRoot } from '../../navigation/page-root.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { loadAccessSession } from '../../access/use-access-session.js';
 import { navigationFor, navigationRole, dashboardLabels, flattenNavigation, canOpenPage } from '../../access/navigation.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
 import '../../../css/office.css';
 const h = React.createElement;
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = createPageRoot(document.getElementById('root'));
 function Dashboard({ session }) {
     const entries = navigationFor(session.roleName);
     const feature = new URLSearchParams(location.search).get('feature');

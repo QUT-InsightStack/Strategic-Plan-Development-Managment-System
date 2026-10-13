@@ -1,3 +1,4 @@
+import { createPageRoot } from '../../navigation/page-root.js';
 import { getStrategicPlan, updateStrategicPlan } from '../../api/strategic-plans-api.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { PageHeader } from '../../components/PageHeader.js';
@@ -52,4 +53,4 @@ function EditStrategicPlanApp() {
     );
 }
 
-ReactDOM.createRoot(root).render(React.createElement(EditStrategicPlanApp));
+createPageRoot(root).render(React.createElement(EditStrategicPlanApp));

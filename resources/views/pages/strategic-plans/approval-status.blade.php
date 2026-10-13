@@ -11,6 +11,7 @@
     'resources/css/approval-status.css',
     'resources/js/pages/planner/approval-status-app.js'
 ])
+    <meta name="app-page-entry" content="{{ Vite::asset('resources/js/pages/planner/approval-status-app.js') }}">
 </head>
 <body>
     <div id="root" data-plan-id="{{ $planId }}"></div>

@@ -1,3 +1,4 @@
+import { createPageRoot } from '../../navigation/page-root.js';
 import { BrandLogo } from '../../brand-logo.js';
 import { resetPassword } from '../../api/auth-api.js';
 
@@ -282,4 +283,4 @@ function ResetPasswordApp() {
     );
 }
 
-ReactDOM.createRoot(rootElement).render(React.createElement(ResetPasswordApp));
+createPageRoot(rootElement).render(React.createElement(ResetPasswordApp));

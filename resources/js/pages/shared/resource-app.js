@@ -1,3 +1,4 @@
+import { createPageRoot } from '../../navigation/page-root.js';
 import '../../resource-crud-config.js';
 import { BrandLogo } from '../../brand-logo.js';
 import { logout, guardAgainstBackNavigation } from '../../auth-session.js';
@@ -270,4 +271,4 @@ function ResourceApp() {
     );
 }
 
-ReactDOM.createRoot(rootElement).render(React.createElement(ResourceApp));
+createPageRoot(rootElement).render(React.createElement(ResourceApp));

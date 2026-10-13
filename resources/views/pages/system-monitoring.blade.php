@@ -6,6 +6,7 @@
     <title>System Activity | Strategic Planning Management System</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     @vite(['resources/css/system-monitoring.css', 'resources/js/pages/technical-admin/system-monitoring-app.js'])
+    <meta name="app-page-entry" content="{{ Vite::asset('resources/js/pages/technical-admin/system-monitoring-app.js') }}">
 </head>
 <body>
     <div id="root"></div>

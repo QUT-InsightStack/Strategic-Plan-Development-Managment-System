@@ -1,3 +1,4 @@
+import { createPageRoot } from '../../navigation/page-root.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { apiRequest } from '../../api/api-client.js';
 import { listAssignedPlanSubmissions, isSubmissionAssignedToReviewer } from '../../api/plan-approval-api.js';
@@ -112,7 +113,7 @@ function ApprovalsPage({ session }) {
                 h(ManagementPagination, { page, total: visible.length, onChange: setPage, label: 'plans' })))));
 }
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = createPageRoot(document.getElementById('root'));
 root.render(h('p', { role: 'status' }, 'Loading approvals…'));
 apiRequest('/api/auth/me').then(payload => {
     const session = saveAccessSession(createAccessSession(payload.data));

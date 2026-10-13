@@ -22,6 +22,7 @@ function host(path, dependencies, planId = 7) {
                 return [state[index], value => { state[index] = typeof value === 'function' ? value(state[index]) : value; }];
             },
         },
+        createPageRoot: () => ({ render: element => { root = element; } }),
         ReactDOM: { createRoot: () => ({ render: element => { root = element; } }) },
         document: { getElementById: () => ({ dataset: { planId } }) },
         mountProtectedPage: (_element, factory) => { root = factory(); },

@@ -1,3 +1,4 @@
+import { createPageRoot } from '../../navigation/page-root.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { useDialogBehaviour } from '../../components/use-dialog-behaviour.js';
 import { apiRequest } from '../../api/api-client.js';
@@ -203,7 +204,7 @@ const [filters, setFilters] = useState(() => ({
             } })));
 }
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = createPageRoot(document.getElementById('root'));
 root.render(h('p', { role: 'status' }, 'Loading your access…'));
 apiRequest('/api/auth/me').then(payload => {
     saveAccessSession(createAccessSession(payload.data));

@@ -1,3 +1,4 @@
+import { createPageRoot } from '../../navigation/page-root.js';
 import defaultAvatar from '../../../images/profile-avatar.svg';
 import { BrandLogo } from '../../brand-logo.js';
 import { logout, guardAgainstBackNavigation } from '../../auth-session.js';
@@ -241,7 +242,11 @@ function ProfileForm({ status, setStatus, onAvatarChange }) {
         }
 
         window.addEventListener('beforeunload', warn);
-        return () => window.removeEventListener('beforeunload', warn);
+        window.addEventListener('app:before-navigate', warn);
+        return () => {
+            window.removeEventListener('beforeunload', warn);
+            window.removeEventListener('app:before-navigate', warn);
+        };
     }, [dirty]);
 
     function loadProfile() {
@@ -690,4 +695,4 @@ function ProfileApp() {
     );
 }
 
-ReactDOM.createRoot(rootElement).render(React.createElement(ProfileApp));
+createPageRoot(rootElement).render(React.createElement(ProfileApp));

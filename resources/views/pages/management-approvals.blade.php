@@ -6,6 +6,7 @@
     <title>Approve List | SPDMS</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     @vite(['resources/css/management-dashboard.css', 'resources/js/pages/management/management-approvals-app.js'])
+    <meta name="app-page-entry" content="{{ Vite::asset('resources/js/pages/management/management-approvals-app.js') }}">
 </head>
 <body>
     <div id="root"></div>

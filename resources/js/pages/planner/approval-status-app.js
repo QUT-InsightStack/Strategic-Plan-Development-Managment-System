@@ -1,3 +1,4 @@
+import { createPageRoot } from '../../navigation/page-root.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { PageHeader } from '../../components/PageHeader.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
@@ -530,4 +531,4 @@ function ApprovalStatusApp() {
     );
 }
 
-ReactDOM.createRoot(root).render(h(ApprovalStatusApp));
+createPageRoot(root).render(h(ApprovalStatusApp));
