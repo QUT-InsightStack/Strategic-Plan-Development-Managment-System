@@ -25,12 +25,16 @@ class ImplementationInputAccessService
     }
 
     public function viewsPlanningScope(User $actor): bool
-    {
-        return ! in_array($actor->role?->role_name, self::OFFICE_ROLES, true)
-            && (in_array($actor->role?->role_name, ['Administrator', 'Planning Officer', 'test'], true)
-                || $this->permissions->userPermissionCodes($actor)->contains('implementation_inputs.view_all')
-                || ($this->isManagement($actor) && $this->permissions->userPermissionCodes($actor)->contains('implementation_inputs.view_all')));
-    }
+{
+    return in_array($actor->role?->role_name, [
+        'Administrator',
+        'test',
+        'Planning Officer',
+        'Administrative Admin',
+        'Administrative Administrator',
+        ...self::MANAGEMENT_ROLES,
+    ], true);
+}
 
     public function office(User $actor): ResponsibleUnit
     {
@@ -48,14 +52,17 @@ class ImplementationInputAccessService
         if ($actor->role?->hasFullAccess()) {
             return $query;
         }
-        if ($this->isManagement($actor) && $this->permissions->userPermissionCodes($actor)->contains('implementation_inputs.view_all')) {
-            return $query->whereIn('record_id', app(StrategicPlanAuthorizationService::class)
-                ->authorizedPlanIdsForListing($actor));
-        }
-        if ($this->viewsPlanningScope($actor)) {
-            return $query->whereIn('record_id', DB::table('tblimplementation_input_scopes')
-                ->select('strategic_plan_id')->where('user_id', $actor->user_id));
-        }
+if (in_array($actor->role?->role_name, [
+    'Administrative Admin',
+    'Administrative Administrator',
+    ...self::MANAGEMENT_ROLES,
+], true)) {
+    return $query;
+}
+
+if ($actor->role?->role_name === 'Planning Officer') {
+    return $query->where('created_by', $actor->user_id);
+}
         $unit = $this->office($actor);
 
         return $query->where(fn (Builder $scope) => $scope
@@ -83,11 +90,17 @@ class ImplementationInputAccessService
     }
 
     public function canReview(User $actor): bool
-    {
-        return $actor->status === 'active' && in_array($actor->role?->role_name, ['Planning Officer', 'test'], true)
-            && $this->permissions->userPermissionCodes($actor)->contains('implementation_inputs.review')
-            && $this->viewsPlanningScope($actor);
-    }
+{
+    return $actor->status === 'active'
+        && in_array($actor->role?->role_name, [
+            'Planning Officer',
+            'Administrative Admin',
+            'Administrative Administrator',
+            'test',
+        ], true)
+        && $this->permissions->userPermissionCodes($actor)
+            ->contains('implementation_inputs.review');
+}
 
     private function isManagement(User $actor): bool
     {

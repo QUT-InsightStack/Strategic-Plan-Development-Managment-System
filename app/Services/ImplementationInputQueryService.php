@@ -111,10 +111,15 @@ class ImplementationInputQueryService
         return DB::transaction(function () use ($id, $data, $actor) {
             $this->show($id, $actor);
             $input = ImplementationInput::whereKey($id)->lockForUpdate()->firstOrFail();
-            // Serialize scope revocation with a review using that grant.
-            abort_unless(DB::table('tblimplementation_input_scopes')->where('strategic_plan_id', $input->strategic_plan_id)
-                ->where('user_id', $actor->user_id)->lockForUpdate()->first(), 403, 'Your planning scope was revoked.');
-            $plan = $input->strategicPlan()->lockForUpdate()->firstOrFail();
+$plan = $input->strategicPlan()->lockForUpdate()->firstOrFail();
+
+if ($actor->role?->role_name === 'Planning Officer') {
+    abort_unless(
+        (int) $plan->created_by === (int) $actor->user_id,
+        403,
+        'You can review inputs only for plans you created.'
+    );
+}
             $objective = $input->objective_id === null ? null : $input->objective()->lockForUpdate()->firstOrFail();
             abort_unless($this->isReviewable($input, $plan->status, $objective?->status), 409, 'This input is no longer available for review.');
             $input->forceFill([
