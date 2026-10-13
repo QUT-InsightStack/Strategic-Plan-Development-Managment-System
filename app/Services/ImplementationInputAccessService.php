@@ -44,7 +44,7 @@ class ImplementationInputAccessService
     public function plans(User $actor): Builder
     {
         $this->ensureCanView($actor);
-        $query = Strategic::where('level', 'strategic_plan')->where('status', '!=', 'deleted');
+        $query = Strategic::query()->where('status', '!=', 'deleted');
         if ($actor->role?->hasFullAccess()) {
             return $query;
         }
@@ -68,7 +68,9 @@ class ImplementationInputAccessService
     public function ensurePlan(int $planId, User $actor): Strategic
     {
         $this->ensureCanView($actor);
-        $plan = Strategic::where('level', 'strategic_plan')->where('status', '!=', 'deleted')->findOrFail($planId);
+        $plan = Strategic::query()
+        ->where('status', '!=', 'deleted')
+        ->findOrFail($planId);
         abort_unless($this->plans($actor)->whereKey($planId)->exists(), 403, 'This plan is outside your authorized input scope.');
         $hasOwnPlanLevelInput = in_array($actor->role?->role_name, self::OFFICE_ROLES, true)
             && $plan->inputs()->whereNull('objective_id')

@@ -23,7 +23,7 @@ class ImplementationInputScopeController extends Controller
     public function show(Request $request, int $planId): JsonResponse
     {
         $this->permissions->ensureHasPermission('implementation_inputs.manage_scope', $request->user('api'));
-        Strategic::where('level', 'strategic_plan')->where('status', '!=', 'deleted')->findOrFail($planId);
+        Strategic::where('status', '!=', 'deleted')->findOrFail($planId);
 
         return response()->json(['success' => true, 'data' => $this->userIds($planId)]);
     }
@@ -34,7 +34,7 @@ class ImplementationInputScopeController extends Controller
         $data = $request->validate(['user_ids' => ['present', 'array', 'max:500'], 'user_ids.*' => ['required', 'integer', 'distinct', 'exists:tblusers,user_id']]);
 
         return DB::transaction(function () use ($planId, $data, $actor) {
-            Strategic::where('level', 'strategic_plan')->where('status', '!=', 'deleted')->lockForUpdate()->findOrFail($planId);
+            Strategic::where('status', '!=', 'deleted')->lockForUpdate()->findOrFail($planId);
             foreach (User::with('role.permissions')->whereIn('user_id', $data['user_ids'])->get() as $user) {
                 if ($user->status !== 'active' || ! $this->access->viewsPlanningScope($user)) {
                     throw ValidationException::withMessages(['user_ids' => ['Scope recipients must be active users with planning input view permission.']]);
