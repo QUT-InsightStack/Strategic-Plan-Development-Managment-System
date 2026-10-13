@@ -30,22 +30,10 @@ export function OfficePlanDetail({ planId, mode = 'review', includeAllOfficePlan
                 if (!active) return;
                 setPlan(payload.data);
                 try {
-                    if (includeAllOfficePlans) {
-                        const result = await listStrategicObjectives(planId, { include_all_office_plans: 1 });
-                        if (active) setObjectives(result.data || []);
-                    } else {
-                        const assigned = [];
-                        let currentPage = 1;
-                        let lastPage = 1;
-                        do {
-                            const result = await listObjectiveProgress({ plan_id: planId, page: currentPage, per_page: 100 });
-                            if (!active) return;
-                            assigned.push(...result.data);
-                            lastPage = result.meta.last_page;
-                            currentPage++;
-                        } while (currentPage <= lastPage);
-                        if (active) setObjectives(assigned);
-                    }
+
+                    const result = await listStrategicObjectives(planId);
+                    if (active) setObjectives(result.data || []);
+
                 } catch (err) { if (active) setObjectiveError(err.message); }
             } catch (err) { if (active) setError(err.message); }
             finally { if (active) setLoading(false); }
@@ -85,7 +73,7 @@ export function OfficePlanDetail({ planId, mode = 'review', includeAllOfficePlan
                             h('td', null, (page - 1) * pageSize + index + 1), h('td', null, objective.objective_title || objective.objective_description || '—'),
                             ...['expected_outcome', 'indicator', 'target'].map(key => h('td', { key }, objective[key] || '—')),
                             h('td', null, objective.responsible_unit_assignment?.responsible_unit?.responsible_office_agency || objective.responsible_office_agency || '—')))
-                            : h('tr', null, h('td', { colSpan: 6 }, 'No strategic objectives have been added to this plan.'))))),
+                            : h('tr', null, h('td', { colSpan: 6 }, 'No objectives are assigned to your Office/Unit in this plan.'))))),
                     h('footer', { className: 'office-pagination' }, h('span', null, `${objectives.length} objectives`),
                         h('button', { 'aria-label': 'Previous objectives page', disabled: page <= 1, onClick: () => setPage(page - 1) }, '‹'),
                         h('span', { 'aria-live': 'polite' }, `${page} / ${pageCount}`),
