@@ -88,7 +88,7 @@ export function OfficeComments({ plan, mode = 'comments' }) {
             if (mode === 'comments') {
                 const content = comment.trim();
                 if (!content) return;
-                await submitPlanInput(plan.record_id, {content: `Plan feedback:\n${content}`, input_type: plan.status === 'draft' ? 'change_request' : 'issue',});
+                await submitPlanInput(plan.record_id, {content: `Plan feedback:\n${content}`, input_type: plan.status === 'draft' ? 'change_request' : 'issue',feedback_category: 'plan_feedback',feedback_category: 'new_objective',});
                 setComment('');
                 setPage(1);
                 setRefresh(value => value + 1);

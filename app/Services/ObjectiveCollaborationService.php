@@ -50,6 +50,46 @@ class ObjectiveCollaborationService
             [$plan, $objective] = $this->context($planId, $objectiveId, $actor, true, $planLevelProposal);
             $unit = $this->authorizeUnit($plan, $objective, $actor, true, $planLevelProposal);
             $this->ensureOpen($plan, $objective);
+            $category = $data['feedback_category'] ?? (
+    $objective ? 'objective_feedback' : null
+);
+
+if (in_array($category, ['objective_feedback', 'mapping_feedback'], true)
+    && ! $objective) {
+    throw ValidationException::withMessages([
+        'objective_id' => ['Select the objective this feedback relates to.'],
+    ]);
+}
+
+if (in_array($category, ['plan_feedback', 'new_objective'], true)
+    && $objective) {
+    throw ValidationException::withMessages([
+        'objective_id' => ['This input category must relate to the plan itself.'],
+    ]);
+}
+
+$mappingTitle = null;
+
+if ($category === 'mapping_feedback') {
+    $references = $data['mapping_type'] === 'pdp-chapter'
+        ? $objective->pdpChaptersWithArchived()
+        : $objective->presidentialAgendaItemsWithArchived();
+
+    $reference = $references
+        ->wherePivot('status', 'active')
+        ->whereKey($data['mapping_reference_id'])
+        ->first();
+
+    if (! $reference) {
+        throw ValidationException::withMessages([
+            'mapping_reference_id' => [
+                'Select an active mapping belonging to this objective.',
+            ],
+        ]);
+    }
+
+    $mappingTitle = $reference->chapter_title ?? $reference->title;
+}
             if ($data['input_type'] === 'change_request'
                 && ($plan->status !== 'draft' || ($objective && $objective->status !== 'draft'))) {
                 throw ValidationException::withMessages([
@@ -61,6 +101,12 @@ class ObjectiveCollaborationService
                 ...$this->submissionIdentity($unit, $actor),
                 'strategic_plan_id' => $plan->record_id,
                 'objective_id' => $objective?->objective_id,
+                'feedback_category' => $category,
+'mapping_type' => $category === 'mapping_feedback'
+    ? $data['mapping_type'] : null,
+'mapping_reference_id' => $category === 'mapping_feedback'
+    ? $data['mapping_reference_id'] : null,
+'mapping_reference_title' => $mappingTitle,
                 'input_type' => $data['input_type'],
                 'content' => $data['content'],
                 'review_status' => ImplementationInput::PENDING_REVIEW,

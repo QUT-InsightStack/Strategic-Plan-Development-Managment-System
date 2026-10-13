@@ -67,6 +67,9 @@ class ImplementationInputQueryService
             abort_unless($allowed, 403, 'This Office/Agency is outside your authorized input scope.');
             $query->where('responsible_unit_id', $unitId);
         }
+        if (! empty($filters['feedback_category'])) {
+    $query->where('feedback_category', $filters['feedback_category']);
+}
         if (! empty($filters['input_type'])) {
             $query->where('input_type', $filters['input_type']);
         }

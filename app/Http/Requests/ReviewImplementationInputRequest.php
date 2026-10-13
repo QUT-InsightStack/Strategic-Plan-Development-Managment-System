@@ -16,7 +16,7 @@ class ReviewImplementationInputRequest extends ApiFormRequest
     {
         return [
             'status' => ['required', Rule::in(['Approved', 'Rejected'])],
-            'review_note' => ['required_if:status,Rejected', 'nullable', 'string', 'max:5000', 'regex:/\S/u'],
+            'review_note' => ['required', 'string', 'max:5000', 'regex:/\S/u'],
             ...array_fill_keys(['content', 'input_type', 'strategic_plan_id', 'objective_id', 'submitted_by',
                 'submitted_at', 'responsible_unit_id', 'responsible_office_agency', 'submitter_name',
                 'review_status', 'reviewed_by', 'reviewer_name', 'reviewed_at'], ['missing']),

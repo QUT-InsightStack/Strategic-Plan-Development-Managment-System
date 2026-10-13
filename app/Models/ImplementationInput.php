@@ -8,6 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ImplementationInput extends Model
 {
     public const TYPES = ['progress_update', 'issue', 'change_request'];
+    public const FEEDBACK_CATEGORIES = [
+    'new_objective',
+    'plan_feedback',
+    'objective_feedback',
+    'mapping_feedback',
+];
 
     public const PENDING_REVIEW = 'Pending Review';
 
@@ -21,7 +27,7 @@ class ImplementationInput extends Model
 
     protected $fillable = ['strategic_plan_id', 'objective_id', 'responsible_unit_id',
         'submitted_by', 'responsible_office_agency', 'submitter_name', 'input_type',
-        'content', 'review_status', 'submitted_at'];
+        'content', 'review_status', 'submitted_at', 'feedback_category','mapping_type','mapping_reference_id','mapping_reference_title',];
 
     protected $attributes = ['review_status' => self::PENDING_REVIEW];
 

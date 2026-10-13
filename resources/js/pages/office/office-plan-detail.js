@@ -4,6 +4,8 @@ import { getStrategicPlan } from '../../api/strategic-plans-api.js';
 import { listStrategicObjectives } from '../../api/strategic-objectives-api.js';
 import { can } from '../../access/access-session.js';
 import { listObjectiveProgress } from '../../api/objective-progress-api.js';
+import { ObjectiveFeedback } from './ObjectiveFeedback.js';
+import { listPlanAlignments } from '../../api/strategic-alignments-api.js';
 const h = React.createElement;
 const { useEffect, useState } = React;
 const dateLabel = value => {
@@ -15,6 +17,10 @@ const dateLabel = value => {
 export function OfficePlanDetail({ planId, mode = 'review', includeAllOfficePlans = false }) {
     const [plan, setPlan] = useState(null);
     const [objectives, setObjectives] = useState([]);
+    const [planMappings, setPlanMappings] = useState([]);
+    const [mappingsLoading, setMappingsLoading] = useState(false);
+    const [mappingsError, setMappingsError] = useState('');
+    const [mappingAttempt, setMappingAttempt] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [objectiveError, setObjectiveError] = useState('');
@@ -44,6 +50,29 @@ export function OfficePlanDetail({ planId, mode = 'review', includeAllOfficePlan
         return () => { active = false; };
     }, [planId, attempt, assignmentVersion, includeAllOfficePlans]);
     const field = (label, value) => h('div', { className: 'office-summary-field', key: label }, h('dt', null, label), h('dd', null, value || 'Not provided'));
+    useEffect(() => {
+    let active = true;
+    setPlanMappings([]);
+    setMappingsLoading(true);
+    setMappingsError('');
+
+    listPlanAlignments(planId)
+        .then(result => {
+            if (active) {
+                setPlanMappings(
+                    (result.data || []).filter(item => item.status === 'active')
+                );
+            }
+        })
+        .catch(err => {
+            if (active) setMappingsError(err.message);
+        })
+        .finally(() => {
+            if (active) setMappingsLoading(false);
+        });
+
+    return () => { active = false; };
+}, [planId, mappingAttempt]);
     const pageCount = Math.max(1, Math.ceil(objectives.length / pageSize));
     const author = plan?.creator?.name || [plan?.creator?.first_name, plan?.creator?.last_name].filter(Boolean).join(' ');
     const hasInputPanel = mode === 'comments' || mode === 'proposal';
@@ -101,13 +130,115 @@ export function OfficePlanDetail({ planId, mode = 'review', includeAllOfficePlan
                 h('h2', { id: 'objectives-title' }, 'Strategic Objectives'),
                 objectiveError ? h('p', { role: 'alert' }, objectiveError, ' ', h('button', { onClick: () => setAttempt(attempt + 1) }, 'Retry')) : h(React.Fragment, null,
                     h('div', { className: 'office-table-scroll' }, h('table', null,
-                        h('thead', null, h('tr', null, ['No.', 'Objectives', 'Expected outcome', 'Indicator', 'Target', 'Responsible Office/Agency'].map(label => h('th', { key: label, scope: 'col' }, label)))),
-                        h('tbody', null, objectives.length ? objectives.slice((page - 1) * pageSize, page * pageSize).map((objective, index) => h('tr', { key: objective.objective_id },
-                            h('td', null, (page - 1) * pageSize + index + 1), h('td', null, objective.objective_title || objective.objective_description || '—'),
-                            ...['expected_outcome', 'indicator', 'target'].map(key => h('td', { key }, objective[key] || '—')),
-                            h('td', null, objective.responsible_unit_assignment?.responsible_unit?.responsible_office_agency || objective.responsible_office_agency || '—')))
-                            : h('tr', null, h('td', { colSpan: 6 }, 'No objectives are assigned to your Office/Unit in this plan.'))))),
-                    h('footer', { className: 'office-pagination' }, h('span', null, `${objectives.length} objectives`),
+                        h('thead', null,
+    h('tr', null,
+        ['No.', 'Objectives', 'Expected outcome', 'Indicator',
+            'Target', 'Responsible Office/Agency'].map(label =>
+            h('th', { key: label, scope: 'col' }, label))
+    )
+),
+
+h('tbody', null,
+    objectives.length
+        ? objectives.slice(
+            (page - 1) * pageSize,
+            page * pageSize
+        ).map((objective, index) => {
+            const assignedMappings = planMappings.filter(mapping =>
+                Number(mapping.objective_id) === Number(objective.objective_id)
+            );
+
+            return h(React.Fragment, { key: objective.objective_id },
+                h('tr', null,
+                    h('td', null, (page - 1) * pageSize + index + 1),
+                    h('td', null,
+                        objective.objective_title
+                        || objective.objective_description
+                        || '—'),
+                    ...['expected_outcome', 'indicator', 'target'].map(key =>
+                        h('td', { key }, objective[key] || '—')),
+                    h('td', null,
+                        objective.responsible_unit_assignment
+                            ?.responsible_unit?.responsible_office_agency
+                        || objective.responsible_office_agency
+                        || '—')
+                ),
+
+                h('tr', null,
+                    h('td', {
+                        colSpan: 6,
+                        style: {
+                            padding: '16px',
+                            background: '#f8fafc',
+                            whiteSpace: 'normal',
+                        },
+                    },
+                        h('section', {
+                            'aria-label': `Mappings for ${objective.objective_title}`,
+                        },
+                            h('h3', {
+                                style: { margin: '0 0 8px', fontSize: '1rem' },
+                            }, 'Strategic alignment'),
+
+                            mappingsLoading
+                                && h('p', { role: 'status' }, 'Loading mappings…'),
+
+                            mappingsError && h('p', { role: 'alert' },
+                                mappingsError,
+                                ' ',
+                                h('button', {
+                                    type: 'button',
+                                    onClick: () =>
+                                        setMappingAttempt(value => value + 1),
+                                }, 'Retry')),
+
+                            !mappingsLoading && !mappingsError
+                                && (assignedMappings.length
+                                    ? h('ul', null,
+                                        assignedMappings.map(mapping =>
+                                            h('li', { key: mapping.id },
+                                                h('strong', null,
+                                                    mapping.type === 'pdp-chapter'
+                                                        ? 'PDP Chapter: '
+                                                        : 'Presidential Agenda: '),
+                                                mapping.reference_title,
+                                                Object.entries(
+                                                    mapping.reference_details || {}
+                                                ).filter(([, value]) =>
+                                                    value != null && value !== ''
+                                                ).map(([key, value]) =>
+                                                    h('p', {
+                                                        key,
+                                                        style: {
+                                                            margin: '4px 0',
+                                                            whiteSpace: 'pre-wrap',
+                                                            overflowWrap: 'anywhere',
+                                                        },
+                                                    },
+                                                        `${key.replaceAll('_', ' ')}: ${
+                                                            typeof value === 'object'
+                                                                ? JSON.stringify(value)
+                                                                : String(value)
+                                                        }`
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                    : h('p', null,
+                                        'No active mappings for this objective.'))
+                        ),
+
+                        h('div', { style: { marginTop: '16px' } },
+                            h(ObjectiveFeedback, { plan, objective }))
+                    )
+                )
+            );
+        })
+        : h('tr', null,
+            h('td', { colSpan: 6 },
+                'No objectives are assigned to your Office/Unit in this plan.'))
+))),  h('footer', { className: 'office-pagination' }, h('span', null, `${objectives.length} objectives`),
                         h('button', { 'aria-label': 'Previous objectives page', disabled: page <= 1, onClick: () => setPage(page - 1) }, '‹'),
                         h('span', { 'aria-live': 'polite' }, `${page} / ${pageCount}`),
                         h('button', { 'aria-label': 'Next objectives page', disabled: page >= pageCount, onClick: () => setPage(page + 1) }, '›')))))),
