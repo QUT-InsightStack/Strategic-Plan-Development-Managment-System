@@ -407,19 +407,52 @@ class PlanApprovalTest extends TestCase
         $this->assertDatabaseCount('workflow_notifications', 9);
     }
 
-    public function test_event_recipient_unique_constraint_and_recipient_overlap(): void
-    {
-        $this->authenticateApiUser($this->admin);
-        $configuration = $this->configuration();
-        $configuration['stages'] = [['name' => 'Planner review', 'sequence' => 1, 'user_id' => $this->planner->user_id]];
-        $this->putJson('/api/approval-workflow', $configuration)->assertOk();
-        $this->authenticateApiUser($this->planner);
-        $this->postJson($this->url('submit'))->assertCreated();
-        $this->assertDatabaseCount('workflow_notifications', 1);
-        $notification = WorkflowNotification::firstOrFail();
-        $this->expectException(QueryException::class);
-        $notification->replicate()->save();
-    }
+public function test_event_recipient_unique_constraint_and_recipient_overlap(): void
+{
+    $this->authenticateApiUser($this->admin);
+
+    $configuration = $this->configuration();
+    $configuration['stages'] = [
+        [
+            'name' => 'First review',
+            'sequence' => 1,
+            'user_id' => $this->reviewer->user_id,
+        ],
+        [
+            'name' => 'Final review',
+            'sequence' => 2,
+            'user_id' => $this->reviewer->user_id,
+        ],
+    ];
+
+    $this->putJson('/api/approval-workflow', $configuration)->assertOk();
+
+    $this->authenticateApiUser($this->planner);
+    $submission = $this->postJson($this->url('submit'))
+        ->assertCreated()
+        ->json('data');
+
+    // Submission notifies the submitter and the separate reviewer.
+    $this->assertDatabaseCount('workflow_notifications', 2);
+
+    $this->authenticateApiUser($this->reviewer);
+    $this->postJson($this->url('approval/decision'), [
+        'submission_id' => $submission['id'],
+        'stage_id' => $submission['stages'][0]['id'],
+        'decision' => 'approve',
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.current_sequence', 2);
+
+    // The reviewer belongs to both stages but receives only one
+    // notification for the approval event.
+    $this->assertDatabaseCount('workflow_notifications', 4);
+
+    $notification = WorkflowNotification::firstOrFail();
+
+    $this->expectException(QueryException::class);
+    $notification->replicate()->save();
+}
 
     public function test_final_approval_notifies_the_submitter_and_final_reviewers_and_cannot_be_resubmitted(): void
     {
@@ -535,7 +568,88 @@ class PlanApprovalTest extends TestCase
         $this->authenticateApiUser($this->admin);
         $this->getJson($url)->assertForbidden();
     }
+public function test_administrative_admin_can_submit_but_only_another_assigned_user_can_approve(): void
+{
+    $submitter = $this->user('Administrative Admin');
+    $peer = $this->user('Administrative Admin');
 
+    $submitter->role->permissions()->syncWithoutDetaching([
+        Permission::where('code', 'strategic_records.update')
+            ->value('permission_id'),
+    ]);
+
+    $configuration = $this->configuration();
+    $configuration['stages'] = [
+        [
+            'name' => 'Administrative review',
+            'sequence' => 1,
+            'role_id' => $submitter->role_id,
+        ],
+    ];
+
+    $this->authenticateApiUser($this->admin);
+    $this->putJson('/api/approval-workflow', $configuration)->assertOk();
+
+    // The plan was created by the Planning Officer.
+    $this->authenticateApiUser($submitter);
+    $submission = $this->postJson($this->url('submit'))
+        ->assertCreated()
+        ->assertJsonCount(1, 'data.stages.0.reviewers')
+        ->assertJsonPath('data.stages.0.reviewers.0.user_id', $peer->user_id)
+        ->json('data');
+
+    $this->getJson('/api/plan-reviews')
+        ->assertOk()
+        ->assertJsonCount(0, 'data');
+
+    // Simulate an older submission that still lists its submitter.
+    PlanSubmission::findOrFail($submission['id'])
+        ->stages()->first()->reviewers()
+        ->attach($submitter->user_id, [
+            'reviewer_name' => $submitter->name,
+        ]);
+
+    $decision = [
+        'submission_id' => $submission['id'],
+        'stage_id' => $submission['stages'][0]['id'],
+        'decision' => 'approve',
+    ];
+
+    $this->postJson($this->url('approval/decision'), $decision)
+        ->assertForbidden();
+
+    $this->authenticateApiUser($peer);
+    $this->postJson($this->url('approval/decision'), $decision)
+        ->assertOk()
+        ->assertJsonPath('data.status', 'approved');
+}
+
+public function test_a_stage_with_only_the_submitter_blocks_submission(): void
+{
+    $configuration = $this->configuration();
+    $configuration['stages'] = [
+        [
+            'name' => 'Planner review',
+            'sequence' => 1,
+            'user_id' => $this->planner->user_id,
+        ],
+    ];
+
+    $this->authenticateApiUser($this->admin);
+    $this->putJson('/api/approval-workflow', $configuration)->assertOk();
+
+    $this->authenticateApiUser($this->planner);
+    $this->postJson($this->url('submit'))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('workflow');
+
+    $this->assertDatabaseCount('plan_submissions', 0);
+    $this->assertSame('draft', $this->plan->fresh()->status);
+    $this->assertSame(
+        'not_submitted',
+        $this->plan->fresh()->approval_status
+    );
+}
     private function configure(): void
     {
         $this->authenticateApiUser($this->admin);

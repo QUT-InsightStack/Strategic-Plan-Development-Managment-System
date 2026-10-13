@@ -54,6 +54,12 @@ Route::view('/strategic-plans/finalize', 'pages.strategic-plans.finalize', ['pla
 Route::get('/strategic-plans/{id}/finalize', function (int $id) {
     return view('pages.strategic-plans.finalize', ['planId' => $id]);
 })->whereNumber('id')->name('strategic-plans.finalize');
+Route::get('/strategic-plans/{id}/overview', function (int $id) {
+    return view('pages.strategic-plans.finalize', [
+        'planId' => $id,
+        'overviewMode' => true,
+    ]);
+})->whereNumber('id')->name('strategic-plans.overview');
 Route::get('/strategic-plans/{id}/objectives', function (int $id) {
     return view('pages.strategic-plans.objectives', ['planId' => $id]);
 })->whereNumber('id')->name('strategic-plans.objectives');

@@ -119,6 +119,45 @@ const technicalAdminPermissions = [
 ];
 
 const administrativeAdminPermissions = [
+        PERMISSIONS.PLANS_VIEW,
+    PERMISSIONS.PLANS_CREATE,
+    PERMISSIONS.PLANS_UPDATE,
+    PERMISSIONS.PLANS_ARCHIVE,
+
+    PERMISSIONS.FOUNDATIONS_VIEW,
+    PERMISSIONS.FOUNDATIONS_MANAGE,
+    'strategic_foundations.create',
+    'strategic_foundations.update',
+
+    'plan_core_values.view',
+    'plan_core_values.manage',
+    'plan_core_values.create',
+    'plan_core_values.update',
+
+    PERMISSIONS.OBJECTIVES_VIEW,
+    PERMISSIONS.OBJECTIVES_CREATE,
+    PERMISSIONS.OBJECTIVES_UPDATE,
+    PERMISSIONS.OBJECTIVES_ARCHIVE,
+    'strategic_objectives.assign_responsible_unit',
+    PERMISSIONS.OBJECTIVES_VIEW_PROGRESS,
+    PERMISSIONS.OBJECTIVES_CORRECT_PROGRESS,
+
+    PERMISSIONS.MAPPINGS_MANAGE,
+    'relations.view',
+    'relations.create',
+    'relations.update',
+    'strategic_alignments.archive',
+
+    PERMISSIONS.OBJECTIVE_COMMENTS_CREATE,
+    'objective_comments.view_all',
+
+    PERMISSIONS.INPUTS_VIEW,
+    'implementation_inputs.view_all',
+    'implementation_inputs.review',
+
+    PERMISSIONS.DOCUMENTS_UPLOAD,
+    'strategic_documents.view',
+    'strategic_documents.download',
     PERMISSIONS.DASHBOARD_VIEW,
     PERMISSIONS.PRESIDENTIAL_AGENDA_VIEW,
     PERMISSIONS.PRESIDENTIAL_AGENDA_MANAGE,

@@ -98,18 +98,25 @@ class StrategicPlanAuthorizationService
         return $user;
     }
 
-    public function authorizedPlanIdsForListing(?User $user = null, array $excludedStatuses = ['archived', 'deleted'], bool $includeAllOfficePlans = false): Collection
-    {
-        $user = $this->permissionAuthorizationService->resolveUser($user);
+   public function authorizedPlanIdsForListing(
+    ?User $user = null,
+    array $excludedStatuses = ['archived', 'deleted'],
+    bool $includeAllOfficePlans = false
+): Collection {
+    $user = $this->permissionAuthorizationService->resolveUser($user);
 
-        $query = Strategic::query()
-            ->select('record_id')
-            ->whereNotIn('status', $excludedStatuses);
+    $query = Strategic::query()
+        ->select('record_id')
+        ->whereNotIn('status', $excludedStatuses);
 
-        $this->applyApprovedListingScopeHook($query, $user, $includeAllOfficePlans);
+    $this->applyApprovedListingScopeHook(
+        $query,
+        $user,
+        $includeAllOfficePlans
+    );
 
-        return $query->pluck('record_id');
-    }
+    return $query->pluck('record_id');
+}
 
     public function ensurePlanIsWithinAuthorizedScope(Strategic $plan, ?User $user = null, string $message = 'You are not authorized to view this strategic plan.', bool $includeAllOfficePlans = false): User
     {
@@ -127,6 +134,13 @@ class StrategicPlanAuthorizationService
 
     private function applyApprovedListingScopeHook(Builder $query, User $user, bool $includeAllOfficePlans = false): void
     {
+        if (in_array($user->role?->role_name, [
+    'Planning Officer',
+    'Planner/Encoder',
+], true)) {
+    $query->where('created_by', $user->user_id);
+    return;
+}
         if (! in_array($user->role?->role_name, self::OFFICE_ROLES, true)) {
             return;
         }
@@ -143,6 +157,17 @@ class StrategicPlanAuthorizationService
 
     public function scopeObjectivesForUser(Builder $query, User $user): void
     {
+        if (in_array($user->role?->role_name, [
+    'Planning Officer',
+    'Planner/Encoder',
+], true)) {
+    $query->whereHas(
+        'strategicPlan',
+        fn (Builder $planQuery) =>
+            $planQuery->where('created_by', $user->user_id)
+    );
+    return;
+}
         if (! in_array($user->role?->role_name, self::OFFICE_ROLES, true)) {
             return;
         }

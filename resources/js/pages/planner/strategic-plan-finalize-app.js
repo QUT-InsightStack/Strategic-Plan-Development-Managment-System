@@ -5,14 +5,15 @@ import { listStrategicObjectives } from '../../api/strategic-objectives-api.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
 import { apiRequest } from '../../api/api-client.js';
 import { submitStrategicPlan, resubmitStrategicPlan, getApprovalStatus } from '../../api/plan-approval-api.js';
-
+import { can } from '../../access/access-session.js';
 enforcePageAccess();
 
 const h = React.createElement;
 const { useEffect, useState } = React;
 const root = document.getElementById('root');
 const routePlanId = Number(root.dataset.planId) || null;
-
+const overviewMode = root.dataset.overviewMode === 'true';
+const pageTitle = overviewMode ? 'Plan Overview' : 'Finalize & Submit';
 const text = value => String(value || '').trim();
 const formatDate = value => value
     ? new Date(value).toLocaleDateString('en-GB', {
@@ -82,7 +83,18 @@ function FinalizeStrategicPlanApp() {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [notice, setNotice] = useState({ type: '', message: '' });
-    const [openSections, setOpenSections] = useState({});
+    const [openSections, setOpenSections] = useState(
+    overviewMode
+        ? {
+            foundation: true,
+            objectives: true,
+            outcomes: true,
+            indicators: true,
+            mapping: true,
+            description: true,
+        }
+        : {}
+);
     const [dialog, setDialog] = useState({ open: false, mode: '', title: '', message: '' });
 
     useEffect(() => {
@@ -123,8 +135,23 @@ function FinalizeStrategicPlanApp() {
 
     function selectPlan(event) {
         const id = Number(event.target.value);
-        setPlanId(id); setPlan(null); setObjectives([]); setRelations([]); setInputMeta(null); setOpenSections({});
-        window.history.replaceState({}, '', `/strategic-plans/${id}/finalize`);
+        setPlanId(id); setPlan(null); setObjectives([]); setRelations([]); setInputMeta(null); setOpenSections(
+    overviewMode
+        ? {
+            foundation: true,
+            objectives: true,
+            outcomes: true,
+            indicators: true,
+            mapping: true,
+            description: true,
+        }
+        : {}
+);
+        window.history.replaceState(
+    {},
+    '',
+    `/strategic-plans/${id}/${overviewMode ? 'overview' : 'finalize'}`
+);
     }
 
     function toggle(section) { setOpenSections(current => ({ ...current, [section]: !current[section] })); }
@@ -134,16 +161,34 @@ function FinalizeStrategicPlanApp() {
     const coreValues = plan?.coreValues || plan?.core_values || [];
     const outstandingInputs = Number(inputMeta?.summary?.['Pending Review'] || 0);
     const rejection = latestRejection(tracking);
+    const objectivesMissingIndicators = objectives.filter(
+    objective => !text(objective.indicator)
+);
     const checks = plan ? [
+        {
+    label: 'Strategic Plan level selected',
+    done: plan.level === 'strategic_plan',
+},
         { label: 'Mission and Vision completed', done: Boolean(text(mission?.content) && text(vision?.content)) },
         { label: 'Core Values reviewed', done: coreValues.length > 0 },
         { label: 'Strategic Objectives added', done: objectives.length > 0 },
         { label: 'Objectives mapped to outcomes', done: objectives.length > 0 && objectives.every(item => text(item.expected_outcome)) },
-        { label: 'Indicators added', done: objectives.length > 0 && objectives.every(item => text(item.indicator)) },
+       {
+    label: 'Indicator added for every objective',
+    done: objectives.length > 0 && objectivesMissingIndicators.length === 0,
+},
         { label: 'Agency inputs consolidated', done: inputMeta !== null && outstandingInputs === 0 },
         { label: 'Progress status updated', done: objectives.length > 0 && objectives.every(item => text(item.status)) },
     ] : [];
     const ready = checks.length > 0 && checks.every(item => item.done);
+    const canEditSections = Boolean(
+    plan
+    && can('strategic_records.update')
+    && ['draft', 'finished'].includes(plan.status)
+    && ['not_submitted', 'rejected'].includes(
+        plan.approval_status || 'not_submitted'
+    )
+);
 
     async function submitPlan() {
     const resubmission = plan?.approval_status === 'rejected';
@@ -230,10 +275,16 @@ function FinalizeStrategicPlanApp() {
     return h(React.Fragment, null,
         h(AppSidebar, { active: 'Finalize Plans', onNotice: message => setNotice({ type: 'info', message }) }),
         h('main', { className: 'app-shell-main finalize-page' }, h('div', { className: 'app-shell-container finalize-container' },
-            h('nav', { className: 'finalize-breadcrumb', 'aria-label': 'Breadcrumb' }, h('a', { href: '/strategic-plans' }, 'Strategic Plans'), h('i', { className: 'bi bi-chevron-right' }), h('span', null, 'Finalized Strategic Plan')),
-            h('h1', { className: 'finalize-title' }, 'Finalized Strategic Plan'),
-            h('p', { className: 'finalize-subtitle' }, 'Review the finalized plan before submitting it for Management approval.'),
-            plans.length > 1 && h('label', { className: 'ui-field finalize-plan-picker' }, h('span', { className: 'ui-label' }, 'Strategic plan'), h('select', { className: 'ui-select', value: planId || '', onChange: selectPlan }, plans.map(item => h('option', { value: item.record_id, key: item.record_id }, `${item.title} · ${planStatusLabel(item.status)}`)))),
+            h('nav', { className: 'finalize-breadcrumb', 'aria-label': 'Breadcrumb' }, h('a', { href: '/strategic-plans' }, 'Strategic Plans'), h('i', { className: 'bi bi-chevron-right' }), h('span', null, pageTitle)),
+            h('h1', { className: 'finalize-title' }, pageTitle),
+h(
+    'p',
+    { className: 'finalize-subtitle' },
+    overviewMode
+        ? 'Review the complete plan, objectives and alignment mappings. Use the edit links to update any section.'
+        : 'Check that the plan is complete before submitting it for approval.'
+),
+            !overviewMode && plans.length > 1 && h('label', { className: 'ui-field finalize-plan-picker' }, h('span', { className: 'ui-label' }, 'Strategic plan'), h('select', { className: 'ui-select', value: planId || '', onChange: selectPlan }, plans.map(item => h('option', { value: item.record_id, key: item.record_id }, `${item.title} · ${planStatusLabel(item.status)}`)))),
             notice.message && h('div', { className: `ui-status ui-status--${notice.type} finalize-feedback`, role: notice.type === 'error' ? 'alert' : 'status' }, notice.message),
             loading ? h('section', { className: 'ui-card ui-empty' }, 'Loading finalized plan…') : !plan ? h('section', { className: 'ui-card ui-empty' }, 'No strategic plan is available for finalization.') :
             h('div', { className: 'finalize-layout' },
@@ -256,6 +307,35 @@ function FinalizeStrategicPlanApp() {
                 h('aside', { className: 'ui-card finalize-checklist', 'aria-labelledby': 'checklist-title' },
                     h('h2', { className: 'finalize-section-heading', id: 'checklist-title' }, 'Pre-submission Checklist'),
                     h('ul', null, checks.map(item => h('li', { className: item.done ? '' : 'is-missing', key: item.label }, h('i', { className: `bi ${item.done ? 'bi-check-circle' : 'bi-exclamation-circle'}`, 'aria-hidden': 'true' }), h('span', null, item.label)))),
+                    objectivesMissingIndicators.length > 0 && h(
+    'div',
+    { className: 'finalize-warning' },
+    h(
+        'div',
+        null,
+        h('strong', null, 'Add the missing indicators'),
+        h(
+            'p',
+            null,
+            'Indicators are entered inside each strategic objective. '
+            + 'Open an objective below, complete its Indicator field, '
+            + 'save it, then return to Finalize & Submit.'
+        ),
+        objectivesMissingIndicators.map(objective =>
+            h(
+                'p',
+                { key: objective.objective_id },
+                h(
+                    'a',
+                    {
+                        href: `/strategic-plans/${plan.record_id}/objectives?edit=${objective.objective_id}`,
+                    },
+                    `Edit: ${objective.objective_title || 'Untitled objective'}`
+                )
+            )
+        )
+    )
+),
                     h('div', { className: 'finalize-warning' }, h('i', { className: 'bi bi-exclamation-triangle-fill', 'aria-hidden': 'true' }), h('span', null, plan.approval_status === 'under_approval' ? 'This plan is under approval in the configured workflow.' : ready ? 'A snapshot of this plan and its supporting information will be sent for approval.' : 'Complete every checklist item before submitting the plan.')),
                     plan.approval_status === 'rejected' && h(
     'section',
@@ -377,8 +457,43 @@ function FinalizeStrategicPlanApp() {
 ),
                     h('div', { className: 'finalize-actions' },
                         tracking?.current_submission && h('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: `/strategic-plans/${plan.record_id}/approval-status` }, 'Approval status and history'),
-                        h('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: `/strategic-plans/${plan.record_id}/edit` }, 'View / Update'),
-                    h(
+                       canEditSections && h(
+    React.Fragment,
+    null,
+    h(
+        'a',
+        {
+            className: 'ui-button ui-button--secondary ui-button--sm',
+            href: `/strategic-plans/${plan.record_id}/edit`,
+        },
+        'Edit Plan Details / MVC'
+    ),
+    can('strategic_objectives.update') && h(
+        'a',
+        {
+            className: 'ui-button ui-button--secondary ui-button--sm',
+            href: `/strategic-plans/${plan.record_id}/objectives`,
+        },
+        'Edit Objectives / Indicators'
+    ),
+    can('strategic_objectives.update') && h(
+        'a',
+        {
+            className: 'ui-button ui-button--secondary ui-button--sm',
+            href: `/mappings?plan_id=${plan.record_id}`,
+        },
+        'Edit Mappings'
+    )
+),
+overviewMode && canEditSections && plan.level === 'strategic_plan' && h(
+    'a',
+    {
+        className: 'ui-button ui-button--primary ui-button--sm',
+        href: `/strategic-plans/${plan.record_id}/finalize`,
+    },
+    'Continue to Finalize & Submit'
+),
+!overviewMode && h(
     'button',
     {
         className: 'ui-button ui-button--primary ui-button--sm',

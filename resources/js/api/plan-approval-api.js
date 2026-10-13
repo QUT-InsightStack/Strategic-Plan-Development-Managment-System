@@ -44,8 +44,15 @@ export async function processPlanDecision({ planId, submission, decision, commen
 }
 
 export function isSubmissionAssignedToReviewer(submission, session) {
-    return submission?.status === 'under_approval' && Boolean(submission.currentStage?.reviewers
-        ?.some(reviewer => Number(reviewer.user_id) === Number(session?.userId)));
+    return session?.userId != null
+        && submission?.submitted_by != null
+        && Number(submission.submitted_by) !== Number(session.userId)
+        && submission.status === 'under_approval'
+        && Boolean(
+            submission.currentStage?.reviewers?.some(
+                reviewer => Number(reviewer.user_id) === Number(session.userId)
+            )
+        );
 }
 
 export function submitStrategicPlan(planId) {

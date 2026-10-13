@@ -116,7 +116,35 @@ export function MappingApp() {
         h('label', { className: 'ui-field' }, 'Strategic plan', h('select', { className: 'ui-select', value: planId, disabled: busy, onChange: event => { setPlanId(event.target.value); setObjectiveId(''); setReferenceId(''); setNotice(''); setError(''); setEditing(null); setAction(null); } },
             h('option', { value: '', disabled: true }, 'Select a strategic plan'),
             plans.map(plan => h('option', { key: plan.record_id, value: plan.record_id }, plan.title)))),
-        notice && h('p', { className: 'ui-status ui-status--success', role: 'status' }, notice),
+        !readOnly && planId && data && !loading && h(
+    'div',
+   { className: 'mapping-navigation-actions' },
+    h(
+        'a',
+        {
+            className: 'ui-button ui-button--secondary ui-button--sm',
+            href: `/strategic-plans/${planId}/objectives`,
+            onClick: event => {
+                if (busy) event.preventDefault();
+            },
+            'aria-disabled': busy,
+        },
+        'Back to Objectives'
+    ),
+    h(
+        'a',
+        {
+            className: 'ui-button ui-button--primary ui-button--sm',
+            href: `/strategic-plans/${planId}/overview`,
+            onClick: event => {
+                if (busy) event.preventDefault();
+            },
+            'aria-disabled': busy,
+        },
+        'Review Plan'
+    )
+),
+            notice && h('p', { className: 'ui-status ui-status--success', role: 'status' }, notice),
         error && h('p', { className: 'ui-status ui-status--error', role: 'alert' }, error),
         loading ? h('p', { role: 'status' }, 'Loading alignments...') : !planId ? h('p', null, 'No plans are available in your scope.') : h(React.Fragment, null,
             !readOnly && data && !Object.values(capabilities).some(Boolean) && h('p', null, 'These alignments are read-only for your permissions or the current plan status.'),

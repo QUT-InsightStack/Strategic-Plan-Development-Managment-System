@@ -30,7 +30,43 @@ export const roleNavigation = {
         page('security-settings', 'Security Settings', '/settings', ['settings.manage'], { icon: 'bi-shield-lock' }),
         page('maintenance', 'Backups', '/manual-backup', ['backups.view'], { icon: 'bi-hdd-stack' }),
     ], 'bi-shield-check')],
-    administrative: [group('references', 'Planning Preparation', [
+    administrative: [
+    group('administrative-planning', 'Strategic Planning', [
+        page('plans', 'Strategic Plan List', '/strategic-plans', [
+            'strategic_records.view',
+        ]),
+        page('create-plan', 'Create Strategic Plan / MVC', '/strategic-plans/create', [
+            'strategic_records.create',
+        ]),
+        page('objectives', 'Strategic Objectives', '/strategic-objectives', [
+            'strategic_records.view',
+            'strategic_objectives.view',
+        ]),
+        inputs,
+        page('finalize', 'Finalize & Submit', '/strategic-plans/finalize', [
+            'strategic_records.update',
+        ]),
+        page('submission-status', 'Submission Status', '/strategic-plans', [
+            'strategic_records.view',
+        ], {
+            dashboardOnly: true,
+            description: 'Open a plan to view its approval status and history.',
+        }),
+    ]),
+    group('administrative-alignment', 'Strategic Alignment', [
+        mapping,
+        alignment,
+    ], 'bi-map'),
+    group('administrative-progress', 'Progress Monitoring', [
+        page('objective-progress', 'Objective Progress', '/progress-monitoring', [
+            'strategic_records.view',
+            'strategic_objectives.view_progress',
+        ]),
+    ], 'bi-graph-up'),
+    group('administrative-reviews', 'Assigned Approvals', [
+        page('reviews', 'Assigned Plan Reviews', '/management-approvals'),
+    ]),
+    group('references', 'Planning Preparation', [
         page('agenda', 'Presidential Agenda', '/administrative-admin/reference-data?tab=agenda', ['reference_data.manage', 'presidential_agenda.view'], { icon: 'bi-bank' }),
         page('pdp', 'PDP Chapters', '/pdp-chapters/manage', ['pdp_chapters.manage'], { icon: 'bi-journal-bookmark' }),
         page('reference', 'Reference Data', '/administrative-admin/reference-data?tab=reference', ['reference_data.manage'], { icon: 'bi-collection' }),

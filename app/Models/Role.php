@@ -25,6 +25,14 @@ class Role extends Model
     public const PRIVILEGED_ROLES = ['Administrator', 'Technical Administrator', 'Technical Admin', 'test'];
 
     public const FULL_ACCESS_ROLES = ['Administrator', 'test'];
+    public const PLANNING_ROLES = [
+    'Administrator',
+    'test',
+    'Planning Officer',
+    'Planner/Encoder',
+    'Administrative Admin',
+    'Administrative Administrator',
+];
 
     protected $fillable = [
         'role_name',
