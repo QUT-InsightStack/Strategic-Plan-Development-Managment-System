@@ -171,6 +171,7 @@ class RolePermissionSeeder extends Seeder
 
         $this->call(ObjectiveCollaborationPermissionSeeder::class);
         $this->call(ObjectiveProgressPermissionSeeder::class);
+        $this->call(AdministrativePlanningPermissionSeeder::class);
 
         // Include permissions created by the feature seeders above as well.
         $testRole = Role::query()->where('role_name', 'test')->first();

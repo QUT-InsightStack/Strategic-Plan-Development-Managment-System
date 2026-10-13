@@ -252,8 +252,9 @@ function approvalStatusClass(status) {
         {
             className:
                 'ui-button ui-button--secondary ui-button--sm',
-            href:
-                `/strategic-plans/${plan.record_id}/edit`,
+            href: plan.status === 'draft'
+    ? `/strategic-plans/${plan.record_id}/overview`
+    : `/strategic-plans/${plan.record_id}/edit`,
             'aria-label': `Edit ${plan.title}`,
         },
         React.createElement('i', {

@@ -34,8 +34,12 @@ class PlanApprovalService
 
     private function startSubmission(int $planId, User $actor, ?int $previousSubmissionId = null, ?string $note = null): PlanSubmission
     {
-        abort_unless($actor->status === 'active' && in_array($actor->role?->role_name, ['Planning Officer', 'Administrator', 'test'], true),
-            403, 'Only authorised Planning Officers may submit strategic plans.');
+        abort_unless(
+    $actor->status === 'active'
+        && in_array($actor->role?->role_name, Role::PLANNING_ROLES, true),
+    403,
+    'Only authorised planning users may submit strategic plans.'
+);
 
         return DB::transaction(function () use ($planId, $actor, $previousSubmissionId, $note) {
             $workflow = ApprovalWorkflow::lockForUpdate()->findOrFail(1);
@@ -64,6 +68,26 @@ class PlanApprovalService
                 'objectives.comments', 'objectives.documents', 'inputs', 'documents', 'parents',
             ]);
             $this->validatePlan($plan);
+            $stageReviewers = [];
+
+foreach ($workflow->stages as $stage) {
+    $reviewers = $this->workflows->reviewers($stage->toArray())
+        ->reject(
+            fn ($reviewer) =>
+                (int) $reviewer->user_id === (int) $actor->user_id
+        )
+        ->values();
+
+    if ($reviewers->isEmpty()) {
+        throw ValidationException::withMessages([
+            'workflow' => 'Stage "'.$stage->name
+                .'" has no eligible reviewer after excluding the submitter. '
+                .'Ask a Technical Administrator to assign another reviewer.',
+        ]);
+    }
+
+    $stageReviewers[$stage->id] = $reviewers;
+}
             // Keep the existing lifecycle and its database guards; approval has its own status.
             $plan->forceFill(['status' => 'finished', 'approval_status' => 'under_approval', 'updated_by' => $actor->user_id])->save();
             $snapshot = $plan->toArray();
@@ -86,7 +110,7 @@ class PlanApprovalService
                 'previous_submission_id' => $previousSubmissionId,
             ]);
             foreach ($workflow->stages as $stage) {
-                $reviewers = $this->workflows->reviewers($stage->toArray());
+                $reviewers = $stageReviewers[$stage->id];
                 $instance = $submission->stages()->create([
                     'name' => $stage->name, 'sequence' => $stage->sequence,
                     'approver_type' => $stage->user_id ? 'user' : 'role',
@@ -174,19 +198,24 @@ class PlanApprovalService
                 'status' => $latest?->status ?? 'not_submitted', 'current_submission' => $current,
                 'current_stage' => $latest?->current_sequence === null ? null : $cycles->last()->stages->firstWhere('sequence', $latest->current_sequence),
                 'cycles' => $summaries, 'history' => $history,
-                'can_review' => $latest && $this->isParticipant($latest, $actor),
+                'can_review' => $latest && $this->isAssignedReviewer($latest, $actor),
                 'can_resubmit' => $manager && $latest?->status === 'rejected' && $plan->approval_status === 'rejected'
                     && in_array($plan->status, ['draft', 'finished'], true),
             ];
         });
     }
 
-    private function canManageApproval(User $actor): bool
-    {
-        return $actor->status === 'active' && ($actor->role?->role_name === 'Administrator'
-            || ($actor->role?->role_name === 'Planning Officer'
-                && app(PermissionAuthorizationService::class)->userPermissionCodes($actor)->contains('strategic_records.update')));
-    }
+   private function canManageApproval(User $actor): bool
+{
+    return $actor->status === 'active'
+        && in_array($actor->role?->role_name, Role::PLANNING_ROLES, true)
+        && (
+            $actor->role?->hasFullAccess()
+            || app(PermissionAuthorizationService::class)
+                ->userPermissionCodes($actor)
+                ->contains('strategic_records.update')
+        );
+}
 
     public function authorizeParticipant(PlanSubmission $submission, User $actor): void
     {
@@ -200,6 +229,20 @@ class PlanApprovalService
             || $submission->stages()->whereHas('reviewers', fn ($query) => $query->where('tblusers.user_id', $actor->user_id))->exists());
     }
 
+    private function isAssignedReviewer(PlanSubmission $submission, User $actor): bool
+{
+    return $actor->status === 'active'
+        && (int) $submission->submitted_by !== (int) $actor->user_id
+        && $submission->status === 'under_approval'
+        && $submission->stages()
+            ->where('sequence', $submission->current_sequence)
+            ->whereHas(
+                'reviewers',
+                fn ($query) =>
+                    $query->where('tblusers.user_id', $actor->user_id)
+            )
+            ->exists();
+}
     public function decide(int $planId, array $data, User $actor): PlanSubmission
     {
         return DB::transaction(function () use ($planId, $data, $actor) {
@@ -208,6 +251,11 @@ class PlanApprovalService
                 409, 'An archived plan can only be returned for correction. Restore it before approval.');
             $submission = PlanSubmission::where('plan_id', $planId)->latest('id')->lockForUpdate()->firstOrFail();
             $this->authorizeParticipant($submission, $actor);
+            abort_if(
+    (int) $submission->submitted_by === (int) $actor->user_id,
+    403,
+    'You cannot review or decide your own plan submission.'
+);
             abort_unless($submission->status === 'under_approval' && $submission->id === (int) $data['submission_id'],
                 409, 'This approval submission is no longer current. Reload the review.');
             $stage = $submission->stages()->where('sequence', $submission->current_sequence)->firstOrFail();

@@ -24,8 +24,14 @@ class ImplementationInputAccessService
             ])->isNotEmpty(), 403, 'You are not authorized to view submitted inputs.');
     }
 
-    public function viewsPlanningScope(User $actor): bool
+ public function viewsPlanningScope(User $actor): bool
 {
+    // Office roles remain restricted to their Office,
+    // even if they receive an extra view_all permission.
+    if (in_array($actor->role?->role_name, self::OFFICE_ROLES, true)) {
+        return false;
+    }
+
     return in_array($actor->role?->role_name, [
         'Administrator',
         'test',
@@ -33,9 +39,11 @@ class ImplementationInputAccessService
         'Administrative Admin',
         'Administrative Administrator',
         ...self::MANAGEMENT_ROLES,
-    ], true);
+    ], true)
+        || $this->permissions
+            ->userPermissionCodes($actor)
+            ->contains('implementation_inputs.view_all');
 }
-
     public function office(User $actor): ResponsibleUnit
     {
         $unit = ResponsibleUnit::where('name_key', ResponsibleUnit::nameKey($actor->office ?? ''))
@@ -63,7 +71,16 @@ if (in_array($actor->role?->role_name, [
 if ($actor->role?->role_name === 'Planning Officer') {
     return $query->where('created_by', $actor->user_id);
 }
-        $unit = $this->office($actor);
+// Custom viewers use explicit grants, not organisation-wide access.
+if (!in_array($actor->role?->role_name, self::OFFICE_ROLES, true)) {
+    return $query->whereIn(
+        'record_id',
+        DB::table('tblimplementation_input_scopes')
+            ->where('user_id', $actor->user_id)
+            ->select('strategic_plan_id')
+    );
+}
+$unit = $this->office($actor);
 
         return $query->where(fn (Builder $scope) => $scope
             ->whereHas('objectives', fn (Builder $q) => $q->where('status', '!=', 'deleted')

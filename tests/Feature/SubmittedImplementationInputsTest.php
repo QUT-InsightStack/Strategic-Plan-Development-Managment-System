@@ -65,6 +65,11 @@ class SubmittedImplementationInputsTest extends TestCase
         $this->approved = $this->input($this->objective, $this->office, 'Approved', 'issue');
         $this->rejected = $this->input($this->otherObjective, $this->otherOffice, 'Rejected', 'change_request');
         $this->outside = $this->input($outsideObjective, $this->otherOffice, 'Pending Review', 'progress_update');
+        $otherPlanner = $this->user('Planning Officer');
+
+$this->outsidePlan->update([
+    'created_by' => $otherPlanner->user_id,
+]);
     }
 
     public function test_authentication_and_view_permission_are_required_on_every_read_route(): void
@@ -95,15 +100,35 @@ class SubmittedImplementationInputsTest extends TestCase
         $this->getJson('/api/implementation-inputs?page=20')->assertOk()->assertJsonCount(0, 'data')->assertJsonPath('meta.total', 3);
     }
 
-    public function test_missing_scope_does_not_infer_access_from_plan_ownership_or_department(): void
-    {
-        DB::table('tblimplementation_input_scopes')->delete();
-        $this->authenticateApiUser($this->planner);
-        $this->getJson('/api/implementation-inputs')->assertOk()->assertJsonCount(0, 'data')
-            ->assertJsonPath('meta.summary', ['Pending Review' => 0, 'Approved' => 0, 'Rejected' => 0])
-            ->assertJsonCount(0, 'meta.filters.plans')->assertJsonCount(0, 'meta.filters.offices');
-        $this->getJson('/api/strategic-plans/'.$this->plan->record_id.'/inputs')->assertForbidden();
-    }
+public function test_planner_access_uses_ownership_without_manual_scope_grants(): void
+{
+    DB::table('tblimplementation_input_scopes')->delete();
+
+    $this->authenticateApiUser($this->planner);
+
+    $this->getJson('/api/implementation-inputs')
+        ->assertOk()
+        ->assertJsonCount(3, 'data')
+        ->assertJsonPath('meta.summary', [
+            'Pending Review' => 1,
+            'Approved' => 1,
+            'Rejected' => 1,
+        ])
+        ->assertJsonCount(1, 'meta.filters.plans')
+        ->assertJsonCount(2, 'meta.filters.offices')
+        ->assertJsonMissing(['input_id' => $this->outside->input_id]);
+
+    $this->getJson(
+        '/api/strategic-plans/'.$this->plan->record_id.'/inputs'
+    )->assertOk();
+
+    // A legacy grant must not expose another creator's plan.
+    $this->grant($this->planner, $this->outsidePlan);
+
+    $this->getJson(
+        '/api/strategic-plans/'.$this->outsidePlan->record_id.'/inputs'
+    )->assertForbidden();
+}
 
     public function test_out_of_scope_plan_objective_detail_and_review_requests_are_rejected(): void
     {
@@ -115,7 +140,13 @@ class SubmittedImplementationInputsTest extends TestCase
             '/api/implementation-inputs/'.$this->outside->input_id] as $url) {
             $this->getJson($url)->assertForbidden();
         }
-        $this->postJson('/api/implementation-inputs/'.$this->outside->input_id.'/review', ['status' => 'Approved'])->assertForbidden();
+        $this->postJson(
+    '/api/implementation-inputs/'.$this->outside->input_id.'/review',
+    [
+        'status' => 'Approved',
+        'review_note' => 'Testing ownership protection.',
+    ]
+)->assertForbidden();
         $this->assertSame('Pending Review', $this->outside->fresh()->review_status);
     }
 
@@ -165,7 +196,10 @@ class SubmittedImplementationInputsTest extends TestCase
             $this->getJson('/api/implementation-inputs?'.$query)->assertUnprocessable();
         }
         $this->getJson('/api/strategic-plans/'.$this->plan->record_id.'/inputs?plan_id='.$this->outsidePlan->record_id)->assertUnprocessable();
-        $this->grant($this->planner, $this->outsidePlan);
+        // Both plans must be accessible to test conflicting identifiers.
+$this->outsidePlan->update([
+    'created_by' => $this->planner->user_id,
+]);
         $this->getJson('/api/implementation-inputs?plan_id='.$this->plan->record_id.'&objective_id='.$this->outside->objective_id)->assertUnprocessable();
         $this->getJson('/api/implementation-inputs/99999999')->assertNotFound();
     }
@@ -259,7 +293,10 @@ class SubmittedImplementationInputsTest extends TestCase
             $mock->shouldReceive('write')->once()->andThrow(new \RuntimeException('Audit unavailable'));
         });
         $before = $this->pending->fresh()->getAttributes();
-        $this->postJson($this->reviewUrl(), ['status' => 'Approved'])->assertStatus(500);
+        $this->postJson($this->reviewUrl(), [
+    'status' => 'Approved',
+    'review_note' => 'Accepting the submitted input.',
+])->assertStatus(500);
         $this->assertSame($before, $this->pending->fresh()->getAttributes());
     }
 
@@ -268,7 +305,10 @@ class SubmittedImplementationInputsTest extends TestCase
         $this->objective->update(['status' => 'archived', 'status_before_archive' => 'draft', 'archived_at' => now(), 'archived_by' => $this->planner->user_id]);
         $this->authenticateApiUser($this->planner);
         $this->getJson('/api/implementation-inputs')->assertOk()->assertJsonPath('meta.total', 3)->assertJsonPath('data.0.can_review', false);
-        $this->postJson($this->reviewUrl(), ['status' => 'Approved'])->assertConflict();
+        $this->postJson($this->reviewUrl(), [
+    'status' => 'Approved',
+    'review_note' => 'Testing archived input protection.',
+])->assertConflict();
         $this->objective->update(['status' => 'deleted', 'deleted_at' => now(), 'status_before_archive' => null, 'archived_at' => null, 'archived_by' => null]);
         $this->getJson('/api/implementation-inputs')->assertOk()->assertJsonPath('meta.total', 1);
         $this->getJson('/api/strategic-objectives/'.$this->objective->objective_id.'/inputs')->assertNotFound();
@@ -286,7 +326,7 @@ class SubmittedImplementationInputsTest extends TestCase
         $this->getJson('/api/implementation-inputs')->assertForbidden();
     }
 
-    public function test_administrator_manages_scope_idempotently_and_revocation_applies_immediately(): void
+    public function test_administrator_manages_scope_idempotently_without_revoking_owner_access(): void
     {
         $url = '/api/strategic-plans/'.$this->plan->record_id.'/input-scope';
         $this->authenticateApiUser($this->planner);
@@ -297,8 +337,20 @@ class SubmittedImplementationInputsTest extends TestCase
         $this->putJson($url, ['user_ids' => [$this->office->user_id]])->assertUnprocessable();
         $this->putJson($url, ['user_ids' => []])->assertOk()->assertExactJson(['success' => true, 'data' => []]);
         $this->authenticateApiUser($this->planner);
-        $this->getJson('/api/implementation-inputs')->assertOk()->assertJsonPath('meta.total', 0);
-        $this->postJson($this->reviewUrl(), ['status' => 'Approved'])->assertForbidden();
+        $this->getJson('/api/implementation-inputs')
+    ->assertOk()
+    ->assertJsonPath('meta.total', 3)
+    ->assertJsonMissing(['input_id' => $this->outside->input_id]);
+
+$this->postJson($this->reviewUrl(), [
+    'status' => 'Approved',
+    'review_note' => 'The plan owner retains review access.',
+])->assertOk();
+
+$this->assertSame(
+    'Approved',
+    $this->pending->fresh()->review_status
+);
         $this->authenticateApiUser($admin);
         $this->putJson($url, ['user_ids' => [$this->planner->user_id]])->assertOk();
         $before = DB::table('tblimplementation_input_scopes')->get()->toJson();

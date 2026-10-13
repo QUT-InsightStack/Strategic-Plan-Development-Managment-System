@@ -75,5 +75,17 @@
 .mapping-agency-chain div { padding: var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-sm); background: #f7fbff; font-size: var(--font-size-xs); }
 .mapping-agency-chain strong { display: block; margin-bottom: var(--space-1); color: var(--color-primary); }
 .mapping-empty { padding: var(--space-6); color: var(--color-text-secondary); text-align: center; }
+.mapping-navigation-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin: 16px 0 24px;
+}
+
+.mapping-navigation-actions .ui-button {
+    width: auto;
+    white-space: nowrap;
+}
 @media (max-width: 950px) { .mapping-levels { grid-template-columns: 1fr; } .mapping-arrow { transform: rotate(90deg); justify-self: center; } .mapping-agency-chain, .mapping-reference-layout { grid-template-columns: 1fr; } }
 @media (max-width: 680px) { .mapping-context, .mapping-agency-chain { grid-template-columns: 1fr; } .mapping-reference-submit { width: 100%; } }

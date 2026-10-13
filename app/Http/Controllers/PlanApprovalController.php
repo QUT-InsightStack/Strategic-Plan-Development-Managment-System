@@ -11,6 +11,7 @@ use App\Services\StrategicDocumentService;
 use App\Services\StrategicPlanAuthorizationService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Models\Role;
 
 class PlanApprovalController extends Controller
 {
@@ -41,7 +42,11 @@ class PlanApprovalController extends Controller
     public function preparation(Request $request, int $plan, StrategicPlanAuthorizationService $access)
     {
         $actor = $request->user('api');
-        abort_unless(in_array($actor->role?->role_name, ['Planning Officer', 'Administrator', 'test'], true), 403);
+        abort_unless(
+    $actor->status === 'active'
+        && in_array($actor->role?->role_name, Role::PLANNING_ROLES, true),
+    403
+);
         $record = Strategic::findOrFail($plan);
         $access->ensureCanUpdatePlan($record, $actor);
 
@@ -60,7 +65,8 @@ class PlanApprovalController extends Controller
         $actor = $request->user('api');
         $data = $request->validate(['per_page' => ['sometimes', 'integer', 'min:1', 'max:100']]);
         $submissions = PlanSubmission::where('status', 'under_approval')
-            ->whereHas('stages', fn ($query) => $query->where('status', 'current')
+        ->where('submitted_by', '!=', $actor->user_id)
+        ->whereHas('stages', fn ($query) => $query->where('status', 'current')
                 ->whereHas('reviewers', fn ($query) => $query->where('tblusers.user_id', $actor->user_id)))
             ->with(['stages.reviewers', 'history'])->orderBy('submitted_at')->paginate($data['per_page'] ?? 25);
 

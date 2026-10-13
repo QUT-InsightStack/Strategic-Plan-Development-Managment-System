@@ -11,10 +11,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use App\Models\Role;
 
 class ObjectiveProgressService
 {
-    private const PLANNING_ROLES = ['Administrator', 'Planning Officer', 'Planner/Encoder', 'test'];
 
     private const OFFICE_ROLES = ['Office', 'Responsible Unit User', 'Office Representative', 'Office/Agency', 'Offices / Agencies'];
 
@@ -25,7 +25,7 @@ class ObjectiveProgressService
 
     private function isPlanner(User $actor): bool
     {
-        return in_array($actor->role?->role_name, self::PLANNING_ROLES, true);
+        return in_array($actor->role?->role_name, Role::PLANNING_ROLES, true);
     }
 
     private function office(User $actor, bool $lock = false): ResponsibleUnit
