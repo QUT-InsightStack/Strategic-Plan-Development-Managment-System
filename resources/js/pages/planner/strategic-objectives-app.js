@@ -1,7 +1,7 @@
 import { getStrategicPlan, updateStrategicPlan } from '../../api/strategic-plans-api.js';
 import {
     createStrategicObjective, updateStrategicObjective, deleteStrategicObjective,
-    listStrategicObjectives, assignResponsibleUnit, listResponsibleUnits, updateStrategicObjectiveStatus,
+    listStrategicObjectives, assignResponsibleUnit, listResponsibleUnits, updateStrategicObjectiveStatus,assignResponsibleUnitById,
 } from '../../api/strategic-objectives-api.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { AppDialog } from '../../components/AppDialog.js';
@@ -72,8 +72,32 @@ function StrategicObjectivesApp() {
     }
     useEffect(() => {
         load();
-        if (canUpdate) listResponsibleUnits({ per_page: 100 }).then(result => setUnits((result.data || []).map(unit => unit.responsible_office_agency)))
-            .catch(error => setStatus({ type: 'info', message: `Office suggestions could not load: ${error.message}. You can still enter the exact Office / Agency name.` }));
+        if (canUpdate) {
+    (async () => {
+        try {
+            const allUnits = [];
+            let currentPage = 1;
+            let lastPage = 1;
+
+            do {
+                const result = await listResponsibleUnits({
+                    page: currentPage,
+                    per_page: 100,
+                });
+                allUnits.push(...(result.data || []));
+                lastPage = result.meta?.last_page || 1;
+                currentPage++;
+            } while (currentPage <= lastPage);
+
+            setUnits(allUnits);
+        } catch (error) {
+            setStatus({
+                type: 'error',
+                message: `Office list could not load: ${error.message}. Refresh the page to try again.`,
+            });
+        }
+    })();
+}
     }, []);
     useEffect(() => {
         if (!notesDirty) return;
@@ -115,9 +139,20 @@ function StrategicObjectivesApp() {
         if (!canUpdate || !mutable || busy || !assigning) return;
         setBusy(true); setAssignmentError('');
         try {
-            const result = await assignResponsibleUnit(assigning.objective_id, unit);
+            const result = await assignResponsibleUnitById(
+    assigning.objective_id,
+    unit
+);
             setObjectives(items => items.map(item => item.objective_id === result.data.objective_id ? result.data : item));
-            setAssigning(null); setStatus({ type: 'success', message: `Objective assigned to ${unit}.` });
+            const officeName = units.find(
+    item => Number(item.responsible_unit_id) === Number(unit)
+)?.responsible_office_agency || 'the selected Office/Unit';
+
+setAssigning(null);
+setStatus({
+    type: 'success',
+    message: `Objective assigned to ${officeName}.`,
+});
         } catch (error) { setAssignmentError(errorText(error)); }
         finally { setBusy(false); }
     }
@@ -209,8 +244,8 @@ function StrategicObjectivesApp() {
                     h('button', { className: 'ui-button ui-button--secondary', type: 'button', disabled: busy || loading || !canSaveNotes, onClick: () => saveDraft() }, busy ? 'Saving…' : 'Save as a draft'),
                     h('button', { className: 'ui-button ui-button--primary', type: 'button', disabled: busy || loading || !mutable || !canMap, onClick: () => saveDraft(true) }, 'Next: Strategic Mapping')),
                 can(P.OBJECTIVES_VIEW_PROGRESS) && h('details', { className: 'objectives-progress' }, h('summary', null, 'Monitor and update progress'), h(ObjectiveProgressPanel, { planId }))))),
-        h(ObjectiveFormDialog, { open: form.open, objective: form.objective, readOnly: form.readOnly, submitting: busy, serverErrors: formErrors, submitError: formError, planLabel: plan?.title, onSave: saveObjective, onClose: () => { if (!busy) setForm({ open: false, objective: null, readOnly: false }); } }),
-        h(AssignUnitDialog, { objective: assigning, submitting: busy, error: assignmentError, availableUnits: getAssignableUnits(objectives, [getAccessSession()?.office, ...units]), onAssign: assignUnit, onClose: () => { if (!busy) setAssigning(null); } }),
+        h(ObjectiveFormDialog, { open: form.open, objective: form.objective, readOnly: form.readOnly, submitting: busy, serverErrors: formErrors, submitError: formError, planLabel: plan?.title,availableUnits: units, onSave: saveObjective, onClose: () => { if (!busy) setForm({ open: false, objective: null, readOnly: false }); } }),
+        h(AssignUnitDialog, { objective: assigning, submitting: busy, error: assignmentError, availableUnits: units, onAssign: assignUnit, onClose: () => { if (!busy) setAssigning(null); } }),
         h(AppDialog, { open: Boolean(confirmation), variant: confirmation?.action === 'restore' ? 'success' : 'danger', title: `${confirmation?.action || ''} objective?`, message: confirmation ? `${confirmation.action === 'delete' ? 'Permanently delete' : confirmation.action} “${confirmation.objective.objective_title}”?` : '', confirmLabel: busy ? 'Saving…' : 'Confirm', onConfirm: confirmAction, onCancel: () => { if (!busy) setConfirmation(null); } }));
 }
 

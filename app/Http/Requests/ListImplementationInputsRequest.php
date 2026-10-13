@@ -22,6 +22,7 @@ class ListImplementationInputsRequest extends ListObjectiveFeedbackRequest
             'objective_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'responsible_unit_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'input_type' => ['sometimes', 'nullable', Rule::in(ImplementationInput::TYPES)],
+            'feedback_category' => [ 'sometimes', 'nullable',Rule::in(ImplementationInput::FEEDBACK_CATEGORIES),],
             'status' => ['sometimes', 'nullable', Rule::in(ImplementationInput::STATUSES)],
             'submitted_from' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             'submitted_to' => ['sometimes', 'nullable', 'date_format:Y-m-d', ...($this->filled('submitted_from') ? ['after_or_equal:submitted_from'] : [])],

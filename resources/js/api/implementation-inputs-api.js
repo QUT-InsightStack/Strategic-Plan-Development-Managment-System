@@ -19,9 +19,25 @@ export function listObjectiveInputs(objectiveId, params = {}) {
     return apiRequest(`/api/strategic-objectives/${objectiveId}/inputs?${new URLSearchParams(params)}`);
 }
 
-export function submitPlanInput(planId, { content, input_type, objective_id = null }) {
+export function submitPlanInput(planId, {
+    content,
+    input_type,
+    objective_id = null,
+    feedback_category = null,
+    mapping_type = null,
+    mapping_reference_id = null,
+}) {
+    const body = { content, input_type, objective_id };
+
+    if (feedback_category) body.feedback_category = feedback_category;
+    if (mapping_type) body.mapping_type = mapping_type;
+    if (mapping_reference_id != null) {
+        body.mapping_reference_id = Number(mapping_reference_id);
+    }
+
     return apiRequest(`/api/strategic-plans/${planId}/inputs`, {
-        method: 'POST', body: JSON.stringify({ content, input_type, objective_id }),
+        method: 'POST',
+        body: JSON.stringify(body),
     });
 }
 

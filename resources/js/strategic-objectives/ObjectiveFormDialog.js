@@ -92,6 +92,7 @@ export function ObjectiveFormDialog({
     submitError = '',
     planLabel = '',
     readOnly = false,
+    availableUnits = [],
     onSave,
     onClose,
 }) {
@@ -177,12 +178,46 @@ export function ObjectiveFormDialog({
             label: 'Target', name: 'target', value: form.target, onChange: change, error: errors.target,
             disabled: readOnly || submitting, placeholder: 'e.g. 50 projects by 2032',
         }),
-        React.createElement(ObjectiveField, {
-            label: 'Responsible Office/Agency',
-            name: 'responsible_office_agency',
-            value: form.responsible_office_agency, onChange: change, error: errors.responsible_office_agency,
-            disabled: readOnly || submitting, placeholder: 'Exact Office / Agency name',
-        })
+        React.createElement('div', { className: 'ui-field' },
+    React.createElement('label', {
+        className: 'ui-label',
+        htmlFor: 'objective-responsible-office',
+    }, 'Responsible Office/Unit'),
+
+    React.createElement('select', {
+        id: 'objective-responsible-office',
+        name: 'responsible_office_agency',
+        className: 'ui-select',
+        value: form.responsible_office_agency,
+        onChange: change,
+        disabled: readOnly || submitting || availableUnits.length === 0,
+        'aria-invalid': Boolean(errors.responsible_office_agency),
+    },
+        React.createElement('option', { value: '' }, 'Unassigned'),
+        form.responsible_office_agency
+            && !availableUnits.some(unit =>
+                unit.responsible_office_agency === form.responsible_office_agency
+            )
+            && React.createElement('option', {
+                value: form.responsible_office_agency,
+                disabled: true,
+            }, `${form.responsible_office_agency} (currently unavailable)`),
+        availableUnits.map(unit => React.createElement('option', {
+            key: unit.responsible_unit_id,
+            value: unit.responsible_office_agency,
+        }, unit.responsible_office_agency))
+    ),
+
+    React.createElement('small', { className: 'ui-help' },
+        'Select the Office/Unit responsible for this objective.'),
+
+    errors.responsible_office_agency && React.createElement('p', {
+        className: 'ui-error',
+        role: 'alert',
+    }, Array.isArray(errors.responsible_office_agency)
+        ? errors.responsible_office_agency[0]
+        : errors.responsible_office_agency)
+)
 ),
             React.createElement('div', { className: 'objective-modal__actions' }, React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', onClick: onClose, disabled: submitting }, readOnly ? 'Close' : 'Cancel'), readOnly ? null : React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: submit, disabled: submitting }, submitting ? 'Saving…' : (objective ? 'Save Changes' : 'Add Objective')))
         )
