@@ -35,6 +35,14 @@ export function assignResponsibleUnitToObjectives(objectiveIds, responsibleUnitI
         method: 'PUT', body: JSON.stringify({ objective_ids: objectiveIds, responsible_unit_id: responsibleUnitId }),
     });
 }
+export function assignResponsibleUnitById(objectiveId, responsibleUnitId) {
+    return apiRequest(`${baseUrl}/${objectiveId}/responsible-unit`, {
+        method: 'PUT',
+        body: JSON.stringify({
+            responsible_unit_id: Number(responsibleUnitId),
+        }),
+    });
+}
 
 export function listResponsibleUnits(params = {}) {
     return apiRequest(`/api/responsible-units?${new URLSearchParams(params)}`);

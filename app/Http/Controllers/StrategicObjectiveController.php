@@ -83,6 +83,7 @@ class StrategicObjectiveController extends Controller
             ->where('status', '!=', 'deleted')
             ->whereIn('strategic_plan_id', $authorizedPlanIds->all())
             ->whereHas('strategicPlan', fn (Builder $builder) => $builder->where('status', '!=', 'deleted'));
+            $this->authorizationService->scopeObjectivesForUser($query, $user);
 
         if (! empty($filters['search'])) {
             $search = trim((string) $filters['search']);
@@ -149,11 +150,13 @@ class StrategicObjectiveController extends Controller
             $request->boolean('include_all_office_plans')
         );
 
-        $objectives = StrategicObjective::with(self::RESPONSE_RELATIONS)
-            ->where('strategic_plan_id', $planId)
-            ->where('status', '!=', 'deleted')
-            ->orderBy('objective_id')
-            ->get();
+        $query = StrategicObjective::with(self::RESPONSE_RELATIONS)
+        ->where('strategic_plan_id', $planId)
+        ->where('status', '!=', 'deleted');
+
+    $this->authorizationService->scopeObjectivesForUser($query, $user);
+
+    $objectives = $query->orderBy('objective_id')->get();
 
         return response()->json([
             'success' => true,
@@ -169,7 +172,10 @@ class StrategicObjectiveController extends Controller
             $user,
             'You are not authorized to view strategic objectives.'
         );
-        $objective = $this->findObjectiveForRead($id);
+        $query = StrategicObjective::with(self::RESPONSE_RELATIONS)
+        ->where('status', '!=', 'deleted');
+        $this->authorizationService->scopeObjectivesForUser($query, $user);
+        $objective = $query->find($id);
 
         if (! $objective || $objective->strategicPlan?->status === 'deleted') {
             return response()->json(['message' => 'Not found'], 404);

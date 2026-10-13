@@ -115,7 +115,7 @@ class StrategicPlanAuthorizationService
     {
         $user = $this->permissionAuthorizationService->resolveUser($user);
 
-        if (in_array($user->role?->role_name, self::OFFICE_ROLES, true) && ! $includeAllOfficePlans) {
+        if (in_array($user->role?->role_name, self::OFFICE_ROLES, true)) {
             $unit = $this->activeOfficeUnit($user);
             abort_unless($unit && $plan->objectives()
                 ->whereHas('responsibleUnitAssignment', fn (Builder $query) => $query->where('responsible_unit_id', $unit->responsible_unit_id))
@@ -127,7 +127,7 @@ class StrategicPlanAuthorizationService
 
     private function applyApprovedListingScopeHook(Builder $query, User $user, bool $includeAllOfficePlans = false): void
     {
-        if (! in_array($user->role?->role_name, self::OFFICE_ROLES, true) || $includeAllOfficePlans) {
+        if (! in_array($user->role?->role_name, self::OFFICE_ROLES, true)) {
             return;
         }
 
@@ -139,6 +139,28 @@ class StrategicPlanAuthorizationService
 
         $query->whereHas('objectives.responsibleUnitAssignment', fn (Builder $assignment) =>
             $assignment->where('responsible_unit_id', $unit->responsible_unit_id));
+    }
+
+    public function scopeObjectivesForUser(Builder $query, User $user): void
+    {
+        if (! in_array($user->role?->role_name, self::OFFICE_ROLES, true)) {
+            return;
+        }
+
+        $unit = $this->activeOfficeUnit($user);
+
+        if (! $unit) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        $query->whereHas(
+            'responsibleUnitAssignment',
+            fn (Builder $assignment) => $assignment->where(
+                'responsible_unit_id',
+                $unit->responsible_unit_id
+            )
+        );
     }
 
     private function activeOfficeUnit(User $user): ?ResponsibleUnit

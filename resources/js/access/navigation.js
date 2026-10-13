@@ -10,7 +10,7 @@ export function navigationRole(role) {
     if (['Management', 'Executive', 'Management / Executive', 'Division Head'].includes(role)) return 'management';
     return 'planner';
 }
-const review = page('office-review', 'Plan Review', '/office', ['strategic_records.view']);
+const review = page('office-review', 'Plans & Objectives', '/office', ['strategic_records.view']);
 const upload = page('office-upload', 'Upload Planning Files', '/office?view=inputs', ['strategic_records.view', 'strategic_documents.upload']);
 const progress = page('progress', 'Objective Progress', '/office?view=progress', ['strategic_records.view'], { anyPermissions: ['strategic_objectives.view_progress', 'strategic_objectives.update_progress', 'strategic_objectives.correct_progress'] });
 const mapping = page('mapping', 'Strategic Mapping', '/mappings', ['strategic_records.view', 'strategic_objectives.view'], { anyPermissions: ['strategic_objectives.update', 'strategic_alignments.archive', 'strategic_alignments.delete'] });
@@ -47,11 +47,9 @@ export const roleNavigation = {
     group('monitoring', 'Monitoring', [progress, pending('planner-monitoring', 'Monitoring Dashboard'), pending('planner-reports', 'Reports')], 'bi-graph-up'),
     group('reviews', 'Reviews', [page('reviews', 'Plan Reviews', '/management-approvals')])],
     office: [group('planning', 'Planning', [review, upload,
-        page('proposals', 'Proposed Objectives', '/office?view=proposal', ['strategic_records.view', 'implementation_inputs.create']),
-        page('comments', 'Plan Comments', '/office?view=comments', ['strategic_records.view', 'objective_comments.create']),
-        page('input-status', 'Input Submission Status', '/consolidate-inputs', ['implementation_inputs.view']),
+        page('input-status', 'My Inputs', '/consolidate-inputs', ['implementation_inputs.view']),
         page('edit-objectives', 'Edit Objectives', '/office?view=edit', ['strategic_records.view', 'strategic_objectives.update']),
-    ]), group('mapping', 'Agency Mapping', [{ ...mapping, label: 'Add Agency to Mapping' }, alignment], 'bi-map'),
+    ]), group('mapping', 'Strategic Alignment', [alignment], 'bi-map'),
     group('monitoring', 'Monitoring', [{ ...progress, label: 'Progress Updates' }, pending('office-monitoring', 'Monitoring Dashboard'), pending('office-reports', 'Reports')], 'bi-graph-up')],
     management: [page('approval-list', 'Approve List', '/management-approvals', [], { icon: 'bi-clipboard-check' }),
         page('plan-review', 'Plan Review', '/management-plan-review', ['strategic_records.view'], { icon: 'bi-journal-text' }),
