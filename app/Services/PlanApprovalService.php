@@ -204,6 +204,8 @@ class PlanApprovalService
     {
         return DB::transaction(function () use ($planId, $data, $actor) {
             $plan = Strategic::lockForUpdate()->findOrFail($planId);
+            abort_unless($plan->status === 'finished' || ($plan->status === 'archived' && $data['decision'] === 'reject'),
+                409, 'An archived plan can only be returned for correction. Restore it before approval.');
             $submission = PlanSubmission::where('plan_id', $planId)->latest('id')->lockForUpdate()->firstOrFail();
             $this->authorizeParticipant($submission, $actor);
             abort_unless($submission->status === 'under_approval' && $submission->id === (int) $data['submission_id'],
