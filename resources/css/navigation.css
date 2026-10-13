@@ -1,5 +1,3 @@
-.app-sidebar__subitem { display: flex; align-items: center; gap: 8px; }
-.app-sidebar__subitem small { margin-left: auto; font-size: 12px; }
 .navigation-locked { opacity: .65; cursor: not-allowed; }
 .module-hub { max-width: 1400px; margin: 0 auto; }
 .module-hub__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 16px 0 28px; }
