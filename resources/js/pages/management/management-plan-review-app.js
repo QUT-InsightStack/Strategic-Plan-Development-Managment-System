@@ -1,4 +1,5 @@
 import { createPageRoot } from '../../navigation/page-root.js';
+import { usePageQuery } from '../../navigation/use-page-query.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { apiRequest } from '../../api/api-client.js';
 import { listAuthorizedManagementPlans } from './management-data.js';
@@ -11,13 +12,17 @@ import { isManagementSession } from '../../access/management-access.js';
 const h = React.createElement;
 
 function PlanReviewPage({ session }) {
-    const query = new URLSearchParams(window.location.search);
+    const pageQuery = usePageQuery();
+    const query = new URLSearchParams(pageQuery);
     const objectivesMode = query.get('view') === 'objectives';
     const [plans, setPlans] = React.useState([]);
     const [selectedPlanId, setSelectedPlanId] = React.useState(query.get('plan') || '');
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState('');
     const [attempt, setAttempt] = React.useState(0);
+    React.useEffect(() => {
+        setSelectedPlanId(new URLSearchParams(pageQuery).get('plan') || '');
+    }, [pageQuery]);
     function choosePlan(id) {
         setSelectedPlanId(String(id));
         const url = new URL(window.location.href);
