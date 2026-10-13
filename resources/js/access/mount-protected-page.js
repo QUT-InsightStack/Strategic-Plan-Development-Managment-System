@@ -1,9 +1,10 @@
+import { createPageRoot } from '../navigation/page-root.js';
 import { loadAccessSession } from './use-access-session.js';
 import { enforcePageAccess } from './access-guard.js';
 
 // Evaluate page permissions only after the current account has been refreshed.
 export function mountProtectedPage(element, renderPage) {
-    const root = ReactDOM.createRoot(element);
+    const root = createPageRoot(element);
     async function mount() {
         root.render(React.createElement('p', { role: 'status', className: 'p-4' }, 'Loading account permissions…'));
         try {

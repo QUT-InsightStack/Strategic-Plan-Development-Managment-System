@@ -1,3 +1,4 @@
+import { createPageRoot } from '../../navigation/page-root.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
 import { getAccessSession } from '../../access/access-session.js';
@@ -1903,6 +1904,6 @@ h(
     );
 }
 
-ReactDOM.createRoot(root).render(
+createPageRoot(root).render(
     h(StrategicPlanReviewApp)
 );

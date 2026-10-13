@@ -1,3 +1,4 @@
+import { createPageRoot } from '../../navigation/page-root.js';
 import { BrandLogo } from '../../brand-logo.js';
 import { clearLogoutFlag } from '../../auth-session.js';
 import { createAccessSession, saveAccessSession } from '../../access/access-session.js';
@@ -460,4 +461,4 @@ function LoginApp() {
     );
 }
 
-ReactDOM.createRoot(rootElement).render(React.createElement(LoginApp));
+createPageRoot(rootElement).render(React.createElement(LoginApp));

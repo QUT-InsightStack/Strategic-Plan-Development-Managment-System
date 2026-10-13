@@ -1,3 +1,4 @@
+import { createPageRoot } from '../../navigation/page-root.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { apiRequest } from '../../api/api-client.js';
 import { listAuthorizedManagementPlans } from './management-data.js';
@@ -48,7 +49,7 @@ function PlanReviewPage({ session }) {
             h('footer', { className: 'management-dashboard__footer' }, '© 2026 Strategic Planning Management System. All rights reserved.'))));
 }
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = createPageRoot(document.getElementById('root'));
 root.render(h('p', { role: 'status' }, 'Loading Management access…'));
 apiRequest('/api/auth/me').then(payload => {
     const session = saveAccessSession(createAccessSession(payload.data));

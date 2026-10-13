@@ -1,3 +1,4 @@
+import { createPageRoot } from '../../navigation/page-root.js';
 import { canonicalOfficeUrl, canOpenPage } from '../../access/navigation.js';
 import { getAccessSession } from '../../access/access-session.js';
 import { OfficeWorkflow } from './office-workflow.js';
@@ -109,7 +110,7 @@ function OfficeApp() {
      h('button', { disabled: loading || query.page <= 1, onClick: () => setQuery({ ...query, page: query.page - 1 }), 'aria-label': 'Previous page' }, '‹'), h('span', null, `Page ${query.page} of ${meta.last_page || 1}`),
      h('button', { disabled: loading || query.page >= (meta.last_page || 1), onClick: () => setQuery({ ...query, page: query.page + 1 }), 'aria-label': 'Next page' }, '›'))))));
 }
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = createPageRoot(document.getElementById('root'));
 root.render(h('p', { role: 'status' }, 'Loading your office access…'));
 apiRequest('/api/auth/me').then(payload => {
  saveAccessSession(createAccessSession(payload.data));

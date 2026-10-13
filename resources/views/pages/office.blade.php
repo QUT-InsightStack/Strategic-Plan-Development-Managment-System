@@ -6,6 +6,7 @@
     <title>Offices / Agencies | SPDMS</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     @vite(['resources/css/office.css', 'resources/js/pages/office/office.js'])
+    <meta name="app-page-entry" content="{{ Vite::asset('resources/js/pages/office/office.js') }}">
 </head>
 <body>
     <div id="root"></div>

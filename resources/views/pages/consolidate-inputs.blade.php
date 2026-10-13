@@ -6,6 +6,7 @@
     <title>Submitted Office/Agency Inputs | SPDMS</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     @vite(['resources/css/consolidate-inputs.css', 'resources/js/pages/planner/consolidate-inputs-app.js'])
+    <meta name="app-page-entry" content="{{ Vite::asset('resources/js/pages/planner/consolidate-inputs-app.js') }}">
 </head>
 <body>
     <div id="root"></div>

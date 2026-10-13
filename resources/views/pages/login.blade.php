@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Log In | Strategic Planning Management System</title>
     @vite(['resources/css/login.css', 'resources/js/pages/auth/login-app.js'])
+    <meta name="app-page-entry" content="{{ Vite::asset('resources/js/pages/auth/login-app.js') }}">
 </head>
 <body>
     <div id="root" data-login-url="/api/auth/login"></div>

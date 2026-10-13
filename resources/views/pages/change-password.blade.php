@@ -10,6 +10,7 @@
         'resources/css/change-password.css',
         'resources/js/pages/auth/change-password-app.js'
     ])
+    <meta name="app-page-entry" content="{{ Vite::asset('resources/js/pages/auth/change-password-app.js') }}">
 </head>
 
 <body>

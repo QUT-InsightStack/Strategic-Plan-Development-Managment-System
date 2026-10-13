@@ -6,6 +6,7 @@
     <title>Role and Permission Control | Strategic Planning Management System</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     @vite(['resources/css/role-management.css', 'resources/js/pages/technical-admin/role-management-app.js'])
+    <meta name="app-page-entry" content="{{ Vite::asset('resources/js/pages/technical-admin/role-management-app.js') }}">
 </head>
 <body>
     <div id="root"></div>

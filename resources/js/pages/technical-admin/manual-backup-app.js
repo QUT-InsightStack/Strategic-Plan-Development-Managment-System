@@ -68,7 +68,11 @@ function ManualBackupApp() {
         }
 
         window.addEventListener('beforeunload', warn);
-        return () => window.removeEventListener('beforeunload', warn);
+        window.addEventListener('app:before-navigate', warn);
+        return () => {
+            window.removeEventListener('beforeunload', warn);
+            window.removeEventListener('app:before-navigate', warn);
+        };
     }, [creating, restoringId]);
 
     function closeDialog() {

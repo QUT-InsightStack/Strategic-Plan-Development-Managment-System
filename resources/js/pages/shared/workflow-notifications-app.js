@@ -1,3 +1,4 @@
+import { createPageRoot } from '../../navigation/page-root.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { PageHeader } from '../../components/PageHeader.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
@@ -628,6 +629,6 @@ function WorkflowNotificationsApp() {
     );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+createPageRoot(document.getElementById('root')).render(
     h(WorkflowNotificationsApp)
 );

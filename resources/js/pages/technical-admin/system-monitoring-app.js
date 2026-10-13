@@ -1,3 +1,4 @@
+import { createPageRoot } from '../../navigation/page-root.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
 import { PageHeader } from '../../components/PageHeader.js';
 import { TechnicalAdminSidebar } from '../../components/TechnicalAdminSidebar.js';
@@ -498,4 +499,4 @@ function SystemMonitoringApp() {
                 body)));
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(h(SystemMonitoringApp));
+createPageRoot(document.getElementById('root')).render(h(SystemMonitoringApp));

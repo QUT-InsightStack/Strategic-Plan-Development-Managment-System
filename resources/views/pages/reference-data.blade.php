@@ -6,6 +6,7 @@
     <title>Reference Data Management | Strategic Planning Management System</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     @vite(['resources/css/reference-data.css', 'resources/js/pages/administrative-admin/reference-data-app.js'])
+    <meta name="app-page-entry" content="{{ Vite::asset('resources/js/pages/administrative-admin/reference-data-app.js') }}">
 </head>
 <body>
     <div id="root"></div>

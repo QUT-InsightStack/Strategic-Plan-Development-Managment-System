@@ -1,6 +1,7 @@
 import { apiRequest } from '../api/api-client.js';
 import { createAccessSession, saveAccessSession } from './access-session.js';
 let request;
+export function invalidateAccessSession() { request = null; }
 export function loadAccessSession() {
     if (!request) request = apiRequest('/api/auth/me').then(payload => {
         if (!payload.data) throw new Error('Unable to load account permissions.');

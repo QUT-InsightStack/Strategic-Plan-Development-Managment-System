@@ -1,3 +1,4 @@
+import { createPageRoot } from '../../navigation/page-root.js';
 import { BrandLogo } from '../../brand-logo.js';
 import { LogoutButton } from '../../components/LogoutButton.js';
 import { changePassword, getCurrentUser, logoutUser } from '../../api/auth-api.js';
@@ -634,8 +635,7 @@ function ChangePasswordApp() {
     );
 }
 
-ReactDOM
-    .createRoot(rootElement)
+createPageRoot(rootElement)
     .render(
         React.createElement(ChangePasswordApp)
     );

@@ -79,7 +79,11 @@ function StrategicObjectivesApp() {
         if (!notesDirty) return;
         const warn = event => { if (navigating.current) return; event.preventDefault(); event.returnValue = ''; };
         window.addEventListener('beforeunload', warn);
-        return () => window.removeEventListener('beforeunload', warn);
+        window.addEventListener('app:before-navigate', warn);
+        return () => {
+            window.removeEventListener('beforeunload', warn);
+            window.removeEventListener('app:before-navigate', warn);
+        };
     }, [notesDirty]);
     async function refreshObjectives() {
         const result = await listStrategicObjectives(planId);

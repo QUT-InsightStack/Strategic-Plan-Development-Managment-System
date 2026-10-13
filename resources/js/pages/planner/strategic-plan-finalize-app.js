@@ -1,3 +1,4 @@
+import { createPageRoot } from '../../navigation/page-root.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { getStrategicPlan, listStrategicPlans } from '../../api/strategic-plans-api.js';
 import { listStrategicObjectives } from '../../api/strategic-objectives-api.js';
@@ -433,4 +434,4 @@ function FinalizeStrategicPlanApp() {
     );
 }
 
-ReactDOM.createRoot(root).render(h(FinalizeStrategicPlanApp));
+createPageRoot(root).render(h(FinalizeStrategicPlanApp));

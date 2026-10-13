@@ -22,6 +22,7 @@
         'resources/css/workflow-configuration.css',
         'resources/js/pages/technical-admin/workflow-configuration-app.js'
     ])
+    <meta name="app-page-entry" content="{{ Vite::asset('resources/js/pages/technical-admin/workflow-configuration-app.js') }}">
 </head>
 
 <body>
