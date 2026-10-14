@@ -41,6 +41,8 @@ function StrategicObjectivesApp() {
     const [confirmation, setConfirmation] = useState(null);
     const navigating = React.useRef(false);
     const mutable = Boolean(plan && !['archived', 'deleted'].includes(plan.status));
+    // Approved plans are final, so they do not continue to the mapping editor.
+    const approved = plan?.approval_status === 'approved';
     const canSaveNotes = plan?.status === 'draft' && can(P.PLANS_UPDATE);
     const notesDirty = notes !== savedNotes;
     const pageCount = Math.max(1, Math.ceil(objectives.length / pageSize));
@@ -172,7 +174,7 @@ setStatus({
         finally { setBusy(false); }
     }
     async function saveDraft(goNext = false) {
-        if (busy || !plan || (goNext && !canMap)) return;
+        if (busy || !plan || (goNext && (!canMap || approved))) return;
         if (!canSaveNotes && !goNext) return;
         setBusy(true); setStatus({ type: '', message: '' });
         try {
@@ -242,7 +244,7 @@ setStatus({
                                 iconButton('Next page', 'bi-chevron-right', () => setPage(currentPage + 1), false, currentPage >= pageCount))))),
                 h('div', { className: 'objectives-page-actions' },
                     h('button', { className: 'ui-button ui-button--secondary', type: 'button', disabled: busy || loading || !canSaveNotes, onClick: () => saveDraft() }, busy ? 'Saving…' : 'Save as a draft'),
-                    h('button', { className: 'ui-button ui-button--primary', type: 'button', disabled: busy || loading || !mutable || !canMap, onClick: () => saveDraft(true) }, 'Next: Strategic Mapping')),
+                    !approved && h('button', { className: 'ui-button ui-button--primary', type: 'button', disabled: busy || loading || !mutable || !canMap, onClick: () => saveDraft(true) }, 'Next: Strategic Mapping')),
                 can(P.OBJECTIVES_VIEW_PROGRESS) && h('details', { className: 'objectives-progress' }, h('summary', null, 'Monitor and update progress'), h(ObjectiveProgressPanel, { planId }))))),
         h(ObjectiveFormDialog, { open: form.open, objective: form.objective, readOnly: form.readOnly, submitting: busy, serverErrors: formErrors, submitError: formError, planLabel: plan?.title,availableUnits: units, onSave: saveObjective, onClose: () => { if (!busy) setForm({ open: false, objective: null, readOnly: false }); } }),
         h(AssignUnitDialog, { objective: assigning, submitting: busy, error: assignmentError, availableUnits: units, onAssign: assignUnit, onClose: () => { if (!busy) setAssigning(null); } }),
