@@ -64,6 +64,8 @@ export function MappingApp() {
     const allowed = name => !readOnly && Boolean(capabilities[name]);
     const showArchived = status === 'archived' && (allowed('archive') || allowed('delete'));
     const rows = (data?.data || []).filter(mapping => mapping.status === (showArchived ? 'archived' : 'active'));
+    const activeCount = (data?.data || []).filter(mapping => mapping.status === 'active').length;
+    const archivedCount = (data?.data || []).filter(mapping => mapping.status === 'archived').length;
     const catalog = data?.meta?.catalog || {};
     const groups = [...rows.reduce((map, row) => {
         const group = map.get(row.objective_id) || { objective: row, links: [] };
@@ -180,7 +182,7 @@ export function MappingApp() {
                 h('div', { className: 'mapping-hierarchy-action' }, h('button', { className: 'ui-button ui-button--primary ui-button--sm', disabled: busy || !selected.objectives.length || !selected.agendas.length || !selected.pdp.length }, busy ? 'Saving…' : '+ Add Hierarchical Mapping'))),
             h('section', { className: 'ui-card mapping-preview-card' },
                 h('div', { className: 'mapping-preview-card__header' }, h('h2', null, 'Three-level Mapping Preview'),
-                    (allowed('archive') || allowed('delete')) && h('div', { className: 'mapping-tabs', role: 'group', 'aria-label': 'Mapping status' }, ['active', 'archived'].map(value => button(value === 'active' ? 'Active' : 'Archived', () => setStatus(value), status === value)))),
+                    (allowed('archive') || allowed('delete')) && h('div', { className: 'mapping-tabs', role: 'group', 'aria-label': 'Mapping status' }, ['active', 'archived'].map(value => button(`${value === 'active' ? 'Active' : 'Archived'} (${value === 'active' ? activeCount : archivedCount})`, () => setStatus(value), status === value)))),
                 h('div', { className: 'mapping-preview' }, h('table', { className: 'ui-table' },
                     h('thead', null, h('tr', null, ['Agenda', 'PDP Element', 'DOST Objective', 'Agency Plan', 'Action'].map(label => h('th', { key: label, scope: 'col' }, label)))),
                     h('tbody', null, groups.length ? groups.map(group => h('tr', { key: group.objective.objective_id },
