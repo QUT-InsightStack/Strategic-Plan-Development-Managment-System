@@ -128,3 +128,20 @@
 .mapping-search-select select { appearance: auto; }
 .mapping-field-hint { display: block; margin-top: 4px; color: var(--color-text-secondary); font-size: 11px; }
 .mapping-reference-form .mapping-reference-submit { justify-self: center; }
+/* Match the reference design */
+.mapping-levels { grid-template-columns: minmax(0, 260px) auto minmax(0, 260px) auto minmax(0, 260px); justify-content: space-around; }
+.mapping-level { border-radius: var(--radius-lg, 10px); box-shadow: var(--shadow-xs); }
+.mapping-level legend { font-size: var(--font-size-xl, 20px); font-weight: 700; }
+.mapping-level legend i { font-size: 1.1em; }
+.mapping-option { font-size: var(--font-size-sm); }
+.mapping-option input[type="checkbox"] { border-radius: 50%; }
+.mapping-preview table { border: 1px solid var(--color-border-subtle); border-radius: var(--radius-md); border-collapse: separate; border-spacing: 0; overflow: hidden; }
+.mapping-preview th, .mapping-preview td { text-align: center; vertical-align: middle; border-right: 1px solid var(--color-border-subtle); }
+.mapping-preview th:last-child, .mapping-preview td:last-child { border-right: 0; }
+.mapping-preview td:nth-child(3), .mapping-preview td:nth-child(4) { font-weight: 600; }
+.mapping-preview .mapping-action--delete { color: var(--color-primary); }
+.mapping-preview .mapping-action--delete i { font-size: 1.15em; }
+.mapping-reference-form legend { float: left; width: 100%; margin-bottom: var(--space-2); font-weight: 600; }
+.mapping-reference-form .ui-label em { color: var(--color-text-secondary); font-style: normal; font-weight: 400; }
+.mapping-selected-chain article.is-agency i { color: #3b4cc0; }
+.mapping-selected-chain article.is-dost i { color: #1a7f4b; }

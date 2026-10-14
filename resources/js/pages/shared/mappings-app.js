@@ -178,7 +178,7 @@ export function MappingApp() {
         const isChecked = id => multiple ? selected.objectives.includes(id) : selected[idKey === 'agenda_id' ? 'agenda' : 'pdp'] === id;
         const choose = id => multiple ? toggleObjective(id) : setSelected(current => ({ ...current, [idKey === 'agenda_id' ? 'agenda' : 'pdp']: id }));
         return h('fieldset', { className: 'mapping-level' },
-            h('legend', null, h('i', { className: `bi ${icon}`, 'aria-hidden': true }), title, multiple && h('small', null, 'Select one or more')),
+            h('legend', null, h('i', { className: `bi ${icon}`, 'aria-hidden': true }), title),
             h('div', { className: 'mapping-options' }, items.length ? items.map(item => {
                 const id = String(item[idKey]);
                 return h('label', { key: id, className: 'mapping-option' },
@@ -260,7 +260,7 @@ export function MappingApp() {
                 h('td', null, row.objectives.map(item => item.objective_title).join(', ')),
                 h('td', null, unique(row.objectives.map(item => item.agency)).join(', ') || 'Not assigned'),
                 h('td', null, canRemove && h('button', { type: 'button', className: 'mapping-action mapping-action--delete', disabled: busy, onClick: () => requestRemove(row) },
-                    h('i', { className: 'bi bi-trash3', 'aria-hidden': true }), 'Remove'))))
+                    h('i', { className: 'bi bi-trash3-fill', 'aria-hidden': true }), 'Remove'))))
                 : h('tr', null, h('td', { colSpan: 5 }, 'No active mappings.'))));
 
     return h(React.Fragment, null, h(AppSidebar), h('main', { className: 'app-shell-main mapping-page' }, h('div', { className: 'app-shell-container mapping-container' },
@@ -309,7 +309,7 @@ export function MappingApp() {
                         h('div', { className: 'mapping-selected-chain' },
                             h('article', { className: 'is-pdp' }, h('i', { className: 'bi bi-file-earmark-text-fill', 'aria-hidden': true }), h('div', null, h('small', null, 'PDP Element'), h('strong', null, editing ? editing.pdp?.reference_title || 'Not linked' : 'Select a mapping'))),
                             h('article', { className: 'is-dost' }, h('i', { className: 'bi bi-bullseye', 'aria-hidden': true }), h('div', null, h('small', null, 'DOST Objective'), h('strong', null, editing ? editing.objectives.map(item => item.objective_title).join(', ') : 'Select a mapping'))),
-                            h('article', { className: 'is-agency' }, h('i', { className: 'bi bi-building', 'aria-hidden': true }), h('div', null, h('small', null, 'Agency Plan'), h('strong', null, editing ? unique(editing.objectives.map(item => item.agency)).join(', ') || 'Not assigned' : 'Select a mapping'))))),
+                            h('article', { className: 'is-agency' }, h('i', { className: 'bi bi-bank2', 'aria-hidden': true }), h('div', null, h('small', null, 'Agency Plan'), h('strong', null, editing ? unique(editing.objectives.map(item => item.agency)).join(', ') || 'Not assigned' : 'Select a mapping'))))),
                     h('form', { onSubmit: saveReference }, h('fieldset', { className: 'mapping-reference-form', disabled: busy || !editing },
                         h('legend', null, 'Reference Section Details'),
                         h('label', { className: 'ui-field' }, h('span', { className: 'ui-label' }, 'Uploaded Reference File'),
@@ -321,8 +321,8 @@ export function MappingApp() {
                                 h('option', { value: '' }, 'Select chapter or section'),
                                 sectionOptions.map(section => h('option', { key: section, value: section }, section))),
                             h('small', { className: 'mapping-field-hint' }, 'Sample sections are shown until chapter lists can be read from uploaded files.')),
-                        h('label', { className: 'ui-field' }, h('span', { className: 'ui-label' }, 'Page / Paragraph (Optional)'), h('input', { className: 'ui-input', placeholder: 'e.g. Page 12, Paragraph 3', value: details.page_paragraph || '', onChange: event => setDetails({ ...details, page_paragraph: event.target.value }) })),
-                        h('label', { className: 'ui-field' }, h('span', { className: 'ui-label' }, 'Note (Optional)'), h('textarea', { className: 'ui-textarea', maxLength: 2000, placeholder: 'Add a note about this reference', value: details.note || '', onChange: event => setDetails({ ...details, note: event.target.value }) })),
+                        h('label', { className: 'ui-field' }, h('span', { className: 'ui-label' }, 'Page / Paragraph ', h('em', null, '(Optional)')), h('input', { className: 'ui-input', placeholder: 'e.g. Page 24, Section 2.1', value: details.page_paragraph || '', onChange: event => setDetails({ ...details, page_paragraph: event.target.value }) })),
+                        h('label', { className: 'ui-field' }, h('span', { className: 'ui-label' }, 'Note ', h('em', null, '(Optional)')), h('textarea', { className: 'ui-textarea', maxLength: 2000, placeholder: 'Add any additional notes about this reference mapping...', value: details.note || '', onChange: event => setDetails({ ...details, note: event.target.value }) })),
                         h('button', { className: 'ui-button ui-button--primary mapping-primary mapping-reference-submit' }, '+ Add Reference Mapping')))))
         ),
         h(AppDialog, { open: Boolean(action), variant: 'danger',
