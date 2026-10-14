@@ -176,8 +176,8 @@
 .management-dashboard__header > div:first-child p { max-width: 620px; }
 .management-dashboard__controls label { min-width: 170px; }
 .management-kpis { grid-template-columns: repeat(6, minmax(140px, 1fr)); margin-bottom: var(--space-4); }
-.management-kpi { min-height: 156px; align-items: flex-start; justify-content: flex-start; padding: 16px; text-align: left; border-color: #dce5ef; }
-.management-kpi__copy { justify-items: start; gap: 4px; }
+.management-kpi { min-height: 156px; padding: 16px; border-color: #dce5ef; }
+.management-kpi__copy { gap: 4px; }
 .management-kpi__copy small { font-size: var(--font-size-xs); font-weight: 600; }
 .management-kpi__copy strong { font-size: 26px; }
 .management-kpi__copy strong.is-muted { color: var(--color-text-secondary); font-size: 18px; }
