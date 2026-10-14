@@ -40,6 +40,9 @@ class ObjectiveProgressTest extends TestCase
         $this->plan = app(PlanCreationService::class)->create(['level' => 'strategic_plan', 'title' => 'Progress plan',
             'mission' => 'Mission', 'vision' => 'Vision', 'core_values' => ['Integrity'], 'status' => 'draft'], $this->planner);
         $this->objective = $this->objective('ICT Office');
+        $this->plan->status = 'finished';
+$this->plan->approval_status = 'approved';
+$this->plan->saveOrFail();
     }
 
     public function test_endpoints_require_authentication(): void
@@ -323,7 +326,112 @@ class ObjectiveProgressTest extends TestCase
         $this->assertTrue(Schema::hasColumn('tblstrategic_objectives', 'progress_status'));
         $this->assertTrue(Schema::hasTable('tblobjective_progress_updates'));
     }
+public static function blockedPlanProgressStates(): array
+{
+    return [
+        'draft' => ['draft', 'not_submitted', 422],
+        'finalized but not submitted' => ['finished', 'not_submitted', 422],
+        'awaiting approval' => ['finished', 'under_approval', 422],
+        'rejected' => ['finished', 'rejected', 422],
+        'archived approved plan' => ['archived', 'approved', 422],
+        'deleted approved plan' => ['deleted', 'approved', 404],
+    ];
+}
 
+#[DataProvider('blockedPlanProgressStates')]
+public function test_updates_and_corrections_are_blocked_for_ineligible_plans(
+    string $status,
+    string $approvalStatus,
+    int $expectedStatus
+): void {
+    if ($status === 'draft') {
+    $this->plan = app(PlanCreationService::class)->create([
+        'level' => 'strategic_plan',
+        'title' => 'Draft progress restriction',
+        'mission' => 'Mission',
+        'vision' => 'Vision',
+        'core_values' => ['Integrity'],
+        'status' => 'draft',
+    ], $this->planner);
+
+    $this->objective = $this->objective('ICT Office');
+}
+    $this->plan->status = $status;
+    $this->plan->approval_status = $approvalStatus;
+
+    if ($status === 'archived') {
+        $this->plan->archived_at = now();
+        $this->plan->archived_by = $this->planner->user_id;
+    }
+
+    if ($status === 'deleted') {
+        $this->plan->deleted_at = now();
+    }
+
+    $this->plan->saveOrFail();
+
+    $admin = $this->user(
+        'Administrative Admin',
+        'Planning Office',
+        ['correct_progress', 'view_progress']
+    );
+
+    $before = $this->objective->fresh()->getAttributes();
+
+    foreach ([$this->office, $this->planner, $admin] as $actor) {
+        $this->authenticateApiUser($actor);
+
+        $this->patchJson($this->url(), [
+            'progress_percentage' => 50,
+            'reason' => 'Checking approval restriction.',
+        ])->assertStatus($expectedStatus);
+    }
+
+    $this->assertSame(
+        $before,
+        $this->objective->fresh()->getAttributes()
+    );
+
+    $this->assertDatabaseCount('tblobjective_progress_updates', 0);
+}
+
+public function test_administrative_admin_can_correct_approved_plan_with_reason(): void
+{
+    $admin = $this->user(
+        'Administrative Admin',
+        'Planning Office',
+        ['correct_progress', 'view_progress']
+    );
+
+    $this->authenticateApiUser($admin);
+
+    $this->patchJson($this->url(), [
+        'progress_percentage' => 50,
+    ])->assertUnprocessable()->assertJsonValidationErrors('reason');
+
+    $this->patchJson($this->url(), [
+        'progress_percentage' => 50,
+        'reason' => 'Verified implementation report.',
+    ])->assertOk();
+
+    $this->assertDatabaseHas('tblobjective_progress_updates', [
+        'objective_id' => $this->objective->objective_id,
+        'updated_by' => $admin->user_id,
+        'is_correction' => true,
+        'new_percentage' => 50,
+        'reason' => 'Verified implementation report.',
+    ]);
+}
+
+public function test_progress_listing_includes_plan_approval_status(): void
+{
+    $this->authenticateApiUser($this->office);
+
+    $this->getJson('/api/strategic-objective-progress')
+        ->assertOk()
+        ->assertJsonPath('data.0.strategic_plan.status', 'finished')
+        ->assertJsonPath('data.0.strategic_plan.approval_status', 'approved');
+}
     private function user(string $roleName, ?string $office, array $actions): User
     {
         $role = Role::firstOrCreate(['role_name' => $roleName], ['is_assignable' => true, 'is_protected' => false]);

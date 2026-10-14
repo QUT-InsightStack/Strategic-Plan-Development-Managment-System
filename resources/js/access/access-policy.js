@@ -116,6 +116,14 @@ const technicalAdminPermissions = [
     PERMISSIONS.BACKUPS_CREATE,
     PERMISSIONS.BACKUPS_DOWNLOAD,
     PERMISSIONS.BACKUPS_RESTORE,
+    PERMISSIONS.PLANS_VIEW,
+    PERMISSIONS.PLANS_DELETE,
+    PERMISSIONS.FOUNDATIONS_VIEW, 'plan_core_values.view',
+    PERMISSIONS.OBJECTIVES_VIEW,
+    PERMISSIONS.OBJECTIVES_DELETE,'relations.view','strategic_alignments.delete','strategic_documents.view','strategic_documents.download',
+    PERMISSIONS.PDP_CHAPTERS_DELETE,
+    PERMISSIONS.PRESIDENTIAL_AGENDA_VIEW,
+    PERMISSIONS.PRESIDENTIAL_AGENDA_DELETE,
 ];
 
 const administrativeAdminPermissions = [
@@ -227,6 +235,10 @@ export const routeRules = [
     {
     test: /^\/workflow-configuration(?:\/|$)/,
     roles: ['Administrator', 'Technical Administrator', 'Technical Admin', 'test'],
+},
+{
+    test: /^\/administrative-admin\/reference-data\/agenda\/\d+\/edit(?:\/|$)/,
+    permission: PERMISSIONS.PRESIDENTIAL_AGENDA_VIEW,
 },
     { test: /^\/administrative-admin\/reference-data(?:\/|$)/, permission: PERMISSIONS.REFERENCE_DATA_MANAGE },
     { test: /^\/administrative-admin\/templates(?:\/|$)/, permission: PERMISSIONS.TEMPLATES_MANAGE },

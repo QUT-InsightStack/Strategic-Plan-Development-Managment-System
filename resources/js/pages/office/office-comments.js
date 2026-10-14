@@ -84,23 +84,41 @@ export function OfficeComments({ plan, mode = 'comments' }) {
         event.preventDefault();
         if (busy) return;
         setBusy(true); setError(''); setMessage('');
-        try {
-            if (mode === 'comments') {
-                const content = comment.trim();
-                if (!content) return;
-                await submitPlanInput(plan.record_id, {content: `Plan feedback:\n${content}`, input_type: plan.status === 'draft' ? 'change_request' : 'issue',feedback_category: 'plan_feedback',feedback_category: 'new_objective',});
-                setComment('');
-                setPage(1);
-                setRefresh(value => value + 1);
-                setMessage('Planning input submitted for review. Track the decision and reviewer remarks in My Inputs.');
-            } else {
-                const content = proposalFields.map(([key, label]) => `${label}: ${proposal[key].trim() || '—'}`).join('\n');
-                await submitPlanInput(plan.record_id, { content, input_type: 'change_request' });
-                setProposal(emptyProposal);
-                setRefresh(value => value + 1);
-                setMessage('Proposed objective submitted for review.');
-            }
-        } catch (err) { setError([err.message, ...Object.values(err.errors || {}).flat()].join(' ')); }
+       try {
+    if (mode === 'comments') {
+        const content = comment.trim();
+        if (!content) return;
+
+        await submitPlanInput(plan.record_id, {
+            content: `Plan feedback:\n${content}`,
+            input_type: plan.status === 'draft'
+                ? 'change_request'
+                : 'issue',
+            feedback_category: 'plan_feedback',
+        });
+
+        setComment('');
+        setPage(1);
+        setRefresh(value => value + 1);
+        setMessage('Planning input submitted for review. Track the decision and reviewer remarks in My Inputs.');
+    } else {
+        const content = proposalFields
+            .map(([key, label]) =>
+                `${label}: ${proposal[key].trim() || '—'}`
+            )
+            .join('\n');
+
+        await submitPlanInput(plan.record_id, {
+            content,
+            input_type: 'change_request',
+            feedback_category: 'new_objective',
+        });
+
+        setProposal(emptyProposal);
+        setRefresh(value => value + 1);
+        setMessage('Proposed objective submitted for review.');
+    }
+} catch (err) { setError([err.message, ...Object.values(err.errors || {}).flat()].join(' ')); }
         finally { setBusy(false); }
     }
 

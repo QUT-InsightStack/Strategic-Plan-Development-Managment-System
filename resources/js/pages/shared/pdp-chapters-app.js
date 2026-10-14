@@ -65,6 +65,10 @@ function ChapterDialog({ mode, chapter, onClose, onSaved }) {
 }
 
 function ChapterTable({ chapters, loading, selectedIds, onToggle, onOpen, onArchive, onDelete, canManage, canArchive, canDelete }) {
+    const canDeleteActive = [
+    'Technical Administrator',
+    'Technical Admin',
+].includes(getAccessSession()?.roleName);
     const columns = 5;
     return React.createElement('section', { className: 'ui-card pdp-table-card', 'aria-labelledby': 'pdp-register-title' },
         React.createElement('div', { className: 'ui-section-header' },
@@ -97,7 +101,9 @@ function ChapterTable({ chapters, loading, selectedIds, onToggle, onOpen, onArch
                                 React.createElement('div', { className: 'pdp-table__actions' },
                                     canManage && chapter.status !== 'archived' ? React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => onOpen(chapter) }, 'Edit') : null,
                                     canArchive && chapter.status !== 'archived' ? React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => onArchive(chapter) }, 'Archive') : null,
-                                    canDelete && chapter.status === 'archived' ? React.createElement('button', { className: 'ui-button ui-button--danger ui-button--sm', type: 'button', onClick: () => onDelete(chapter) }, 'Delete') : null)) : null))))));
+                                    canDelete &&
+chapter.status !== 'deleted' &&
+(chapter.status === 'archived' || canDeleteActive)? React.createElement('button', { className: 'ui-button ui-button--danger ui-button--sm', type: 'button', onClick: () => onDelete(chapter) }, 'Delete') : null)) : null))))));
 }
 
 function PdpChapterDetailApp() {
@@ -164,7 +170,7 @@ function PdpChaptersApp() {
             open: true,
             variant: 'danger',
             title: 'Delete PDP Chapter?',
-            message: `Delete “${chapter.chapter_title || 'Untitled chapter'}”? Only archived chapters can be deleted; the record and history are retained.`,
+            message: `Delete “${chapter.chapter_title || 'Untitled chapter'}”? It will no longer be available for active use. The record and history will be retained.`,
             chapter,
             action: 'delete',
         });

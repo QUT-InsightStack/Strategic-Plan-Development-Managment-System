@@ -7,8 +7,8 @@ import { AppDialog } from '../../components/AppDialog.js';
 import { PageHeader } from '../../components/PageHeader.js';
 import { TechnicalAdminSidebar } from '../../components/TechnicalAdminSidebar.js';
 import { useDialogBehaviour } from '../../components/use-dialog-behaviour.js';
-
-
+import { PasswordAssistancePanel } from '../../components/PasswordAssistancePanel.js';
+import { PasswordAssistanceResetForm } from '../../components/PasswordAssistanceResetForm.js';
 const { useEffect, useState } = React;
 const initialFilters = { search: '', role_id: '', status: '' };
 const initialAccount = { first_name: '', last_name: '', email: '', password: '', office: '', role_id: '', status: 'active' };
@@ -93,6 +93,17 @@ function statusDetails(status) {
 
 function UserManagementApp() {
     const accessSession = getAccessSession();
+    const assistanceRequestId = Number(
+    new URLSearchParams(window.location.search).get('assistance_id')
+);
+    const canHandlePasswordAssistance =
+    [
+        'Technical Administrator',
+        'Technical Admin',
+        'Administrator',
+        'test',
+    ].includes(accessSession?.roleName) &&
+    can(PERMISSIONS.USERS_UPDATE, accessSession);
     const canUpdateUsers = can(PERMISSIONS.USERS_UPDATE, accessSession) || can(PERMISSIONS.USERS_MANAGE, accessSession);
     const canCreateUsers = can(PERMISSIONS.USERS_CREATE, accessSession) && can(PERMISSIONS.USERS_ASSIGN_ROLES, accessSession);
     const canAssignProtectedRoles = can(PERMISSIONS.ROLES_ASSIGN_PROTECTED, accessSession);
@@ -347,6 +358,18 @@ function UserManagementApp() {
                     actions: canCreateUsers ? React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: () => { setNotice({ type: '', message: '' }); setCreateOpen(true); } }, React.createElement('i', { className: 'bi bi-person-plus-fill' }), 'Create Account') : null,
                 }),
                 notice.message ? React.createElement('div', { className: `ui-status ui-status--${notice.type}`, role: 'status', 'aria-live': 'polite' }, notice.message) : null,
+                canHandlePasswordAssistance && assistanceRequestId > 0
+    ? React.createElement(PasswordAssistanceResetForm, {
+        requestId: assistanceRequestId,
+    })
+    : null,
+
+canHandlePasswordAssistance
+    ? React.createElement(PasswordAssistancePanel, {
+        onNotice: (message, type = 'info') =>
+            setNotice({ type, message }),
+    })
+    : null,
                 React.createElement('section', { className: 'ui-card user-filter-card', 'aria-labelledby': 'user-filter-title' },
                     React.createElement('div', { className: 'ui-section-header' },
                         React.createElement('div', { className: 'ui-section-header__copy' },
@@ -465,7 +488,9 @@ function UserManagementApp() {
                             React.createElement('label', { className: 'ui-label', htmlFor: 'account-role' }, 'Role', React.createElement('span', { className: 'ui-required' }, ' *')),
                             React.createElement('select', { id: 'account-role', className: 'ui-select', value: account.role_id, required: true, onChange: (event) => setAccount((current) => ({ ...current, role_id: event.target.value })) },
                                 React.createElement('option', { value: '' }, 'Select an approved role'),
-                                roles.filter((role) => role.is_assignable).map((role) => React.createElement('option', { key: role.role_id, value: role.role_id, disabled: role.is_protected && !canAssignProtectedRoles }, `${displayRoleName(role.role_name)}${role.is_protected ? ' (Protected)' : ''}`))
+                                roles.filter((role) =>
+    role.is_assignable && role.role_name !== 'Administrator'
+).map((role) => React.createElement('option', { key: role.role_id, value: role.role_id, disabled: role.is_protected && !canAssignProtectedRoles }, `${displayRoleName(role.role_name)}${role.is_protected ? ' (Protected)' : ''}`))
                             ),
                             accountErrors.role_id ? React.createElement('p', { className: 'ui-error' }, accountErrors.role_id[0]) : null
                         )

@@ -35,7 +35,7 @@ class ObjectiveProgressController extends Controller
         if (! empty($filters['search'])) {
             $query->where('objective_title', 'like', '%'.$filters['search'].'%');
         }
-        $rows = $query->with(['progressUpdater:user_id,first_name,last_name', 'strategicPlan:record_id,title,status'])
+        $rows = $query->with(['progressUpdater:user_id,first_name,last_name', 'strategicPlan:record_id,title,status,approval_status'])
             ->orderByDesc('progress_updated_at')->orderByDesc('objective_id')->paginate($filters['per_page'] ?? 20);
 
         return response()->json(['success' => true, 'data' => $rows->items(), 'meta' => [

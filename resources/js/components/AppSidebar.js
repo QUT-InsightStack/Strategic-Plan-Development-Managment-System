@@ -6,7 +6,7 @@ import { useAccessSession } from '../access/use-access-session.js';
 import { navigationFor, navigationRole, canOpenPage, isCurrentPage } from '../access/navigation.js';
 import { canDeleteMappings } from '../mappings/mapping-eligibility.js';
 import '../../css/navigation.css';
-
+import { PasswordAssistanceIndicator } from './PasswordAssistanceIndicator.js';
 export function AppSidebar() {
     const { session, error, retry } = useAccessSession();
     const [open, setOpen] = React.useState(() => {
@@ -40,6 +40,7 @@ export function AppSidebar() {
         h('nav', { className: 'app-sidebar__nav' },
             !session && h('p', { role: error ? 'alert' : 'status' }, error || 'Loading menu…'),
             error && h('button', { type: 'button', onClick: retry }, 'Retry'),
+            h(PasswordAssistanceIndicator, { session }),
             items.map(item => {
                 if (!item.children) return leaf(item);
                 const children = item.children.filter(child => !child.dashboardOnly && (!child.hideWhenDenied || canOpenPage(child, session)));

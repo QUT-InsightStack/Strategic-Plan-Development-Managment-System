@@ -18,7 +18,37 @@ const alignment = page('alignment', 'View Strategic Alignment', '/mappings?mode=
 const inputs = page('inputs', 'Consolidate Inputs', '/consolidate-inputs', ['implementation_inputs.view']);
 const common = [page('notifications', 'Notifications', '/workflow-notifications', [], { icon: 'bi-bell' }), page('profile', 'Profile', '/profile', [], { icon: 'bi-person' }), pending('faq', 'FAQ', { icon: 'bi-question-circle' })];
 export const roleNavigation = {
-    technical: [group('accounts', 'Access Administration', [
+    technical: [
+    group('technical-planning-support', 'Planning Support', [
+        page('plans', 'Strategic Plan List', '/strategic-plans', [
+            'strategic_records.view',
+        ], {
+            icon: 'bi-journal-text',
+        }),
+        page('objectives', 'Strategic Objectives', '/strategic-objectives', [
+            'strategic_records.view',
+            'strategic_objectives.view',
+        ], {
+            icon: 'bi-list-check',
+        }),
+              alignment,
+        page('technical-pdp-chapters', 'PDP Chapters', '/pdp-chapters/manage', [], {
+            icon: 'bi-book',
+            anyPermissions: [
+                'pdp_chapters.manage',
+                'pdp_chapters.archive',
+                'pdp_chapters.delete',
+            ],
+        }),
+                page(
+            'technical-agenda',
+            'Presidential Agenda',
+            '/administrative-admin/reference-data?tab=agenda',
+            ['presidential_agenda.view'],
+            { icon: 'bi-bank' }
+        ),
+    ], 'bi-clipboard2-check'),
+    group('accounts', 'Access Administration', [
         page('users', 'Users', '/user-management', ['users.view'], { icon: 'bi-people' }),
         page('roles', 'Role Management', '/role-management', ['roles.manage', 'users.view', 'roles.view'], { icon: 'bi-person-gear' }),
         page('permissions', 'Permissions', '/role-management?section=permissions', ['roles.manage', 'roles.view', 'permissions.view'], { icon: 'bi-key' }),
@@ -83,6 +113,13 @@ export const roleNavigation = {
     group('monitoring', 'Monitoring', [progress, pending('planner-monitoring', 'Monitoring Dashboard'), pending('planner-reports', 'Reports')], 'bi-graph-up'),
     group('reviews', 'Reviews', [page('reviews', 'Plan Reviews', '/management-approvals')])],
     office: [group('planning', 'Planning', [review, upload,
+                page(
+            'office-proposals',
+            'Propose Objective',
+            '/office?view=proposal',
+            ['strategic_records.view', 'implementation_inputs.create'],
+            { icon: 'bi-lightbulb' }
+        ),
         page('input-status', 'My Inputs', '/consolidate-inputs', ['implementation_inputs.view']),
         page('edit-objectives', 'Edit Objectives', '/office?view=edit', ['strategic_records.view', 'strategic_objectives.update']),
     ]), group('mapping', 'Strategic Alignment', [alignment], 'bi-map'),

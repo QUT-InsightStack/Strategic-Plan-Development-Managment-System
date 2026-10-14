@@ -7,6 +7,7 @@ use App\Models\PresidentialAgendaItem;
 use App\Repositories\PresidentialAgendaItemRepository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use App\Models\User;
 
 class PresidentialAgendaItemService
 {
@@ -124,11 +125,20 @@ class PresidentialAgendaItemService
                 ]);
             }
 
-            if ($item->status !== 'archived') {
-                throw ValidationException::withMessages([
-                    'status' => ['Only archived Presidential Agenda items can be deleted.'],
-                ]);
-            }
+            $actor = User::query()->with('role')->findOrFail($actorId);
+
+$isTechnicalAdmin = in_array($actor->role?->role_name, [
+    'Technical Administrator',
+    'Technical Admin',
+], true);
+
+if ($item->status !== 'archived' && ! $isTechnicalAdmin) {
+    throw ValidationException::withMessages([
+        'status' => ['Only archived Presidential Agenda items can be deleted.'],
+    ]);
+}
+
+$previousStatus = $item->status;
 
             $item->status = 'deleted';
             $item->deleted_at = now();
@@ -142,7 +152,7 @@ class PresidentialAgendaItemService
                 'actor_user_id' => $actorId,
                 'resource_type' => 'presidential_agenda_item',
                 'resource_id' => $item->agenda_id,
-                'from' => 'archived',
+                'from' => $previousStatus,
                 'to' => 'deleted',
             ]);
 
