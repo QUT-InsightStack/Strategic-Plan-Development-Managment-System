@@ -135,11 +135,20 @@ class PdpChapterController extends Controller
             }
     
     
-            if ($locked->status !== 'archived') {
-                throw ValidationException::withMessages([
-                    'status' => ['Only archived PDP Chapters can be deleted.'],
-                ]);
-            }
+            $actor = Auth::guard('api')->user();
+
+$isTechnicalAdmin = in_array($actor?->role?->role_name, [
+    'Technical Administrator',
+    'Technical Admin',
+], true);
+
+if ($locked->status !== 'archived' && ! $isTechnicalAdmin) {
+    throw ValidationException::withMessages([
+        'status' => ['Only archived PDP Chapters can be deleted.'],
+    ]);
+}
+
+$previousStatus = $locked->status;
     
             $locked->status = 'deleted';
             $locked->deleted_at = now();
@@ -150,6 +159,8 @@ class PdpChapterController extends Controller
                 'actor_user_id' => Auth::guard('api')->id(),
                 'resource_type' => 'pdp_chapter',
                 'resource_id' => $locked->chapter_id,
+                'from' => $previousStatus,
+'to' => 'deleted',
             ]);
     
             return $locked->fresh();

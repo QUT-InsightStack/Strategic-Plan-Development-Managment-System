@@ -57,7 +57,7 @@ class StrategicObjectiveAlignmentWriteTest extends TestCase
             'mission' => 'Improve services',
             'vision' => 'Accessible services',
             'core_values' => ['Integrity'],
-            'status' => 'finished',
+            'status' => 'draft',
         ], $this->officer);
         $this->objective = StrategicObjective::create([
             'strategic_plan_id' => $this->plan->record_id,
@@ -222,7 +222,8 @@ class StrategicObjectiveAlignmentWriteTest extends TestCase
 
     public function test_inactive_agenda_rejects_the_entire_batch(): void
     {
-        $this->agenda->update(['status' => 'inactive']);
+        $this->agenda->status = 'inactive';
+$this->agenda->save();
         $this->authenticateOfficer();
         $this->postJson($this->endpoint(), $this->payload())->assertUnprocessable()
             ->assertJsonValidationErrors('presidential_agenda_item_ids.0');
@@ -296,7 +297,14 @@ class StrategicObjectiveAlignmentWriteTest extends TestCase
             $model->update(['status' => 'deleted', 'deleted_at' => now()]);
         } elseif (str_starts_with($case, 'archived-')) {
             $model = $case === 'archived-plan' ? $this->plan : $this->objective;
-            $metadata = $case === 'archived-objective' ? ['status_before_archive' => $model->status] : [];
+
+if ($case === 'archived-plan') {
+    $model->update(['status' => 'finished']);
+}
+
+$metadata = $case === 'archived-objective'
+    ? ['status_before_archive' => $model->status]
+    : [];
             $model->update([...$metadata, 'status' => 'archived', 'archived_at' => now(), 'archived_by' => $this->officer->user_id]);
         }
         $this->authenticateOfficer();

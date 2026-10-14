@@ -27,7 +27,21 @@ function agendaRow(item) {
     };
 }
 
-function ReferenceDataTable({ rows, loading, canManage, canArchive, canDelete, onReview, onUpdate, onArchive, onDelete }) {
+function ReferenceDataTable({
+    rows,
+    loading,
+    canManage,
+    canArchive,
+    canDelete,
+    onReview,
+    onUpdate,
+    onArchive,
+    onDelete,
+}) {
+    const canDeleteActive = [
+        'Technical Administrator',
+        'Technical Admin',
+    ].includes(getAccessSession()?.roleName);
     return React.createElement('div', { className: 'ui-table-wrap reference-table-wrap' },
         React.createElement('table', { className: 'ui-table reference-table' },
             React.createElement('caption', { className: 'ui-visually-hidden' }, 'Presidential Agenda reference data'),
@@ -47,7 +61,9 @@ function ReferenceDataTable({ rows, loading, canManage, canArchive, canDelete, o
                         { label: 'Review', icon: 'bi-eye-fill', onSelect: () => onReview(row) },
                         ...(canManage && row.status !== 'archived' ? [{ label: 'Update', icon: 'bi-pencil-fill', onSelect: () => onUpdate(row) }] : []),
                         ...(canArchive && row.status !== 'archived' ? [{ label: 'Archive', icon: 'bi-archive-fill', onSelect: () => onArchive(row) }] : []),
-                        ...(canDelete && row.status === 'archived' ? [{ label: 'Delete', icon: 'bi-trash3-fill', tone: 'danger', onSelect: () => onDelete(row) }] : []),
+                        ...(canDelete &&
+row.status !== 'deleted' &&
+(row.status === 'archived' || canDeleteActive) ? [{ label: 'Delete', icon: 'bi-trash3-fill', tone: 'danger', onSelect: () => onDelete(row) }] : []),
                     ] }))
                 )) : null
             )
@@ -172,7 +188,7 @@ export function ReferenceDataManagementApp() {
             open: true,
             variant: 'danger',
             title: 'Delete Presidential Agenda?',
-            message: `Delete \u201C${row.title}\u201D (${row.code})? Only archived items can be deleted. The record is retained so existing references and history stay intact.`,
+            message: `Delete “${row.title}” (${row.code})? It will no longer be available for active use. The record and existing references and history will be retained.`,
             row,
             action: 'delete',
         });

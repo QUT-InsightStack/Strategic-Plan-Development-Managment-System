@@ -73,15 +73,79 @@ class PdpChapterTest extends TestCase
             'chapter_id' => $chapterId,
             'chapter_title' => 'Updated Development Context',
         ]);
+        $this->deleteJson("/api/pdp-chapters/{$chapterId}")
+    ->assertUnprocessable();
 
+$this->patchJson("/api/pdp-chapters/{$chapterId}/archive")
+    ->assertOk();
         $this->deleteJson("/api/pdp-chapters/{$chapterId}")
             ->assertOk()
             ->assertJsonPath('message', 'PDP Chapter deleted successfully.');
 
-        $this->assertDatabaseMissing('tblpdp_chapters', [
-            'chapter_id' => $chapterId,
-        ]);
+        $this->assertDatabaseHas('tblpdp_chapters', [
+    'chapter_id' => $chapterId,
+    'status' => 'deleted',
+    'deleted_by' => $administrator->user_id,
+]);
+
+$this->getJson('/api/pdp-chapters?status=all')
+    ->assertOk()
+    ->assertJsonMissing(['chapter_id' => $chapterId]);
     }
+    public function test_technical_admin_can_delete_active_chapter_only_with_delete_permission(): void
+{
+    $technicalAdmin = $this->createUser('Technical Administrator');
+
+    $chapter = PdpChapter::create([
+        'chapter_title' => 'Technical deletion test',
+        'chapter_description' => 'Disposable test chapter.',
+        'status' => 'active',
+        'created_by' => $technicalAdmin->user_id,
+    ]);
+
+    $this->authenticateApiUser($technicalAdmin);
+    $this->withoutMiddleware(ValidateAuthVersion::class);
+
+    $url = '/api/pdp-chapters/'.$chapter->chapter_id;
+
+    $this->deleteJson($url)->assertForbidden();
+
+    $this->assertDatabaseHas('tblpdp_chapters', [
+        'chapter_id' => $chapter->chapter_id,
+        'status' => 'active',
+    ]);
+
+    $permission = Permission::firstOrCreate(
+        ['code' => 'pdp_chapters.delete'],
+        [
+            'permission_name' => 'Delete PDP Chapters',
+            'description' => 'Delete PDP Chapters',
+            'module' => 'pdp_chapters',
+        ]
+    );
+
+    $technicalAdmin->role->permissions()
+        ->syncWithoutDetaching([$permission->permission_id]);
+
+    $this->authenticateApiUser($technicalAdmin->fresh());
+
+    $this->deleteJson($url)
+        ->assertOk()
+        ->assertJsonPath('data.status', 'deleted');
+
+    $this->assertDatabaseHas('tblpdp_chapters', [
+        'chapter_id' => $chapter->chapter_id,
+        'status' => 'deleted',
+        'deleted_by' => $technicalAdmin->user_id,
+        'archived_at' => null,
+    ]);
+
+    $this->getJson('/api/pdp-chapters?status=all')
+        ->assertOk()
+        ->assertJsonMissing(['chapter_id' => $chapter->chapter_id]);
+
+    $this->deleteJson($url)->assertUnprocessable();
+}
 
     private function createUser(string $roleName, bool $canManage = false): User
     {
