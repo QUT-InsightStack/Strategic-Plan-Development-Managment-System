@@ -95,7 +95,11 @@ export function ObjectiveProgressPanel({ planId = '' }) {
     const table = h('table', { className: 'ui-table progress-monitor-table' },
         h('thead', null, h('tr', null, ...['Objective', 'Strategic plan', 'Office/Unit', 'Current progress', 'Last updated', 'Actions'].map(label => h('th', { key: label, scope: 'col' }, label)))),
         h('tbody', null, rows.map(row => {
-            const canChange = mayUpdate && !['archived', 'deleted'].includes(row.status) && !['archived', 'deleted'].includes(row.strategic_plan?.status);
+            const canChange =
+    mayUpdate &&
+    ['draft', 'published'].includes(row.status) &&
+    row.strategic_plan?.status === 'finished' &&
+    row.strategic_plan?.approval_status === 'approved';
             const actionButtons = [
                 canChange && button(correction ? 'Correct progress' : 'Update progress', () => { setSelected(row); setPercentage(String(row.progress_percentage)); setReason(''); setError(''); setMessage(''); }, saving),
                 button('History', () => { setHistory(row); setHistoryPage(1); setError(''); }, saving),
@@ -169,6 +173,9 @@ export function ObjectiveProgressPanel({ planId = '' }) {
 
     return h(React.Fragment, null,
         accountCard,
+        h('p', { className: 'ui-help' },
+    'Progress updates and corrections are available only after the plan is finalized and approved. Archived or deleted content cannot be updated.'
+),
         message && h('div', { className: 'ui-status ui-status--success progress-monitor-feedback', role: 'status' }, message),
         error && h('div', { className: 'ui-status ui-status--error progress-monitor-feedback', role: 'alert' }, error),
         filterCard, listCard, editor, historyCard);
