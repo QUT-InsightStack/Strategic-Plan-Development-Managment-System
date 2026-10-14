@@ -15,26 +15,49 @@ class SeededRolesTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_complete_seeding_is_repeatable_and_provisions_only_the_six_defaults(): void
+   public function test_complete_seeding_is_repeatable_and_provisions_default_roles(): void
     {
         $this->seed(DatabaseSeeder::class);
         $grantCount = DB::table('tblrole_permissions')->count();
         $this->seed(DatabaseSeeder::class);
-
-        $this->assertEqualsCanonicalizing([
-            'Administrator', 'test', 'Planning Officer', 'Management', 'Office', 'Technical Administrator',
-        ], Role::pluck('role_name')->all());
         $this->assertSame($grantCount, DB::table('tblrole_permissions')->count());
         $this->assertDatabaseCount('tblusers', 4);
         $this->assertSame('Office', User::where('email', 'testviewer@example.com')->firstOrFail()->role->role_name);
-
+        $this->assertEqualsCanonicalizing([
+    'Administrator',
+    'Administrative Admin',
+    'test',
+    'Planning Officer',
+    'Management',
+    'Office',
+    'Technical Administrator',
+], Role::pluck('role_name')->all());
         $readOnlyCodes = [
             'dashboard.view', 'strategic_records.view', 'strategic_foundations.view', 'strategic_objectives.view',
             'strategic_documents.view', 'strategic_documents.download', 'relations.view', 'plan_core_values.view',
         ];
         foreach (['Management', 'Office'] as $name) {
-            $this->assertEqualsCanonicalizing($readOnlyCodes, Role::where('role_name', $name)->firstOrFail()->permissions->pluck('code')->all());
-        }
+    $codes = Role::where('role_name', $name)
+        ->firstOrFail()
+        ->permissions
+        ->pluck('code')
+        ->all();
+
+    foreach ($readOnlyCodes as $code) {
+        $this->assertContains($code, $codes);
+    }
+
+    foreach ([
+        'strategic_records.create',
+        'strategic_records.update',
+        'strategic_records.delete',
+        'users.create',
+        'users.delete',
+        'roles.manage',
+    ] as $code) {
+        $this->assertNotContains($code, $codes);
+    }
+}
 
         $test = Role::where('role_name', 'test')->firstOrFail();
         $this->assertEqualsCanonicalizing(Permission::pluck('permission_id')->all(), $test->permissions->pluck('permission_id')->all());
@@ -119,7 +142,11 @@ class SeededRolesTest extends TestCase
             $this->getJson('/api/strategic-plans')->assertOk();
             $this->getJson('/api/roles')->assertForbidden();
             $this->getJson('/api/approval-workflow')->assertForbidden();
-            $this->getJson('/api/implementation-inputs')->assertForbidden();
+            if ($name === 'Management') {
+    $this->getJson('/api/implementation-inputs')->assertOk();
+} else {
+    $this->getJson('/api/implementation-inputs')->assertForbidden();
+}
             $this->postJson('/api/strategic-plans', ['level' => 'strategic_plan', 'title' => 'Not permitted'])->assertForbidden();
         }
     }

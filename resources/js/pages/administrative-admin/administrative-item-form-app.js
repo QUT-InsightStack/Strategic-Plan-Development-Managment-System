@@ -98,7 +98,12 @@ function FormField({ field, value, error, onChange, readOnly = false }) {
 
 export function AdministrativeItemFormApp({ itemType = 'agenda' }) {
     const config = formConfigs[itemType] || formConfigs.agenda;
-    const reviewMode = new URLSearchParams(window.location.search).get('mode') === 'review';
+    const reviewMode =
+    new URLSearchParams(window.location.search).get('mode') === 'review' ||
+    (
+        itemType === 'agenda' &&
+        !can(PERMISSIONS.PRESIDENTIAL_AGENDA_MANAGE, getAccessSession())
+    );
     const itemIdMatch = window.location.pathname.match(/\/([^/]+)\/edit$/);
     const itemId = itemIdMatch ? decodeURIComponent(itemIdMatch[1]) : '';
     const canManageAgenda = itemType === 'agenda' && can(PERMISSIONS.PRESIDENTIAL_AGENDA_MANAGE, getAccessSession());
@@ -126,6 +131,7 @@ export function AdministrativeItemFormApp({ itemType = 'agenda' }) {
 
     async function submit(event) {
         event.preventDefault();
+        if (reviewMode || !canManageAgenda) return;
         const nextErrors = config.fields.reduce((result, field) => {
             if (field.required && !String(values[field.name] || '').trim()) result[field.name] = `${field.label} is required.`;
             return result;

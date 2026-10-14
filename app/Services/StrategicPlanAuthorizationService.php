@@ -121,6 +121,18 @@ class StrategicPlanAuthorizationService
     public function ensurePlanIsWithinAuthorizedScope(Strategic $plan, ?User $user = null, string $message = 'You are not authorized to view this strategic plan.', bool $includeAllOfficePlans = false): User
     {
         $user = $this->permissionAuthorizationService->resolveUser($user);
+        if (in_array($user->role?->role_name, [
+    'Planning Officer',
+    'Planner/Encoder',
+], true)) {
+    abort_unless(
+        (int) $plan->created_by === (int) $user->user_id,
+        403,
+        $message
+    );
+
+    return $user;
+}
 
         if (in_array($user->role?->role_name, self::OFFICE_ROLES, true)) {
             $unit = $this->activeOfficeUnit($user);
