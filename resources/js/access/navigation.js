@@ -113,6 +113,13 @@ export const roleNavigation = {
     group('monitoring', 'Monitoring', [progress, pending('planner-monitoring', 'Monitoring Dashboard'), pending('planner-reports', 'Reports')], 'bi-graph-up'),
     group('reviews', 'Reviews', [page('reviews', 'Plan Reviews', '/management-approvals')])],
     office: [group('planning', 'Planning', [review, upload,
+                page(
+            'office-proposals',
+            'Propose Objective',
+            '/office?view=proposal',
+            ['strategic_records.view', 'implementation_inputs.create'],
+            { icon: 'bi-lightbulb' }
+        ),
         page('input-status', 'My Inputs', '/consolidate-inputs', ['implementation_inputs.view']),
         page('edit-objectives', 'Edit Objectives', '/office?view=edit', ['strategic_records.view', 'strategic_objectives.update']),
     ]), group('mapping', 'Strategic Alignment', [alignment], 'bi-map'),
@@ -122,6 +129,13 @@ export const roleNavigation = {
         page('objectives-review', 'Objectives Review', '/management-plan-review?view=objectives', ['strategic_records.view', 'strategic_objectives.view'], { icon: 'bi-list-check' }),
         page('alignment-review', 'Strategic Alignment Review', '/management-dashboard?tab=alignment', ['relations.view'], { icon: 'bi-diagram-3' }),
         page('agency-input-review', 'Agency Input Review', '/management-dashboard?tab=alignment&section=agency', ['relations.view', 'strategic_objectives.view'], { icon: 'bi-building-check' }),
+                page(
+            'management-inputs',
+            'Consolidated Inputs',
+            '/consolidate-inputs',
+            ['implementation_inputs.view'],
+            { icon: 'bi-inbox' }
+        ),
         page('monitoring', 'Monitoring', '/management-dashboard?tab=dashboard', ['strategic_records.view'], { icon: 'bi-graph-up' }),
         page('reports', 'Reports & Summary', '/management-dashboard?tab=reports', ['strategic_records.view'], { icon: 'bi-file-earmark-bar-graph' }),
     ],
