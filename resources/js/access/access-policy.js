@@ -228,6 +228,7 @@ export function hasRolePolicy(roleName) {
 
 export const routeRules = [
     { test: /^\/management-dashboard(?:\/|$)/, permission: PERMISSIONS.DASHBOARD_VIEW },
+    { test: /^\/monitoring-dashboard(?:\/|$)/, permission: PERMISSIONS.DASHBOARD_VIEW },
     { test: /^\/management-approvals(?:\/|$)/ },
     { test: /^\/management-plan-review(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
     { test: /^\/progress-monitoring(?:\/|$)/, permission: PERMISSIONS.OBJECTIVES_VIEW_PROGRESS },

@@ -5,6 +5,7 @@
 - `access/navigation.js` defines the five role workspaces, canonical destinations, permission requirements and planned features.
 - `components/AppSidebar.js` renders that registry. Technical and Administrative sidebar modules are compatibility re-exports, not separate menu definitions.
 - `pages/shared/dashboard-app.js` renders role function cards and explicit placeholders. The Management dashboard retains its existing implementation.
+- Administrative Admin, Planning Officer, Office / Agency and Management workspaces are grouped by planning stage (see *Role workspaces* below). Technical Admin is unchanged.
 - `access/mount-protected-page.js` refreshes `/api/auth/me` before mounting the migrated administration and plan/objective registers. Existing independently bootstrapped Office/Management pages remain intact.
 - The backend remains authoritative for authorization and record scope. A visible placeholder or menu entry never grants API access.
 
@@ -16,6 +17,7 @@ Keep page entries in their existing role directories. Shared UI belongs in `comp
 | --- | --- |
 | Role workspace | `/dashboard` |
 | Management dashboard | `/management-dashboard` |
+| Monitoring Dashboard / Reports for planning, office and administrative roles | `/monitoring-dashboard`, `/monitoring-dashboard?tab=reports` |
 | Real account management | `/user-management` |
 | Role assignment | `/role-management` |
 | Role permission settings | `/role-management?section=permissions` |
@@ -32,6 +34,19 @@ Old `view=agency-input` upload links normalize to `view=inputs`, retaining the s
 The legacy `/office?view=mapping` and `view=alignment` previews remain readable with a link to the current mapping page. The old mapping form has no working mapping-save integration; its controls are disabled rather than submitting misleading objective proposals.
 
 Standard functions without an implemented screen have a `/dashboard?feature=...` placeholder. Missing permissions produce a disabled `No access` entry; additional nonstandard capabilities are hidden if unauthorized. Do not hide implemented forms merely because the API returns no records.
+
+## Role workspaces
+
+Each role's sidebar groups and `/dashboard` home cards follow the planning stages below, in this order. Entries keep their existing permission requirements; without permission a card shows *No access*. When a stage lists another name for a page that is already in the sidebar, that entry is `dashboardOnly`: it appears as a home card with a short explanation, but not twice in the sidebar. A stage whose entries are all `dashboardOnly` therefore appears only on the home page.
+
+| Role | Stages |
+| --- | --- |
+| Administrative Admin | Planning reference-data preparation (Administrative Dashboard, Presidential Agenda, PDP Chapters, Reference Data) · Planning-template preparation (Template Management) · Administrative monitoring (Monitoring Dashboard, Reports, System Logs) · then the existing Strategic Planning, Strategic Alignment, Progress Monitoring and Assigned Approvals groups |
+| Planning Officer | Initial strategic-plan creation · Strategic foundation development · Strategic-objective development · Strategic alignment mapping · Office/Agency input collection · Office/Agency input consolidation · Strategic-plan finalization · Approval submission · Implementation monitoring (Objective Progress Monitoring, Monitoring Dashboard, Reports) · Reviews |
+| Office / Agency | Initial strategic-plan review · Planning-input submission (Planning Inputs, Proposed Objectives, Comments) · Agency-level strategic mapping (read-only `/mappings?mode=view`) · Input-processing status review · Assigned-objective progress updates (incl. Edit Objectives) · Agency implementation monitoring (Monitoring Dashboard, Reports) |
+| Management / Executive | Strategic-plan approval preparation · Strategic-plan review · Strategic-alignment review · Strategic-plan approval · Implementation oversight — all open the existing Management Dashboard tabs and Plan Review |
+
+`/dashboard` is the first card of the first stage for these roles (Management keeps `/management-dashboard` as home). `/monitoring-dashboard` renders the Management Dashboard page for any account with `strategic_records.view` or `reports.view`: only the Overview and Reports tabs, each gated by permission, with data scoped by the backend. My Pending Actions appears there only for users with a plan review assigned to them.
 
 ## Data sources
 

@@ -88,6 +88,9 @@ Route::view(
 
 Route::view('/management-dashboard', 'pages.management-dashboard')
     ->name('management.dashboard');
+// Planning and office roles open the same page as their permission-gated Monitoring Dashboard.
+Route::view('/monitoring-dashboard', 'pages.management-dashboard')
+    ->name('monitoring.dashboard');
 
 /*
 |--------------------------------------------------------------------------

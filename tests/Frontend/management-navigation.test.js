@@ -1,22 +1,26 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { navigationFor, flattenNavigation, pageForUrl, canOpenPage, managementDashboardTab } from '../../resources/js/access/navigation.js';
+import { navigationFor, flattenNavigation, pageForUrl, canOpenPage, isCurrentPage, managementDashboardTab } from '../../resources/js/access/navigation.js';
 import { ManagementPagination, pageRows } from '../../resources/js/components/ManagementPagination.js';
 
 const management = () => flattenNavigation(navigationFor('Management'));
 
-test('management menu opens the dashboard tabs, plan review and reports', () => {
-    assert.ok(navigationFor('Management').every(item => !item.children), 'Management sidebar links are all top-level');
+test('management menu follows the five approval and oversight stages', () => {
+    assert.deepEqual(navigationFor('Management').filter(item => item.children).map(item => item.label), [
+        'Strategic-plan approval preparation', 'Strategic-plan review', 'Strategic-alignment review', 'Strategic-plan approval', 'Implementation oversight',
+    ]);
     const items = management();
     const byId = id => items.find(item => item.id === id);
     assert.equal(byId('home'), undefined);
-    assert.equal(items[0].id, 'dashboard');
+    assert.equal(byId('dashboard').label, 'Executive Dashboard');
     assert.equal(byId('dashboard').href, '/management-dashboard');
+    assert.equal(byId('reviews-approvals').href, '/management-dashboard?tab=approvals');
     assert.equal(byId('alignment-performance').href, '/management-dashboard?tab=alignment');
     assert.equal(byId('inputs-consolidation').href, '/management-dashboard?tab=inputs');
-    assert.equal(byId('reviews-approvals').href, '/management-dashboard?tab=approvals');
+    assert.equal(byId('plan-approval').href, '/management-dashboard?tab=approvals&queue=pending');
     assert.equal(byId('plan-review').href, '/management-plan-review');
     assert.equal(byId('reports').href, '/management-dashboard?tab=reports');
+    assert.ok(['mvc-review', 'objectives-review', 'agenda-pdp-review', 'progress-summary'].every(id => byId(id).dashboardOnly), 'repeated pages appear once in the sidebar');
     assert.equal(pageForUrl('/management-dashboard', 'Management').id, 'dashboard');
     assert.equal(pageForUrl('/management-dashboard?tab=overview&period=2023-2028', 'Management').id, 'dashboard');
     assert.equal(pageForUrl('/management-dashboard?tab=alignment', 'Management').id, 'alignment-performance');
@@ -24,6 +28,8 @@ test('management menu opens the dashboard tabs, plan review and reports', () => 
     assert.equal(pageForUrl('/management-dashboard?tab=inputs', 'Management').id, 'inputs-consolidation');
     assert.equal(pageForUrl('/management-dashboard?tab=approvals&queue=returned', 'Management').id, 'reviews-approvals');
     assert.equal(pageForUrl('/management-dashboard?tab=reports', 'Management').id, 'reports');
+    assert.equal(isCurrentPage(byId('plan-approval'), '/management-dashboard?tab=approvals&queue=pending'), true);
+    assert.equal(isCurrentPage(byId('plan-approval'), '/management-dashboard?tab=approvals&queue=approved'), false);
 });
 
 test('old management dashboard links resolve to the matching tab', () => {
