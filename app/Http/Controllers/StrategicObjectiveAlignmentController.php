@@ -55,7 +55,11 @@ class StrategicObjectiveAlignmentController extends Controller
             $objectives->whereHas('responsibleUnitAssignment', fn ($assignment) =>
                 $assignment->where('responsible_unit_id', $unit?->responsible_unit_id));
         }
-        $objectives = $objectives->with(['pdpChaptersWithArchived', 'presidentialAgendaItemsWithArchived'])->get();
+        $objectives = $objectives->with([
+            'pdpChaptersWithArchived',
+            'presidentialAgendaItemsWithArchived',
+            'responsibleUnitAssignment.responsibleUnit',
+        ])->get();
         $rows = [];
         foreach ($objectives as $objective) {
             foreach (['pdp-chapter' => $objective->pdpChaptersWithArchived, 'presidential-agenda' => $objective->presidentialAgendaItemsWithArchived] as $type => $references) {
@@ -65,6 +69,11 @@ class StrategicObjectiveAlignmentController extends Controller
                         'plan_id' => $planId, 'objective_id' => $objective->objective_id,
                         'objective_title' => $objective->objective_title, 'objective_status' => $objective->status,
                         'responsible_office_agency' => $objective->responsible_office_agency,
+                        'agency_plan' => [
+                            'responsible_unit_id' => $objective->responsibleUnitAssignment?->responsible_unit_id,
+                            'title' => $objective->responsibleUnitAssignment?->responsibleUnit?->responsible_office_agency
+                                ?? $objective->responsible_office_agency,
+                        ],
                         'type' => $type, 'reference_id' => $reference->getKey(),
                         'reference_title' => $reference->chapter_title ?? $reference->title,
                         'reference_status' => $reference->status,
@@ -84,7 +93,16 @@ class StrategicObjectiveAlignmentController extends Controller
         return response()->json(['success' => true, 'data' => $rows, 'meta' => [
             'plan' => $plan->only(['record_id', 'title', 'status', 'approval_status']),
             'capabilities' => $capabilities,
-            'objectives' => $objectives->map(fn ($objective) => $objective->only(['objective_id', 'objective_title', 'status'])),
+            'objectives' => $objectives->map(fn ($objective) => [
+                'objective_id' => $objective->objective_id,
+                'objective_title' => $objective->objective_title,
+                'status' => $objective->status,
+                'agency_plan' => [
+                    'responsible_unit_id' => $objective->responsibleUnitAssignment?->responsible_unit_id,
+                    'title' => $objective->responsibleUnitAssignment?->responsibleUnit?->responsible_office_agency
+                        ?? $objective->responsible_office_agency,
+                ],
+            ]),
             'catalog' => $capabilities['create'] ? [
                 'pdp_chapters' => PdpChapter::where('status', 'active')->get(['chapter_id', 'chapter_title']),
                 'presidential_agenda' => PresidentialAgendaItem::where('status', 'active')->get(['agenda_id', 'code', 'title']),

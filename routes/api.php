@@ -303,6 +303,7 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
     Route::post('strategic-plans/{plan}/resubmit', [\App\Http\Controllers\PlanApprovalController::class, 'resubmit'])->whereNumber('plan');
     Route::get('strategic-plans/{plan}/approval-status', [\App\Http\Controllers\PlanApprovalController::class, 'tracking'])->whereNumber('plan');
     Route::post('strategic-plans/{plan}/submit', [\App\Http\Controllers\PlanApprovalController::class, 'submit'])->whereNumber('plan');
+    Route::post('strategic-plans/{plan}/finalize', [\App\Http\Controllers\PlanApprovalController::class, 'finalize'])->whereNumber('plan');
     Route::get('strategic-plans/{plan}/approval-preparation', [\App\Http\Controllers\PlanApprovalController::class, 'preparation'])->whereNumber('plan');
     Route::get('strategic-plans/{plan}/approval', [\App\Http\Controllers\PlanApprovalController::class, 'show'])->whereNumber('plan');
     Route::post('strategic-plans/{plan}/approval/decision', [\App\Http\Controllers\PlanApprovalController::class, 'decide'])->whereNumber('plan');
