@@ -135,7 +135,7 @@ export const roleNavigation = {
         page('inputs-consolidation', 'Inputs & Consolidation', '/management-dashboard?tab=inputs', [], { anyPermissions: ['implementation_inputs.view', 'implementation_inputs.view_all'], icon: 'bi-building-check' }),
         page('reviews-approvals', 'Reviews & Approvals', '/management-dashboard?tab=approvals', ['strategic_records.view'], { icon: 'bi-clipboard-check' }),
         page('plan-review', 'Plan Review', '/management-plan-review', ['strategic_records.view'], { icon: 'bi-journal-text' }),
-        page('reports', 'Reports & Summary', '/management-dashboard?tab=reports', ['strategic_records.view'], { icon: 'bi-file-earmark-bar-graph' }),
+        page('reports', 'Reports & Summary', '/management-dashboard?tab=reports', ['reports.view'], { icon: 'bi-file-earmark-bar-graph' }),
     ],
 };
 export const dashboardLabels = { technical: 'Technical Administration Dashboard', administrative: 'Administrative Dashboard', planner: 'Planning Dashboard', office: 'Office/Agency Dashboard', management: 'Executive Dashboard' };

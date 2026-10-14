@@ -12,17 +12,17 @@ import { isManagementSession } from '../../access/management-access.js';
 import { managementDashboardTab } from '../../access/navigation.js';
 import { ManagementPagination, pageRows } from '../../components/ManagementPagination.js';
 import {
-    chartPeriod, filterManagementRows, isAligned, objectiveRisk, officeName, officePerformance, officeUnitPerformance,
-    periodLabel, planMatchesFilters, planPeriodKey, progressPercent, progressStatus, scopeFilters, sixYearProgress,
+    chartPeriod, filterManagementRows, isAligned, objectiveRisk, officeName, officeUnitPerformance,
+    periodLabel, planMatchesFilters, planPeriodKey, progressStatus, scopeFilters, sixYearProgress,
 } from './management-insights.js';
 import { getManagementProgressTimeline, listAuthorizedManagementPlans, loadAllManagementPages, managementDateLabel } from './management-data.js';
 import { ManagementFilterBar, PlanningPeriodSelect, hasManagementFilters, useManagementFilters } from './management-filters.js';
 import { EmptyState, SectionCard, sectionGate, useManagementSource } from './management-sections.js';
 import { ApprovalsPanel, approvalSection, mergeAssignedPlans } from './management-approvals.js';
+import { ManagementReport } from './management-report.js';
 import { AttentionRequired, OfficePerformanceTable, PendingActions, PlanProgressMonitor, ProgressBreakdownTable, SixYearChart } from './management-overview.js';
 
 const h = React.createElement;
-const statusLabels = { completed: 'Completed', in_progress: 'Ongoing', not_started: 'Not Started' };
 const TABS = [
     { id: 'overview', label: 'Overview', icon: 'bi-grid-1x2' },
     { id: 'alignment', label: 'Alignment & Performance', icon: 'bi-diagram-3' },
@@ -111,7 +111,9 @@ function ManagementDashboard({ session }) {
     const canViewObjectives = can('strategic_objectives.view', session);
     const canViewInputs = can(P.INPUTS_VIEW, session) || can('implementation_inputs.view_all', session);
     const canReview = can(P.PLANS_VIEW, session);
-    const visibleTabs = TABS.filter(tab => tab.id !== 'inputs' || canViewInputs);
+    const canViewReports = can(P.REPORTS_VIEW, session);
+    const canExportReports = can('reports.export', session);
+    const visibleTabs = TABS.filter(tab => (tab.id !== 'inputs' || canViewInputs) && (tab.id !== 'reports' || canViewReports));
     const requestedTab = managementDashboardTab(search);
     const activeTab = visibleTabs.some(tab => tab.id === requestedTab) ? requestedTab : 'overview';
     const queue = approvalSection(search.get('queue'));
@@ -124,11 +126,9 @@ function ManagementDashboard({ session }) {
 
     const [inputStatus, setInputStatus] = React.useState('');
     const [inputCategory, setInputCategory] = React.useState('');
-    const [activeReport, setActiveReport] = React.useState('');
     const [alignmentPage, setAlignmentPage] = React.useState(1);
     const [agencyPage, setAgencyPage] = React.useState(1);
-    const [reportPage, setReportPage] = React.useState(1);
-    React.useEffect(() => { setAlignmentPage(1); setAgencyPage(1); setReportPage(1); }, [JSON.stringify(filters)]);
+    React.useEffect(() => { setAlignmentPage(1); setAgencyPage(1); }, [JSON.stringify(filters)]);
 
     function navigate(changes) {
         const url = new URL(window.location.href);
@@ -137,7 +137,7 @@ function ManagementDashboard({ session }) {
         window.history.pushState(window.history.state, '', url);
         setSearch(new URLSearchParams(url.search));
     }
-    const openTab = tab => { navigate({ tab: tab === 'overview' ? '' : tab, section: '', queue: tab === 'approvals' ? queue : '' }); setActiveReport(''); };
+    const openTab = tab => { navigate({ tab: tab === 'overview' ? '' : tab, section: '', queue: tab === 'approvals' ? queue : '' }); };
 
     const plans = plansSource.data;
     const objectives = objectivesSource.data;
@@ -155,7 +155,6 @@ function ManagementDashboard({ session }) {
     const filteredInputs = inputs.filter(input => allowedPlanIds.has(String(input.strategic_plan_id))
         && (!scope.office || input.responsible_office_agency === scope.office)
         && (!scope.objectiveStatus || allowedObjectiveIds.has(String(input.objective_id))));
-    const filteredReviews = reviews.filter(review => allowedPlanIds.has(String(review.planId)));
     const plansById = new Map(filteredPlans.map(plan => [String(plan.record_id), plan]));
     const approvedPlans = filteredPlans.filter(plan => plan.approval_status === 'approved');
     const approvedPlansById = new Map(approvedPlans.map(plan => [String(plan.record_id), plan]));
@@ -168,8 +167,6 @@ function ManagementDashboard({ session }) {
     const riskRows = executionObjectives.map(objective => ({ objective, plan: approvedPlansById.get(String(objective.strategic_plan_id)) }))
         .map(row => ({ ...row, risk: objectiveRisk(row.objective, row.plan) })).filter(row => row.risk);
     const pendingPlans = filteredPlans.filter(plan => plan.approval_status === 'under_approval');
-    const returnedPlans = filteredPlans.filter(plan => plan.approval_status === 'rejected');
-    const performanceRows = officePerformance(executionObjectives);
     const officeRows = officeUnitPerformance(executionObjectives, { plansById: approvedPlansById, inputs: filteredInputs });
     const inputCounts = { pending: filteredInputs.filter(item => item.review_status === 'Pending Review').length,
         approved: filteredInputs.filter(item => item.review_status === 'Approved').length,
@@ -199,15 +196,9 @@ function ManagementDashboard({ session }) {
     const sixYears = sixYearProgress({ period: period.value, objectives: chartObjectives, updates: timelineSource.data, plansById: approvedPlansById });
 
     const reportRows = {
-        plans: filteredPlans.map(plan => ({ plan_id: plan.record_id, plan: plan.title, status: plan.planning_status_label || plan.status, approval_status: plan.approval_status || 'not_submitted', office: plan.department_agency || '', planning_start_date: plan.planning_start_date, planning_end_date: plan.planning_end_date })),
-        progress: executionObjectives.map(item => ({ plan: item.strategic_plan?.title || '', objective: item.objective_title, responsible_office: officeName(item), progress_percent: progressPercent(item), status: statusLabels[progressStatus(item)], updated_at: item.progress_updated_at || '' })),
         alignment: filteredObjectives.map(item => ({ plan: item.strategic_plan?.title || '', presidential_agenda: agendaLabel(item), pdp_chapter: chapterLabel(item), objective: item.objective_title, agency: officeName(item) })),
-        reviews: filteredReviews.map(item => ({ plan_id: item.planId, plan: item.plan_snapshot?.title || `Strategic Plan ${item.planId}`, stage: item.currentStage?.name || '', submitted_at: item.submittedAt || '', workflow: item.workflowName || '' })),
         inputs: filteredInputs.map(item => ({ plan: item.strategic_plan?.title || '', objective: item.objective?.objective_title || '', office: item.responsible_office_agency || '', input_type: item.input_type, category: item.feedback_category || item.input_type, status: item.review_status === 'Approved' ? 'Accepted' : item.review_status === 'Rejected' ? 'Declined' : item.review_status, submitted_at: item.submitted_at || '', content: item.content || '', reviewer_remarks: item.review_note || '', reviewed_at: item.reviewed_at || '' })),
-        offices: performanceRows,
-        risks: riskRows.map(({ objective, plan, risk }) => ({ plan: plan?.title || '', objective: objective.objective_title || '', office: officeName(objective), progress_percent: progressPercent(objective), planning_end_date: plan?.planning_end_date || '', risk })),
         approvals: filteredPlans.filter(plan => ['under_approval', 'approved', 'rejected'].includes(plan.approval_status)).map(plan => ({ plan_id: plan.record_id, plan: plan.title, approval_status: plan.approval_status, decision_display: plan.approval_status === 'rejected' ? 'Returned for correction' : plan.approval_status, office: plan.department_agency || '' })),
-        consolidation: consolidationRows,
         breakdown: sixYears.years.map(row => ({ year: row.label, calendar_year: row.year, completed: row.future ? '' : row.completed, ongoing: row.future ? '' : row.ongoing, not_started: row.future ? '' : row.not_started, delayed: row.future ? '' : row.delayed, total: row.future ? 'Not yet reached' : row.total })),
     };
 
@@ -333,48 +324,10 @@ function ManagementDashboard({ session }) {
             : h(ApprovalsPanel, { session, management: true, plans: approvalPlans, assigned: reviews, loading: reviewsSource.status === 'loading', section: queue,
                 onSectionChange: id => navigate({ queue: id }), emptyMessage: filtered ? 'No plans in this category match the current filters.' : 'No plans in this category.' }));
 
-    // Reports & Summary (unchanged report list)
     const sources = [plansSource, objectivesSource, reviewsSource, inputsSource];
     const loading = sources.some(source => source.status === 'loading');
-    const hasErrors = sources.some(source => source.status === 'error');
-    const reports = [
-        { id: 'plans', title: 'Strategic Plan Register', description: 'Plan title, lifecycle status and planning period.', icon: 'bi-journal-text', count: filteredPlans.length, label: 'plans', rows: reportRows.plans },
-        { id: 'progress', title: 'Objective Progress Summary', description: 'Progress percentage, calculated status, responsible office and last update.', icon: 'bi-graph-up', count: executionObjectives.length, label: 'objectives', rows: reportRows.progress },
-        { id: 'alignment', title: 'Strategic Alignment Report', description: 'Agenda, PDP chapter, objective and responsible agency mappings.', icon: 'bi-diagram-3', count: filteredObjectives.length, label: 'objective mappings', rows: reportRows.alignment },
-        { id: 'inputs', title: 'Agency Input Report', description: 'Submitted agency implementation updates, review status and submission date.', icon: 'bi-building-check', count: filteredInputs.length, label: 'agency inputs', rows: reportRows.inputs },
-        { id: 'reviews', title: 'Assigned Approval Queue', description: 'Plan approvals assigned to your account and their current workflow stage.', icon: 'bi-clipboard-check', count: filteredReviews.length, label: 'pending reviews', rows: reportRows.reviews },
-        { id: 'approvals', title: 'Plan Approval Status', description: 'Awaiting, approved and returned plans.', icon: 'bi-clipboard-check', count: reportRows.approvals.length, label: 'plans', rows: reportRows.approvals },
-        { id: 'offices', title: 'Office / Unit Performance', description: 'Objective execution counts by responsible Office / Agency.', icon: 'bi-people', count: performanceRows.length, label: 'offices', rows: reportRows.offices },
-        { id: 'risks', title: 'Overdue Items', description: 'Incomplete objectives past their plan end date. The plan end date is used because objective deadlines are not available.', icon: 'bi-exclamation-triangle', count: riskRows.length, label: 'items', rows: reportRows.risks },
-        { id: 'consolidation', title: 'Input Consolidation Progress', description: 'Pending, approved and rejected agency inputs by office.', icon: 'bi-inboxes', count: consolidationRows.length, label: 'offices', rows: reportRows.consolidation },
-    ];
-    const visibleReports = reports.filter(report => !['inputs', 'consolidation'].includes(report.id) || canViewInputs);
-    const selectedReport = visibleReports.find(report => report.id === activeReport);
-    const reportsContent = h(React.Fragment, null,
-        h('section', { className: 'management-oversight', 'aria-label': 'Management status overview' },
-            h('article', null, h('h2', null, 'Plan approvals'), h('p', null, `${pendingPlans.length} awaiting · ${approvedPlans.length} approved · ${returnedPlans.length} returned for correction`)),
-            h('article', null, h('h2', null, 'Office performance'), h('p', null, `${performanceRows.length} office(s) · ${filteredObjectives.length} assigned objective(s)`)),
-            canViewInputs ? h('article', null, h('h2', null, 'Input consolidation'), h('p', null, `${inputCounts.pending} pending · ${inputCounts.approved} approved · ${inputCounts.rejected} rejected`)) : null,
-            h('article', null, h('h2', null, 'Overdue objectives'), h('p', null, `${riskRows.length} overdue`))),
-        h('section', { className: 'management-card management-table-card', 'aria-label': 'Reports and summaries' },
-            h('div', { className: 'management-card__heading' }, h('div', null,
-                h('h2', null, selectedReport ? selectedReport.title : 'Reports & Summary'),
-                h('p', null, selectedReport ? selectedReport.description : 'Browse reporting datasets, inspect records and export CSV files.')),
-                selectedReport ? h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => { setActiveReport(''); setReportPage(1); } }, 'Back to reports') : null),
-            selectedReport
-                ? h(React.Fragment, null,
-                    h('div', { className: 'management-report-detail__actions' }, h('span', null, `${selectedReport.rows.length} ${selectedReport.label}`),
-                        h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', disabled: loading || hasErrors || !selectedReport.rows.length, onClick: () => downloadCsv(`${selectedReport.id}-report.csv`, selectedReport.rows) }, 'Export CSV')),
-                    h('div', { className: 'management-table-scroll' }, h('table', null,
-                        h('thead', null, h('tr', null, (selectedReport.rows.length ? Object.keys(selectedReport.rows[0]) : ['No records']).map(key => h('th', { key, scope: 'col' }, key.replaceAll('_', ' '))))),
-                        h('tbody', null, selectedReport.rows.length ? pageRows(selectedReport.rows, reportPage).map((row, index) => h('tr', { key: `${reportPage}-${index}` }, Object.keys(row).map(key => h('td', { key }, String(row[key] ?? '—'))))) : h('tr', null, h('td', null, 'No records available.'))))),
-                    h(ManagementPagination, { page: reportPage, total: selectedReport.rows.length, label: 'records', onChange: setReportPage }))
-                : h('div', { className: 'management-report-list' }, visibleReports.map(report => h('article', { className: 'management-report-list__row', key: report.id },
-                    h('span', { className: 'management-report-card__icon' }, h('i', { className: `bi ${report.icon}`, 'aria-hidden': true })),
-                    h('div', { className: 'management-report-list__copy' }, h('h3', null, report.title), h('p', null, report.description), h('small', null, `${loading ? '—' : report.count} ${report.label}`)),
-                    h('div', { className: 'management-report-card__actions' },
-                        h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', disabled: loading, onClick: () => { setActiveReport(report.id); setReportPage(1); } }, 'View'),
-                        h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', disabled: loading || hasErrors || !report.rows.length, onClick: () => downloadCsv(`${report.id}-report.csv`, report.rows) }, 'Export CSV')))))));
+    // Report master: sections and rows come from the backend for this account.
+    const reportsContent = h(ManagementReport, { filters, refresh, canExport: canExportReports, filtered, onClear: resetFilters });
 
     // Export Dashboard: the current tab's main dataset.
     const exportSets = {
@@ -390,7 +343,7 @@ function ManagementDashboard({ session }) {
     const pageContent = { overview: overviewContent, alignment: alignmentContent, inputs: inputsContent, approvals: approvalsContent, reports: reportsContent }[activeTab];
     const activeLabel = TABS.find(tab => tab.id === activeTab).label;
 
-    return h('div', { className: 'app-shell management-dashboard' },
+    return h('div', { className: `app-shell management-dashboard${activeTab === 'reports' ? ' management-dashboard--report' : ''}` },
         h(AppSidebar),
         h('main', { className: 'app-shell-main' }, h('div', { className: 'management-dashboard__content' },
             h('header', { className: 'management-dashboard__header' },
