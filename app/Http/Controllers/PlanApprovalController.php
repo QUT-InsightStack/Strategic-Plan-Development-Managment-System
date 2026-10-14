@@ -22,6 +22,11 @@ class PlanApprovalController extends Controller
         return response()->json(['data' => $this->service->submit($plan, $request->user('api'))], 201);
     }
 
+    public function finalize(Request $request, int $plan)
+    {
+        return response()->json(['data' => $this->service->finalize($plan, $request->user('api'))]);
+    }
+
     public function resubmit(Request $request, int $plan)
     {
         $data = $request->validate([

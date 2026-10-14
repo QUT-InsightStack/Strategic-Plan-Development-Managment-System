@@ -178,9 +178,10 @@ function FinalizeStrategicPlanApp() {
     done: objectives.length > 0 && objectivesMissingIndicators.length === 0,
 },
         { label: 'Agency inputs consolidated', done: inputMeta !== null && outstandingInputs === 0 },
-        { label: 'Progress status updated', done: objectives.length > 0 && objectives.every(item => text(item.status)) },
+        { label: 'Title and planning period completed', done: Boolean(text(plan.title) && plan.title !== 'Untitled Strategic Plan' && plan.planning_start_date && plan.planning_end_date) },
+        { label: 'Targets and responsible Offices / Agencies assigned', done: objectives.length > 0 && objectives.every(item => text(item.target) && text(item.responsible_office_agency)) },
     ] : [];
-    const ready = checks.length > 0 && checks.every(item => item.done);
+    const ready = checks.length > 0 && checks.every(item => item.done) && Object.keys(plan?.preparation_errors || {}).length === 0;
     const canEditSections = Boolean(
     plan
     && can('strategic_records.update')
@@ -189,6 +190,18 @@ function FinalizeStrategicPlanApp() {
         plan.approval_status || 'not_submitted'
     )
 );
+
+    async function finalizePlan() {
+        setSubmitting(true); setNotice({ type: '', message: '' });
+        try {
+            const response = await apiRequest(`/api/strategic-plans/${planId}/finalize`, { method: 'POST' });
+            setPlan(response.data);
+            setPlans(rows => rows.map(row => row.record_id === response.data.record_id ? response.data : row));
+            setNotice({ type: 'success', message: 'Plan finalized. Status: Ready to Submit. You can now submit it for approval.' });
+        } catch (error) {
+            setNotice({ type: 'error', message: [error.message, ...Object.values(error.errors || {}).flat()].join(' ') });
+        } finally { setSubmitting(false); }
+    }
 
     async function submitPlan() {
     const resubmission = plan?.approval_status === 'rejected';
@@ -204,7 +217,7 @@ function FinalizeStrategicPlanApp() {
         !plan ||
         missingPreviousSubmission ||
         cannotResubmit ||
-        !['draft', 'finished'].includes(plan.status) ||
+        plan.status !== 'finished' ||
         ['under_approval', 'approved'].includes(plan.approval_status) ||
         submitting
     ) {
@@ -226,6 +239,8 @@ function FinalizeStrategicPlanApp() {
             ...plan,
             status: 'finished',
             approval_status: response.data.status,
+            planning_status_label: 'Awaiting Approval',
+            ready_to_submit: false,
         };
 
         setPlan(finalizedPlan);
@@ -284,7 +299,7 @@ h(
         ? 'Review the complete plan, objectives and alignment mappings. Use the edit links to update any section.'
         : 'Check that the plan is complete before submitting it for approval.'
 ),
-            !overviewMode && plans.length > 1 && h('label', { className: 'ui-field finalize-plan-picker' }, h('span', { className: 'ui-label' }, 'Strategic plan'), h('select', { className: 'ui-select', value: planId || '', onChange: selectPlan }, plans.map(item => h('option', { value: item.record_id, key: item.record_id }, `${item.title} · ${planStatusLabel(item.status)}`)))),
+            !overviewMode && plans.length > 1 && h('label', { className: 'ui-field finalize-plan-picker' }, h('span', { className: 'ui-label' }, 'Strategic plan'), h('select', { className: 'ui-select', value: planId || '', onChange: selectPlan }, plans.map(item => h('option', { value: item.record_id, key: item.record_id }, `${item.title} · ${item.planning_status_label || planStatusLabel(item.status)}`)))),
             notice.message && h('div', { className: `ui-status ui-status--${notice.type} finalize-feedback`, role: notice.type === 'error' ? 'alert' : 'status' }, notice.message),
             loading ? h('section', { className: 'ui-card ui-empty' }, 'Loading finalized plan…') : !plan ? h('section', { className: 'ui-card ui-empty' }, 'No strategic plan is available for finalization.') :
             h('div', { className: 'finalize-layout' },
@@ -292,7 +307,7 @@ h(
                     h('section', { className: 'ui-card finalize-plan-info', 'aria-labelledby': 'plan-information-title' },
                         h('h2', { className: 'finalize-section-heading', id: 'plan-information-title' }, 'Plan Information'),
                         h('div', { className: 'finalize-info-grid' },
-                            [['Plan Title', plan.title], ['Plan Level', (plan.level || 'strategic_plan').replaceAll('_', ' ')], ['Created by Author', creatorName(plan.creator)], ['Date Created', formatDate(plan.created_at)], ['Department / Agency', plan.creator?.department || plan.creator?.office || '—'], ['Status', h('span', { className: `finalize-status is-${plan.status}` }, plan.status === 'finished' ? 'Finalized' : plan.status)]].map(([label, value]) => h('div', { className: 'finalize-info-item', key: label }, h('small', null, label), h('strong', null, value)))
+                            [['Plan Title', plan.title], ['Plan Level', (plan.level || 'strategic_plan').replaceAll('_', ' ')], ['Created by Author', creatorName(plan.creator)], ['Date Created', formatDate(plan.created_at)], ['Department / Agency', plan.creator?.department || plan.creator?.office || '—'], ['Status', h('span', { className: `finalize-status is-${plan.status}` }, plan.planning_status_label || planStatusLabel(plan.status))]].map(([label, value]) => h('div', { className: 'finalize-info-item', key: label }, h('small', null, label), h('strong', null, value)))
                         )
                     ),
                     h('div', { className: 'finalize-accordions' },
@@ -493,6 +508,7 @@ overviewMode && canEditSections && plan.level === 'strategic_plan' && h(
     },
     'Continue to Finalize & Submit'
 ),
+!overviewMode && canEditSections && plan.status === 'draft' && (plan.approval_status || 'not_submitted') === 'not_submitted' && h('button', { type: 'button', className: 'ui-button ui-button--primary ui-button--sm', disabled: !ready || submitting, onClick: finalizePlan }, submitting ? 'Finalizing…' : 'Finalize Plan'),
 !overviewMode && h(
     'button',
     {
@@ -508,7 +524,7 @@ overviewMode && canEditSections && plan.level === 'strategic_plan' && h(
                     !tracking?.current_submission?.id
                 )
             ) ||
-            !['draft', 'finished'].includes(plan.status) ||
+            plan.status !== 'finished' ||
             ['under_approval', 'approved'].includes(
                 plan.approval_status
             ) ||

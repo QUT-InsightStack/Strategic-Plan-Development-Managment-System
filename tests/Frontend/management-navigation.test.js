@@ -12,25 +12,21 @@ test('management menu opens the matching review, alignment, monitoring and repor
     assert.equal(byId('home'), undefined);
     assert.equal(byId('approval-list').href, '/management-approvals');
     assert.equal(byId('plan-review').href, '/management-plan-review');
-    assert.equal(byId('objectives-review').href, '/management-plan-review?view=objectives');
     assert.equal(byId('alignment-review').href, '/management-dashboard?tab=alignment');
-    assert.equal(byId('agency-input-review').href, '/management-dashboard?tab=alignment&section=agency');
+    assert.equal(byId('agency-input-review').href, '/management-dashboard?tab=inputs');
     assert.equal(byId('monitoring').href, '/management-dashboard?tab=dashboard');
     assert.equal(byId('reports').href, '/management-dashboard?tab=reports');
     assert.equal(pageForUrl('/management-dashboard?tab=alignment', 'Management').id, 'alignment-review');
     assert.equal(pageForUrl('/management-dashboard?tab=alignment&section=documents', 'Management').id, 'alignment-review');
-    assert.equal(pageForUrl('/management-dashboard?tab=alignment&section=agency', 'Management').id, 'agency-input-review');
+    assert.equal(pageForUrl('/management-dashboard?tab=inputs', 'Management').id, 'agency-input-review');
     assert.equal(pageForUrl('/management-dashboard', 'Management').id, 'monitoring');
     assert.equal(pageForUrl('/management-dashboard?tab=reports', 'Management').id, 'reports');
-    assert.equal(pageForUrl('/management-plan-review?view=objectives&plan=7', 'Management').id, 'objectives-review');
 });
 
-test('management alignment and objective review links require their view permissions', () => {
+test('management alignment review link requires its view permission', () => {
     const items = management();
-    assert.equal(canOpenPage(items.find(item => item.id === 'alignment-review'), { permissions: ['relations.view'] }), true);
+    assert.equal(canOpenPage(items.find(item => item.id === 'alignment-review'), { permissions: ['strategic_records.view', 'strategic_objectives.view'] }), true);
     assert.equal(canOpenPage(items.find(item => item.id === 'alignment-review'), { permissions: [] }), false);
-    assert.equal(canOpenPage(items.find(item => item.id === 'objectives-review'), { permissions: ['strategic_records.view'] }), false);
-    assert.equal(canOpenPage(items.find(item => item.id === 'objectives-review'), { permissions: ['strategic_records.view', 'strategic_objectives.view'] }), true);
 });
 
 test('management list pagination exposes each record once', () => {

@@ -27,6 +27,23 @@ class PlanApprovalService
         return $this->startSubmission($planId, $actor);
     }
 
+    public function finalize(int $planId, User $actor): Strategic
+    {
+        abort_unless($actor->status === 'active' && in_array($actor->role?->role_name, Role::PLANNING_ROLES, true), 403);
+        return DB::transaction(function () use ($planId, $actor) {
+            $plan = Strategic::lockForUpdate()->findOrFail($planId);
+            $this->access->ensureCanUpdatePlan($plan, $actor);
+            abort_if(in_array($plan->approval_status, ['under_approval', 'approved', 'rejected'], true), 409, 'Use the existing approval workflow for this plan.');
+            $errors = app(PlanReadinessService::class)->errors($plan);
+            if ($errors) throw ValidationException::withMessages($errors);
+            $plan->forceFill(['status' => 'finished', 'updated_by' => $actor->user_id])->save();
+            app(\App\Contracts\StrategicLogWriter::class)->write('strategic_plan.finalized', [
+                'record_id' => $planId, 'user_id' => $actor->user_id, 'status' => 'finished',
+            ]);
+            return app(PlanReadinessService::class)->describe($plan);
+        });
+    }
+
     public function resubmit(int $planId, int $previousSubmissionId, ?string $note, User $actor): PlanSubmission
     {
         return $this->startSubmission($planId, $actor, $previousSubmissionId, $note);
@@ -133,22 +150,10 @@ foreach ($workflow->stages as $stage) {
 
     private function validatePlan(Strategic $plan): void
     {
-        $errors = [];
-        if (! in_array($plan->status, ['draft', 'finished'], true) || $plan->level !== 'strategic_plan'
+        $errors = app(PlanReadinessService::class)->errors($plan);
+        if ($plan->status !== 'finished' || $plan->level !== 'strategic_plan'
             || $plan->approval_status === 'approved') {
-            $errors['plan'] = 'Only draft or finished strategic plans awaiting approval can be submitted.';
-        }
-        if (! trim($plan->title) || $plan->title === 'Untitled Strategic Plan') {
-            $errors['title'] = 'A plan title is required before submission.';
-        }
-        if (! trim($plan->missionFoundation?->content ?? '') || ! trim($plan->visionFoundation?->content ?? '') || $plan->coreValues->isEmpty()) {
-            $errors['foundations'] = 'Complete the mission, vision and core values before submitting.';
-        }
-        if ($plan->objectives->isEmpty() || $plan->objectives->contains(fn ($objective) => ! trim($objective->objective_title ?? '') || ! trim($objective->expected_outcome ?? '') || ! trim($objective->indicator ?? ''))) {
-            $errors['objectives'] = 'Add strategic objectives with titles, expected outcomes and indicators before submitting.';
-        }
-        if ($plan->inputs->contains('review_status', ImplementationInput::PENDING_REVIEW)) {
-            $errors['inputs'] = 'Review all pending implementation inputs before submitting.';
+            $errors['plan'] = 'Finalize the strategic plan before submitting it for approval.';
         }
         if ($errors) {
             throw ValidationException::withMessages($errors);

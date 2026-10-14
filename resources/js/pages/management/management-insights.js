@@ -34,7 +34,9 @@ export function filterManagementRows(plans, objectives, filters, inputs = []) {
     const selectedIds = new Set(selectedPlans.map(plan => String(plan.record_id)));
     const selectedObjectives = objectives.filter(objective => selectedIds.has(String(objective.strategic_plan_id))
         && (!filters.office || officeName(objective) === filters.office)
-        && (!filters.objectiveStatus || progressStatus(objective) === filters.objectiveStatus));
+        && (!filters.objectiveStatus || (filters.objectiveStatus === 'overdue'
+            ? objectiveRisk(objective, selectedPlans.find(plan => String(plan.record_id) === String(objective.strategic_plan_id))) === 'Overdue'
+            : progressStatus(objective) === filters.objectiveStatus)));
     const visibleIds = filters.office || filters.objectiveStatus
         ? new Set(selectedObjectives.map(objective => String(objective.strategic_plan_id))) : selectedIds;
     if (filters.office && !filters.objectiveStatus) {
@@ -50,21 +52,21 @@ export function objectiveRisk(objective, plan, now = new Date()) {
     const end = new Date(`${String(plan.planning_end_date).slice(0, 10)}T23:59:59`);
     if (Number.isNaN(end.getTime())) return '';
     if (end < now) return 'Overdue';
-    return end.getTime() - now.getTime() <= 30 * 86400000 && progressPercent(objective) < 75 ? 'At risk' : '';
+    return ''; // No client-approved at-risk threshold has been defined.
 }
 
 export function officePerformance(objectives) {
     const groups = new Map();
     objectives.forEach(objective => {
         const name = officeName(objective);
-        const row = groups.get(name) || { office: name, objectives: 0, completed: 0, progressTotal: 0 };
+        const row = groups.get(name) || { office: name, objectives: 0, completed: 0, in_progress: 0, not_started: 0 };
         row.objectives += 1;
         row.completed += progressStatus(objective) === 'completed' ? 1 : 0;
-        row.progressTotal += progressPercent(objective);
+        if (progressStatus(objective) !== 'completed') row[progressStatus(objective)] += 1;
         groups.set(name, row);
     });
     return [...groups.values()].map(row => ({
         office: row.office, objectives: row.objectives, completed: row.completed,
-        average_progress_percent: Math.round(row.progressTotal / row.objectives),
+        in_progress: row.in_progress, not_started: row.not_started,
     })).sort((a, b) => a.office.localeCompare(b.office));
 }

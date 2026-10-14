@@ -138,3 +138,35 @@
 @media (max-width: 760px) { .management-dashboard__content { padding: var(--space-4); } .management-dashboard__header { align-items: stretch; flex-direction: column; } .management-dashboard__controls { align-items: stretch; } .management-dashboard__controls label { flex: 1; } .management-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .management-report-grid { grid-template-columns: 1fr; } .management-dashboard__panel { padding: 10px; } }
 @media (max-width: 480px) { .management-dashboard__controls { flex-direction: column; } .management-dashboard__controls label { min-width: 0; } .management-kpis { grid-template-columns: 1fr 1fr; gap: 7px; } .management-kpi { align-items: flex-start; flex-direction: column; padding: 9px; } .management-card__heading { align-items: flex-start; flex-direction: column; } .management-bar-row { grid-template-columns: minmax(80px, 1fr) minmax(90px, 2fr) 36px; gap: 7px; } }
 @media (max-width: 760px) { .management-report-list__row { grid-template-columns: 44px minmax(0, 1fr); } .management-report-list__row .management-report-card__actions { grid-column: 2; flex-wrap: wrap; } }
+.management-progress-legend { display: flex; flex-wrap: wrap; gap: 12px 22px; padding: 0 18px; font-size: 13px; }
+.management-progress-legend span { display: inline-flex; align-items: center; gap: 7px; }
+.management-progress-legend i { width: 9px; height: 9px; border-radius: 50%; background: var(--progress-color); }
+.progress-tone-completed { --progress-color: #16764b; --progress-tint: #eef8f2; }
+.progress-tone-in_progress { --progress-color: #2468b5; --progress-tint: #eef5fd; }
+.progress-tone-not_started { --progress-color: #64748b; --progress-tint: #f1f4f8; }
+.progress-tone-overdue { --progress-color: #b73535; --progress-tint: #fff1f1; }
+.management-progress-guide { padding: 0 18px; color: var(--color-text-secondary); font-size: 12px; line-height: 1.6; }
+.management-progress-plans { display: grid; gap: 16px; padding: 8px 18px 18px; }
+.management-progress-plan { min-width: 0; border: 1px solid #dce5ef; border-radius: 10px; padding: 20px; background: #fff; }
+.management-progress-plan__heading, .management-objective-card__heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+.management-progress-plan__heading small { color: var(--color-text-secondary); font-size: 11px; letter-spacing: .06em; }
+.management-progress-plan h3 { margin: 5px 0 7px; font-size: 17px; line-height: 1.45; color: var(--color-primary); overflow-wrap: anywhere; }
+.management-progress-plan__heading p { margin: 0; color: var(--color-text-secondary); font-size: 12px; }
+.management-progress-counts { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 18px; font-size: 13px; color: var(--color-text-secondary); }
+.management-progress-counts strong { color: var(--progress-color, var(--color-primary)); font-size: 19px; margin-right: 4px; }
+.management-objective-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 20px; padding-top: 18px; border-top: 1px solid #e8edf3; }
+.management-objective-cards > .management-pagination, .management-objective-cards > .management-empty { grid-column: 1 / -1; }
+.management-objective-card { min-width: 0; border: 1px solid #e0e7ef; border-radius: 8px; padding: 16px; background: #fcfdff; }
+.management-objective-card h4 { margin: 0; color: var(--color-primary); font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.management-objective-badge { flex-shrink: 0; border-radius: 20px; padding: 4px 9px; color: var(--progress-color); background: var(--progress-tint); font-size: 11px; font-weight: 600; }
+.management-objective-owner { margin: 14px 0 18px; color: var(--color-text-secondary); font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.management-objective-owner strong { font-weight: 500; color: var(--color-primary); }
+.management-objective-meter-label { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--color-text-secondary); }
+.management-objective-meter-label strong { color: var(--progress-color); font-size: 16px; }
+.management-objective-meter { height: 9px; overflow: hidden; border-radius: 10px; background: #e7edf4; margin: 8px 0 12px; }
+.management-objective-meter > span { display: block; height: 100%; border-radius: inherit; background: var(--progress-color); }
+.management-objective-updated { color: var(--color-text-secondary); font-size: 11px; }
+.management-scope-filters input { min-width: 0; width: 100%; min-height: 36px; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 6px 10px; font: inherit; }
+.management-scope-filters input:focus-visible { outline: var(--focus-ring); }
+@media (max-width: 1000px) { .management-objective-cards { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .management-progress-plan { padding: 14px; } .management-progress-plans { padding: 8px; } .management-progress-plan__heading, .management-objective-card__heading { flex-direction: column; } }
