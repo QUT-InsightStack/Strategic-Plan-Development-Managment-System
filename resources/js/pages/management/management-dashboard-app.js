@@ -1,4 +1,5 @@
 import { createPageRoot } from '../../navigation/page-root.js';
+import { usePageQuery } from '../../navigation/use-page-query.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { apiRequest } from '../../api/api-client.js';
 import { listAllStrategicObjectives } from '../../api/strategic-objectives-api.js';
@@ -59,10 +60,11 @@ function downloadCsv(filename, rows) {
 }
 
 function ManagementDashboard({ session }) {
+    const pageQuery = usePageQuery();
     const canViewInputs = can(P.INPUTS_VIEW, session) && can('implementation_inputs.view_all', session);
-    const queryTab = new URLSearchParams(window.location.search).get('tab');
+    const queryTab = new URLSearchParams(pageQuery).get('tab');
     const activeTab = queryTab === 'alignment' && can('relations.view', session) ? 'alignment' : queryTab === 'reports' ? 'reports' : 'dashboard';
-    const alignmentSection = new URLSearchParams(window.location.search).get('section') === 'agency' ? 'agency' : 'mapping';
+    const alignmentSection = new URLSearchParams(pageQuery).get('section') === 'agency' ? 'agency' : 'mapping';
     const [scopeFilters, setScopeFilters] = React.useState({ planId: '', year: '', office: '', planStatus: '', objectiveStatus: '', approvalStatus: '' });
     const [planSearch, setPlanSearch] = React.useState('');
     const [planLevel, setPlanLevel] = React.useState('');

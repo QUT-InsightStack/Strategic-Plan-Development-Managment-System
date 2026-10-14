@@ -26,11 +26,18 @@ function loadStyle(source) {
 
 async function visit(href, historyVisit = false) {
     if (navigating) { pendingVisit = [href, historyVisit]; return; }
-    const target = new URL(href, location.href);
-    if (target.href === currentUrl) return;
+    let target = new URL(href, location.href);
+    if (target.href === (historyVisit ? currentUrl : location.href)) return;
     if (!window.dispatchEvent(new Event('app:before-navigate', { cancelable: true }))
         && !window.confirm('There are unsaved changes or an operation in progress. Leave this page?')) {
         if (historyVisit) history.pushState(null, '', currentUrl);
+        return;
+    }
+    const queryNavigation = new CustomEvent('app:query-navigate', { cancelable: true, detail: { href: target.href } });
+    if (!window.dispatchEvent(queryNavigation)) {
+        if (!historyVisit) history.pushState(null, '', target.href);
+        currentUrl = target.href;
+        window.scrollTo(0, 0);
         return;
     }
     navigating = true;
@@ -41,7 +48,13 @@ async function visit(href, historyVisit = false) {
     let switched = false;
     try {
         const response = await fetch(target.href, { credentials: 'same-origin', headers: { Accept: 'text/html' } });
-        if (response.redirected) { location.assign(response.url); return; }
+        // Laravel's compatibility routes can redirect to another application page.
+        // Fetch has already followed that redirect; render its final response here.
+        if (response.redirected) {
+            const destination = new URL(response.url);
+            if (destination.origin !== location.origin) { location.assign(destination.href); return; }
+            target = destination;
+        }
         if (!response.ok) throw new Error(`Page could not be loaded (${response.status}). Please try again.`);
         const next = new DOMParser().parseFromString(await response.text(), 'text/html');
         const entry = next.querySelector('meta[name="app-page-entry"]')?.content;
@@ -73,6 +86,11 @@ async function visit(href, historyVisit = false) {
         const finish = () => {
             const content = document.getElementById('root')?.firstElementChild;
             if (!content || (content.tagName === 'P' && content.getAttribute('role') === 'status')) return false;
+            const nextSidebar = document.getElementById('root')?.querySelector('.app-sidebar');
+            // A mounted page may still be fetching its sidebar permissions. Keep
+            // the previous menu visible until the replacement is actually ready.
+            if (nextSidebar?.dataset.navigationReady === 'false') return false;
+            if (nextSidebar && retained) nextSidebar.scrollTop = retained.scrollTop;
             retained?.remove();
             const required = new Set(styles.map(link => link.href));
             for (const link of previousStyles) {
@@ -82,7 +100,7 @@ async function visit(href, historyVisit = false) {
         };
         if (!finish()) {
             const observer = new MutationObserver(() => { if (finish()) { observer.disconnect(); clearTimeout(timer); } });
-            observer.observe(document.getElementById('root'), { childList: true, subtree: true });
+            observer.observe(document.getElementById('root'), { childList: true, subtree: true, attributes: true, attributeFilter: ['data-navigation-ready'] });
             const timer = setTimeout(() => { observer.disconnect(); retained?.remove(); }, 15000);
             cleanupTransition = () => { observer.disconnect(); clearTimeout(timer); retained?.remove(); };
         }
