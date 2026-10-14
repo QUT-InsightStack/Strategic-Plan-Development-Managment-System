@@ -33,6 +33,12 @@ class ImplementationInputQueryService
         return $query;
     }
 
+    /** Every input in the actor's authorised scope, for the Management report. */
+    public function reportInputs(User $actor): \Illuminate\Support\Collection
+    {
+        return $this->scopedQuery($actor)->with($this->relations())->orderBy('input_id')->get();
+    }
+
     public function listing(array $filters, User $actor): array
     {
         $query = $this->scopedQuery($actor);
