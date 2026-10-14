@@ -20,8 +20,8 @@ class PasswordManagementTest extends TestCase
     {
         $this->putJson('/api/change-password', [
             'current_password' => 'password',
-            'new_password' => 'NewPassword123!!',
-            'new_password_confirmation' => 'NewPassword123!!',
+            'new_password' => 'NewPassword123!!!',
+            'new_password_confirmation' => 'NewPassword123!!!',
         ])->assertUnauthorized();
     }
 
@@ -31,12 +31,11 @@ class PasswordManagementTest extends TestCase
         $user->refresh();
         $originalVersion = (int) $user->auth_version;
 
-        $this->actingAs($user, 'api');
-        $response = $this->withoutMiddleware(ValidateAuthVersion::class)
-            ->putJson('/api/change-password', [
+        $this->authenticateApiUser($user);
+       $response = $this->putJson('/api/change-password', [
                 'current_password' => 'password',
-                'new_password' => 'NewPassword123!!',
-                'new_password_confirmation' => 'NewPassword123!!',
+                'new_password' => 'NewPassword123!!!',
+                'new_password_confirmation' => 'NewPassword123!!!',
             ])
             ->assertOk()
             ->assertJsonPath('success', true)
@@ -44,7 +43,7 @@ class PasswordManagementTest extends TestCase
 
         $user->refresh();
 
-        $this->assertTrue(Hash::check('NewPassword123!!', $user->password));
+        $this->assertTrue(Hash::check('NewPassword123!!!', $user->password));
         $this->assertSame($originalVersion + 1, (int) $user->auth_version);
         $this->assertStringContainsString(
             'auth.password_changed',
@@ -53,13 +52,16 @@ class PasswordManagementTest extends TestCase
         $this->assertEmpty($response->headers->getCookies()[0]->getValue());
     }
     public function test_change_password_rejects_password_shorter_than_sixteen_characters(): void
-    {
-        $user = $this->createUser();
+{
+    $settings = app(\App\Services\SystemSettingsService::class)->current();
+    $settings->password_min_length = 16;
+    $settings->saveOrFail();
 
-        $this->actingAs($user, 'api');
+    $user = $this->createUser();
 
-        $this->withoutMiddleware(ValidateAuthVersion::class)
-            ->putJson('/api/change-password', [
+       $this->authenticateApiUser($user);
+
+        $this->putJson('/api/change-password', [
                 'current_password' => 'password',
                 'new_password' => 'ShortPassword1!',
                 'new_password_confirmation' => 'ShortPassword1!',
@@ -75,12 +77,11 @@ class PasswordManagementTest extends TestCase
     {
         $user = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
-            ->putJson('/api/change-password', [
+        $this->authenticateApiUser($user);
+        $this->putJson('/api/change-password', [
                 'current_password' => 'wrong-password',
-                'new_password' => 'NewPassword123!!',
-                'new_password_confirmation' => 'NewPassword123!!',
+                'new_password' => 'NewPassword123!!!',
+                'new_password_confirmation' => 'NewPassword123!!!',
             ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('current_password');

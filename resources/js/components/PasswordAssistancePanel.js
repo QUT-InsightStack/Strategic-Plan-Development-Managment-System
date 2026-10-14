@@ -1,193 +1,197 @@
-import { passwordAssistanceDemoRequests } from '../data/password-assistance-demo-data.js';
+import { apiRequest } from '../api/api-client.js';
+import { getAccessSession } from '../access/access-session.js';
 
-const { useMemo, useState } = React;
+const { useEffect, useState } = React;
+const h = React.createElement;
 
-function formatDateTime(value) {
-    if (!value) return '—';
-
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) return '—';
-
-    return date.toLocaleString();
-}
+const labels = {
+    pending: 'Pending',
+    accepted: 'Accepted',
+    acted_on: 'Acted on',
+    ignored: 'Ignored',
+};
 
 export function PasswordAssistancePanel({ onNotice = () => {} }) {
-    const [requests, setRequests] = useState(
-        passwordAssistanceDemoRequests.map((request) => ({ ...request }))
-    );
+    const [requests, setRequests] = useState([]);
     const [filter, setFilter] = useState('pending');
+    const [page, setPage] = useState(1);
+    const [meta, setMeta] = useState({
+        last_page: 1,
+        pending_count: 0,
+    });
+    const [loading, setLoading] = useState(false);
+    const [busy, setBusy] = useState(null);
+    const [error, setError] = useState('');
 
-    const filteredRequests = useMemo(
-        () => requests.filter((request) => request.status === filter),
-        [requests, filter]
-    );
+    async function load() {
+        setLoading(true);
+        setError('');
 
-    const pendingCount = requests.filter(
-        (request) => request.status === 'pending'
-    ).length;
-
-    function markResolved(requestId) {
-        setRequests((current) =>
-            current.map((request) =>
-                request.id === requestId
-                    ? {
-                        ...request,
-                        status: 'resolved',
-                        handledBy: 'Current Administrator',
-                        handledAt: new Date().toISOString(),
-                    }
-                    : request
-            )
-        );
-
-        onNotice(
-            'Password assistance request marked as resolved in the frontend demonstration.',
-            'success'
-        );
+        try {
+            const payload = await apiRequest(
+                `/api/password-assistance-requests?status=${filter}&page=${page}`
+            );
+            setRequests(payload.data || []);
+            setMeta(payload.meta);
+        } catch (requestError) {
+            setError(requestError.message);
+        } finally {
+            setLoading(false);
+        }
     }
 
-    return React.createElement(
-        'section',
-        {
-            className: 'password-assistance-panel',
-            'aria-labelledby': 'password-assistance-title',
-        },
-        React.createElement(
-            'div',
-            { className: 'password-assistance-header' },
-            React.createElement(
-                'div',
-                null,
-                React.createElement(
-                    'h2',
-                    { id: 'password-assistance-title' },
-                    'Password Assistance Requests'
-                ),
-                React.createElement(
-                    'p',
-                    null,
-                    'Review password assistance requests submitted by active users- Frontend demonstration — awaiting backend integration.'
-                )
+    useEffect(() => {
+        load();
+    }, [filter, page]);
+
+    function openAccount(request) {
+        window.location.href =
+            `/user-management?assistance_id=${request.id}` +
+            `&user_id=${request.user_id}`;
+    }
+
+    async function act(request, action) {
+        if (busy !== null) return;
+
+        if (!window.confirm(
+            action === 'accept'
+                ? `Accept password assistance for ${request.user_name}?`
+                : `Ignore password assistance for ${request.user_name}?`
+        )) return;
+
+        setBusy(request.id);
+        setError('');
+
+        try {
+            const payload = await apiRequest(
+                `/api/password-assistance-requests/${request.id}/${action}`,
+                { method: 'POST' }
+            );
+
+            if (action === 'accept') {
+                openAccount(payload.data);
+                return;
+            }
+
+            onNotice(payload.message, 'success');
+            await load();
+        } catch (requestError) {
+            setError(requestError.message);
+        } finally {
+            setBusy(null);
+        }
+    }
+
+    return h('section', {
+        className: 'ui-card password-assistance-panel',
+        'aria-labelledby': 'password-assistance-title',
+    },
+        h('div', { className: 'password-assistance-header' },
+            h('h2', { id: 'password-assistance-title' },
+                'Password Assistance Requests'
             ),
-            React.createElement(
-                'span',
-                {
-                    className: 'password-assistance-count',
-                    'aria-label': `${pendingCount} pending requests`,
-                },
-                `${pendingCount} Pending`
+            h('span', { className: 'password-assistance-count' },
+                `${meta.pending_count} Pending`
             )
         ),
-        React.createElement(
-            'div',
-            {
-                className: 'password-assistance-filters',
-                role: 'group',
-                'aria-label': 'Filter password assistance requests',
-            },
-            ['pending', 'resolved'].map((status) =>
-                React.createElement(
-                    'button',
-                    {
-                        key: status,
-                        type: 'button',
-                        className:
-                            `password-assistance-filter${filter === status ? ' is-active' : ''}`,
-                        onClick: () => setFilter(status),
-                        'aria-pressed': filter === status,
+        h('p', null,
+            'Accept a request to reset the password in User Accounts.'
+        ),
+        h('div', { className: 'password-assistance-filters' },
+            ...Object.entries(labels).map(([status, label]) =>
+                h('button', {
+                    key: status,
+                    type: 'button',
+                    className: 'ui-button ui-button--secondary ui-button--sm',
+                    'aria-pressed': filter === status,
+                    onClick: () => {
+                        setFilter(status);
+                        setPage(1);
                     },
-                    status === 'pending' ? 'Pending' : 'Resolved'
-                )
-            )
+                }, label)
+            ),
+            h('button', {
+                type: 'button',
+                className: 'ui-button ui-button--secondary ui-button--sm',
+                disabled: loading || busy !== null,
+                onClick: load,
+            }, 'Refresh')
         ),
-        filteredRequests.length === 0
-            ? React.createElement(
-                'p',
-                { className: 'password-assistance-empty' },
-                `No ${filter} password assistance requests.`
-            )
-            : React.createElement(
-                'div',
-                { className: 'password-assistance-table-wrap' },
-                React.createElement(
-                    'table',
-                    { className: 'password-assistance-table' },
-                    React.createElement(
-                        'thead',
-                        null,
-                        React.createElement(
-                            'tr',
-                            null,
-                            React.createElement('th', { scope: 'col' }, 'User'),
-                            React.createElement('th', { scope: 'col' }, 'Requested'),
-                            React.createElement('th', { scope: 'col' }, 'Status'),
-                            React.createElement('th', { scope: 'col' }, 'Handled By'),
-                            React.createElement('th', { scope: 'col' }, 'Action')
-                        )
-                    ),
-                    React.createElement(
-                        'tbody',
-                        null,
-                        filteredRequests.map((request) =>
-                            React.createElement(
-                                'tr',
-                                { key: request.id },
-                                React.createElement(
-                                    'td',
-                                    null,
-                                    React.createElement('strong', null, request.userName),
-                                    React.createElement('small', null, request.email)
-                                ),
-                                React.createElement(
-                                    'td',
-                                    null,
-                                    formatDateTime(request.requestedAt)
-                                ),
-                                React.createElement(
-                                    'td',
-                                    null,
-                                    React.createElement(
-                                        'span',
-                                        {
-                                            className:
-                                                `password-assistance-status is-${request.status}`,
-                                        },
-                                        request.status === 'pending'
-                                            ? 'Pending'
-                                            : 'Resolved'
-                                    )
-                                ),
-                                React.createElement(
-                                    'td',
-                                    null,
-                                    request.handledBy || '—'
-                                ),
-                                React.createElement(
-                                    'td',
-                                    null,
-                                    request.status === 'pending'
-                                        ? React.createElement(
-                                            'button',
-                                            {
-                                                className:
-                                                    'action-button primary password-assistance-resolve',
-                                                type: 'button',
-                                                onClick: () =>
-                                                    markResolved(request.id),
-                                            },
-                                            'Mark as Resolved'
-                                        )
-                                        : React.createElement(
-                                            'span',
-                                            { className: 'password-assistance-complete' },
-                                            formatDateTime(request.handledAt)
-                                        )
-                                )
+        error && h('p', { className: 'ui-error', role: 'alert' }, error),
+        loading
+            ? h('p', { role: 'status' }, 'Loading requests…')
+            : requests.length === 0
+                ? h('p', null, `No ${labels[filter].toLowerCase()} requests.`)
+                : h('div', { className: 'password-assistance-table-wrap' },
+                    h('table', { className: 'password-assistance-table' },
+                        h('thead', null,
+                            h('tr', null,
+                                ...['User', 'Requested', 'Status', 'Handled by', 'Action']
+                                    .map(label => h('th', {
+                                        key: label,
+                                        scope: 'col',
+                                    }, label))
                             )
+                        ),
+                        h('tbody', null,
+                            ...requests.map(request => {
+                                const mine =
+                                    Number(request.accepted_by) ===
+                                    Number(getAccessSession()?.userId);
+
+                                return h('tr', { key: request.id },
+                                    h('td', null,
+                                        h('strong', null, request.user_name),
+                                        h('small', null, request.email || 'Account unavailable')
+                                    ),
+                                    h('td', null,
+                                        new Date(request.requested_at).toLocaleString()
+                                    ),
+                                    h('td', null, labels[request.status]),
+                                    h('td', null,
+                                        request.handled_by_name ||
+                                        request.accepted_by_name || '—'
+                                    ),
+                                    h('td', null,
+                                        request.status === 'pending' &&
+                                            h('button', {
+                                                type: 'button',
+                                                className: 'ui-button ui-button--primary ui-button--sm',
+                                                disabled: busy !== null,
+                                                onClick: () => act(request, 'accept'),
+                                            }, 'Accept'),
+                                        request.status === 'accepted' && mine &&
+                                            h('button', {
+                                                type: 'button',
+                                                className: 'ui-button ui-button--primary ui-button--sm',
+                                                onClick: () => openAccount(request),
+                                            }, 'Open User Account'),
+                                        (request.status === 'pending' ||
+                                            (request.status === 'accepted' && mine)) &&
+                                            h('button', {
+                                                type: 'button',
+                                                className: 'ui-button ui-button--secondary ui-button--sm',
+                                                disabled: busy !== null,
+                                                onClick: () => act(request, 'ignore'),
+                                            }, 'Ignore')
+                                    )
+                                );
+                            })
                         )
                     )
-                )
-            )
+                ),
+        h('div', { className: 'password-assistance-filters' },
+            h('button', {
+                type: 'button',
+                disabled: loading || page <= 1,
+                onClick: () => setPage(current => current - 1),
+            }, 'Previous'),
+            h('span', null, `Page ${page} of ${meta.last_page}`),
+            h('button', {
+                type: 'button',
+                disabled: loading || page >= meta.last_page,
+                onClick: () => setPage(current => current + 1),
+            }, 'Next')
+        )
     );
 }
