@@ -4,6 +4,8 @@ import { AppSidebar } from '../../components/AppSidebar.js';
 import { apiRequest } from '../../api/api-client.js';
 import { listAuthorizedManagementPlans } from './management-data.js';
 import { ManagementPlanReview } from './management-plan-review.js';
+import { ManagementFilterBar, useManagementFilters } from './management-filters.js';
+import { scopeFilters } from './management-insights.js';
 import { createAccessSession, saveAccessSession, can } from '../../access/access-session.js';
 import { PERMISSIONS } from '../../access/access-policy.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
@@ -16,6 +18,7 @@ function PlanReviewPage({ session }) {
     const query = new URLSearchParams(pageQuery);
     const [plans, setPlans] = React.useState([]);
     const [selectedPlanId, setSelectedPlanId] = React.useState(query.get('plan') || '');
+    const { filters, setFilter, resetFilters } = useManagementFilters(pageQuery);
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState('');
     const [attempt, setAttempt] = React.useState(0);
@@ -47,8 +50,10 @@ function PlanReviewPage({ session }) {
                     h('h1', null, 'Plan Review'),
                     h('p', null, 'Review finalized strategic plans, foundations, objectives and comments. Drafts are not included.'))),
             error ? h('div', { className: 'management-dashboard__errors', role: 'alert' }, error, ' ', h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setAttempt(value => value + 1) }, 'Retry')) : null,
+            !error && !selectedPlanId && can(PERMISSIONS.PLANS_VIEW, session) ? h(ManagementFilterBar, { filters, plans, offices: [...new Set(plans.map(plan => plan.department_agency).filter(Boolean))].sort(),
+                onChange: setFilter, onReset: resetFilters, includeObjectiveStatus: false, disabled: loading }) : null,
             error ? null : loading ? h('p', { role: 'status', className: 'management-empty' }, 'Loading authorized plans…') : can(PERMISSIONS.PLANS_VIEW, session)
-                ? h(ManagementPlanReview, { plans, planId: plans.some(plan => String(plan.record_id) === String(selectedPlanId)) ? selectedPlanId : '', canComment: can(PERMISSIONS.OBJECTIVE_COMMENTS_CREATE, session), onOpenPlan: choosePlan, onBack: () => choosePlan('') })
+                ? h(ManagementPlanReview, { plans, filters: scopeFilters(filters), planId: plans.some(plan => String(plan.record_id) === String(selectedPlanId)) ? selectedPlanId : '', canComment: can(PERMISSIONS.OBJECTIVE_COMMENTS_CREATE, session), onOpenPlan: choosePlan, onBack: () => choosePlan('') })
                 : h('div', { className: 'management-dashboard__errors', role: 'alert' }, 'You do not have permission to review strategic plans.'),
             h('footer', { className: 'management-dashboard__footer' }, '© 2026 Strategic Planning Management System. All rights reserved.'))));
 }
