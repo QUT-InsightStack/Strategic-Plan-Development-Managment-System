@@ -6,7 +6,6 @@ use App\Models\Log;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
-use App\Http\Middleware\ValidateAuthVersion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -32,8 +31,8 @@ class UserAccountStatusTest extends TestCase
         $target->refresh();
         $oldVersion = (int) $target->auth_version;
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+        $this
             ->patchJson("/api/users/{$target->user_id}/status", [
                 'status' => 'suspended',
                 'reason' => 'Security review',
@@ -59,8 +58,8 @@ class UserAccountStatusTest extends TestCase
     {
         $admin = $this->createAdministrator();
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+        $this
             ->patchJson("/api/users/{$admin->user_id}/status", [
                 'status' => 'inactive',
             ])
@@ -73,8 +72,8 @@ class UserAccountStatusTest extends TestCase
         $admin = $this->createAdministrator();
         $target = $this->createUser();
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+        $this
             ->patchJson("/api/users/{$target->user_id}/status", [
                 'status' => 'deleted',
             ])

@@ -33,7 +33,18 @@ class Role extends Model
     'Administrative Admin',
     'Administrative Administrator',
 ];
+    public const OFFICE_ROLES = [
+    'Office',
+    'Responsible Unit User',
+    'Office Representative',
+    'Office/Agency',
+    'Offices / Agencies',
+];
 
+public function requiresOffice(): bool
+{
+    return in_array($this->role_name, self::OFFICE_ROLES, true);
+}
     protected $fillable = [
         'role_name',
         'description',

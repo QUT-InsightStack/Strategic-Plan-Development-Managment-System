@@ -6,6 +6,7 @@ import { LogoutButton } from '../../components/LogoutButton.js';
 import { myLoginHistory } from '../../api/login-history-api.js';
 import { PHOTO_ACCEPT, checkPhoto, removeProfilePhoto, uploadProfilePhoto } from '../../api/profile-photo-api.js';
 import { getCurrentUser, updateProfile } from '../../api/auth-api.js';
+import { AppSidebar } from '../../components/AppSidebar.js';
 
 const { useRef, useState, useEffect } = React;
 
@@ -665,10 +666,10 @@ function ProfileApp() {
     return React.createElement(
         'div',
         { className: 'profile-shell' },
-        React.createElement(Header, { onMessage: (message) => setStatus(message, 'info'), onLogout: handleLogout, loggingOut }),
+        React.createElement(AppSidebar),
         React.createElement(
             'main',
-            { className: 'profile-main' },
+            { className: 'app-shell-main profile-main' },
             React.createElement(
                 'div',
                 { className: 'page-inner' },

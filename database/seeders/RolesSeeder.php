@@ -39,7 +39,7 @@ class RolesSeeder extends Seeder
             ],
             [
                 'role_name' => 'Office',
-                'description' => 'Read-only access to published plans and reports.',
+                'description' => 'Submits planning proposals and feedback within authorised scope and updates assigned objective progress after plan approval. Requires organisation/office details.',
                 'is_assignable' => true,
                 'is_protected' => false,
             ],
@@ -56,7 +56,16 @@ class RolesSeeder extends Seeder
                 'is_protected' => true,
             ],
         ];
-
+            // Retain legacy roles and their existing accounts, but stop offering
+// them for new assignments.
+Role::query()
+    ->whereIn('role_name', [
+        'Responsible Unit User',
+        'Office Representative',
+        'Office/Agency',
+        'Offices / Agencies',
+    ])
+    ->update(['is_assignable' => false]);
         foreach ($roles as $role) {
             Role::updateOrCreate(
                 ['role_name' => $role['role_name']],

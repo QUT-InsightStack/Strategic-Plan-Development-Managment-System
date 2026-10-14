@@ -13,7 +13,7 @@ const ROLE_DISPLAY_NAMES = Object.freeze({
     'Division Head': 'Management',
     Management: 'Management',
     Viewer: 'Office',
-    Office: 'Office',
+    Office: 'Office / Unit User',
     Executive: 'Management / Executive',
     'Management / Executive': 'Management / Executive',
 });
