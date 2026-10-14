@@ -71,9 +71,17 @@ class ObjectiveProgressService
                 abort_unless($objective->responsibleUnitAssignment()->where('responsible_unit_id', $unit->responsible_unit_id)->exists(),
                     403, 'Your Office/Unit is not assigned to this strategic objective.');
             }
-            if (! in_array($plan->status, ['draft', 'finished'], true) || ! in_array($objective->status, ['draft', 'published'], true)) {
-                throw ValidationException::withMessages(['progress_percentage' => ['Restore archived content before updating progress.']]);
-            }
+            if (
+    $plan->status !== 'finished'
+    || $plan->approval_status !== 'approved'
+    || ! in_array($objective->status, ['draft', 'published'], true)
+) {
+    throw ValidationException::withMessages([
+        'progress_percentage' => [
+            'Progress updates and corrections require an approved, finalized plan and an objective that is not archived or deleted.',
+        ],
+    ]);
+}
             $data['reason'] = is_string($data['reason'] ?? null) ? trim($data['reason']) : ($data['reason'] ?? null);
             $validated = Validator::make($data, [
                 'progress_percentage' => ['required', 'integer:strict', 'between:0,100'],
