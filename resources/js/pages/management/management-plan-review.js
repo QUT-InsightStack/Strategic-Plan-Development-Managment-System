@@ -32,14 +32,16 @@ export function ManagementPlanReview({ plans, planId, canComment = false, onOpen
     useEffect(() => {
         if (!planId) { setPlan(null); setObjectives([]); setError(''); return undefined; }
         let active = true;
+        setPlan(null); setObjectives([]);
         setLoading(true); setError('');
         setComments([]); setCommentError(''); setCommentText('');
         setObjectivePage(1);
         Promise.all([getStrategicPlan(planId), listStrategicObjectives(planId)])
             .then(([planPayload, objectivePayload]) => {
                 if (!active) return;
+                if (!planPayload.data?.review_ready) throw new Error('This plan is not finalized and ready for Management review.');
                 setPlan(planPayload.data);
-                setObjectives(objectivePayload.data || []);
+                setObjectives((objectivePayload.data || []).filter(item => !['archived', 'deleted'].includes(item.status)));
             })
             .catch(reason => { if (active) setError(reason.message || 'Unable to load plan details.'); })
             .finally(() => { if (active) setLoading(false); });
@@ -80,7 +82,7 @@ export function ManagementPlanReview({ plans, planId, canComment = false, onOpen
             h('label', null, h('span', null, 'Office / Unit'), h('select', { value: office, onChange: event => { setOffice(event.target.value); setPage(1); } }, h('option', { value: '' }, 'All offices'), [...new Set(plans.map(item => item.department_agency).filter(Boolean))].sort().map(item => h('option', { key: item, value: item }, item)))),
             h('label', null, h('span', null, 'Plan status'), h('select', { value: status, onChange: event => { setStatus(event.target.value); setPage(1); } },
                 h('option', { value: '' }, 'All statuses'),
-                [...new Set(plans.map(item => item.status).filter(Boolean))].sort().map(item => h('option', { key: item, value: item }, item.replaceAll('_', ' '))))),
+                [...new Set(plans.map(item => item.status).filter(Boolean))].sort().map(item => h('option', { key: item, value: item }, item === 'finished' ? 'Finalized' : item.replaceAll('_', ' '))))),
             h('label', null, h('span', null, 'Approval status'), h('select', { value: approvalStatus, onChange: event => { setApprovalStatus(event.target.value); setPage(1); } },
                 h('option', { value: '' }, 'All approvals'),
                 [['not_submitted', 'Not submitted'], ['under_approval', 'Awaiting approval'], ['approved', 'Approved'], ['rejected', 'Returned / rejected']].map(([value, label]) => h('option', { key: value, value }, label))))),
@@ -88,7 +90,7 @@ export function ManagementPlanReview({ plans, planId, canComment = false, onOpen
             h('thead', null, h('tr', null, ['Plan ID', 'Strategic Plan', 'Department / Agency', 'Period', 'Status', 'Action'].map(label => h('th', { key: label, scope: 'col' }, label)))),
             h('tbody', null, visiblePlans.length ? pageRows(visiblePlans, page).map(item => h('tr', { key: item.record_id },
                 h('td', null, item.record_id), h('td', null, item.title), h('td', null, item.department_agency || '—'),
-                h('td', null, `${dateLabel(item.planning_start_date)} – ${dateLabel(item.planning_end_date)}`), h('td', null, item.status || '—'),
+                h('td', null, `${dateLabel(item.planning_start_date)} – ${dateLabel(item.planning_end_date)}`), h('td', null, item.planning_status_label || item.status || '—'),
                 h('td', null, h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => onOpenPlan(item.record_id) }, 'View summary'))))
                 : h('tr', null, h('td', { colSpan: 6 }, plans.length ? 'No plans match these filters.' : 'No plans are available for review.'))))),
         h(ManagementPagination, { page, total: visiblePlans.length, onChange: setPage, label: 'plans' }),
@@ -103,7 +105,7 @@ export function ManagementPlanReview({ plans, planId, canComment = false, onOpen
     }) : h('tr', null, h('td', { colSpan: 7 }, 'No strategic objectives have been added to this plan.'));
     const detail = plan && !loading ? h('article', { className: 'office-panel office-detail-panel' },
         h('section', { 'aria-labelledby': 'management-plan-summary-title' },
-            h('div', { className: 'office-plan-toolbar' }, h('h2', { id: 'management-plan-summary-title' }, 'Plan Summary'), h('span', { className: 'management-plan-review__status' }, plan.status || '—')),
+            h('div', { className: 'office-plan-toolbar' }, h('h2', { id: 'management-plan-summary-title' }, 'Plan Summary'), h('span', { className: 'management-plan-review__status' }, plan.planning_status_label || plan.status || '—')),
             h('dl', { className: 'office-summary-grid' },
                 field('Plan ID', plan.record_id), field('Plan Title', plan.title),
                 field('Plan period', plan.planning_start_date && plan.planning_end_date ? `${dateLabel(plan.planning_start_date)} – ${dateLabel(plan.planning_end_date)}` : null),

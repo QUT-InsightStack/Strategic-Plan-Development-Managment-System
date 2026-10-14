@@ -33,7 +33,7 @@ function PlanReviewPage({ session }) {
     React.useEffect(() => {
         let active = true;
         setLoading(true); setError('');
-        listAuthorizedManagementPlans().then(rows => { if (active) setPlans(rows); })
+        listAuthorizedManagementPlans().then(rows => { if (active) setPlans(rows.filter(plan => plan.review_ready)); })
             .catch(reason => { if (active) setError(reason.message || 'Unable to load authorized plans.'); })
             .finally(() => { if (active) setLoading(false); });
         return () => { active = false; };
@@ -45,10 +45,10 @@ function PlanReviewPage({ session }) {
             h('header', { className: 'management-dashboard__header' },
                 h('div', null, h('p', { className: 'management-dashboard__eyebrow' }, 'Management / Executive · Planning Module'),
                     h('h1', null, 'Plan Review'),
-                    h('p', null, 'Review strategic plan summaries, foundations and objectives.'))),
+                    h('p', null, 'Review finalized strategic plans, foundations, objectives and comments. Drafts are not included.'))),
             error ? h('div', { className: 'management-dashboard__errors', role: 'alert' }, error, ' ', h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setAttempt(value => value + 1) }, 'Retry')) : null,
             error ? null : loading ? h('p', { role: 'status', className: 'management-empty' }, 'Loading authorized plans…') : can(PERMISSIONS.PLANS_VIEW, session)
-                ? h(ManagementPlanReview, { plans, planId: selectedPlanId, canComment: can(PERMISSIONS.OBJECTIVE_COMMENTS_CREATE, session), onOpenPlan: choosePlan, onBack: () => choosePlan('') })
+                ? h(ManagementPlanReview, { plans, planId: plans.some(plan => String(plan.record_id) === String(selectedPlanId)) ? selectedPlanId : '', canComment: can(PERMISSIONS.OBJECTIVE_COMMENTS_CREATE, session), onOpenPlan: choosePlan, onBack: () => choosePlan('') })
                 : h('div', { className: 'management-dashboard__errors', role: 'alert' }, 'You do not have permission to review strategic plans.'),
             h('footer', { className: 'management-dashboard__footer' }, '© 2026 Strategic Planning Management System. All rights reserved.'))));
 }

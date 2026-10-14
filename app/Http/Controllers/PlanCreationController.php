@@ -57,7 +57,7 @@ class PlanCreationController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Strategic plans loaded.',
-            'data' => $plans->items(),
+            'data' => $plans->getCollection()->load(['objectives', 'inputs'])->map(fn ($plan) => app(\App\Services\PlanReadinessService::class)->describe($plan)),
             'meta' => [
                 'current_page' => $plans->currentPage(),
                 'last_page' => $plans->lastPage(),
@@ -76,7 +76,7 @@ class PlanCreationController extends Controller
         $includeAllOfficePlans = $request->boolean('include_all_office_plans');
         $this->authorizationService->ensurePlanIsWithinAuthorizedScope($plan, $user, 'You are not authorized to view this strategic plan.', $includeAllOfficePlans);
 
-        return response()->json(['success' => true, 'data' => $plan]);
+        return response()->json(['success' => true, 'data' => app(\App\Services\PlanReadinessService::class)->describe($plan)]);
     }
 
     public function update(UpdatePlanRequest $request, int $id): JsonResponse

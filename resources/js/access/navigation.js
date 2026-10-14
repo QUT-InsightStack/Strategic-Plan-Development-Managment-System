@@ -89,9 +89,9 @@ export const roleNavigation = {
     group('monitoring', 'Monitoring', [{ ...progress, label: 'Progress Updates' }, pending('office-monitoring', 'Monitoring Dashboard'), pending('office-reports', 'Reports')], 'bi-graph-up')],
     management: [page('approval-list', 'Approve List', '/management-approvals', [], { icon: 'bi-clipboard-check' }),
         page('plan-review', 'Plan Review', '/management-plan-review', ['strategic_records.view'], { icon: 'bi-journal-text' }),
-        page('alignment-review', 'Strategic Alignment Review', '/management-dashboard?tab=alignment', ['relations.view'], { icon: 'bi-diagram-3' }),
-        page('agency-input-review', 'Agency Input Review', '/management-dashboard?tab=alignment&section=agency', ['relations.view', 'strategic_objectives.view'], { icon: 'bi-building-check' }),
-        page('monitoring', 'Monitoring', '/management-dashboard?tab=dashboard', ['strategic_records.view'], { icon: 'bi-graph-up' }),
+        page('alignment-review', 'Alignment Review', '/management-dashboard?tab=alignment', ['strategic_records.view', 'strategic_objectives.view'], { icon: 'bi-diagram-3' }),
+        page('agency-input-review', 'Input Review', '/management-dashboard?tab=inputs', [], { anyPermissions: ['implementation_inputs.view', 'implementation_inputs.view_all'], icon: 'bi-building-check' }),
+        page('monitoring', 'Monitoring', '/management-dashboard?tab=dashboard', ['strategic_records.view', 'strategic_objectives.view'], { icon: 'bi-graph-up' }),
         page('reports', 'Reports & Summary', '/management-dashboard?tab=reports', ['strategic_records.view'], { icon: 'bi-file-earmark-bar-graph' }),
     ],
 };
