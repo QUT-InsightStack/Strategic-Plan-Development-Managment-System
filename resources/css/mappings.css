@@ -113,3 +113,18 @@
 .mapping-selected-chain article.is-pdp { background: #eef4ff; }
 .mapping-step__heading { background: white; }
 @media (max-width: 800px) { .mapping-reference-layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* Three-level mapping redesign */
+.mapping-level { margin: 0; min-width: 0; }
+.mapping-level legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); width: 100%; margin-bottom: var(--space-3); padding: 0; color: var(--color-primary); font-size: var(--font-size-sm); font-weight: 600; }
+.mapping-level legend small { margin-left: auto; color: var(--color-text-secondary); font-size: 11px; font-weight: 400; }
+.mapping-option { cursor: pointer; }
+.mapping-option input[type="checkbox"] { border-radius: 3px; }
+.mapping-primary { min-width: 220px; }
+.mapping-preview tr.is-selected td { background: #eef4ff; }
+.mapping-preview .mapping-action { padding: 2px 0; }
+.mapping-preview-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: 0 var(--space-4); }
+.mapping-pager { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+.mapping-search-select select { appearance: auto; }
+.mapping-field-hint { display: block; margin-top: 4px; color: var(--color-text-secondary); font-size: 11px; }
+.mapping-reference-form .mapping-reference-submit { justify-self: center; }
