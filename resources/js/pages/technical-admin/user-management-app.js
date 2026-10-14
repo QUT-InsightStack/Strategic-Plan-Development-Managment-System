@@ -128,7 +128,25 @@ function UserManagementApp() {
     // the page-level notice renders behind the overlay, where the
     // administrator cannot see it.
     const [editError, setEditError] = useState('');
+    const officeRoleNames = [
+    'Office',
+    'Responsible Unit User',
+    'Office Representative',
+    'Office/Agency',
+    'Offices / Agencies',
+];
 
+const selectedAccountRole = roles.find(
+    (role) => String(role.role_id) === String(account.role_id)
+);
+
+const accountRequiresOffice = officeRoleNames.includes(
+    selectedAccountRole?.role_name
+);
+
+const editRequiresOffice = officeRoleNames.includes(
+    editUser?.role?.role_name
+);
     const editDirty = Object.keys(editForm).some(
         (field) => editForm[field] !== editOriginal[field]
     );
@@ -475,8 +493,17 @@ canHandlePasswordAssistance
                             ['email', 'User account', 'email', 'name@example.com'],
                             ['office', 'Office / Agency', 'text', 'Head Office'],
                         ].map(([name, label, type, placeholder]) => React.createElement('div', { key: name, className: `ui-field${accountErrors[name] ? ' is-invalid' : ''}` },
-                            React.createElement('label', { className: 'ui-label', htmlFor: `account-${name}` }, label, name !== 'office' ? React.createElement('span', { className: 'ui-required' }, ' *') : null),
-                            React.createElement('input', { id: `account-${name}`, className: 'ui-input', type, placeholder, value: account[name], required: name !== 'office', onChange: (event) => setAccount((current) => ({ ...current, [name]: event.target.value })) }),
+                            React.createElement('label', { className: 'ui-label', htmlFor: `account-${name}` }, label, (name !== 'office' || accountRequiresOffice)
+    ? React.createElement('span', { className: 'ui-required' }, ' *')
+    : null),
+                            React.createElement('input', { id: `account-${name}`, className: 'ui-input', type, placeholder, value: account[name], required: name !== 'office' || accountRequiresOffice, onChange: (event) => setAccount((current) => ({ ...current, [name]: event.target.value })) }),
+                            name === 'office' ? React.createElement(
+    'p',
+    { className: 'ui-help' },
+    accountRequiresOffice
+        ? 'Required for Office / Unit Users. Use the office name used in objective assignments.'
+        : 'Where this user works. An office name does not grant Office / Unit User permissions.'
+) : null,
                             accountErrors[name] ? React.createElement('p', { className: 'ui-error' }, accountErrors[name][0]) : null
                         )),
                         React.createElement('div', { className: `ui-field${accountErrors.password ? ' is-invalid' : ''}` },
@@ -520,19 +547,28 @@ canHandlePasswordAssistance
 
                     React.createElement('div', { className: 'ui-form-grid ui-form-grid--2' },
                         EDIT_FIELDS.map(([name, label, type, required, maxLength]) => React.createElement('div', { key: name, className: `ui-field${editErrors[name] ? ' is-invalid' : ''}` },
-                            React.createElement('label', { className: 'ui-label', htmlFor: `edit-${name}` }, label, required ? React.createElement('span', { className: 'ui-required' }, ' *') : null),
+                            React.createElement('label', { className: 'ui-label', htmlFor: `edit-${name}` }, label, (required || (name === 'office' && editRequiresOffice))
+    ? React.createElement('span', { className: 'ui-required' }, ' *')
+    : null),
                             React.createElement('input', {
                                 id: `edit-${name}`,
                                 className: 'ui-input',
                                 type,
                                 value: editForm[name],
-                                required,
+                                required: required || (name === 'office' && editRequiresOffice),
                                 maxLength,
                                 max: type === 'date' ? today() : undefined,
                                 'aria-invalid': editErrors[name] ? 'true' : undefined,
                                 'aria-describedby': editErrors[name] ? `edit-${name}-error` : undefined,
                                 onChange: (event) => setEditForm((current) => ({ ...current, [name]: event.target.value })),
                             }),
+                            name === 'office' ? React.createElement(
+    'p',
+    { className: 'ui-help' },
+    editRequiresOffice
+        ? 'Required for Office / Unit Users. Changing this name changes which office assignments the user can access.'
+        : 'Where this user works. An office name does not grant Office / Unit User permissions.'
+) : null,
                             editErrors[name] ? React.createElement('p', { id: `edit-${name}-error`, className: 'ui-error' }, editErrors[name][0]) : null
                         )),
 
