@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Http\Middleware\ValidateAuthVersion;
 use App\Models\Log;
 use App\Models\Permission;
 use App\Models\Role;
@@ -30,8 +29,8 @@ class UserUpdateTest extends TestCase
         $actor  = $this->createUserWithPermissions(['users.view']);
         $target = $this->createUser(['first_name' => 'Original']);
 
-        $this->actingAs($actor, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->putJson("/api/users/{$target->user_id}", ['first_name' => 'Changed'])
             ->assertForbidden();
 
@@ -46,8 +45,8 @@ class UserUpdateTest extends TestCase
         $admin  = $this->createUserWithPermissions(['users.update']);
         $target = $this->createUser(['first_name' => 'Original']);
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+        $this
             ->putJson("/api/users/{$target->user_id}", [
                 'first_name' => 'Updated',
                 'last_name'  => 'Person',
@@ -69,8 +68,8 @@ class UserUpdateTest extends TestCase
         $admin  = $this->createUserWithPermissions(['users.update']);
         $target = $this->createUser();
 
-        $this->actingAs($admin, 'api');
-        $data = $this->withoutMiddleware(ValidateAuthVersion::class)
+       $this->authenticateApiUser($admin);
+        $data = $this
             ->putJson("/api/users/{$target->user_id}", ['first_name' => 'Updated'])
             ->assertOk()
             ->json('data');
@@ -89,8 +88,8 @@ class UserUpdateTest extends TestCase
             'office'     => 'Regional',
         ]);
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+       $this
             ->putJson("/api/users/{$target->user_id}", ['department' => 'Executive'])
             ->assertOk();
 
@@ -104,8 +103,8 @@ class UserUpdateTest extends TestCase
     {
         $admin = $this->createUserWithPermissions(['users.update']);
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+        $this
             ->putJson('/api/users/999999', ['first_name' => 'Ghost'])
             ->assertNotFound();
     }
@@ -117,8 +116,8 @@ class UserUpdateTest extends TestCase
         $admin  = $this->createUserWithPermissions(['users.update']);
         $target = $this->createUser();
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+        $this
             ->putJson("/api/users/{$target->user_id}", ['email' => 'not-an-email'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('email');
@@ -130,8 +129,8 @@ class UserUpdateTest extends TestCase
         $taken  = $this->createUser(['email' => 'taken@example.com']);
         $target = $this->createUser(['email' => 'target@example.com']);
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+        $this
             ->putJson("/api/users/{$target->user_id}", ['email' => 'taken@example.com'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('email');
@@ -145,8 +144,8 @@ class UserUpdateTest extends TestCase
         $admin  = $this->createUserWithPermissions(['users.update']);
         $target = $this->createUser(['email' => 'target@example.com']);
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+        $this
             ->putJson("/api/users/{$target->user_id}", [
                 'email'      => 'target@example.com',
                 'first_name' => 'Renamed',
@@ -163,8 +162,8 @@ class UserUpdateTest extends TestCase
         $target   = $this->createUser();
         $original = $target->role_id;
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+        $this
             ->putJson("/api/users/{$target->user_id}", ['role_id' => $newRole->role_id])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('role_id');
@@ -185,8 +184,8 @@ class UserUpdateTest extends TestCase
         $target->refresh();
         $originalVersion = (int) $target->auth_version;
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+        $this
             ->putJson("/api/users/{$target->user_id}", ['status' => 'suspended'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('status');
@@ -212,8 +211,8 @@ class UserUpdateTest extends TestCase
             'role_id'    => $protectedRole->role_id,
         ]);
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+        $this
             ->putJson("/api/users/{$target->user_id}", ['first_name' => 'Changed'])
             ->assertForbidden();
 
@@ -238,8 +237,8 @@ class UserUpdateTest extends TestCase
             'role_id'    => $protectedRole->role_id,
         ]);
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+        $this
             ->putJson("/api/users/{$target->user_id}", ['first_name' => 'Changed'])
             ->assertOk();
 
@@ -255,8 +254,8 @@ class UserUpdateTest extends TestCase
         $target     = $this->createUser(['first_name' => 'Target']);
         $bystander  = $this->createUser(['first_name' => 'Bystander']);
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+       $this->authenticateApiUser($admin);
+        $this
             ->putJson("/api/users/{$target->user_id}", ['first_name' => 'Renamed'])
             ->assertOk();
 
@@ -267,37 +266,51 @@ class UserUpdateTest extends TestCase
     }
 
     public function test_update_is_audited_against_the_acting_administrator(): void
-    {
-        $admin  = $this->createUserWithPermissions(['users.update']);
-        $target = $this->createUser();
+{
+    $admin = $this->createUserWithPermissions(['users.update']);
+    $target = $this->createUser();
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
-            ->putJson("/api/users/{$target->user_id}", ['first_name' => 'Audited'])
-            ->assertOk();
+    $this->authenticateApiUser($admin);
 
-        $this->assertDatabaseHas('tbllog', [
-            'user_id' => $admin->user_id,
-            'states'  => 'success',
-        ]);
+    $this->putJson("/api/users/{$target->user_id}", [
+        'first_name' => 'Audited',
+    ])->assertOk();
 
-        $audit = Log::latest('log_id')->first();
-        $this->assertSame('user.account_updated', $audit->operation);
-        $this->assertSame($target->user_id, (int) $audit->resource_id);
-        $this->assertContains('first_name', $audit->metadata['fields']);
-    }
+    $this->assertDatabaseHas('tbllog', [
+        'user_id' => $admin->user_id,
+        'operation' => 'user.updated',
+        'resource_type' => 'user',
+        'resource_id' => $target->user_id,
+        'outcome' => 'success',
+    ]);
+
+    $audit = Log::query()
+        ->where('operation', 'user.updated')
+        ->where('user_id', $admin->user_id)
+        ->where('resource_type', 'user')
+        ->where('resource_id', $target->user_id)
+        ->latest('log_id')
+        ->firstOrFail();
+
+    $this->assertContains(
+        'first_name',
+        $audit->metadata['changed_fields']
+    );
+
+    $this->assertFalse($audit->metadata['sessions_invalidated']);
+}
 
     public function test_updated_information_appears_in_search_results(): void
     {
         $admin  = $this->createUserWithPermissions(['users.update', 'users.view']);
         $target = $this->createUser(['first_name' => 'Before']);
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+        $this
             ->putJson("/api/users/{$target->user_id}", ['first_name' => 'After'])
             ->assertOk();
 
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+       $this
             ->getJson('/api/users/search?search=After&search_by=name')
             ->assertOk()
             ->assertJsonFragment(['first_name' => 'After']);
@@ -310,8 +323,8 @@ class UserUpdateTest extends TestCase
         $admin  = $this->createUserWithPermissions(['users.update']);
         $target = $this->createUser();
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+        $this
             ->putJson("/api/users/{$target->user_id}", [
                 'date_of_birth' => '1990-04-17',
                 'gender' => 'non_binary',
@@ -330,8 +343,8 @@ class UserUpdateTest extends TestCase
         $admin  = $this->createUserWithPermissions(['users.update']);
         $target = $this->createUser();
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+        $this
             ->putJson("/api/users/{$target->user_id}", [
                 'date_of_birth' => now()->addDay()->format('Y-m-d'),
             ])
@@ -348,8 +361,8 @@ class UserUpdateTest extends TestCase
         $admin  = $this->createUserWithPermissions(['users.update']);
         $target = $this->createUser();
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+       $this
             ->putJson("/api/users/{$target->user_id}", ['gender' => 'Female'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('gender');
@@ -365,8 +378,8 @@ class UserUpdateTest extends TestCase
             'gender' => 'female',
         ]);
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+        $this
             ->putJson("/api/users/{$target->user_id}", [
                 'date_of_birth' => null,
                 'gender' => null,
@@ -390,8 +403,8 @@ class UserUpdateTest extends TestCase
             'gender' => 'male',
         ]);
 
-        $this->actingAs($admin, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($admin);
+        $this
             ->putJson("/api/users/{$target->user_id}", ['first_name' => 'Renamed'])
             ->assertOk();
 

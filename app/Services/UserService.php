@@ -69,9 +69,23 @@ class UserService
             ]);
         }
 
-        $this->userRoleService->authorizeAssignment($role);
+       $this->userRoleService->authorizeAssignment($role);
 
-        $actor = Auth::guard('api')->user();
+if (
+    $role->requiresOffice()
+    && (
+        ! is_string($data['office'] ?? null)
+        || trim($data['office']) === ''
+    )
+) {
+    throw ValidationException::withMessages([
+        'office' => [
+            'Office / Agency is required for an Office / Unit User.',
+        ],
+    ]);
+}
+
+$actor = Auth::guard('api')->user();
 
         if (! $actor instanceof User) {
             throw ValidationException::withMessages([
@@ -149,9 +163,24 @@ class UserService
                 );
             }
     
-            $user->fill($data);
-    
-            $changed = array_keys($user->getDirty());
+          if (
+    array_key_exists('office', $data)
+    && $user->role?->requiresOffice()
+    && (
+        ! is_string($data['office'])
+        || trim($data['office']) === ''
+    )
+) {
+    throw ValidationException::withMessages([
+        'office' => [
+            'Office / Agency cannot be empty for an Office / Unit User.',
+        ],
+    ]);
+}
+
+$user->fill($data);
+
+$changed = array_keys($user->getDirty());
     
             if ($changed === []) {
                 return $user->fresh(['role']);

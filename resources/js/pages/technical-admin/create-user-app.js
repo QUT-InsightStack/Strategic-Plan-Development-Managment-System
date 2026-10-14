@@ -224,7 +224,10 @@ function FormField({ field, value, error, options, showPassword, onTogglePasswor
             isRequired ? React.createElement('span', { className: 'required-mark' }, '*') : null
         ),
         control,
-        React.createElement('p', { className: 'field-error' }, error || '')
+field.help
+    ? React.createElement('p', { className: 'field-note' }, field.help)
+    : null,
+React.createElement('p', { className: 'field-error' }, error || '')
     );
 }
 
@@ -236,6 +239,17 @@ function CreateUserApp() {
     const [status, setStatus] = useState({ message: '', type: 'info' });
     const [showPassword, setShowPassword] = useState(false);
     const [saving, setSaving] = useState(false);
+    const selectedRole = (options.role_id || []).find(
+    (role) => String(role.role_id) === String(values.role_id)
+);
+
+const requiresOffice = [
+    'Office',
+    'Responsible Unit User',
+    'Office Representative',
+    'Office/Agency',
+    'Offices / Agencies',
+].includes(selectedRole?.role_name);
 
     useEffect(() => {
         loadOptions();
@@ -296,7 +310,9 @@ return [
                 nextErrors[field.name] = message;
             }
         });
-
+        if (requiresOffice && !String(values.office ?? '').trim()) {
+    nextErrors.office = 'Office / Agency is required for an Office / Unit User.';
+}
         setErrors(nextErrors);
         return Object.keys(nextErrors).length === 0;
     }
@@ -367,7 +383,17 @@ return [
 
         return React.createElement(FormField, {
             key: field.name,
-            field,
+            field: field.name === 'office'
+    ? {
+        ...field,
+        label: 'Office / Agency',
+        required: requiresOffice,
+        requiredOnCreate: requiresOffice,
+        help: requiresOffice
+            ? 'Required for Office / Unit Users. Use the office name used in objective assignments.'
+            : 'Where this user works. An office name does not grant Office / Unit User permissions.',
+    }
+    : field,
             value: values[field.name],
             error: errors[field.name],
             options,

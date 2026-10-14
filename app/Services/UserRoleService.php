@@ -87,7 +87,19 @@ class UserRoleService
                     ],
                 ]);
             }
-
+            if (
+    $role->requiresOffice()
+    && (
+        ! is_string($targetUser->office)
+        || trim($targetUser->office) === ''
+    )
+) {
+    throw ValidationException::withMessages([
+        'role_id' => [
+            'Add Office / Agency details in User Management before assigning the Office / Unit User role.',
+        ],
+    ]);
+}
             $oldRoleId = $targetUser->role_id;
             $oldRoleName = $targetUser->role?->role_name;
 
