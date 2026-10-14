@@ -332,6 +332,12 @@ class PermissionSeeder extends Seeder
                 'code' => 'reports.view',
                 'module' => 'reports',
             ],
+            [
+                'permission_name' => 'Export Reports',
+                'description' => 'Allows exporting Management report sections as CSV.',
+                'code' => 'reports.export',
+                'module' => 'reports',
+            ],
             // Kept separate from one another on purpose: a backup file holds
             // every user record and password hash, so being able to trigger
             // one is not the same as being allowed to take a copy off the

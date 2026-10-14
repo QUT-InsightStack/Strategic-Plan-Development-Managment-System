@@ -76,6 +76,7 @@ class RolePermissionSeeder extends Seeder
             'implementation_inputs.view', 'implementation_inputs.view_all',
             'strategic_documents.view', 'strategic_documents.download',
             'relations.view', 'plan_core_values.view',
+            'reports.view', 'reports.export',
         ];
 
         $administrativeAdminPermissions = [
