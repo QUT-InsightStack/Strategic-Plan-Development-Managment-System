@@ -2,12 +2,14 @@ import { createPageRoot } from '../../navigation/page-root.js';
 import { BrandLogo } from '../../brand-logo.js';
 import { LogoutButton } from '../../components/LogoutButton.js';
 import { changePassword, getCurrentUser, logoutUser } from '../../api/auth-api.js';
+import { dashboardHrefFor } from '../../access/navigation.js';
+import { getAccessSession } from '../../access/access-session.js';
 
 const { useEffect, useState } = React;
 
 const rootElement = document.getElementById('root');
 
-const dashboardUrl = '/dashboard';
+const dashboardUrl = dashboardHrefFor(getAccessSession()?.roleName);
 const profileUrl = '/profile';
 const loginUrl = '/login';
 

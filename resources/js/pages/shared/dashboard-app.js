@@ -1,7 +1,7 @@
 import { createPageRoot } from '../../navigation/page-root.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { loadAccessSession } from '../../access/use-access-session.js';
-import { navigationFor, navigationRole, dashboardLabels, flattenNavigation, canOpenPage } from '../../access/navigation.js';
+import { navigationFor, navigationRole, dashboardLabels, flattenNavigation, canOpenPage, dashboardHrefFor } from '../../access/navigation.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
 import '../../../css/office.css';
 const h = React.createElement;
@@ -14,7 +14,7 @@ function Dashboard({ session }) {
         h('h1', null, placeholder?.label || dashboardLabels[navigationRole(session.roleName)]),
         feature ? h('section', { className: 'module-hub__card' }, h('h2', null, placeholder ? 'Planned feature' : 'Feature unavailable'),
             h('p', null, placeholder ? 'This feature has not been implemented yet. No records or reports are generated on this page.' : 'This feature is not part of your current role workspace.'),
-            h('a', { className: 'ui-button ui-button--secondary', href: '/dashboard' }, 'Back to dashboard'))
+            h('a', { className: 'ui-button ui-button--secondary', href: dashboardHrefFor(session.roleName) }, 'Back to dashboard'))
         : h(React.Fragment, null, h('p', null, 'Choose a function below. Access is based on the permissions currently assigned to your account.'),
             entries.filter(item => item.children).map(section => h('section', { key: section.id }, h('h2', null, section.label),
                 h('div', { className: 'module-hub__grid' }, section.children.filter(item => !item.hideWhenDenied || canOpenPage(item, session)).map(item => {
@@ -28,6 +28,11 @@ function Dashboard({ session }) {
 root.render(h('p', { role: 'status' }, 'Loading your workspace…'));
 loadAccessSession().then(async session => {
     if (!enforcePageAccess()) return;
+    // Administrative, planner and office roles use their Dashboard; only ?feature= placeholders stay here.
+    if (dashboardHrefFor(session.roleName) !== '/dashboard' && !new URLSearchParams(location.search).has('feature')) {
+        location.replace(dashboardHrefFor(session.roleName));
+        return;
+    }
     if (new URLSearchParams(location.search).get('view') === 'legacy') {
         const { LegacyDashboardApp } = await import('./legacy-dashboard.js');
         root.render(h(LegacyDashboardApp));

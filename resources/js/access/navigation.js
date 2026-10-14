@@ -71,11 +71,10 @@ export const roleNavigation = {
         page('security-settings', 'Security Settings', '/settings', ['settings.manage'], { icon: 'bi-shield-lock' }),
         page('maintenance', 'Backups', '/manual-backup', ['backups.view'], { icon: 'bi-hdd-stack' }),
     ], 'bi-shield-check')],
-    // Role workspaces follow the planning stages. A later entry for a page that is already listed
-    // is dashboardOnly: it appears as a home card but not twice in the sidebar.
+    // Role workspaces follow the planning stages. A later name for a page that is already listed is
+    // dashboardOnly, so each page has one sidebar link.
     administrative: [monitoringDashboard,
     group('admin-reference-preparation', 'Planning reference-data preparation', [
-        page('home', 'Administrative Dashboard', '/dashboard', [], { icon: 'bi-speedometer2' }),
         page('agenda', 'Presidential Agenda Management', '/administrative-admin/reference-data?tab=agenda', ['reference_data.manage', 'presidential_agenda.view'], { icon: 'bi-bank' }),
         page('pdp', 'PDP Chapters Management', '/pdp-chapters/manage', ['pdp_chapters.manage'], { icon: 'bi-journal-bookmark' }),
         page('reference', 'Reference Data Management', '/administrative-admin/reference-data?tab=reference', ['reference_data.manage'], { icon: 'bi-collection' }),
@@ -103,7 +102,6 @@ export const roleNavigation = {
     group('administrative-reviews', 'Assigned Approvals', [page('reviews', 'Assigned Plan Reviews', '/management-approvals')])],
     planner: [monitoringDashboard,
     group('planning', 'Initial strategic-plan creation', [
-        page('home', 'Planning Dashboard', '/dashboard', [], { icon: 'bi-speedometer2' }),
         page('plans', 'Strategic Plan List', '/strategic-plans', ['strategic_records.view']),
         page('create-plan', 'Create Strategic Plan', '/strategic-plans/create', ['strategic_records.create']),
     ]),
@@ -135,7 +133,6 @@ export const roleNavigation = {
     group('reviews', 'Reviews', [page('reviews', 'Plan Reviews', '/management-approvals')])],
     office: [monitoringDashboard,
     group('planning', 'Initial strategic-plan review', [
-        page('home', 'Office/Agency Dashboard', '/dashboard', [], { icon: 'bi-speedometer2' }),
         { ...review, label: 'Initial Strategic Plan Review' },
     ]),
     group('input-submission', 'Planning-input submission', [
@@ -185,9 +182,16 @@ export const roleNavigation = {
 export const dashboardLabels = { technical: 'Technical Administration Dashboard', administrative: 'Administrative Dashboard', planner: 'Planning Dashboard', office: 'Office/Agency Dashboard', management: 'Executive Dashboard' };
 export function navigationFor(role) {
     const kind = navigationRole(role);
-    // Other workspaces list their dashboard inside the first stage.
+    // Only Technical Admin keeps the /dashboard function-card page; other workspaces start with their own Dashboard link.
     const home = kind === 'technical' ? [page('home', 'Dashboard', '/dashboard', [], { icon: 'bi-speedometer2' })] : [];
     return [...home, ...roleNavigation[kind], ...(kind === 'management' ? common : [group('account', 'Account and Help', common, 'bi-person-circle')])];
+}
+// Where a role's Dashboard link points; /dashboard redirects administrative, planner and office roles here.
+export function dashboardHrefFor(role) {
+    if (!role) return '/dashboard';
+    const kind = navigationRole(role);
+    if (kind === 'management') return '/management-dashboard';
+    return kind === 'technical' ? '/dashboard' : '/monitoring-dashboard';
 }
 export function flattenNavigation(items) { return items.flatMap(item => item.children ? flattenNavigation(item.children) : [item]); }
 export function canOpenPage(item, session) {

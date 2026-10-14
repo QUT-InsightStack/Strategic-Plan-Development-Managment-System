@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { navigationFor, flattenNavigation, pageForUrl, canOpenPage } from '../../resources/js/access/navigation.js';
+import { navigationFor, flattenNavigation, pageForUrl, canOpenPage, dashboardHrefFor } from '../../resources/js/access/navigation.js';
 
 const stages = role => navigationFor(role).filter(item => item.children && item.id !== 'account').map(item => item.label);
 const labels = (role, stage) => navigationFor(role).find(item => item.label === stage).children.map(item => item.label);
@@ -12,7 +12,7 @@ test('Administrative Admin workspace follows its stages and keeps the planning s
         'Strategic Planning', 'Strategic Alignment', 'Progress Monitoring', 'Assigned Approvals',
     ]);
     assert.deepEqual(labels('Administrative Admin', 'Planning reference-data preparation'),
-        ['Administrative Dashboard', 'Presidential Agenda Management', 'PDP Chapters Management', 'Reference Data Management']);
+        ['Presidential Agenda Management', 'PDP Chapters Management', 'Reference Data Management']);
     assert.deepEqual(labels('Administrative Admin', 'Administrative monitoring'), ['Reports', 'System Logs']);
 });
 
@@ -24,7 +24,7 @@ test('Planning Officer workspace follows the nine planning stages', () => {
     ]);
     assert.deepEqual(labels('Planning Officer', 'Strategic alignment mapping'), ['Strategic Mapping', 'Agenda → PDP → DOST Mapping', 'PDP Chapters']);
     assert.deepEqual(labels('Planning Officer', 'Implementation monitoring'), ['Objective Progress Monitoring', 'Reports']);
-    assert.equal(entry('Planning Officer', 'plan-editor').dashboardOnly, true, 'pages already in the sidebar appear only as home cards');
+    assert.equal(entry('Planning Officer', 'plan-editor').dashboardOnly, true, 'each page has one sidebar link');
 });
 
 test('Office workspace follows its stages with read-only agency mapping', () => {
@@ -38,11 +38,15 @@ test('Office workspace follows its stages with read-only agency mapping', () => 
     assert.ok(labels('Office', 'Assigned-objective progress updates').includes('Edit Objectives'));
 });
 
-test('each workspace lists its dashboard in the first stage and Technical Admin is unchanged', () => {
-    for (const [role, label] of [['Administrative Admin', 'Administrative Dashboard'], ['Planning Officer', 'Planning Dashboard'], ['Office', 'Office/Agency Dashboard']]) {
-        assert.equal(navigationFor(role).find(item => item.children).children[0].label, label, 'the home cards stay in the first stage');
-        assert.equal(pageForUrl('/dashboard', role).id, 'home');
+test('the old stage-card dashboard is gone for these roles and Technical Admin is unchanged', () => {
+    for (const role of ['Administrative Admin', 'Planning Officer', 'Office']) {
+        assert.equal(entry(role, 'home'), undefined);
+        assert.equal(pageForUrl('/dashboard', role), undefined);
+        assert.equal(dashboardHrefFor(role), '/monitoring-dashboard');
     }
+    assert.equal(dashboardHrefFor('Management'), '/management-dashboard');
+    assert.equal(dashboardHrefFor('Administrator'), '/dashboard');
+    assert.equal(dashboardHrefFor(undefined), '/dashboard');
     assert.equal(navigationFor('Administrator')[0].id, 'home');
     assert.deepEqual(stages('Administrator'), ['Planning Support', 'Access Administration', 'Account Security']);
 });

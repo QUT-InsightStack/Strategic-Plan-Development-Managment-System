@@ -191,8 +191,8 @@ const officePermissions = [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW,
 
 const rolePolicies = {
     Administrator: { home: '/role-management', permissions: ['*'] },
-    'Administrative Admin': { home: '/dashboard', permissions: administrativeAdminPermissions },
-    'Administrative Administrator': { home: '/dashboard', permissions: administrativeAdminPermissions },
+    'Administrative Admin': { home: '/monitoring-dashboard', permissions: administrativeAdminPermissions },
+    'Administrative Administrator': { home: '/monitoring-dashboard', permissions: administrativeAdminPermissions },
     'Technical Administrator': { home: '/dashboard', permissions: technicalAdminPermissions },
     'Technical Admin': { home: '/dashboard', permissions: technicalAdminPermissions },
     test: { home: '/dashboard', permissions: ['*'] },

@@ -7,11 +7,13 @@ import { myLoginHistory } from '../../api/login-history-api.js';
 import { PHOTO_ACCEPT, checkPhoto, removeProfilePhoto, uploadProfilePhoto } from '../../api/profile-photo-api.js';
 import { getCurrentUser, updateProfile } from '../../api/auth-api.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
+import { dashboardHrefFor } from '../../access/navigation.js';
+import { getAccessSession } from '../../access/access-session.js';
 
 const { useRef, useState, useEffect } = React;
 
 const rootElement = document.getElementById('root');
-const dashboardUrl = '/dashboard';
+const dashboardUrl = dashboardHrefFor(getAccessSession()?.roleName);
 
 // The fields this form owns. profile_picture is deliberately absent: it is a
 // file, handled by the photo endpoint, and the profile endpoint now rejects it.
