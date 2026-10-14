@@ -367,6 +367,7 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
         ->whereNumber('id')->whereNumber('referenceId')->where('type', 'pdp-chapter|presidential-agenda')
         ->middleware('permission:strategic_objectives.update');
     Route::get('strategic-objective-progress', [\App\Http\Controllers\ObjectiveProgressController::class, 'index']);
+    Route::get('management/progress-timeline', [\App\Http\Controllers\ManagementProgressTimelineController::class, 'index']);
     Route::get('strategic-objectives/{objective}/progress-history', [\App\Http\Controllers\ObjectiveProgressController::class, 'history'])->whereNumber('objective');
     Route::patch('strategic-objectives/{objective}/progress', [\App\Http\Controllers\ObjectiveProgressController::class, 'update'])->whereNumber('objective');
     Route::put(
