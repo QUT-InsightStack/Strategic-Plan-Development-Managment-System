@@ -16,7 +16,13 @@ const progress = page('progress', 'Objective Progress', '/office?view=progress',
 const mapping = page('mapping', 'Strategic Mapping', '/mappings', ['strategic_records.view', 'strategic_objectives.view'], { anyPermissions: ['strategic_objectives.update', 'strategic_alignments.archive', 'strategic_alignments.delete'] });
 const alignment = page('alignment', 'View Strategic Alignment', '/mappings?mode=view', ['strategic_records.view', 'strategic_objectives.view']);
 const inputs = page('inputs', 'Consolidate Inputs', '/consolidate-inputs', ['implementation_inputs.view']);
-const common = [page('notifications', 'Notifications', '/workflow-notifications', [], { icon: 'bi-bell' }), page('profile', 'Profile', '/profile', [], { icon: 'bi-person' }), pending('faq', 'FAQ', { icon: 'bi-question-circle' })];
+const common = [    page(
+        'workflow-guide',
+        'How SPDMS Works',
+        '/how-spdms-works',
+        [],
+        { icon: 'bi-signpost-split' }
+    ),page('notifications', 'Notifications', '/workflow-notifications', [], { icon: 'bi-bell' }), page('profile', 'Profile', '/profile', [], { icon: 'bi-person' }), pending('faq', 'FAQ', { icon: 'bi-question-circle' })];
 export const roleNavigation = {
     technical: [
     group('technical-planning-support', 'Planning Support', [

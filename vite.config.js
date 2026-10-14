@@ -61,6 +61,8 @@ export default defineConfig({
                 'resources/js/pages/technical-admin/settings-app.js',
                 'resources/js/pages/technical-admin/audit-logs-app.js',
                 'resources/js/pages/technical-admin/user-management-app.js',
+                'resources/css/workflow-guide.css',
+                'resources/js/pages/shared/workflow-guide-app.js',
                 'resources/js/pages/technical-admin/user-search-app.js',
                 'resources/js/pages/technical-admin/login-history-app.js',
                 'resources/js/pages/technical-admin/system-monitoring-app.js',
