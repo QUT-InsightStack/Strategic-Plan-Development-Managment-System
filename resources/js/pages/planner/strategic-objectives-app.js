@@ -190,7 +190,7 @@ setStatus({
                 setPlan(result.data); setNotes(result.data.description || ''); setSavedNotes(result.data.description || '');
                 setStatus({ type: 'success', message: 'Draft notes saved. Objectives are saved when you submit each objective form.' });
             }
-            if (goNext) { navigating.current = true; window.location.assign('/mappings'); }
+            if (goNext) { navigating.current = true; window.location.assign(`/mappings?plan_id=${planId}`); }
         } catch (error) { setStatus({ type: 'error', message: errorText(error) }); }
         finally { setBusy(false); }
     }

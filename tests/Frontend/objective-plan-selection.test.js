@@ -95,7 +95,7 @@ test('draft save preserves fresh plan fields and next opens mapping for the same
     assert.equal(saved[0].payload.planning_end_date, '2032-12-31');
     assert.equal(saved[0].payload.status, 'draft');
     await button(tree, 'Next: Strategic Mapping').props.onClick();
-    assert.deepEqual(app.navigation, ['/mappings']);
+    assert.deepEqual(app.navigation, ['/mappings?plan_id=17']);
     assert.equal(saved.length, 1, 'unchanged notes are not saved twice');
 });
 
