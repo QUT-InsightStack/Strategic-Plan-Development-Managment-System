@@ -261,7 +261,17 @@ function CreateUserApp() {
                 optionFields.map(async (field) => {
                     const response = await resourceRequest(`/api/${field.optionsResource}${field.optionQuery || ''}`);
                     const list = crud.extractData(response);
-                    return [field.name, Array.isArray(list) ? list : []];
+                    const availableOptions = Array.isArray(list) ? list : [];
+
+return [
+    field.name,
+    field.name === 'role_id'
+        ? availableOptions.filter(role =>
+            role.is_assignable &&
+            role.role_name !== 'Administrator'
+        )
+        : availableOptions,
+];
                 })
             );
 

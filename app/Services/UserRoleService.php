@@ -153,7 +153,7 @@ class UserRoleService
             );
         }
 
-        if (! $role->is_assignable) {
+       if ($role->role_name === 'Administrator' || ! $role->is_assignable) {
             throw ValidationException::withMessages([
                 'role_id' => [
                     'The selected role is not approved for assignment.',

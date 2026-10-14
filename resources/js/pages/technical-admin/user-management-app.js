@@ -488,7 +488,9 @@ canHandlePasswordAssistance
                             React.createElement('label', { className: 'ui-label', htmlFor: 'account-role' }, 'Role', React.createElement('span', { className: 'ui-required' }, ' *')),
                             React.createElement('select', { id: 'account-role', className: 'ui-select', value: account.role_id, required: true, onChange: (event) => setAccount((current) => ({ ...current, role_id: event.target.value })) },
                                 React.createElement('option', { value: '' }, 'Select an approved role'),
-                                roles.filter((role) => role.is_assignable).map((role) => React.createElement('option', { key: role.role_id, value: role.role_id, disabled: role.is_protected && !canAssignProtectedRoles }, `${displayRoleName(role.role_name)}${role.is_protected ? ' (Protected)' : ''}`))
+                                roles.filter((role) =>
+    role.is_assignable && role.role_name !== 'Administrator'
+).map((role) => React.createElement('option', { key: role.role_id, value: role.role_id, disabled: role.is_protected && !canAssignProtectedRoles }, `${displayRoleName(role.role_name)}${role.is_protected ? ' (Protected)' : ''}`))
                             ),
                             accountErrors.role_id ? React.createElement('p', { className: 'ui-error' }, accountErrors.role_id[0]) : null
                         )
