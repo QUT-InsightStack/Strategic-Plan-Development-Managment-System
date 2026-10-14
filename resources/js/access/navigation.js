@@ -130,11 +130,11 @@ export const roleNavigation = {
         page('edit-objectives', 'Edit Objectives', '/office?view=edit', ['strategic_records.view', 'strategic_objectives.update']),
     ]), group('mapping', 'Strategic Alignment', [alignment], 'bi-map'),
     group('monitoring', 'Monitoring', [{ ...progress, label: 'Progress Updates' }, pending('office-monitoring', 'Monitoring Dashboard'), pending('office-reports', 'Reports')], 'bi-graph-up')],
-    management: [page('approval-list', 'Approve List', '/management-approvals', [], { icon: 'bi-clipboard-check' }),
+    management: [page('dashboard', 'Dashboard', '/management-dashboard', ['strategic_records.view'], { icon: 'bi-speedometer2' }),
+        page('alignment-performance', 'Alignment & Performance', '/management-dashboard?tab=alignment', ['strategic_records.view', 'strategic_objectives.view'], { icon: 'bi-diagram-3' }),
+        page('inputs-consolidation', 'Inputs & Consolidation', '/management-dashboard?tab=inputs', [], { anyPermissions: ['implementation_inputs.view', 'implementation_inputs.view_all'], icon: 'bi-building-check' }),
+        page('reviews-approvals', 'Reviews & Approvals', '/management-dashboard?tab=approvals', ['strategic_records.view'], { icon: 'bi-clipboard-check' }),
         page('plan-review', 'Plan Review', '/management-plan-review', ['strategic_records.view'], { icon: 'bi-journal-text' }),
-        page('alignment-review', 'Alignment Review', '/management-dashboard?tab=alignment', ['strategic_records.view', 'strategic_objectives.view'], { icon: 'bi-diagram-3' }),
-        page('agency-input-review', 'Input Review', '/management-dashboard?tab=inputs', [], { anyPermissions: ['implementation_inputs.view', 'implementation_inputs.view_all'], icon: 'bi-building-check' }),
-        page('monitoring', 'Monitoring', '/management-dashboard?tab=dashboard', ['strategic_records.view', 'strategic_objectives.view'], { icon: 'bi-graph-up' }),
         page('reports', 'Reports & Summary', '/management-dashboard?tab=reports', ['strategic_records.view'], { icon: 'bi-file-earmark-bar-graph' }),
     ],
 };
@@ -150,6 +150,12 @@ export function canOpenPage(item, session) {
     const granted = permission => session.permissions?.includes('*') || session.permissions?.includes(permission);
     return (!item.permissions || item.permissions.every(granted)) && (!item.anyPermissions || item.anyPermissions.some(granted));
 }
+// Management dashboard tabs; older Monitoring links (?tab=dashboard / monitoring) open the Overview.
+export function managementDashboardTab(params) {
+    const tab = params.get('tab') || '';
+    if (tab === 'inputs' || (tab === 'alignment' && params.get('section') === 'agency')) return 'inputs';
+    return ['alignment', 'approvals', 'reports'].includes(tab) ? tab : 'overview';
+}
 export function canonicalOfficeUrl(input) {
     const url = new URL(input, 'http://localhost');
     if (url.pathname === '/office' && url.searchParams.get('view') === 'agency-input') url.searchParams.set('view', 'inputs');
@@ -160,8 +166,10 @@ export function isCurrentPage(item, input) {
     const target = new URL(item.href, 'http://localhost');
     if (item.id === 'objectives' && /^\/strategic-plans\/\d+\/objectives$/.test(current.pathname)) return true;
     if (current.pathname !== target.pathname) return false;
-    if (item.id === 'monitoring' && current.pathname === '/management-dashboard' && !current.searchParams.has('tab')) return true;
-    if (item.id === 'alignment-review' && current.pathname === '/management-dashboard' && current.searchParams.get('tab') === 'alignment') return current.searchParams.get('section') !== 'agency';
+    if (current.pathname === '/management-dashboard') {
+        const tab = managementDashboardTab(current.searchParams);
+        return tab === (target.searchParams.get('tab') || 'overview');
+    }
     const keys = ['view', 'section', 'tab', 'feature', 'mode'];
     return keys.every(key => (current.searchParams.get(key) || '') === (target.searchParams.get(key) || ''));
 }

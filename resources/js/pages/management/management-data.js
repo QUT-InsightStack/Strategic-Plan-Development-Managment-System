@@ -1,4 +1,5 @@
 import { listStrategicPlans } from '../../api/strategic-plans-api.js';
+import { apiRequest } from '../../api/api-client.js';
 
 export async function loadAllManagementPages(loader) {
     const rows = [];
@@ -15,6 +16,12 @@ export async function loadAllManagementPages(loader) {
 
 export function listAuthorizedManagementPlans() {
     return loadAllManagementPages(listStrategicPlans);
+}
+
+// Objectives and progress history for one plan, scoped by the backend like the objective listing.
+export async function getManagementProgressTimeline(planId) {
+    const response = await apiRequest(`/api/management/progress-timeline?plan_id=${encodeURIComponent(planId)}`);
+    return response.data;
 }
 
 export function managementDateLabel(value, fallback = '—') {

@@ -170,3 +170,87 @@
 .management-scope-filters input:focus-visible { outline: var(--focus-ring); }
 @media (max-width: 1000px) { .management-objective-cards { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .management-progress-plan { padding: 14px; } .management-progress-plans { padding: 8px; } .management-progress-plan__heading, .management-objective-card__heading { flex-direction: column; } }
+
+/* Management dashboard redesign: header, KPI row, underline tabs and section states. */
+.management-dashboard__header h1 { font-size: clamp(24px, 2.1vw, 30px); }
+.management-dashboard__header > div:first-child p { max-width: 620px; }
+.management-dashboard__controls label { min-width: 170px; }
+.management-kpis { grid-template-columns: repeat(6, minmax(140px, 1fr)); margin-bottom: var(--space-4); }
+.management-kpi { min-height: 156px; padding: 16px; border-color: #dce5ef; }
+.management-kpi__copy { gap: 4px; }
+.management-kpi__copy small { font-size: var(--font-size-xs); font-weight: 600; }
+.management-kpi__copy strong { font-size: 26px; }
+.management-kpi__copy strong.is-muted { color: var(--color-text-secondary); font-size: 18px; }
+.management-kpi.is-cyan .management-kpi__icon { color: #087990; background: #e2f7fb; }
+.management-kpi.is-cyan .management-kpi__copy strong { color: #087990; }
+.management-kpi.is-amber .management-kpi__icon { color: #a35f00; background: #fff3dc; }
+.management-kpi.is-amber .management-kpi__copy strong { color: #a35f00; }
+.management-kpi__details { margin-top: 2px; color: var(--color-text-secondary); font-size: 11px; }
+.management-kpi__details summary { color: #2460a8; cursor: pointer; }
+.management-kpi__details ul { display: grid; gap: 2px; margin: 4px 0 0; padding: 0; list-style: none; }
+.management-kpi__details li { display: flex; justify-content: space-between; gap: 10px; }
+.management-kpi__details li strong { color: var(--color-text); font-size: 11px; }
+.management-link-button { border: 0; padding: 0; color: #2460a8; background: none; font: inherit; font-size: var(--font-size-xs); text-decoration: underline; cursor: pointer; }
+.management-link-button:focus-visible { outline: var(--focus-ring); }
+.management-scope-filters__reset { align-self: end; margin-left: auto; }
+.management-dashboard__tabs { margin-bottom: var(--space-4); border: 0; border-bottom: 1px solid #d6e0eb; border-radius: 0; background: transparent; }
+.management-dashboard__tab { padding: 10px 16px; }
+.management-dashboard__tab:hover { background: transparent; }
+.management-dashboard__tab.is-active { border-bottom-color: #2767ef; color: #2767ef; background: transparent; }
+.management-dashboard__tabs--sub { margin-bottom: var(--space-3); }
+.management-dashboard__panel { min-height: 320px; border: 0; padding: 0; background: transparent; }
+.management-skeleton-block { display: grid; gap: 10px; padding: 18px 16px; }
+.management-skeleton { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, #e8eef5 25%, #f4f7fb 50%, #e8eef5 75%); background-size: 200% 100%; animation: management-shimmer 1.4s ease-in-out infinite; }
+.management-skeleton--value { width: 70px; height: 26px; }
+.management-skeleton-row td { padding: 14px 12px; }
+@keyframes management-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .management-skeleton { animation: none; } }
+.management-section-error { display: grid; justify-items: start; gap: 8px; margin: 14px 16px; border: 1px solid #eaa5a5; border-left: 4px solid #cf3030; border-radius: var(--radius-md); padding: 10px 14px; color: #8f2020; background: #fff2f2; font-size: var(--font-size-sm); }
+.management-section-error p { margin: 0; }
+.management-empty--filtered { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.management-empty--filtered p { margin: 0; }
+.management-empty--denied { color: #6b4f00; }
+.management-overview-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--space-4); }
+.management-overview-grid--split { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.management-six-year__figure { margin: 0; padding: 12px 16px 14px; }
+.management-six-year__chart { display: block; width: 100%; height: auto; max-height: 300px; }
+.management-six-year__grid { stroke: #e3e9f0; stroke-width: 1; }
+.management-six-year__tick, .management-six-year__year { fill: #6b7683; font-size: 11px; }
+.management-six-year__label { fill: var(--color-text); font-size: 12px; font-weight: 600; }
+.management-six-year__future { fill: #8a94a0; font-size: 11px; font-style: italic; }
+.management-six-year__bar { fill: var(--progress-color); }
+.management-six-year__figure .management-progress-legend { justify-content: center; padding: 8px 0 0; font-size: 12px; }
+.management-status.is-overdue { color: #a42f2f; background: #fdeaea; }
+.management-monitor-toolbar { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 14px 18px 0; }
+.management-monitor-toolbar .management-progress-legend { padding: 0; }
+.management-chain { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-right: 6px; color: var(--color-primary); font-weight: 600; }
+.management-chain .bi { color: #8a94a0; font-size: 11px; }
+.management-summary-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); padding: 16px; }
+.management-summary-cards article { display: flex; align-items: flex-start; gap: 12px; border: 1px solid #e0e7ef; border-radius: var(--radius-md); padding: 14px; background: #fcfdff; }
+.management-summary-cards article > div { display: grid; flex: 1; min-width: 0; gap: 3px; }
+.management-summary-cards small { color: var(--color-text-secondary); font-size: var(--font-size-xs); font-weight: 600; }
+.management-summary-cards strong { color: #2767ef; font-size: 22px; }
+.management-summary-cards article > div > span { color: var(--color-text-secondary); font-size: 11px; }
+.management-summary-cards .management-objective-meter { margin: 4px 0; }
+.management-attention { display: grid; gap: 4px; padding: 6px 16px 14px; }
+.management-attention__group { border-top: 1px solid #e8edf3; padding: 10px 0; }
+.management-attention__group:first-child { border-top: 0; }
+.management-attention__group h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; color: var(--color-primary); font-size: var(--font-size-sm); }
+.management-attention__group.is-overdue h3 .bi { color: #b73535; }
+.management-attention__group.is-pending h3 .bi { color: #a35f00; }
+.management-attention__group.is-in_progress h3 .bi { color: #2468b5; }
+.management-attention__count { margin-left: auto; border-radius: var(--radius-pill); padding: 1px 9px; color: var(--color-text); background: #eef2f7; font-size: 11px; }
+.management-attention ul, .management-actions-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.management-attention li { display: grid; gap: 1px; font-size: var(--font-size-xs); }
+.management-attention li span { color: var(--color-text-secondary); }
+.management-attention .management-empty { padding: 4px 0; font-size: var(--font-size-xs); }
+.management-actions-list { padding: 12px 16px 16px; }
+.management-actions-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #e0e7ef; border-radius: var(--radius-md); padding: 10px 12px; }
+.management-actions-list li > div { display: grid; min-width: 0; gap: 2px; font-size: var(--font-size-xs); }
+.management-actions-list li span { color: var(--color-text-secondary); }
+@media (max-width: 1280px) { .management-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 1100px) { .management-overview-grid, .management-overview-grid--split { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .management-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .management-summary-cards { grid-template-columns: 1fr; } .management-scope-filters__reset { margin-left: 0; } .management-actions-list li { align-items: flex-start; flex-direction: column; } }
+.management-progress-plan__meta { display: flex; flex-wrap: wrap; gap: 8px; color: var(--color-text-secondary); font-size: 11px; letter-spacing: .04em; }
+.management-plan-status-bar { display: flex; height: 9px; overflow: hidden; margin-top: 12px; border-radius: var(--radius-pill); background: #e7edf4; }
+.management-plan-status-bar > span { height: 100%; background: var(--progress-color); }
