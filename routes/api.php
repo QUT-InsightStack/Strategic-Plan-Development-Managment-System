@@ -25,6 +25,7 @@ use App\Http\Controllers\PresidentialAgendaItemController;
 use App\Http\Controllers\StrategicObjectiveAlignmentController;
 use App\Http\Controllers\StrategicPlanCommentController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PasswordAssistanceController;
 
 Route::middleware(['auth:api', 'auth.version', 'permission:system_monitoring.view'])
     ->prefix('system-monitoring')->group(function (): void {
@@ -54,7 +55,10 @@ Route::post('forgot-password', [AuthController::class, 'forgotPassword'])
     ->middleware('throttle:5,1');
 Route::post('reset-password', [AuthController::class, 'resetPassword'])
     ->middleware('throttle:5,1');
-
+Route::post('password-assistance-requests', [
+    PasswordAssistanceController::class,
+    'store',
+])->middleware('throttle:5,1');
 /*
 |--------------------------------------------------------------------------
 | Protected authentication routes
@@ -71,7 +75,33 @@ Route::middleware(['auth:api','auth.version', 'auth.session', 'system.available'
     Route::get('auth/me',     [AuthController::class, 'me']);
     Route::put('auth/profile',       [AuthController::class, 'updateProfile']);
     Route::put('change-password', [AuthController::class, 'changePassword']);
+    Route::get('password-assistance-requests', [
+    PasswordAssistanceController::class,
+    'index',
+])->middleware('permission:users.update');
+Route::get('password-assistance-requests/{assistanceRequest}', [
+    PasswordAssistanceController::class,
+    'show',
+])->whereNumber('assistanceRequest')
+    ->middleware('permission:users.update');
 
+Route::post('password-assistance-requests/{assistanceRequest}/accept', [
+    PasswordAssistanceController::class,
+    'accept',
+])->whereNumber('assistanceRequest')
+    ->middleware('permission:users.update');
+
+Route::post('password-assistance-requests/{assistanceRequest}/ignore', [
+    PasswordAssistanceController::class,
+    'ignore',
+])->whereNumber('assistanceRequest')
+    ->middleware('permission:users.update');
+
+Route::post('password-assistance-requests/{assistanceRequest}/reset', [
+    PasswordAssistanceController::class,
+    'reset',
+])->whereNumber('assistanceRequest')
+    ->middleware('permission:users.update');
     // Takes a file rather than JSON, so it cannot go through updateProfile.
     Route::post('auth/profile/photo', [AuthController::class, 'uploadPhoto']);
     Route::delete('auth/profile/photo', [AuthController::class, 'removePhoto']);

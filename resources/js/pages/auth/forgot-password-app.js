@@ -1,6 +1,6 @@
 import { createPageRoot } from '../../navigation/page-root.js';
 import { BrandLogo } from '../../brand-logo.js';
-
+import { apiRequest } from '../../api/api-client.js';
 const { useState } = React;
 
 const rootElement = document.getElementById('root');
@@ -151,27 +151,49 @@ function ForgotPasswordForm({ status, setStatus }) {
         return Object.keys(nextErrors).length === 0;
     }
 
-    async function handleSubmit(event) {
-        event.preventDefault();
 
-        if (!validate()) {
-            setStatus(
-                'Please check the highlighted field and try again.',
-                'error'
-            );
-            return;
-        }
+async function handleSubmit(event) {
+    event.preventDefault();
 
-        setIsSubmitting(true);
-        setStatus('Processing your request...', 'info');
+    if (isSubmitting) return;
 
-        setErrors({});
+    if (!validate()) {
         setStatus(
-            'Your password recovery request has been submitted. If the account details are valid, a recovery password will be provided shortly by an authorised system administrator.',
-            'success'
+            'Please check the highlighted field and try again.',
+            'error'
         );
+        return;
+    }
+
+    setIsSubmitting(true);
+    setErrors({});
+    setStatus('Processing your request...', 'info');
+
+    try {
+        const payload = await apiRequest(
+            '/api/password-assistance-requests',
+            {
+                method: 'POST',
+                redirectOnUnauthorized: false,
+                body: JSON.stringify({
+                    email: email.trim(),
+                }),
+            }
+        );
+
+        setStatus(payload.message, 'success');
+    } catch (error) {
+        setErrors(error.errors || {});
+        setStatus(
+            error.status === 429
+                ? 'Too many requests. Please wait a minute and try again.'
+                : error.message || 'Unable to submit your request. Please try again.',
+            'error'
+        );
+    } finally {
         setIsSubmitting(false);
-        }
+    }
+}
 
     return React.createElement(
         'section',
