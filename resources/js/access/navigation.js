@@ -89,7 +89,6 @@ export const roleNavigation = {
     group('monitoring', 'Monitoring', [{ ...progress, label: 'Progress Updates' }, pending('office-monitoring', 'Monitoring Dashboard'), pending('office-reports', 'Reports')], 'bi-graph-up')],
     management: [page('approval-list', 'Approve List', '/management-approvals', [], { icon: 'bi-clipboard-check' }),
         page('plan-review', 'Plan Review', '/management-plan-review', ['strategic_records.view'], { icon: 'bi-journal-text' }),
-        page('objectives-review', 'Objectives Review', '/management-plan-review?view=objectives', ['strategic_records.view', 'strategic_objectives.view'], { icon: 'bi-list-check' }),
         page('alignment-review', 'Strategic Alignment Review', '/management-dashboard?tab=alignment', ['relations.view'], { icon: 'bi-diagram-3' }),
         page('agency-input-review', 'Agency Input Review', '/management-dashboard?tab=alignment&section=agency', ['relations.view', 'strategic_objectives.view'], { icon: 'bi-building-check' }),
         page('monitoring', 'Monitoring', '/management-dashboard?tab=dashboard', ['strategic_records.view'], { icon: 'bi-graph-up' }),

@@ -12,7 +12,7 @@ function field(label, value) {
     return h('div', { className: 'office-summary-field', key: label }, h('dt', null, label), h('dd', null, value || 'Not provided'));
 }
 
-export function ManagementPlanReview({ plans, planId, mode = 'plans', canComment = false, onOpenPlan, onBack }) {
+export function ManagementPlanReview({ plans, planId, canComment = false, onOpenPlan, onBack }) {
     const [plan, setPlan] = useState(null);
     const [objectives, setObjectives] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -72,8 +72,8 @@ export function ManagementPlanReview({ plans, planId, mode = 'plans', canComment
         && (!approvalStatus || item.approval_status === approvalStatus));
     if (!planId) return h('section', { className: 'management-card management-table-card' },
         h('div', { className: 'management-card__heading' }, h('div', null,
-            h('h2', null, mode === 'objectives' ? 'Choose a plan for Objectives Review' : 'Strategic Plans for Review'),
-            h('p', null, mode === 'objectives' ? 'Open a plan to see its objective list, owners and progress.' : 'Open a plan to review its summary, foundations and comments.')),
+            h('h2', null, 'Strategic Plans for Review'),
+            h('p', null, 'Open a plan to review its summary, foundations and comments.')),
             h('label', { className: 'management-approvals__search' }, h('span', null, 'Search plans'), h('input', { type: 'search', value: search, onChange: event => { setSearch(event.target.value); setPage(1); }, placeholder: 'Plan title, ID or agency' }))),
         h('div', { className: 'management-scope-filters', 'aria-label': 'Plan review filters' },
             h('label', null, h('span', null, 'Planning period'), h('select', { value: year, onChange: event => { setYear(event.target.value); setPage(1); } }, h('option', { value: '' }, 'All periods'), planningYears(plans).map(item => h('option', { key: item, value: String(item) }, item)))),
@@ -89,7 +89,7 @@ export function ManagementPlanReview({ plans, planId, mode = 'plans', canComment
             h('tbody', null, visiblePlans.length ? pageRows(visiblePlans, page).map(item => h('tr', { key: item.record_id },
                 h('td', null, item.record_id), h('td', null, item.title), h('td', null, item.department_agency || '—'),
                 h('td', null, `${dateLabel(item.planning_start_date)} – ${dateLabel(item.planning_end_date)}`), h('td', null, item.status || '—'),
-                h('td', null, h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => onOpenPlan(item.record_id) }, mode === 'objectives' ? 'View objectives' : 'View summary'))))
+                h('td', null, h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => onOpenPlan(item.record_id) }, 'View summary'))))
                 : h('tr', null, h('td', { colSpan: 6 }, plans.length ? 'No plans match these filters.' : 'No plans are available for review.'))))),
         h(ManagementPagination, { page, total: visiblePlans.length, onChange: setPage, label: 'plans' }),
         h('p', { className: 'management-plan-review__count' }, `${visiblePlans.length} of ${plans.length} plan(s)`));
@@ -109,9 +109,9 @@ export function ManagementPlanReview({ plans, planId, mode = 'plans', canComment
                 field('Plan period', plan.planning_start_date && plan.planning_end_date ? `${dateLabel(plan.planning_start_date)} – ${dateLabel(plan.planning_end_date)}` : null),
                 field('Department / Agency', plan.department_agency), field('Last Updated', dateLabel(plan.updated_at))),
             author ? h('p', { className: 'office-muted' }, `Created by ${author}`) : null,
-            mode === 'plans' ? h('dl', { className: 'office-foundations' },
+            h('dl', { className: 'office-foundations' },
                 field('Mission', plan.mission_foundation?.content), field('Vision', plan.vision_foundation?.content),
-                field('Core Values', plan.core_values?.length ? h('ul', null, plan.core_values.map((value, index) => h('li', { key: value.foundation_id || index }, value.content))) : null)) : null),
+                field('Core Values', plan.core_values?.length ? h('ul', null, plan.core_values.map((value, index) => h('li', { key: value.foundation_id || index }, value.content))) : null))),
         h('section', { className: 'office-detail-objectives', 'aria-labelledby': 'management-objectives-title' },
             h('h2', { id: 'management-objectives-title' }, 'Strategic Objectives'),
             h('div', { className: 'office-table-scroll' }, h('table', null,
