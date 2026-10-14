@@ -352,7 +352,7 @@ function ManagementDashboard({ session, management }) {
         h(AppSidebar),
         h('main', { className: 'app-shell-main' }, h('div', { className: 'management-dashboard__content' },
             h('header', { className: 'management-dashboard__header' },
-                h('div', null, h('h1', null, management ? 'Management Dashboard' : 'Monitoring Dashboard'),
+                h('div', null, h('h1', null, management ? 'Management Dashboard' : 'Dashboard'),
                     h('p', null, management ? 'Monitor strategic plan progress, alignment status, and planning summaries across departments and agencies.'
                         : 'Monitor strategic plan progress and planning summaries within your authorised scope.')),
                 h('div', { className: 'management-dashboard__controls' },
@@ -377,6 +377,6 @@ apiRequest('/api/auth/me').then(payload => {
     if (!enforcePageAccess()) return;
     const management = isManagementSession(session);
     if (!management && !can(P.PLANS_VIEW, session) && !can(P.REPORTS_VIEW, session)) { window.location.replace('/access-denied'); return; }
-    if (!management) document.title = 'Monitoring Dashboard | SPDMS';
+    if (!management) document.title = 'Dashboard | SPDMS';
     root.render(h(ManagementErrorBoundary, null, h(ManagementDashboard, { session, management })));
 }).catch(error => root.render(h('p', { role: 'alert' }, error.message)));

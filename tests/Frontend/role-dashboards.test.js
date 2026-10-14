@@ -13,7 +13,7 @@ test('Administrative Admin workspace follows its stages and keeps the planning s
     ]);
     assert.deepEqual(labels('Administrative Admin', 'Planning reference-data preparation'),
         ['Administrative Dashboard', 'Presidential Agenda Management', 'PDP Chapters Management', 'Reference Data Management']);
-    assert.deepEqual(labels('Administrative Admin', 'Administrative monitoring'), ['Monitoring Dashboard', 'Reports', 'System Logs']);
+    assert.deepEqual(labels('Administrative Admin', 'Administrative monitoring'), ['Reports', 'System Logs']);
 });
 
 test('Planning Officer workspace follows the nine planning stages', () => {
@@ -23,7 +23,7 @@ test('Planning Officer workspace follows the nine planning stages', () => {
         'Implementation monitoring', 'Reviews',
     ]);
     assert.deepEqual(labels('Planning Officer', 'Strategic alignment mapping'), ['Strategic Mapping', 'Agenda → PDP → DOST Mapping', 'PDP Chapters']);
-    assert.deepEqual(labels('Planning Officer', 'Implementation monitoring'), ['Objective Progress Monitoring', 'Monitoring Dashboard', 'Reports']);
+    assert.deepEqual(labels('Planning Officer', 'Implementation monitoring'), ['Objective Progress Monitoring', 'Reports']);
     assert.equal(entry('Planning Officer', 'plan-editor').dashboardOnly, true, 'pages already in the sidebar appear only as home cards');
 });
 
@@ -40,7 +40,7 @@ test('Office workspace follows its stages with read-only agency mapping', () => 
 
 test('each workspace lists its dashboard in the first stage and Technical Admin is unchanged', () => {
     for (const [role, label] of [['Administrative Admin', 'Administrative Dashboard'], ['Planning Officer', 'Planning Dashboard'], ['Office', 'Office/Agency Dashboard']]) {
-        assert.equal(navigationFor(role).find(item => item.children).children[0].label, label);
+        assert.equal(navigationFor(role).find(item => item.children).children[0].label, label, 'the home cards stay in the first stage');
         assert.equal(pageForUrl('/dashboard', role).id, 'home');
     }
     assert.equal(navigationFor('Administrator')[0].id, 'home');
@@ -49,6 +49,10 @@ test('each workspace lists its dashboard in the first stage and Technical Admin 
 
 test('monitoring links open the permission-gated dashboard and report master', () => {
     for (const role of ['Administrative Admin', 'Planning Officer', 'Office']) {
+        const first = navigationFor(role)[0];
+        assert.equal(first.id, 'monitoring-dashboard', 'Dashboard is the first top-level menu item');
+        assert.equal(first.label, 'Dashboard');
+        assert.equal(first.children, undefined);
         assert.equal(entry(role, 'monitoring-dashboard').href, '/monitoring-dashboard');
         assert.equal(entry(role, 'monitoring-reports').href, '/monitoring-dashboard?tab=reports');
         assert.equal(entry(role, 'monitoring-dashboard').placeholder, undefined);

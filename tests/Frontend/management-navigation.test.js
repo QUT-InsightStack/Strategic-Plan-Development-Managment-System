@@ -12,7 +12,10 @@ test('management menu follows the five approval and oversight stages', () => {
     const items = management();
     const byId = id => items.find(item => item.id === id);
     assert.equal(byId('home'), undefined);
-    assert.equal(byId('dashboard').label, 'Executive Dashboard');
+    assert.equal(navigationFor('Management')[0].id, 'dashboard', 'Dashboard is the first top-level item');
+    assert.equal(byId('dashboard').label, 'Dashboard');
+    assert.equal(byId('executive-dashboard').dashboardOnly, true);
+    assert.equal(byId('monitoring').dashboardOnly, true);
     assert.equal(byId('dashboard').href, '/management-dashboard');
     assert.equal(byId('reviews-approvals').href, '/management-dashboard?tab=approvals');
     assert.equal(byId('alignment-performance').href, '/management-dashboard?tab=alignment');

@@ -18,7 +18,8 @@ const alignment = page('alignment', 'View Strategic Alignment', '/mappings?mode=
 const inputs = page('inputs', 'Consolidate Inputs', '/consolidate-inputs', ['implementation_inputs.view']);
 // Monitoring for planning and office roles reuses the Management Overview and report master;
 // the backend scopes the data to each account.
-const monitoringDashboard = page('monitoring-dashboard', 'Monitoring Dashboard', '/monitoring-dashboard', ['strategic_records.view'], { icon: 'bi-speedometer2' });
+// The monitoring dashboard is these roles' top-level Dashboard link.
+const monitoringDashboard = page('monitoring-dashboard', 'Dashboard', '/monitoring-dashboard', ['strategic_records.view'], { icon: 'bi-speedometer2' });
 const reports = page('monitoring-reports', 'Reports', '/monitoring-dashboard?tab=reports', ['reports.view'], { icon: 'bi-file-earmark-bar-graph' });
 const common = [    page(
         'workflow-guide',
@@ -72,7 +73,7 @@ export const roleNavigation = {
     ], 'bi-shield-check')],
     // Role workspaces follow the planning stages. A later entry for a page that is already listed
     // is dashboardOnly: it appears as a home card but not twice in the sidebar.
-    administrative: [
+    administrative: [monitoringDashboard,
     group('admin-reference-preparation', 'Planning reference-data preparation', [
         page('home', 'Administrative Dashboard', '/dashboard', [], { icon: 'bi-speedometer2' }),
         page('agenda', 'Presidential Agenda Management', '/administrative-admin/reference-data?tab=agenda', ['reference_data.manage', 'presidential_agenda.view'], { icon: 'bi-bank' }),
@@ -83,7 +84,6 @@ export const roleNavigation = {
         page('templates', 'Template Management', '/administrative-admin/templates', ['templates.manage'], { icon: 'bi-file-earmark-text' }),
     ], 'bi-file-earmark-text'),
     group('admin-monitoring', 'Administrative monitoring', [
-        monitoringDashboard,
         reports,
         page('system-logs', 'System Logs', '/audit-logs', ['logs.view'], { icon: 'bi-list-check' }),
     ], 'bi-graph-up'),
@@ -101,7 +101,7 @@ export const roleNavigation = {
         page('objective-progress', 'Objective Progress', '/progress-monitoring', ['strategic_records.view', 'strategic_objectives.view_progress']),
     ], 'bi-graph-up'),
     group('administrative-reviews', 'Assigned Approvals', [page('reviews', 'Assigned Plan Reviews', '/management-approvals')])],
-    planner: [
+    planner: [monitoringDashboard,
     group('planning', 'Initial strategic-plan creation', [
         page('home', 'Planning Dashboard', '/dashboard', [], { icon: 'bi-speedometer2' }),
         page('plans', 'Strategic Plan List', '/strategic-plans', ['strategic_records.view']),
@@ -131,9 +131,9 @@ export const roleNavigation = {
         page('submit-approval', 'Submit for Approval', '/strategic-plans/finalize', ['strategic_records.update'], { dashboardOnly: true, description: 'Submit a finalized plan from the finalization page.' }),
         page('submission-status', 'Submission Status', '/strategic-plans', ['strategic_records.view'], { dashboardOnly: true, description: 'Open a plan to view its submission status.' }),
     ], 'bi-send-check'),
-    group('monitoring', 'Implementation monitoring', [{ ...progress, label: 'Objective Progress Monitoring' }, monitoringDashboard, reports], 'bi-graph-up'),
+    group('monitoring', 'Implementation monitoring', [{ ...progress, label: 'Objective Progress Monitoring' }, reports], 'bi-graph-up'),
     group('reviews', 'Reviews', [page('reviews', 'Plan Reviews', '/management-approvals')])],
-    office: [
+    office: [monitoringDashboard,
     group('planning', 'Initial strategic-plan review', [
         page('home', 'Office/Agency Dashboard', '/dashboard', [], { icon: 'bi-speedometer2' }),
         { ...review, label: 'Initial Strategic Plan Review' },
@@ -155,11 +155,11 @@ export const roleNavigation = {
         { ...progress, id: 'progress-update', label: 'Progress/Status Update', dashboardOnly: true, description: 'Update progress and status from Assigned Objectives.' },
         page('edit-objectives', 'Edit Objectives', '/office?view=edit', ['strategic_records.view', 'strategic_objectives.update']),
     ], 'bi-list-check'),
-    group('monitoring', 'Agency implementation monitoring', [monitoringDashboard, reports], 'bi-graph-up')],
+    group('monitoring', 'Agency implementation monitoring', [reports], 'bi-graph-up')],
     // Management pages open the Management Dashboard tabs; duplicate labels for one page are dashboardOnly.
-    management: [
+    management: [page('dashboard', 'Dashboard', '/management-dashboard', ['strategic_records.view'], { icon: 'bi-speedometer2' }),
     group('approval-preparation', 'Strategic-plan approval preparation', [
-        page('dashboard', 'Executive Dashboard', '/management-dashboard', ['strategic_records.view'], { icon: 'bi-speedometer2' }),
+        page('executive-dashboard', 'Executive Dashboard', '/management-dashboard', ['strategic_records.view'], { dashboardOnly: true }),
         page('reviews-approvals', 'Approval List', '/management-dashboard?tab=approvals', ['strategic_records.view'], { icon: 'bi-clipboard-check' }),
     ], 'bi-clipboard-check'),
     group('plan-review-stage', 'Strategic-plan review', [
@@ -176,7 +176,7 @@ export const roleNavigation = {
         page('plan-approval', 'Strategic Plan Approval', '/management-dashboard?tab=approvals&queue=pending', ['strategic_records.view'], { icon: 'bi-check2-circle' }),
     ], 'bi-check2-circle'),
     group('oversight', 'Implementation oversight', [
-        page('monitoring', 'Monitoring Dashboard', '/management-dashboard?tab=overview', ['strategic_records.view'], { icon: 'bi-graph-up' }),
+        page('monitoring', 'Monitoring Dashboard', '/management-dashboard?tab=overview', ['strategic_records.view'], { dashboardOnly: true }),
         page('progress-summary', 'Progress Summary', '/management-dashboard?tab=overview', ['strategic_records.view'], { dashboardOnly: true }),
         page('reports', 'Reports', '/management-dashboard?tab=reports', ['reports.view'], { icon: 'bi-file-earmark-bar-graph' }),
     ], 'bi-graph-up'),
