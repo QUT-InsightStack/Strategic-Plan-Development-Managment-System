@@ -90,7 +90,8 @@ export function PlanningPeriodSelect({ filters, plans, onChange, disabled = fals
 export function ManagementFilterBar({ filters, plans, offices = [], onChange, onReset, includePeriod = true, includeObjectiveStatus = true, disabled = false }) {
     const planStatuses = [...new Set(plans.map(plan => plan.status).filter(Boolean))].sort();
     const statusGroups = [
-        { group: 'Plan status', options: planStatuses.map(status => [`plan:${status}`, status === 'finished' ? 'Finalized' : status.replaceAll('_', ' ')]) },
+        { group: 'Plan status', options: planStatuses.map(status => [`plan:${status}`, plans.find(plan => plan.status === status && plan.planning_status_label)?.planning_status_label
+            || (status === 'finished' ? 'Finalized' : status.charAt(0).toUpperCase() + status.slice(1).replaceAll('_', ' '))]) },
         ...(includeObjectiveStatus ? [{ group: 'Objective status', options: OBJECTIVE_STATUS_OPTIONS.map(([value, label]) => [`objective:${value}`, label]) }] : []),
     ].filter(group => group.options.length);
     // An objective status chosen on the dashboard stays in the URL but does not apply to plan-only lists.
