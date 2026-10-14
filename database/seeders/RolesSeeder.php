@@ -15,8 +15,8 @@ class RolesSeeder extends Seeder
         $roles = [
             [
                 'role_name' => 'Administrator',
-                'description' => 'Full system access. Manages users, roles, and system configuration.',
-                'is_assignable' => true,
+                'description' => 'Legacy full-access role retained for existing accounts. Not available for new assignments.',
+                'is_assignable' => false,
                 'is_protected' => true,
             ],
             [
