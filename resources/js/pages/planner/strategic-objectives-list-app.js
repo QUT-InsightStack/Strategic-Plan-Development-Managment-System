@@ -43,7 +43,8 @@ function StrategicObjectivesListApp() {
                 let page = 1, last = 1;
                 do {
                     const result = await listStrategicPlans({ per_page: 100, page });
-                    all.push(...(result.data || []));
+                    // Approved plans are final and no longer edited here.
+                    all.push(...(result.data || []).filter(plan => plan.approval_status !== 'approved'));
                     last = result.meta?.last_page || 1;
                     page++;
                 } while (active && page <= last);

@@ -32,7 +32,7 @@ test('alignment actions use persisted routes and send the deletion reason', asyn
     assert.ok(calls.every(call => call.credentials === 'include'));
 });
 
-function page({ capabilities = {}, failArchive = false, mappingStatus = 'active', search = '?plan_id=4' } = {}) {
+function page({ capabilities = {}, failArchive = false, mappingStatus = 'active', search = '?plan_id=4', extra = [] } = {}) {
     const values = [], effects = [], pending = [];
     let cursor = 0, calls = 0, restoreCalls = 0, listCalls = 0;
     const mapping = { id: '7:pdp-chapter:3', objective_id: 7, type: 'pdp-chapter', reference_id: 3,
@@ -58,12 +58,12 @@ function page({ capabilities = {}, failArchive = false, mappingStatus = 'active'
             },
         },
         listStrategicPlans: async () => ({ data: [{ record_id: 4, title: 'Plan' }], meta: { last_page: 1 } }),
-        listPlanAlignments: async () => { listCalls++; return { data: [{ ...mapping }], meta: { capabilities, objectives: [], catalog: {} } }; },
+        listPlanAlignments: async () => { listCalls++; return { data: [{ ...mapping }, ...extra.filter(link => link.status === 'active')], meta: { capabilities, objectives: [], catalog: {} } }; },
         restoreAlignment: async () => { restoreCalls++; mapping.status = 'active'; },
-        archiveAlignment: async () => {
+        archiveAlignment: async link => {
             calls++;
             if (failArchive) throw new Error('Approval started; mapping is locked.');
-            mapping.status = 'archived';
+            if (link === undefined || link.id === mapping.id) mapping.status = 'archived'; else link.status = 'archived';
         },
     });
     const source = readFileSync(new URL('../../resources/js/pages/shared/mappings-app.js', import.meta.url), 'utf8');
@@ -86,29 +86,29 @@ function nodes(tree, predicate) {
 function text(tree) {
     return tree == null || tree === false ? '' : typeof tree !== 'object' ? String(tree) : tree.children.map(text).join(' ');
 }
-const button = (tree, label) => nodes(tree, node => node.type === 'button' && text(node) === label)[0];
+const button = (tree, label) => nodes(tree, node => node.type === 'button' && text(node).trim() === label)[0];
 
-test('rejected archive stays visible after reload without false success', async () => {
+test('rejected removal stays visible after reload without false success', async () => {
     const app = page({ capabilities: { archive: true }, failArchive: true });
     let tree = await app.settle();
-    button(tree, 'Archive').props.onClick();
+    button(tree, 'Remove').props.onClick();
     nodes(app.render(), node => node.type === 'dialog')[0].props.onConfirm();
     tree = await app.settle();
     assert.equal(app.calls, 1);
     assert.match(text(tree), /Approval started; mapping is locked/);
-    assert.ok(button(tree, 'Archive'));
-    assert.doesNotMatch(text(tree), /Alignment archived\./);
+    assert.ok(button(tree, 'Remove'));
+    assert.doesNotMatch(text(tree), /Mapping removed\./);
 });
 
-test('successful archive is reloaded from the server and appears in archived results', async () => {
+test('successful removal is reloaded from the server and appears in archived results', async () => {
     const app = page({ capabilities: { archive: true, restore: true } });
     let tree = await app.settle();
-    button(tree, 'Archive').props.onClick();
+    button(tree, 'Remove').props.onClick();
     nodes(app.render(), node => node.type === 'dialog')[0].props.onConfirm();
     tree = await app.settle();
-    assert.match(text(tree), /Alignment archived\./);
-    assert.equal(button(tree, 'Archive'), undefined);
-    button(tree, 'Archived (1)').props.onClick();
+    assert.match(text(tree), /Mapping removed\./);
+    assert.equal(button(tree, 'Remove'), undefined);
+    button(tree, 'Archived 1').props.onClick();
     tree = app.render();
     assert.ok(button(tree, 'Restore'));
     assert.match(text(tree), /Chapter 3/);
@@ -126,7 +126,7 @@ test('server read-only capabilities hide mapping mutation actions', async () => 
 test('restoring still requires confirmation and does not require an active reference', async () => {
     const app = page({ capabilities: { archive: true, restore: true }, mappingStatus: 'archived' });
     let tree = await app.settle();
-    button(tree, 'Archived (1)').props.onClick();
+    button(tree, 'Archived 1').props.onClick();
     tree = app.render();
     assert.match(text(tree), /Planner/);
     button(tree, 'Restore').props.onClick();
@@ -152,6 +152,21 @@ test('an unavailable requested plan is not silently replaced', async () => {
 test('view-only mappings do not expose archived records', async () => {
     const app = page({ capabilities: { archive: true, restore: true }, mappingStatus: 'archived', search: '?plan_id=4&mode=view' });
     const tree = await app.settle();
-    assert.equal(button(tree, 'Archived (1)'), undefined);
+    assert.equal(button(tree, 'Archived 1'), undefined);
     assert.doesNotMatch(text(tree), /Chapter 3/);
+});
+
+test('agenda and PDP links group into one hierarchical row and Remove archives both', async () => {
+    const link = (objective, type, reference, title) => ({ id: `${objective}:${type}:${reference}`, objective_id: objective, objective_title: `Strategy ${objective === 7 ? 'A' : 'B'}`,
+        type, reference_id: reference, reference_title: title, status: 'active', objective_status: 'draft' });
+    const extra = [link(7, 'presidential-agenda', 1, 'Agenda 1'), link(8, 'presidential-agenda', 1, 'Agenda 1'), link(8, 'pdp-chapter', 3, 'Chapter 3')];
+    const app = page({ capabilities: { archive: true }, extra });
+    let tree = await app.settle();
+    assert.match(text(tree), /Agenda 1 Chapter 3 Research, Strategy B/);
+    assert.match(text(tree), /Showing 1 of 1 mapping\b/);
+    button(tree, 'Remove').props.onClick();
+    nodes(app.render(), node => node.type === 'dialog')[0].props.onConfirm();
+    tree = await app.settle();
+    assert.equal(app.calls, 4);
+    assert.match(text(tree), /No active mappings/);
 });
