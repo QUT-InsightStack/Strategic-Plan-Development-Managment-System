@@ -174,17 +174,26 @@ export function MappingApp() {
             setError(`${saved} of ${selected.objectives.length} objective(s) saved. ${describe(err)} Review the refreshed preview before retrying.`);
         } finally { setBusy(false); refresh(value => value + 1); }
     }
-    function choiceLevel(title, icon, items, idKey, titleKey, multiple) {
-        const isChecked = id => multiple ? selected.objectives.includes(id) : selected[idKey === 'agenda_id' ? 'agenda' : 'pdp'] === id;
-        const choose = id => multiple ? toggleObjective(id) : setSelected(current => ({ ...current, [idKey === 'agenda_id' ? 'agenda' : 'pdp']: id }));
-        return h('fieldset', { className: 'mapping-level' },
-            h('legend', null, h('i', { className: `bi ${icon}`, 'aria-hidden': true }), title),
-            h('div', { className: 'mapping-options' }, items.length ? items.map(item => {
+    function choiceLevel(title, icon, tone, items, idKey, titleKey, multiple, empty) {
+        const field = idKey === 'agenda_id' ? 'agenda' : 'pdp';
+        const isChecked = id => multiple ? selected.objectives.includes(id) : selected[field] === id;
+        const choose = id => multiple ? toggleObjective(id) : setSelected(current => ({ ...current, [field]: id }));
+        const count = multiple ? selected.objectives.length : selected[field] ? 1 : 0;
+        return h('fieldset', { className: `mapping-level mapping-level--${tone}` },
+            h('legend', { className: 'ui-visually-hidden' }, title),
+            h('div', { className: 'mapping-level__header', 'aria-hidden': true },
+                h('span', { className: 'mapping-level__icon' }, h('i', { className: `bi ${icon}` })),
+                h('div', null, h('h3', null, title), h('small', null, multiple ? 'Choose one or more' : 'Choose one')),
+                count > 0 && h('span', { className: 'mapping-level__count' }, `${count} selected`)),
+            items.length ? h('div', { className: 'mapping-options' }, items.map(item => {
                 const id = String(item[idKey]);
-                return h('label', { key: id, className: 'mapping-option' },
+                return h('label', { key: id, className: `mapping-option${isChecked(id) ? ' is-checked' : ''}` },
                     h('input', { type: multiple ? 'checkbox' : 'radio', name: `mapping-${idKey}`, disabled: busy, checked: isChecked(id), onChange: () => choose(id) }),
-                    h('span', null, item.code ? `${item.code} · ${item[titleKey]}` : item[titleKey]));
-            }) : h('p', { className: 'mapping-empty' }, `No ${title.toLowerCase()} available.`)));
+                    h('span', { className: 'mapping-option__text' }, item.code && h('small', null, item.code), item[titleKey]));
+            })) : h('div', { className: 'mapping-level__empty' },
+                h('i', { className: 'bi bi-inbox', 'aria-hidden': true }),
+                h('p', null, empty?.message || `No ${title.toLowerCase()} available.`),
+                empty?.href && h('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: empty.href }, empty.label)));
     }
 
     React.useEffect(() => {
@@ -278,11 +287,12 @@ export function MappingApp() {
             allowed('create') && h('form', { className: 'ui-card mapping-step mapping-hierarchy-step', onSubmit: add },
                 h('div', { className: 'mapping-step__heading' }, h('span', null, '1'), h('h2', null, 'Step 1. Create Three-Level Mapping')),
                 h('div', { className: 'mapping-levels' },
-                    choiceLevel('Agenda', 'bi-bank2', catalog.presidential_agenda || [], 'agenda_id', 'title', false),
+                    choiceLevel('Agenda', 'bi-bank2', 'agenda', catalog.presidential_agenda || [], 'agenda_id', 'title', false),
                     h('i', { className: 'bi bi-arrow-right mapping-arrow', 'aria-hidden': true }),
-                    choiceLevel('PDP Elements', 'bi-file-earmark-text-fill', catalog.pdp_chapters || [], 'chapter_id', 'chapter_title', false),
+                    choiceLevel('PDP Elements', 'bi-file-earmark-text-fill', 'pdp', catalog.pdp_chapters || [], 'chapter_id', 'chapter_title', false),
                     h('i', { className: 'bi bi-arrow-right mapping-arrow', 'aria-hidden': true }),
-                    choiceLevel('DOST Objectives', 'bi-bullseye', objectives, 'objective_id', 'objective_title', true)),
+                    choiceLevel('DOST Objectives', 'bi-bullseye', 'dost', objectives, 'objective_id', 'objective_title', true,
+                        { message: 'This plan has no DOST objectives yet. Add objectives to the plan, then map them here.', href: `/strategic-plans/${planId}/objectives`, label: 'Add objectives' })),
                 h('div', { className: 'mapping-hierarchy-action' }, h('button', { className: 'ui-button ui-button--primary mapping-primary', disabled: busy || !ready }, busy ? 'Saving…' : '+ Add Hierarchical Mapping'))),
             h('section', { className: 'ui-card mapping-preview-card' },
                 h('div', { className: 'mapping-preview-card__header' }, h('h2', null, 'Three-level Mapping Preview'),
