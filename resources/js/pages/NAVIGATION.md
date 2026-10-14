@@ -57,5 +57,5 @@ After pulling changes, rebuild assets or restart Vite. Test each role with its r
 - Legacy `?plan_id=...&edit=...` or `&create=1` links redirect in the chooser to that canonical page. Plan creation and editing link there directly.
 - Target and Responsible Office/Agency use existing objective fields. Notes/Comment uses the existing plan Description/Notes field, not a new comment store.
 - Each objective form saves immediately. Save as a draft saves plan notes only for editable drafts, preserving current MVC, dates, and title through the existing update API. Finished plans cannot be reset to draft here.
-- Next: Strategic Mapping saves changed draft notes first and navigates to `/mappings?plan_id=...`. Mapping retains the selected plan and does not silently switch to another plan if it is unavailable.
+- Next: Strategic Mapping saves changed draft notes first and navigates to `/mappings`. Opening `/mappings?plan_id=...` directly still preselects that plan and does not silently switch to another plan if it is unavailable.
 - The obsolete cross-plan editor and its dedicated list stylesheet were removed; progress, assignment, review, archive/restore, and delete remain available on the single plan-scoped page.
