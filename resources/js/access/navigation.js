@@ -129,6 +129,31 @@ export const roleNavigation = {
 ),
         page('alignment-performance', 'Alignment', '/management-dashboard?tab=alignment', ['strategic_records.view', 'strategic_objectives.view'], { icon: 'bi-diagram-3' }),
         page('inputs-consolidation', 'Input Review', '/management-dashboard?tab=inputs', [], { anyPermissions: ['implementation_inputs.view', 'implementation_inputs.view_all'], icon: 'bi-building-check' }),
+    group('management-records', 'Planning Records', [
+    page('management-plan-records', 'Plans', '/strategic-plans',
+        ['strategic_records.view'],
+        { icon: 'bi-journal-text' }),
+
+    page('management-objective-records', 'Objectives', '/strategic-objectives',
+        ['strategic_records.view', 'strategic_objectives.view'],
+        { icon: 'bi-list-check' }),
+
+    page('management-mapping-records', 'Mappings', '/mappings',
+        ['strategic_records.view', 'strategic_objectives.view'],
+        {
+            anyPermissions: ['strategic_alignments.delete'],
+            icon: 'bi-diagram-3',
+        }),
+
+    page('management-pdp-records', 'PDP Chapters', '/pdp-chapters/manage',
+        ['pdp_chapters.delete'],
+        { icon: 'bi-book' }),
+
+    page('management-agenda-records', 'Presidential Agenda',
+        '/administrative-admin/reference-data?tab=agenda',
+        ['presidential_agenda.view', 'presidential_agenda.delete'],
+        { icon: 'bi-bank' }),
+], 'bi-folder2-open'),
     ],
 };
 export const dashboardLabels = { technical: 'Technical Administration Dashboard', administrative: 'Administrative Dashboard', planner: 'Planning Dashboard', office: 'Office/Agency Dashboard', management: 'Executive Dashboard' };

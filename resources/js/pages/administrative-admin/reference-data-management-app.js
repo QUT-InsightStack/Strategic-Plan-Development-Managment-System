@@ -41,6 +41,10 @@ function ReferenceDataTable({
     const canDeleteActive = [
         'Technical Administrator',
         'Technical Admin',
+        'Management',
+'Executive',
+'Management / Executive',
+'Division Head',
     ].includes(getAccessSession()?.roleName);
     return React.createElement('div', { className: 'ui-table-wrap reference-table-wrap' },
         React.createElement('table', { className: 'ui-table reference-table' },

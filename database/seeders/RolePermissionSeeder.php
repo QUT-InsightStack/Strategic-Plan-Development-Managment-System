@@ -81,6 +81,12 @@ class RolePermissionSeeder extends Seeder
             'strategic_documents.view', 'strategic_documents.download',
             'relations.view', 'plan_core_values.view',
             'reports.view', 'reports.export',
+            'strategic_records.delete',
+            'strategic_objectives.delete',
+            'strategic_alignments.delete',
+            'pdp_chapters.delete',
+            'presidential_agenda.view',
+            'presidential_agenda.delete',
         ];
 
         $administrativeAdminPermissions = [
@@ -88,7 +94,7 @@ class RolePermissionSeeder extends Seeder
             'reference_data.manage',
             'pdp_chapters.manage', 'pdp_chapters.archive', 'pdp_chapters.delete',
             'presidential_agenda.view', 'presidential_agenda.manage',
-            'presidential_agenda.archive', 'presidential_agenda.delete',
+            'presidential_agenda.archive',
             'templates.manage', 'monitoring.view', 'reports.view', 'reports.export', 'logs.view',
         ];
 
@@ -143,12 +149,11 @@ class RolePermissionSeeder extends Seeder
             }
         }
 
-        // Contributor roles must not retain delete rights; Management is
-        // read-only and must not retain alignment deletion from older seeds.
+        // Planning and Office contributor roles must not retain delete rights.
+       // Management has explicitly approved deletion permissions.
         // The explicit detach is required because syncWithoutDetaching above does
         // not revoke permissions assigned by an earlier seeder run.
         $restrictedRoleNames = [
-            'Management',
             'Planning Officer',
             'Planner/Encoder',
             'Office Representative',
@@ -171,15 +176,18 @@ class RolePermissionSeeder extends Seeder
                     ->increment('auth_version');
             }
         });
-
+        $documentRoleNames = array_values(array_unique([
+    ...$restrictedRoleNames,
+    'Management',
+]));
         $documentPermissionIds = $permissionsByCode
             ->filter(fn (Permission $permission) => str_starts_with($permission->code, 'strategic_documents.'))
             ->pluck('permission_id')
             ->all();
 
         Role::query()
-        ->whereIn('role_name', $restrictedRoleNames)
-        ->each(function (Role $role) use ($documentPermissionIds): void {
+        ->whereIn('role_name', $documentRoleNames)
+->each(function (Role $role) use ($documentPermissionIds): void {
             $changes = $role->permissions()->syncWithoutDetaching($documentPermissionIds);
     
             if (($changes['attached'] ?? []) !== []) {
@@ -192,6 +200,7 @@ class RolePermissionSeeder extends Seeder
         $this->call(ObjectiveCollaborationPermissionSeeder::class);
         $this->call(ObjectiveProgressPermissionSeeder::class);
         $this->call(AdministrativePlanningPermissionSeeder::class);
+        $this->call(ClientRolePermissionCorrectionSeeder::class);
 
         // Include permissions created by the feature seeders above as well.
         $testRole = Role::query()->where('role_name', 'test')->first();

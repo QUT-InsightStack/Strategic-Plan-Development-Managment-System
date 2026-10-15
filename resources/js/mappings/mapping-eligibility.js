@@ -34,7 +34,16 @@ export function mappingArchiveBlockReason(mapping, plan) {
  * instead, even if a role were given relations.delete by mistake. The server
  * still makes the final authorisation decision.
  */
-const DELETE_ROLES = ['Management', 'Technical Administrator', 'Administrator', 'test'];
+const DELETE_ROLES = [
+    'Management',
+    'Executive',
+    'Management / Executive',
+    'Division Head',
+    'Technical Administrator',
+    'Technical Admin',
+    'Administrator',
+    'test',
+];
 const NEVER_DELETE_ROLE_LABELS = ['Planning Officer', 'Office/Agency'];
 
 export function canDeleteMappings(session) {
