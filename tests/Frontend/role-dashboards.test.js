@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { navigationFor, flattenNavigation, pageForUrl, canOpenPage, dashboardHrefFor } from '../../resources/js/access/navigation.js';
+import { navigationFor, flattenNavigation, pageForUrl, canOpenPage, dashboardHrefFor, isCurrentPage } from '../../resources/js/access/navigation.js';
 
 const stages = role => navigationFor(role).filter(item => item.children && item.id !== 'account').map(item => item.label);
 const labels = (role, stage) => navigationFor(role).find(item => item.label === stage).children.map(item => item.label);
@@ -24,7 +24,16 @@ test('Planning Officer workspace follows the nine planning stages', () => {
     ]);
     assert.deepEqual(labels('Planning Officer', 'Strategic alignment mapping'), ['Strategic Mapping', 'Agenda → PDP → DOST Mapping', 'PDP Chapters']);
     assert.deepEqual(labels('Planning Officer', 'Implementation monitoring'), ['Objective Progress Monitoring', 'Reports']);
-    assert.equal(entry('Planning Officer', 'plan-editor').dashboardOnly, true, 'each page has one sidebar link');
+    assert.deepEqual(labels('Planning Officer', 'Strategic foundation development'), ['Strategic Plan Editor', 'Mission, Vision, and Core Values']);
+    assert.deepEqual(labels('Planning Officer', 'Approval submission'), ['Submit for Approval', 'Submission Status']);
+    for (const id of ['plan-editor', 'mvc', 'submit-approval', 'submission-status']) {
+        assert.equal(entry('Planning Officer', id).alias, true, id);
+        assert.notEqual(entry('Planning Officer', id).dashboardOnly, true, `${id} is shown in the sidebar`);
+    }
+    assert.equal(isCurrentPage(entry('Planning Officer', 'plan-editor'), '/strategic-plans'), false, 'aliases are never highlighted');
+    assert.equal(isCurrentPage(entry('Planning Officer', 'plans'), '/strategic-plans'), true, 'the first entry for the page is highlighted');
+    assert.equal(pageForUrl('/strategic-plans', 'Planning Officer').id, 'plans');
+    assert.equal(pageForUrl('/strategic-plans/finalize', 'Planning Officer').id, 'finalize');
 });
 
 test('Office workspace follows its stages with read-only agency mapping', () => {

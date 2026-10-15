@@ -37,7 +37,7 @@ Standard functions without an implemented screen have a `/dashboard?feature=...`
 
 ## Role workspaces
 
-Each role's sidebar groups follow the planning stages below, in this order. Entries keep their existing permission requirements; without permission an entry is shown as *No access*. Each page has one sidebar link: a later name for a page that is already listed is `dashboardOnly` and is not shown. Because Administrative Admin, Planning Officer and Office / Agency no longer have the `/dashboard` stage-card page, those extra names are not displayed anywhere; for the Planning Officer this hides the *Strategic foundation development* and *Approval submission* stages, whose pages are reached from the Strategic Plan List and Strategic Plan Finalization.
+Each role's sidebar groups follow the planning stages below, in this order. Entries keep their existing permission requirements; without permission an entry is shown as *No access*. A later name for a page that is already listed is either `dashboardOnly` (not shown in the sidebar) or `alias` (shown, so its stage stays visible). The Planning Officer's *Strategic foundation development* (Strategic Plan Editor, Mission, Vision, and Core Values) and *Approval submission* (Submit for Approval, Submission Status) entries are aliases of the Strategic Plan List and Strategic Plan Finalization. An alias is never highlighted as the current page; the first entry for that page is. The navigation test still rejects any other repeated sidebar destination.
 
 | Role | Stages |
 | --- | --- |

@@ -72,7 +72,8 @@ export const roleNavigation = {
         page('maintenance', 'Backups', '/manual-backup', ['backups.view'], { icon: 'bi-hdd-stack' }),
     ], 'bi-shield-check')],
     // Role workspaces follow the planning stages. A later name for a page that is already listed is
-    // dashboardOnly, so each page has one sidebar link.
+    // dashboardOnly (kept out of the sidebar), or alias when the stage must still appear in the sidebar.
+    // An alias link opens the same page but is never highlighted; the first entry for that page is.
     administrative: [monitoringDashboard,
     group('admin-reference-preparation', 'Planning reference-data preparation', [
         page('agenda', 'Presidential Agenda Management', '/administrative-admin/reference-data?tab=agenda', ['reference_data.manage', 'presidential_agenda.view'], { icon: 'bi-bank' }),
@@ -106,8 +107,8 @@ export const roleNavigation = {
         page('create-plan', 'Create Strategic Plan', '/strategic-plans/create', ['strategic_records.create']),
     ]),
     group('foundations', 'Strategic foundation development', [
-        page('plan-editor', 'Strategic Plan Editor', '/strategic-plans', ['strategic_records.update'], { dashboardOnly: true, description: 'Open a plan from the Strategic Plan List and choose Edit.' }),
-        page('mvc', 'Mission, Vision, and Core Values', '/strategic-plans', ['strategic_foundations.view'], { dashboardOnly: true, description: 'Edit them in the Strategic Plan Editor; a new plan starts with them in Create Strategic Plan.' }),
+        page('plan-editor', 'Strategic Plan Editor', '/strategic-plans', ['strategic_records.update'], { alias: true, description: 'Open a plan from the Strategic Plan List and choose Edit.' }),
+        page('mvc', 'Mission, Vision, and Core Values', '/strategic-plans', ['strategic_foundations.view'], { alias: true, description: 'Edit them in the Strategic Plan Editor; a new plan starts with them in Create Strategic Plan.' }),
     ], 'bi-compass'),
     group('objective-development', 'Strategic-objective development', [
         page('objectives', 'Strategic Objectives', '/strategic-objectives', ['strategic_objectives.view']),
@@ -126,8 +127,8 @@ export const roleNavigation = {
         page('final-review', 'Final Review', '/strategic-plans/finalize', ['strategic_records.update'], { dashboardOnly: true, description: 'Check readiness and the plan summary on the finalization page.' }),
     ], 'bi-check2-square'),
     group('approval-submission', 'Approval submission', [
-        page('submit-approval', 'Submit for Approval', '/strategic-plans/finalize', ['strategic_records.update'], { dashboardOnly: true, description: 'Submit a finalized plan from the finalization page.' }),
-        page('submission-status', 'Submission Status', '/strategic-plans', ['strategic_records.view'], { dashboardOnly: true, description: 'Open a plan to view its submission status.' }),
+        page('submit-approval', 'Submit for Approval', '/strategic-plans/finalize', ['strategic_records.update'], { alias: true, description: 'Submit a finalized plan from the finalization page.' }),
+        page('submission-status', 'Submission Status', '/strategic-plans', ['strategic_records.view'], { alias: true, description: 'Open a plan to view its submission status.' }),
     ], 'bi-send-check'),
     group('monitoring', 'Implementation monitoring', [{ ...progress, label: 'Objective Progress Monitoring' }, reports], 'bi-graph-up'),
     group('reviews', 'Reviews', [page('reviews', 'Plan Reviews', '/management-approvals')])],
@@ -211,6 +212,7 @@ export function canonicalOfficeUrl(input) {
     return url.pathname + url.search + url.hash;
 }
 export function isCurrentPage(item, input) {
+    if (item.alias) return false;
     const current = new URL(canonicalOfficeUrl(input), 'http://localhost');
     const target = new URL(item.href, 'http://localhost');
     if (item.id === 'objectives' && /^\/strategic-plans\/\d+\/objectives$/.test(current.pathname)) return true;
