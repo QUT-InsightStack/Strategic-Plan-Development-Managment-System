@@ -76,3 +76,15 @@ test('monitoring links open the permission-gated dashboard and report master', (
     assert.equal(canOpenPage(entry('Office', 'monitoring-reports'), { permissions: ['reports.view'] }), true);
     assert.equal(canOpenPage(entry('Office', 'monitoring-dashboard'), { permissions: ['strategic_records.view'] }), true);
 });
+
+test('Office page entry lookup handles the top-level Dashboard link', async () => {
+    const { officeEntryFor, officeItems } = await import('../../resources/js/access/office-navigation.js');
+    assert.ok(officeItems.some(item => !item.children), 'the Office menu has top-level links');
+    for (const view of ['review', 'comments', 'inputs', 'edit', 'proposal', 'progress', 'mapping', 'alignment']) {
+        const href = view === 'review' ? '/office' : `/office?view=${view}`;
+        assert.doesNotThrow(() => officeEntryFor(href), view);
+    }
+    assert.equal(officeEntryFor('/office').id, 'office-review');
+    assert.equal(officeEntryFor('/office?view=progress').id, 'progress', 'the canonical entry, not its alias name');
+    assert.equal(officeEntryFor('/office?view=mapping'), undefined);
+});
