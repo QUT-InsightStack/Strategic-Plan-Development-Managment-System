@@ -98,7 +98,9 @@ function statusPill(state) {
     return h('span', { className: `management-status is-${state}` }, labels[state]);
 }
 
-function ManagementDashboard({ session }) {
+// Management sees every tab. Planning and office roles open the same page as their Monitoring
+// Dashboard: Overview and Reports only, each gated by permission, with data scoped by the backend.
+function ManagementDashboard({ session, management }) {
     const pageQuery = usePageQuery();
     const [search, setSearch] = React.useState(() => new URLSearchParams(pageQuery));
     React.useEffect(() => { setSearch(new URLSearchParams(pageQuery)); }, [String(pageQuery)]);
@@ -113,9 +115,11 @@ function ManagementDashboard({ session }) {
     const canReview = can(P.PLANS_VIEW, session);
     const canViewReports = can(P.REPORTS_VIEW, session);
     const canExportReports = can('reports.export', session);
-    const visibleTabs = TABS.filter(tab => (tab.id !== 'inputs' || canViewInputs) && (tab.id !== 'reports' || canViewReports));
+    const visibleTabs = TABS.filter(tab => (management || ['overview', 'reports'].includes(tab.id))
+        && (tab.id !== 'overview' || management || can(P.PLANS_VIEW, session))
+        && (tab.id !== 'inputs' || canViewInputs) && (tab.id !== 'reports' || canViewReports));
     const requestedTab = managementDashboardTab(search);
-    const activeTab = visibleTabs.some(tab => tab.id === requestedTab) ? requestedTab : 'overview';
+    const activeTab = visibleTabs.some(tab => tab.id === requestedTab) ? requestedTab : visibleTabs[0]?.id || 'overview';
     const queue = approvalSection(search.get('queue'));
 
     const [refresh, setRefresh] = React.useState(0);
@@ -241,9 +245,10 @@ function ManagementDashboard({ session }) {
             h(SectionCard, { title: 'Attention Required', description: 'Items that need follow-up within the current filters.' },
                 chartGate || sectionGate([{ label: 'Agency inputs', source: inputsSource }].filter(item => item.source.status !== 'forbidden')) || h(AttentionRequired, {
                     overdue: riskRows, missingLinks, pendingInputs: filteredInputs.filter(input => input.review_status === 'Pending Review'), inputsState: inputsSource.status,
-                    onShowOverdue: () => setFilter('status', 'objective:overdue'), onOpenTab: openTab })),
-            h(SectionCard, { title: 'My Pending Actions', description: 'Plan approvals assigned to you at the current stage. Not affected by filters.' },
-                sectionGate([{ label: 'Assigned reviews', source: reviewsSource }], { forbidden: 'You do not have permission to review strategic plans.' }) || h(PendingActions, { actions: myActions }))));
+                    onShowOverdue: () => setFilter('status', 'objective:overdue'), onOpenTab: management ? openTab : null })),
+            // Outside Management, only approval participants see their pending actions.
+            management || myActions.length ? h(SectionCard, { title: 'My Pending Actions', description: 'Plan approvals assigned to you at the current stage. Not affected by filters.' },
+                sectionGate([{ label: 'Assigned reviews', source: reviewsSource }], { forbidden: 'You do not have permission to review strategic plans.' }) || h(PendingActions, { actions: myActions })) : null));
 
     // Alignment & Performance
     const alignmentGate = sectionGate([{ label: 'Strategic plans', source: plansSource }, { label: 'Objectives', source: objectivesSource }], { lines: 6 });
@@ -347,8 +352,9 @@ function ManagementDashboard({ session }) {
         h(AppSidebar),
         h('main', { className: 'app-shell-main' }, h('div', { className: 'management-dashboard__content' },
             h('header', { className: 'management-dashboard__header' },
-                h('div', null, h('h1', null, 'Management Dashboard'),
-                    h('p', null, 'Monitor strategic plan progress, alignment status, and planning summaries across departments and agencies.')),
+                h('div', null, h('h1', null, management ? 'Management Dashboard' : 'Dashboard'),
+                    h('p', null, management ? 'Monitor strategic plan progress, alignment status, and planning summaries across departments and agencies.'
+                        : 'Monitor strategic plan progress and planning summaries within your authorised scope.')),
                 h('div', { className: 'management-dashboard__controls' },
                     h(PlanningPeriodSelect, { filters, plans, onChange: setFilter, disabled: plansSource.status !== 'ready' }),
                     h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setRefresh(value => value + 1), disabled: loading, 'aria-label': 'Refresh dashboard data', title: 'Refresh dashboard data' }, h('i', { className: 'bi bi-arrow-clockwise', 'aria-hidden': true })),
@@ -369,6 +375,8 @@ root.render(h('p', { role: 'status' }, 'Loading Management access…'));
 apiRequest('/api/auth/me').then(payload => {
     const session = saveAccessSession(createAccessSession(payload.data));
     if (!enforcePageAccess()) return;
-    if (!isManagementSession(session)) { window.location.replace('/access-denied'); return; }
-    root.render(h(ManagementErrorBoundary, null, h(ManagementDashboard, { session })));
+    const management = isManagementSession(session);
+    if (!management && !can(P.PLANS_VIEW, session) && !can(P.REPORTS_VIEW, session)) { window.location.replace('/access-denied'); return; }
+    if (!management) document.title = 'Dashboard | SPDMS';
+    root.render(h(ManagementErrorBoundary, null, h(ManagementDashboard, { session, management })));
 }).catch(error => root.render(h('p', { role: 'alert' }, error.message)));

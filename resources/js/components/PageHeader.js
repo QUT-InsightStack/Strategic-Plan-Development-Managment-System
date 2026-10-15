@@ -1,10 +1,13 @@
+import { getAccessSession } from '../access/access-session.js';
+import { dashboardHrefFor } from '../access/navigation.js';
+
 export function PageHeader({
     section,
     title,
     subtitle,
     actions = null,
     className = '',
-    homeHref = '/dashboard',
+    homeHref = dashboardHrefFor(getAccessSession()?.roleName),
 }) {
     return React.createElement('header', { className: `app-page-header ${className}`.trim() },
         React.createElement('div', { className: 'app-page-header__copy' },

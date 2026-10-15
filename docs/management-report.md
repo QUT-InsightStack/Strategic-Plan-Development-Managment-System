@@ -41,7 +41,7 @@ Only `format=csv` is supported: no spreadsheet library is installed, and none wa
 
 Migration `2026_10_15_000001_grant_management_report_permissions` adds `reports.export` (and `reports.view` if missing) and grants both to the Management, Executive, Management / Executive, Division Head and Administrator roles. **Run `php artisan migrate`** and have users sign in again (or refresh their session) so the new permissions reach the browser. `PermissionSeeder` and `RolePermissionSeeder` include the same permissions for new installations.
 
-`reports.view` already existed and is also held by Administrative Admin. That role can call the report API, but it only receives the sections its other permissions allow. The Reports & Summary tab and sidebar link require `reports.view`; Export CSV buttons appear only with `reports.export`, and the backend enforces both.
+Migration `2026_10_15_000002_grant_role_monitoring_report_permissions` grants `reports.view` and `reports.export` to Planning Officer, Planner/Encoder, the Office roles (Office, Responsible Unit User, Office Representative, Office/Agency, Offices / Agencies) and Administrative Admin / Administrative Administrator, whose Reports page is the same report at `/monitoring-dashboard?tab=reports`. Export is granted with view because every export is audited. These roles receive only the sections and rows their other permissions and data scope allow: a Planning Officer sees the plans they created, an Office account sees the objectives assigned to its unit. Run `php artisan migrate` and sign in again. The Reports & Summary tab and sidebar link require `reports.view`; Export CSV buttons appear only with `reports.export`, and the backend enforces both.
 
 ## PDF
 

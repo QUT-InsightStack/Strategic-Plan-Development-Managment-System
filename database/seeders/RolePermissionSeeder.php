@@ -17,6 +17,7 @@ class RolePermissionSeeder extends Seeder
         $planningPermissions = [
             'dashboard.view',
             'users.assign_roles',
+            'reports.view', 'reports.export',
             'strategic_records.view', 'strategic_records.manage', 'strategic_records.create',
             'strategic_records.update', 'strategic_records.archive',
             'strategic_foundations.view', 'strategic_foundations.manage', 'strategic_foundations.create',
@@ -85,7 +86,7 @@ class RolePermissionSeeder extends Seeder
             'pdp_chapters.manage', 'pdp_chapters.archive', 'pdp_chapters.delete',
             'presidential_agenda.view', 'presidential_agenda.manage',
             'presidential_agenda.archive', 'presidential_agenda.delete',
-            'templates.manage', 'monitoring.view', 'reports.view', 'logs.view',
+            'templates.manage', 'monitoring.view', 'reports.view', 'reports.export', 'logs.view',
         ];
 
         $viewOnlyPermissions = [
@@ -110,7 +111,7 @@ class RolePermissionSeeder extends Seeder
         foreach (['Office', 'Responsible Unit User', 'Office Representative', 'Office/Agency', 'Offices / Agencies'] as $roleName) {
             $assignments[$roleName] = array_values(array_unique(array_merge(
                 $viewOnlyPermissions,
-                ['strategic_documents.upload', 'strategic_objectives.view_progress', 'strategic_objectives.update_progress']
+                ['strategic_documents.upload', 'strategic_objectives.view_progress', 'strategic_objectives.update_progress', 'reports.view', 'reports.export']
             )));
         }
 
