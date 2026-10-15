@@ -48,7 +48,45 @@ class ObjectiveCollaborationService
         return DB::transaction(function () use ($planId, $objectiveId, $data, $actor) {
             $planLevelProposal = $objectiveId === null && $data['input_type'] === 'change_request';
             [$plan, $objective] = $this->context($planId, $objectiveId, $actor, true, $planLevelProposal);
-            $unit = $this->authorizeUnit($plan, $objective, $actor, true, $planLevelProposal);
+            $actor = User::with('role')
+    ->lockForUpdate()
+    ->findOrFail($actor->user_id);
+
+abort_unless($actor->status === 'active', 403);
+
+$this->permissions->ensureHasPermission(
+    'implementation_inputs.create',
+    $actor
+);
+
+$isManagement = in_array($actor->role?->role_name, [
+    'Management',
+    'Executive',
+    'Management / Executive',
+    'Division Head',
+], true);
+
+if ($isManagement) {
+    abort_unless(
+        $objective === null
+        && ($data['feedback_category'] ?? null) === 'new_objective'
+        && $data['input_type'] === 'change_request',
+        403,
+        'Management may submit only proposed objectives through this operation.'
+    );
+
+    abort_unless($plan->level === 'strategic_plan', 422);
+
+    $unit = null;
+} else {
+    $unit = $this->authorizeUnit(
+        $plan,
+        $objective,
+        $actor,
+        true,
+        $planLevelProposal
+    );
+}
             $this->ensureOpen($plan, $objective);
             $category = $data['feedback_category'] ?? (
     $objective ? 'objective_feedback' : null
@@ -67,7 +105,14 @@ if (in_array($category, ['plan_feedback', 'new_objective'], true)
         'objective_id' => ['This input category must relate to the plan itself.'],
     ]);
 }
-
+if ($category === 'new_objective'
+    && $data['input_type'] !== 'change_request') {
+    throw ValidationException::withMessages([
+        'input_type' => [
+            'Objective suggestions must be submitted as change requests.',
+        ],
+    ]);
+}
 $mappingTitle = null;
 
 if ($category === 'mapping_feedback') {
@@ -183,16 +228,18 @@ if ($category === 'mapping_feedback') {
         }
     }
 
-    private function submissionIdentity(ResponsibleUnit $unit, User $actor): array
-    {
-        return [
-            'responsible_unit_id' => $unit->responsible_unit_id,
-            'responsible_office_agency' => $unit->responsible_office_agency,
-            'submitted_by' => $actor->user_id,
-            'submitter_name' => $actor->name,
-            'submitted_at' => now(),
-        ];
-    }
+    private function submissionIdentity(?ResponsibleUnit $unit, User $actor): array
+{
+    return [
+        'responsible_unit_id' => $unit?->responsible_unit_id,
+        'responsible_office_agency' => $unit
+            ? $unit->responsible_office_agency
+            : 'Management',
+        'submitted_by' => $actor->user_id,
+        'submitter_name' => $actor->name,
+        'submitted_at' => now(),
+    ];
+}
 
     private function audit(string $event, int $id, User $actor, Strategic $plan, ?StrategicObjective $objective): void
     {

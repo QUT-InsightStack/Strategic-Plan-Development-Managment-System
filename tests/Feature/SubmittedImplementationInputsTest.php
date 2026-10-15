@@ -417,7 +417,190 @@ $this->assertSame(
         $this->assertTrue($this->office->fresh()->role->permissions->contains('code', 'implementation_inputs.view'));
         $this->assertFalse($this->office->fresh()->role->permissions->contains('code', 'implementation_inputs.review'));
     }
+public function test_management_can_suggest_an_objective_without_office_membership(): void
+{
+    $manager = $this->user('Management');
+    $plan = $this->suggestionPlan();
+    $before = $plan->fresh()->getAttributes();
 
+    $this->authenticateApiUser($manager);
+
+    $response = $this->postJson(
+        "/api/strategic-plans/{$plan->record_id}/inputs",
+        [
+            'content' => 'Proposed objective: Improve public services',
+            'input_type' => 'change_request',
+            'feedback_category' => 'new_objective',
+        ]
+    )->assertCreated()
+        ->assertJsonPath('data.responsible_unit_id', null)
+        ->assertJsonPath('data.responsible_office_agency', 'Management')
+        ->assertJsonPath('data.submitted_by', $manager->user_id)
+        ->assertJsonPath('data.review_status', 'Pending Review');
+
+    $id = $response->json('data.input_id');
+
+    $this->assertSame($before, $plan->fresh()->getAttributes());
+    $this->assertSame(0, $plan->objectives()->count());
+
+    $this->authenticateApiUser($this->planner);
+
+    $this->postJson("/api/implementation-inputs/{$id}/review", [
+        'status' => 'Approved',
+        'review_note' => 'Accepted for inclusion in the draft.',
+    ])->assertOk()
+        ->assertJsonPath('data.review_status', 'Approved');
+
+    $this->authenticateApiUser($manager);
+
+    $this->getJson("/api/implementation-inputs/{$id}")
+        ->assertOk()
+        ->assertJsonPath('data.can_review', false)
+        ->assertJsonPath(
+            'data.review_note',
+            'Accepted for inclusion in the draft.'
+        );
+
+    $this->postJson("/api/implementation-inputs/{$id}/review", [
+        'status' => 'Rejected',
+        'review_note' => 'Not permitted.',
+    ])->assertForbidden();
+
+    $this->assertSame(0, $plan->objectives()->count());
+}
+
+public function test_management_cannot_submit_other_input_categories_or_plan_comments(): void
+{
+    $manager = $this->user('Management');
+    $plan = $this->suggestionPlan();
+    $before = ImplementationInput::count();
+
+    $this->authenticateApiUser($manager);
+
+    foreach (['plan_feedback', 'objective_feedback', 'mapping_feedback'] as $category) {
+        $response = $this->postJson(
+            "/api/strategic-plans/{$plan->record_id}/inputs",
+            [
+                'content' => 'This submission must not be saved.',
+                'input_type' => 'change_request',
+                'feedback_category' => $category,
+            ]
+        );
+
+        // Request validation may reject missing category-specific context
+        // before the service rejects Management's unsupported action.
+        $this->assertContains($response->status(), [403, 422]);
+    }
+
+    $this->postJson(
+        "/api/strategic-plans/{$plan->record_id}/comments",
+        ['content' => 'Whole-plan comment is not permitted.']
+    )->assertForbidden();
+
+    $this->assertSame($before, ImplementationInput::count());
+    $this->assertDatabaseMissing('tblstrategic_plan_comments', [
+        'strategic_plan_id' => $plan->record_id,
+        'submitted_by' => $manager->user_id,
+    ]);
+}
+
+public function test_management_suggestions_reject_finalized_plans_and_wrong_input_types(): void
+{
+    $manager = $this->user('Management');
+    $draft = $this->suggestionPlan();
+    $finished = $this->suggestionPlan('finished');
+    $before = ImplementationInput::count();
+
+    $this->authenticateApiUser($manager);
+
+    $this->postJson(
+        "/api/strategic-plans/{$finished->record_id}/inputs",
+        [
+            'content' => 'Proposed objective: Too late',
+            'input_type' => 'change_request',
+            'feedback_category' => 'new_objective',
+        ]
+    )->assertUnprocessable();
+
+    foreach (['issue', 'progress_update'] as $type) {
+        $this->postJson(
+            "/api/strategic-plans/{$draft->record_id}/inputs",
+            [
+                'content' => 'Proposed objective: Invalid type',
+                'input_type' => $type,
+                'feedback_category' => 'new_objective',
+            ]
+        )->assertForbidden();
+    }
+
+    $this->assertSame($before, ImplementationInput::count());
+}
+
+public function test_input_source_filters_separate_counts_and_preserve_office_scope(): void
+{
+    $manager = $this->user('Management');
+    $this->authenticateApiUser($manager);
+
+    $response = $this->postJson(
+        "/api/strategic-plans/{$this->plan->record_id}/inputs",
+        [
+            'content' => 'Proposed objective: Management suggestion',
+            'input_type' => 'change_request',
+            'feedback_category' => 'new_objective',
+        ]
+    )->assertCreated();
+
+    $id = $response->json('data.input_id');
+
+    $this->authenticateApiUser($this->planner);
+
+    $this->getJson('/api/implementation-inputs?source=management&per_page=1')
+        ->assertOk()
+        ->assertJsonPath('meta.total', 1)
+        ->assertJsonPath('meta.last_page', 1)
+        ->assertJsonPath('data.0.input_id', $id)
+        ->assertJsonPath('meta.summary', [
+            'Pending Review' => 1,
+            'Approved' => 0,
+            'Rejected' => 0,
+        ]);
+
+    $this->getJson('/api/implementation-inputs?source=office&per_page=1')
+        ->assertOk()
+        ->assertJsonPath('meta.total', 3)
+        ->assertJsonPath('meta.last_page', 3)
+        ->assertJsonMissing(['input_id' => $id])
+        ->assertJsonPath('meta.summary', [
+            'Pending Review' => 1,
+            'Approved' => 1,
+            'Rejected' => 1,
+        ]);
+
+    $this->getJson('/api/implementation-inputs?source=invalid')
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('source');
+
+    $this->authenticateApiUser($this->office);
+
+    $this->getJson('/api/implementation-inputs?source=management')
+        ->assertOk()
+        ->assertJsonPath('meta.total', 0);
+
+    $this->getJson("/api/implementation-inputs/{$id}")
+        ->assertForbidden();
+}
+
+private function suggestionPlan(string $status = 'draft'): Strategic
+{
+    return app(PlanCreationService::class)->create([
+        'level' => 'strategic_plan',
+        'title' => 'Management suggestion test',
+        'mission' => 'Improve services',
+        'vision' => 'Accessible services',
+        'core_values' => ['Integrity'],
+        'status' => $status,
+    ], $this->planner);
+}
     private function snapshot(): array
     {
         return collect(Schema::getTableListing())->mapWithKeys(fn ($table) => [$table => DB::table($table)->get()->toJson()])->all();

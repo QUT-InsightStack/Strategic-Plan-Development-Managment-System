@@ -42,6 +42,11 @@ class ImplementationInputQueryService
     public function listing(array $filters, User $actor): array
     {
         $query = $this->scopedQuery($actor);
+        if (($filters['source'] ?? null) === 'management') {
+    $query->whereNull('responsible_unit_id');
+} elseif (($filters['source'] ?? null) === 'office') {
+    $query->whereNotNull('responsible_unit_id');
+}
         if (! empty($filters['plan_id'])) {
             $this->access->ensurePlan((int) $filters['plan_id'], $actor);
             $query->where('strategic_plan_id', $filters['plan_id']);

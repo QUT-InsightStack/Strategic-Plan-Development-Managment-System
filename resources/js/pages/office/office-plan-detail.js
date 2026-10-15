@@ -2,7 +2,8 @@
 import { OfficeComments } from './office-comments.js';
 import { getStrategicPlan } from '../../api/strategic-plans-api.js';
 import { listStrategicObjectives } from '../../api/strategic-objectives-api.js';
-import { can } from '../../access/access-session.js';
+import { can, getAccessSession } from '../../access/access-session.js';
+import { navigationRole } from '../../access/navigation.js';
 import { listObjectiveProgress } from '../../api/objective-progress-api.js';
 import { ObjectiveFeedback } from './ObjectiveFeedback.js';
 import { listPlanAlignments } from '../../api/strategic-alignments-api.js';
@@ -15,6 +16,7 @@ const dateLabel = value => {
 };
 
 export function OfficePlanDetail({ planId, mode = 'review', includeAllOfficePlans = false }) {
+    const isManagement =navigationRole(getAccessSession()?.roleName) === 'management';
     const [plan, setPlan] = useState(null);
     const [objectives, setObjectives] = useState([]);
     const [planMappings, setPlanMappings] = useState([]);
@@ -96,8 +98,9 @@ export function OfficePlanDetail({ planId, mode = 'review', includeAllOfficePlan
         'aria-current': mode === 'review' ? 'page' : undefined,
     }, 'View Plan & Objectives'),
 
-    can('implementation_inputs.create')
-        && ['draft', 'finished'].includes(plan.status)
+    !isManagement
+    && can('implementation_inputs.create')
+    && ['draft', 'finished'].includes(plan.status)
         && h('a', {
             href: `/office?plan=${encodeURIComponent(plan.record_id)}&view=comments`,
             className: 'ui-button ui-button--secondary',
@@ -230,14 +233,16 @@ h('tbody', null,
                         ),
 
                         h('div', { style: { marginTop: '16px' } },
-                            h(ObjectiveFeedback, { plan, objective }))
+                            !isManagement && h(ObjectiveFeedback, { plan, objective }))
                     )
                 )
             );
         })
         : h('tr', null,
             h('td', { colSpan: 6 },
-                'No objectives are assigned to your Office/Unit in this plan.'))
+                isManagement
+    ? 'No strategic objectives are available in this plan yet.'
+    : 'No objectives are assigned to your Office/Unit in this plan.'))
 ))),  h('footer', { className: 'office-pagination' }, h('span', null, `${objectives.length} objectives`),
                         h('button', { 'aria-label': 'Previous objectives page', disabled: page <= 1, onClick: () => setPage(page - 1) }, '‹'),
                         h('span', { 'aria-live': 'polite' }, `${page} / ${pageCount}`),
