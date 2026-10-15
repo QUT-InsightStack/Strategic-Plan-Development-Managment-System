@@ -311,7 +311,9 @@ plan.approval_status === 'under_approval'
     : null,
 
 
-                            canArchivePlans && ['finished', 'archived'].includes(plan.status) ? React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => requestStatusChange(plan), 'aria-label': `${plan.status === 'archived' ? 'Restore' : 'Archive'} ${plan.title}` }, React.createElement('i', { className: `bi ${plan.status === 'archived' ? 'bi-arrow-counterclockwise' : 'bi-archive'}` }), plan.status === 'archived' ? 'Restore' : 'Archive') : null,
+                             canArchivePlans
+    && ['draft', 'finished', 'archived'].includes(plan.status)
+    && plan.approval_status !== 'under_approval'? React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => requestStatusChange(plan), 'aria-label': `${plan.status === 'archived' ? 'Restore' : 'Archive'} ${plan.title}` }, React.createElement('i', { className: `bi ${plan.status === 'archived' ? 'bi-arrow-counterclockwise' : 'bi-archive'}` }), plan.status === 'archived' ? 'Restore' : 'Archive') : null,
                             canDeletePlans ? React.createElement('button', { className: 'ui-button ui-button--danger ui-button--sm', type: 'button', onClick: () => requestDelete(plan), 'aria-label': `Delete ${plan.title}` }, React.createElement('i', { className: 'bi bi-trash3' }), 'Delete') : null
                         ) : React.createElement('span', { className: 'ui-help' }, 'View only'))
                     )))
