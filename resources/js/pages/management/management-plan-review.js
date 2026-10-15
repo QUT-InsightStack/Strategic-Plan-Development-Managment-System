@@ -3,6 +3,8 @@ import { listStrategicObjectives } from '../../api/strategic-objectives-api.js';
 import { ManagementPagination, pageRows } from '../../components/ManagementPagination.js';
 import { planMatchesFilters } from './management-insights.js';
 import { loadAllManagementPages, managementDateLabel } from './management-data.js';
+import { ManagementObjectiveCommentsPanel } from '../../components/ManagementObjectiveCommentsPanel.js';
+import { can } from '../../access/access-session.js';
 
 const h = React.createElement;
 const { useEffect, useState } = React;
@@ -106,7 +108,15 @@ export function ManagementPlanReview({ plans, planId, filters = {}, canComment =
                 h('thead', null, h('tr', null, ['No.', 'Objective', 'Expected outcome', 'Indicator', 'Target', 'Responsible Office / Agency', 'Progress'].map(label => h('th', { key: label, scope: 'col' }, label)))),
                 h('tbody', null, objectiveRows))),
             h(ManagementPagination, { page: objectivePage, total: objectives.length, onChange: setObjectivePage, label: 'objectives' })),
-        canComment ? h('section', { className: 'management-plan-comments', 'aria-labelledby': 'management-plan-comments-title' },
+            can('management_objective_comments.view') && h(
+    ManagementObjectiveCommentsPanel,
+    {
+        key: `management-comments-${planId}`,
+        planId,
+        objectives,
+    }
+),
+            canComment ? h('section', { className: 'management-plan-comments', 'aria-labelledby': 'management-plan-comments-title' },
             h('h2', { id: 'management-plan-comments-title' }, 'Plan comments'),
             commentError ? h('p', { className: 'management-dashboard__errors', role: 'alert' }, commentError) : null,
             comments.length ? h('ul', null, comments.map(comment => h('li', { key: comment.plan_comment_id },

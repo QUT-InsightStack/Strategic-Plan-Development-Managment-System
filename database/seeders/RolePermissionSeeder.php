@@ -12,6 +12,7 @@ class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call(ManagementObjectiveCommentPermissionSeeder::class);
         $permissionsByCode = Permission::query()->get()->keyBy('code');
 
         $planningPermissions = [
