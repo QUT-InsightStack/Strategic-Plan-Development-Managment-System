@@ -68,6 +68,10 @@ function ChapterTable({ chapters, loading, selectedIds, onToggle, onOpen, onArch
     const canDeleteActive = [
     'Technical Administrator',
     'Technical Admin',
+    'Management',
+'Executive',
+'Management / Executive',
+'Division Head',
 ].includes(getAccessSession()?.roleName);
     const columns = 5;
     return React.createElement('section', { className: 'ui-card pdp-table-card', 'aria-labelledby': 'pdp-register-title' },
