@@ -81,6 +81,8 @@ const managementPermissions = [
     'plan_core_values.view',
     'strategic_documents.view',
     'strategic_documents.download',
+    PERMISSIONS.REPORTS_VIEW,
+    'reports.export',
 ];
 
 const contributorPlanningPermissions = [

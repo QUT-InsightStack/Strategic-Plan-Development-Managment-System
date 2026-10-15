@@ -1,32 +1,51 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { navigationFor, flattenNavigation, pageForUrl, canOpenPage } from '../../resources/js/access/navigation.js';
+import { navigationFor, flattenNavigation, pageForUrl, canOpenPage, managementDashboardTab } from '../../resources/js/access/navigation.js';
 import { ManagementPagination, pageRows } from '../../resources/js/components/ManagementPagination.js';
 
 const management = () => flattenNavigation(navigationFor('Management'));
 
-test('management menu opens the matching review, alignment, monitoring and report content', () => {
+test('management menu opens the dashboard tabs, plan review and reports', () => {
     assert.ok(navigationFor('Management').every(item => !item.children), 'Management sidebar links are all top-level');
     const items = management();
     const byId = id => items.find(item => item.id === id);
     assert.equal(byId('home'), undefined);
-    assert.equal(byId('approval-list').href, '/management-approvals');
+    assert.equal(items[0].id, 'dashboard');
+    assert.equal(byId('dashboard').href, '/management-dashboard');
+    assert.equal(byId('alignment-performance').href, '/management-dashboard?tab=alignment');
+    assert.equal(byId('inputs-consolidation').href, '/management-dashboard?tab=inputs');
+    assert.equal(byId('reviews-approvals').href, '/management-dashboard?tab=approvals');
     assert.equal(byId('plan-review').href, '/management-plan-review');
-    assert.equal(byId('alignment-review').href, '/management-dashboard?tab=alignment');
-    assert.equal(byId('agency-input-review').href, '/management-dashboard?tab=inputs');
-    assert.equal(byId('monitoring').href, '/management-dashboard?tab=dashboard');
     assert.equal(byId('reports').href, '/management-dashboard?tab=reports');
-    assert.equal(pageForUrl('/management-dashboard?tab=alignment', 'Management').id, 'alignment-review');
-    assert.equal(pageForUrl('/management-dashboard?tab=alignment&section=documents', 'Management').id, 'alignment-review');
-    assert.equal(pageForUrl('/management-dashboard?tab=inputs', 'Management').id, 'agency-input-review');
-    assert.equal(pageForUrl('/management-dashboard', 'Management').id, 'monitoring');
+    assert.equal(pageForUrl('/management-dashboard', 'Management').id, 'dashboard');
+    assert.equal(pageForUrl('/management-dashboard?tab=overview&period=2023-2028', 'Management').id, 'dashboard');
+    assert.equal(pageForUrl('/management-dashboard?tab=alignment', 'Management').id, 'alignment-performance');
+    assert.equal(pageForUrl('/management-dashboard?tab=alignment&section=documents', 'Management').id, 'alignment-performance');
+    assert.equal(pageForUrl('/management-dashboard?tab=inputs', 'Management').id, 'inputs-consolidation');
+    assert.equal(pageForUrl('/management-dashboard?tab=approvals&queue=returned', 'Management').id, 'reviews-approvals');
     assert.equal(pageForUrl('/management-dashboard?tab=reports', 'Management').id, 'reports');
 });
 
-test('management alignment review link requires its view permission', () => {
+test('old management dashboard links resolve to the matching tab', () => {
+    assert.equal(pageForUrl('/management-dashboard?tab=dashboard', 'Management').id, 'dashboard');
+    assert.equal(pageForUrl('/management-dashboard?tab=monitoring', 'Management').id, 'dashboard');
+    assert.equal(pageForUrl('/management-dashboard?tab=alignment&section=agency', 'Management').id, 'inputs-consolidation');
+    assert.equal(managementDashboardTab(new URLSearchParams('tab=dashboard')), 'overview');
+    assert.equal(managementDashboardTab(new URLSearchParams('')), 'overview');
+    assert.equal(managementDashboardTab(new URLSearchParams('tab=unknown')), 'overview');
+    assert.equal(managementDashboardTab(new URLSearchParams('tab=approvals')), 'approvals');
+});
+
+test('management menu has no administration, security, backup or delete entries', () => {
     const items = management();
-    assert.equal(canOpenPage(items.find(item => item.id === 'alignment-review'), { permissions: ['strategic_records.view', 'strategic_objectives.view'] }), true);
-    assert.equal(canOpenPage(items.find(item => item.id === 'alignment-review'), { permissions: [] }), false);
+    assert.ok(items.every(item => !/admin|security|backup|delete|role|user/i.test(`${item.id} ${item.href}`)));
+});
+
+test('management alignment link requires its view permission', () => {
+    const items = management();
+    assert.equal(canOpenPage(items.find(item => item.id === 'alignment-performance'), { permissions: ['strategic_records.view', 'strategic_objectives.view'] }), true);
+    assert.equal(canOpenPage(items.find(item => item.id === 'alignment-performance'), { permissions: [] }), false);
+    assert.equal(canOpenPage(items.find(item => item.id === 'inputs-consolidation'), { permissions: ['strategic_records.view'] }), false);
 });
 
 test('management list pagination exposes each record once', () => {
