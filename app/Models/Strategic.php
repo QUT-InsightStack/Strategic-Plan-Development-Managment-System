@@ -23,6 +23,7 @@ class Strategic extends Model
         'planning_start_date',
         'planning_end_date',
         'status',
+        'status_before_archive',
         'archived_at',
         'archived_by',
         'deleted_at',
