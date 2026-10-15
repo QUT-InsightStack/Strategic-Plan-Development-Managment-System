@@ -21,8 +21,11 @@ test('grouped report tables start a group whenever the grouping value changes', 
     assert.deepEqual(groupRows(rows), [{ group: null, rows }]);
 });
 
-test('the Reports & Summary link requires reports.view', () => {
-    const reports = flattenNavigation(navigationFor('Management')).find(item => item.id === 'reports');
-    assert.equal(canOpenPage(reports, { permissions: ['strategic_records.view'] }), false);
-    assert.equal(canOpenPage(reports, { permissions: ['reports.view'] }), true);
+test('Reports opens inside the Dashboard rather than from a separate link', () => {
+    for (const role of ['Management', 'Planning Officer', 'Office', 'Administrative Admin']) {
+        const items = flattenNavigation(navigationFor(role));
+        assert.ok(items.every(item => !/tab=reports/.test(item.href)), role);
+    }
+    const office = flattenNavigation(navigationFor('Office')).find(item => item.id === 'monitoring-dashboard');
+    assert.equal(canOpenPage(office, { permissions: ['reports.view'] }), true, 'a reports-only account can still open its Dashboard');
 });

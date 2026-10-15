@@ -29,3 +29,15 @@
 .app-sidebar__item > span, .app-sidebar__subitem > span { min-width: 0; overflow-wrap: anywhere; }
 .app-sidebar__item small, .app-sidebar__subitem small { margin-left: auto; font-size: 12px; }
 .app-sidebar__toggle { font-weight: var(--font-weight-semibold); }
+
+/* Labels stay on one line and truncate; the full name is in the link title. */
+.app-sidebar__item > span, .app-sidebar__subitem > span { overflow: hidden; overflow-wrap: normal; text-overflow: ellipsis; white-space: nowrap; }
+.app-sidebar__toggle > span { flex: 1 1 auto; }
+
+/* Drag handle on the sidebar edge (200-360px). Keyboard: arrow keys, Home and End; double-click resets. */
+.app-sidebar__resizer { position: fixed; top: 0; bottom: 0; left: calc(var(--sidebar-width) - 4px); z-index: 101; width: 8px; cursor: col-resize; touch-action: none; }
+.app-sidebar__resizer::after { content: ''; position: absolute; top: 0; bottom: 0; left: 3px; width: 2px; background: transparent; transition: background-color .15s; }
+.app-sidebar__resizer:hover::after, .app-sidebar__resizer:focus-visible::after, .is-resizing-sidebar .app-sidebar__resizer::after { background: var(--color-brand-cyan); }
+.app-sidebar__resizer:focus-visible { outline: none; }
+body.is-resizing-sidebar { cursor: col-resize; user-select: none; }
+@media (max-width: 720px) { .app-sidebar__resizer { display: none; } }
