@@ -1,0 +1,221 @@
+.management-comments {
+    padding: 24px;
+    margin-top: 24px;
+    border: 1px solid #dce5ef;
+    border-radius: 14px;
+    background: #fff;
+}
+
+.management-comments > h2 {
+    margin: 0 0 8px;
+    color: #194b83;
+    font-size: 1.3rem;
+}
+
+.management-comments > .ui-help {
+    max-width: 850px;
+    margin-bottom: 22px;
+    line-height: 1.6;
+    color: #64748b;
+}
+
+.management-comments > form {
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid #dce5ef;
+    border-radius: 12px;
+    background: #f7faff;
+}
+
+.management-comments fieldset {
+    display: grid;
+    gap: 16px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.management-comments legend {
+    margin-bottom: 14px;
+    color: #194b83;
+    font-weight: 700;
+}
+
+.management-comments .office-field-group {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    color: #334155;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.management-comments select,
+.management-comments textarea {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    color: #1e293b;
+    font: inherit;
+    font-weight: 400;
+}
+
+.management-comments textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
+.management-comments select:focus,
+.management-comments textarea:focus {
+    outline: 3px solid #dbeafe;
+    border-color: #2563a0;
+}
+
+.management-comments > .office-field-group {
+    max-width: 280px;
+    margin: 20px 0;
+}
+
+.management-comments button {
+    width: auto;
+    min-height: 38px;
+    padding: 8px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    color: #194b83;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.management-comments button.ui-button--primary {
+    border-color: #194b83;
+    background: #194b83;
+    color: #fff;
+}
+
+.management-comments fieldset > button {
+    justify-self: start;
+}
+
+.management-comments button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.management-comments button:focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 3px;
+}
+
+.management-comments__card {
+    margin: 16px 0;
+    padding: 20px 22px;
+    border: 1px solid #dce5ef;
+    border-left: 4px solid #d49b24;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.management-comments__card.is-completed {
+    border-left-color: #23845b;
+}
+
+.management-comments__card.is-incomplete {
+    border-left-color: #c65d35;
+}
+
+.management-comments__card h3 {
+    margin: 0 0 6px;
+    color: #173b63;
+    font-size: 1.05rem;
+}
+
+.management-comments__card p {
+    margin: 10px 0;
+    line-height: 1.6;
+    color: #475569;
+}
+
+.management-comments__card > p:first-of-type {
+    margin-top: 0;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.management-comments__card > p:nth-of-type(2) {
+    padding: 14px;
+    border-radius: 8px;
+    background: #f4f7fb;
+    color: #1e293b;
+}
+
+.management-comments__statuses {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 14px 0;
+}
+
+.management-comments__badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    background: #edf2f7;
+    color: #475569;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.management-comments__badge.is-not_acknowledged,
+.management-comments__badge.is-open {
+    background: #fff4d6;
+    color: #805b06;
+}
+
+.management-comments__badge.is-acknowledged {
+    background: #e7f0ff;
+    color: #205691;
+}
+
+.management-comments__badge.is-completed {
+    background: #e5f5ec;
+    color: #206846;
+}
+
+.management-comments__badge.is-incomplete {
+    background: #fff0e9;
+    color: #9a4425;
+}
+
+.management-comments > .office-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.management-comments > .office-pagination > span:first-child {
+    margin-right: auto;
+    color: #64748b;
+}
+
+@media (max-width: 640px) {
+    .management-comments {
+        padding: 16px;
+    }
+
+    .management-comments > form,
+    .management-comments__card {
+        padding: 16px;
+    }
+}

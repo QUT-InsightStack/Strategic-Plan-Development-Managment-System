@@ -6,7 +6,7 @@ import { listSubmittedInputs, getSubmittedInput, reviewSubmittedInput } from '..
 import { createAccessSession, saveAccessSession } from '../../access/access-session.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
 import { can } from '../../access/access-session.js';
-
+import { ManagementObjectiveCommentsPanel } from '../../components/ManagementObjectiveCommentsPanel.js';
 const h = React.createElement;
 const { useState, useEffect } = React;
 const statuses = { 'Pending Review': 'pending', Approved: 'accepted', Rejected: 'rejected' };
@@ -91,6 +91,41 @@ function InputDialog({ id, close, saved }) {
 }
 
 function SubmittedInputsApp() {
+    const [activeTab, setActiveTab] = useState('office');
+
+const commentTabs = h(
+    'nav',
+    {
+        'aria-label': 'Feedback type',
+        style: {
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '8px',
+            marginBottom: '20px',
+        },
+    },
+    [
+        ['office', 'Office / Agency Inputs'],
+        ...(can('management_objective_comments.view')
+            ? [['management', 'Management Comments']]
+            : []),
+    ].map(([value, label]) =>
+        h(
+            'button',
+            {
+                key: value,
+                type: 'button',
+                className: 'ui-button ui-button--secondary ui-button--sm',
+                'aria-pressed': activeTab === value,
+                onClick: () => {
+                    setSelected(null);
+                    setActiveTab(value);
+                },
+            },
+            label
+        )
+    )
+);
     const [rows, setRows] = useState([]);
     const [meta, setMeta] = useState({});
     const emptyFilters = {
@@ -115,20 +150,43 @@ const [filters, setFilters] = useState(() => ({
     const [selected, setSelected] = useState(null);
     const [refresh, setRefresh] = useState(0);
     useEffect(() => {
-        let active = true;
-        setLoading(true); setError(''); setRows([]); setMeta({});
+        if (activeTab !== 'office') return undefined;
+
+let active = true;
+setLoading(true); setError(''); setRows([]); setMeta({});
         listSubmittedInputs(filters).then(result => { if (active) { setRows(result.data); setMeta(result.meta); } })
             .catch(err => { if (active) setError(errorLabel(err)); })
             .finally(() => { if (active) setLoading(false); });
         return () => { active = false; };
-    }, [filters, refresh]);
+    }, [filters, refresh, activeTab]);
     const changeFilter = (key, value) => setFilters(current => ({ ...current, [key]: value, ...(key === 'plan_id' ? { responsible_unit_id: '' } : {}), page: 1 }));
     const select = (key, label, options) => h('label', { key }, h('span', { className: 'consolidate-sr' }, label),
         h('select', { value: filters[key], disabled: loading, onChange: e => changeFilter(key, e.target.value) },
             h('option', { value: '' }, label), options.map(([value, text]) => h('option', { key: value, value }, text))));
-    return h('div', { className: 'office-workspace' }, h(AppSidebar, { onNotice: setNotice }),
+        if (
+    activeTab === 'management'
+    && can('management_objective_comments.view')
+) {
+    return h(
+        'div',
+        { className: 'office-workspace' },
+        h(AppSidebar),
+        h(
+            'main',
+            { className: 'office-content consolidate-content' },
+            h('header', null,
+                h('h1', null, 'Comments and Inputs'),
+                h('p', null, 'Management comments have a separate acknowledgement and completion workflow.')
+            ),
+            commentTabs,
+            h(ManagementObjectiveCommentsPanel)
+        )
+    );
+}
+            return h('div', { className: 'office-workspace' }, h(AppSidebar, { onNotice: setNotice }),
         h('main', { className: 'office-content consolidate-content' },
             h('header', null, h('h1', null, 'Submitted Office/Agency Inputs'), h('p', null, 'View planning suggestions and their outcomes. Authorised reviewers can accept or decline inputs with remarks.')),
+            commentTabs,
             notice && h('p', { role: 'status' }, notice),
             h('nav', {
     'aria-label': 'Input review queues',
