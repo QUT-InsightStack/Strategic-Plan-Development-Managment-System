@@ -105,9 +105,9 @@ const commentTabs = h(
         },
     },
     [
-        ['office', 'Office / Agency Inputs'],
+        ['office', 'Office Inputs'],
         ...(can('management_objective_comments.view')
-            ? [['management', 'Management Comments']]
+            ? [['management', 'Management Inputs']]
             : []),
     ].map(([value, label]) =>
         h(
@@ -119,7 +119,12 @@ const commentTabs = h(
                 'aria-pressed': activeTab === value,
                 onClick: () => {
                     setSelected(null);
-                    setActiveTab(value);
+setNotice('');
+setFilters({
+    ...emptyFilters,
+    status: can('implementation_inputs.review') ? 'Pending Review' : '',
+});
+setActiveTab(value);
                 },
             },
             label
@@ -150,11 +155,14 @@ const [filters, setFilters] = useState(() => ({
     const [selected, setSelected] = useState(null);
     const [refresh, setRefresh] = useState(0);
     useEffect(() => {
-        if (activeTab !== 'office') return undefined;
+
 
 let active = true;
 setLoading(true); setError(''); setRows([]); setMeta({});
-        listSubmittedInputs(filters).then(result => { if (active) { setRows(result.data); setMeta(result.meta); } })
+        listSubmittedInputs({
+    ...filters,
+    source: activeTab,
+}).then(result => { if (active) { setRows(result.data); setMeta(result.meta); } })
             .catch(err => { if (active) setError(errorLabel(err)); })
             .finally(() => { if (active) setLoading(false); });
         return () => { active = false; };
@@ -163,30 +171,31 @@ setLoading(true); setError(''); setRows([]); setMeta({});
     const select = (key, label, options) => h('label', { key }, h('span', { className: 'consolidate-sr' }, label),
         h('select', { value: filters[key], disabled: loading, onChange: e => changeFilter(key, e.target.value) },
             h('option', { value: '' }, label), options.map(([value, text]) => h('option', { key: value, value }, text))));
-        if (
-    activeTab === 'management'
-    && can('management_objective_comments.view')
-) {
-    return h(
-        'div',
-        { className: 'office-workspace' },
-        h(AppSidebar),
-        h(
-            'main',
-            { className: 'office-content consolidate-content' },
-            h('header', null,
-                h('h1', null, 'Comments and Inputs'),
-                h('p', null, 'Management comments have a separate acknowledgement and completion workflow.')
-            ),
-            commentTabs,
-            h(ManagementObjectiveCommentsPanel)
-        )
-    );
-}
+
             return h('div', { className: 'office-workspace' }, h(AppSidebar, { onNotice: setNotice }),
         h('main', { className: 'office-content consolidate-content' },
-            h('header', null, h('h1', null, 'Submitted Office/Agency Inputs'), h('p', null, 'View planning suggestions and their outcomes. Authorised reviewers can accept or decline inputs with remarks.')),
+            h('header', null, h('h1', null, 'Planning Inputs'), h('p', null, 'View planning suggestions and their outcomes. Authorised reviewers can accept or decline inputs with remarks.')),
             commentTabs,
+           activeTab === 'management'
+    && can('management_objective_comments.view')
+    && h('details', {
+        className: 'office-panel',
+        style: { marginBottom: '20px' },
+    },
+        h('summary', {
+            style: {
+                cursor: 'pointer',
+                fontWeight: 600,
+                color: '#194f90',
+                padding: '12px',
+            },
+        }, 'Objective Comments — expand to view and acknowledge'),
+        h('p', {
+            className: 'ui-help',
+            style: { padding: '0 12px' },
+        }, 'Objective suggestions are listed separately below.'),
+        h(ManagementObjectiveCommentsPanel)
+    ),
             notice && h('p', { role: 'status' }, notice),
             h('nav', {
     'aria-label': 'Input review queues',
@@ -212,10 +221,20 @@ setLoading(true); setError(''); setRows([]); setMeta({});
 ),
             h('div', { className: 'consolidate-layout' },
                 h('section', { className: 'office-panel consolidate-register', 'aria-busy': loading },
-                    h('div', { className: 'consolidate-toolbar' }, h('h2', null, 'Submitted inputs'),
+                    h('div', { className: 'consolidate-toolbar' }, h('h2', null,
+    activeTab === 'management'
+        ? 'Management Objective Suggestions'
+        : 'Office Suggestions & Feedback'
+),
                         h('div', { className: 'consolidate-filters' },
                             select('plan_id', 'All authorized plans', (meta.filters?.plans || []).map(p => [p.record_id, p.title])),
-                            select('responsible_unit_id', 'All authorized offices', (meta.filters?.offices || []).map(o => [o.responsible_unit_id, o.responsible_office_agency])),
+                            activeTab === 'office' && select(
+    'responsible_unit_id',
+    'All authorized offices',
+    (meta.filters?.offices || [])
+        .filter(o => o.responsible_unit_id != null)
+        .map(o => [o.responsible_unit_id, o.responsible_office_agency])
+),
                             select('feedback_category', 'All categories', Object.entries(categories)),
                             select('status', 'All statuses', Object.keys(statuses).map(s => [s, statusLabel(s)])),
                             h('details', null,
@@ -254,7 +273,7 @@ setLoading(true); setError(''); setRows([]); setMeta({});
                         h('span', null, `${filters.page} / ${meta.last_page || 1}`),
                         h('button', { disabled: loading || filters.page >= (meta.last_page || 1), onClick: () => setFilters({ ...filters, page: filters.page + 1 }) }, 'Next'))),
                 h('aside', { className: 'office-panel consolidate-summary', 'aria-label': 'Input summary' }, h('h2', null, 'Input Summary'),
-                    h('small', null, 'Inputs matching your plan, Office, category and date filters. Counts include all review statuses.'),
+                    h('small', null, 'Counts apply to the suggestion and feedback register below the selected source tab. Management objective comments have their own statuses above.'),
                     Object.entries(statuses).map(([status, style]) => h('div', { key: status, className: `consolidate-stat is-${style}` },
                         h('div', null, h('span', null, statusLabel(status)), h('strong', null, loading || error ? '—' : meta.summary?.[status] || 0)))))),
             selected && h(InputDialog, { key: selected, id: selected, close: () => setSelected(null), saved: () => {

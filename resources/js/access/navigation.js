@@ -100,7 +100,7 @@ export const roleNavigation = {
         page('finalize', 'Finalize & Submit', '/strategic-plans/finalize', ['strategic_records.update']),
     ], 'bi-clipboard2-check'),
     group('mapping', 'Alignment', [mapping, { ...alignment, label: 'Alignment View' }, page('pdp-read', 'PDP Chapters', '/pdp-chapters', ['strategic_records.view'])], 'bi-map'),
-    { ...inputs, label: 'Office Inputs', icon: 'bi-inbox' },
+    { ...inputs, label: 'Planning Inputs', icon: 'bi-inbox' },
     { ...progress, icon: 'bi-graph-up' },
     page('reviews', 'Plan Reviews', '/management-approvals', [], { icon: 'bi-clipboard-check' })],
     office: [monitoringDashboard,
@@ -120,6 +120,13 @@ export const roleNavigation = {
     management: [page('dashboard', 'Dashboard', '/management-dashboard', ['strategic_records.view'], { icon: 'bi-speedometer2' }),
         page('reviews-approvals', 'Approvals', '/management-dashboard?tab=approvals', ['strategic_records.view'], { icon: 'bi-clipboard-check' }),
         page('plan-review', 'Plan Review', '/management-plan-review', ['strategic_records.view'], { icon: 'bi-journal-text' }),
+        page(
+    'management-proposals',
+    'Suggest Objectives',
+    '/office?view=proposal',
+    ['strategic_records.view', 'implementation_inputs.create'],
+    { icon: 'bi-lightbulb' }
+),
         page('alignment-performance', 'Alignment', '/management-dashboard?tab=alignment', ['strategic_records.view', 'strategic_objectives.view'], { icon: 'bi-diagram-3' }),
         page('inputs-consolidation', 'Input Review', '/management-dashboard?tab=inputs', [], { anyPermissions: ['implementation_inputs.view', 'implementation_inputs.view_all'], icon: 'bi-building-check' }),
     ],

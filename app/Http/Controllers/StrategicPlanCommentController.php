@@ -36,11 +36,22 @@ class StrategicPlanCommentController extends Controller
     public function store(Request $request, int $planId): JsonResponse
     {
         $actor = $this->permissions->ensureHasPermission('objective_comments.create', $request->user('api'));
+        abort_if(
+    in_array($actor->role?->role_name, [
+        'Management',
+        'Executive',
+        'Management / Executive',
+        'Division Head',
+    ], true),
+    403,
+    'Management may comment on strategic objectives, not whole plans.'
+);
         $plan = $this->plan($planId, $actor);
         $data = $request->validate(['content' => ['required', 'string', 'max:10000', 'regex:/\S/u']]);
-        $management = in_array($actor->role?->role_name, ['Management', 'Executive', 'Management / Executive', 'Division Head'], true);
-        $unit = $management ? null : ResponsibleUnit::where('name_key', ResponsibleUnit::nameKey($actor->office ?? ''))
-            ->where('is_active', true)->firstOrFail();
+       $unit = ResponsibleUnit::where(
+    'name_key',
+    ResponsibleUnit::nameKey($actor->office ?? '')
+)->where('is_active', true)->firstOrFail();
 
         $comment = DB::transaction(function () use ($actor, $data, $plan, $unit) {
             $comment = StrategicPlanComment::create([
