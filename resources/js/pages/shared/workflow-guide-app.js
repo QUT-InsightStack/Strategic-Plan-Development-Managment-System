@@ -6,17 +6,19 @@ import { AppSidebar } from '../../components/AppSidebar.js';
 const h = React.createElement;
 
 const stages = [
-    {
-        title: 'Prepare the planning references',
-        roles: ['Administrative Admin', 'Technical Admin'],
-        description:
-            'Planning references provide a consistent foundation for strategic plans and objective alignment.',
-        details: [
-            'Administrative Admin manages reference data, including PDP Chapters and Presidential Agenda items.',
-            'Technical Admin provides support through authorised viewing and deletion actions.',
-            'Reference records are used when mapping objectives to national priorities.',
-        ],
-    },
+{
+    title: 'Prepare the planning references',
+    roles: ['Administrative Admin', 'Technical Admin', 'Management'],
+    description:
+        'Planning references provide a consistent foundation for strategic plans and objective alignment.',
+    details: [
+        'Administrative Admin maintains PDP Chapters and Presidential Agenda items.',
+        'Management and Technical Admin can perform authorised reference-data deletion actions.',
+        'Administrative Admin cannot delete Presidential Agenda items.',
+        'Deletion remains subject to permissions and record lifecycle rules.',
+        'Reference records are used when mapping objectives to national priorities.',
+    ],
+},
     {
         title: 'Create a draft plan',
         roles: ['Planning Officer', 'Administrative Admin'],
@@ -40,23 +42,40 @@ const stages = [
         ],
     },
     {
-        title: 'Collect and consolidate inputs',
-        roles: [
-            'Office / Unit',
-            'Planning Officer',
-            'Administrative Admin',
-            'Management',
-        ],
-        description:
-            'Offices submit proposals or feedback. Planning Officers and Administrative Admin review the inputs, while Management can view consolidated inputs.',
-        details: [
-            'New objective proposals are available while the plan is in draft.',
-            'Submitting a proposal does not automatically create an objective or change the plan.',
-            'Authorised planners accept or decline inputs and record reviewer remarks.',
-            'Management has read-only access to consolidated inputs and cannot accept or decline them.',
-            'Offices can track decisions and reviewer remarks through My Inputs.',
-        ],
-    },
+    title: 'Collect and consolidate inputs',
+    roles: [
+        'Office / Unit',
+        'Management',
+        'Planning Officer',
+        'Administrative Admin',
+    ],
+    description:
+        'Offices provide feedback on plans, objectives and mappings. Both Offices and Management can propose new objectives for draft plans.',
+    details: [
+        'Objective suggestions are blocked once a plan is finalized.',
+        'Submitting a suggestion does not automatically create an objective or change the plan.',
+        'Planning Officers and Administrative Admin review eligible inputs and record decisions and reviewer remarks.',
+        'Planning Inputs separates Office-related inputs from Management-related inputs.',
+        'Management can view authorised consolidated inputs but cannot accept or decline them.',
+        'Contributors can track suggestion decisions and reviewer remarks through My Inputs.',
+    ],
+},
+{
+    title: 'Discuss objectives with Management',
+    roles: ['Management', 'Planning Officer', 'Administrative Admin'],
+    description:
+        'Management can comment on existing objectives in authorised draft and finalized plans. These comments have their own acknowledgement and completion workflow.',
+    details: [
+        'Open Plan Review, select a plan and use its objective comments section.',
+        'New comments start as Not Acknowledged and Open.',
+        'The authorised Planning Officer or Administrative Admin acknowledges the comment through Planning Inputs, under Management Inputs.',
+        'Acknowledgement records who has seen the comment; it does not mean the requested work is complete.',
+        'After acknowledgement, only the Management author can close the comment as Completed or Incomplete, with mandatory closing remarks.',
+        'Management comments do not use the Accept or Decline actions for objective suggestions.',
+        'Comment actions do not automatically change objectives, progress or approval status.',
+        'Archived or deleted content cannot receive comment actions.',
+    ],
+},
     {
         title: 'Check readiness and submit',
         roles: ['Planning Officer', 'Administrative Admin'],
@@ -96,6 +115,19 @@ const stages = [
             'Updating progress does not unlock editing of approved plan content.',
         ],
     },
+    {
+    title: 'Archive or restore a plan',
+    roles: ['Planning Officer', 'Administrative Admin'],
+    description:
+        'Archive plans that should leave active use while retaining their records.',
+    details: [
+        'Planning Officers can archive their own eligible draft or finalized plans. Administrative Admin can do so across creators within their authorised scope.',
+        'Plans under approval cannot be archived.',
+        'Select Archived in the plan-list status filter and click Filter to find archived plans.',
+        'Restore returns the plan to its previous Draft or Finalized status and preserves its approval status.',
+        'Archived plans cannot receive objective progress updates or corrections.',
+    ],
+},
 ];
 
 const roleCards = [
@@ -103,15 +135,13 @@ const roleCards = [
         title: 'Planning Officer',
         names: ['Planning Officer'],
         icon: 'bi-pencil-square',
-        description:
-            'Creates and manages their own plans, objectives and mappings; consolidates inputs; submits plans for approval; and monitors or corrects progress with the required permissions.',
+        description:'Creates and manages their own plans, objectives and mappings; reviews planning inputs; acknowledges Management objective comments; submits or resubmits plans; and monitors or corrects authorised progress after approval. Can archive and restore their own eligible plans.',
     },
     {
         title: 'Administrative Admin',
         names: ['Administrative Admin', 'Administrative Administrator'],
         icon: 'bi-journal-check',
-        description:
-            'Manages planning references and planning work across creators. Can review inputs, submit plans and correct progress. Can approve or reject a submission only when assigned, and cannot review their own submission.',
+        description:'Maintains planning references and manages planning work across creators. Reviews inputs, acknowledges Management objective comments, submits plans and corrects authorised progress. Can archive and restore eligible plans. Cannot delete Presidential Agenda items. Approval decisions require workflow assignment and cannot concern their own submission.',
     },
     {
         title: 'Office / Unit',
@@ -130,15 +160,13 @@ const roleCards = [
         title: 'Management',
         names: ['Management'],
         icon: 'bi-person-check',
-        description:
-            'Views authorised planning information and consolidated inputs. Reviews submitted plans when assigned through the approval workflow. Cannot accept or decline consolidated inputs.',
+        description:'Views authorised plans and reports, proposes objectives for draft plans, and comments on existing objectives during drafting or after finalization. Closes their own acknowledged comments with an outcome and remarks. Reviews submissions when assigned. Cannot accept or decline consolidated inputs. Can delete plans, objectives, mappings and reference data where permissions and lifecycle rules allow.',
     },
     {
         title: 'Technical Admin',
         names: ['Technical Administrator', 'Technical Admin'],
         icon: 'bi-gear',
-        description:
-            'Supports accounts, roles, permissions, system settings and approval configuration. Handles password assistance and uses authorised planning support and deletion actions.',
+        description:'Manages accounts, roles, permissions, security settings, backups and approval configuration. Handles password assistance and can disable Administrative Admin accounts, subject to safeguards. Performs authorised deletion actions. This role alone does not grant approval authority.',
     },
 ];
 
@@ -371,7 +399,7 @@ function WorkflowGuideApp() {
                         ['Under approval', 'The submitted plan is waiting for decisions through its configured approval stages.'],
                         ['Rejected', 'A reviewer has rejected the submission. Authorised planners can revise and resubmit it.'],
                         ['Approved', 'All required approval stages are complete. A finished, approved plan can receive progress updates.'],
-                        ['Archived', 'The record is retained for reference. Progress updates and corrections are blocked.'],
+                        ['Archived', 'The plan is retained outside active use. Progress updates and corrections are blocked. Authorised restoration returns it to its previous Draft or Finalized status.'],
                         ['Deleted', 'The record is unavailable for normal use. Progress updates and corrections are blocked.'],
                     ]),
                     h(
