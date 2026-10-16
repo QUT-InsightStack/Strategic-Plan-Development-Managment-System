@@ -34,7 +34,7 @@ test('Office menu is short, with read-only agency mapping and no monitoring grou
         'Dashboard',
         'Plans & Objectives',
         'Inputs: Planning Inputs, Proposed Objectives, Comments, Input Status',
-        'My Objectives: Progress Update, Edit Objectives',
+        'Progress Update',
         'Agency Mapping',
     ]);
     assert.equal(entry('Office', 'alignment').href, '/mappings?mode=view');
@@ -74,7 +74,7 @@ test('Office page entry lookup handles top-level links and groups', async () => 
     assert.equal(officeEntryFor('/office?view=inputs').id, 'office-upload');
     assert.equal(officeEntryFor('/office?view=progress').id, 'progress');
     assert.equal(officeEntryFor('/office?view=comments').id, 'office-comments');
-    assert.equal(officeEntryFor('/office?view=edit').id, 'edit-objectives');
+    assert.equal(officeEntryFor('/office?view=edit'), undefined, 'Offices do not edit objectives');
     assert.equal(officeEntryFor('/office?view=mapping'), undefined);
 });
 

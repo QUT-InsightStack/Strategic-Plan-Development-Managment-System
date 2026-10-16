@@ -11,7 +11,6 @@
 
 body { background: var(--color-background); }
 .role-page { color: var(--color-text); }
-.role-page .app-shell-container { max-width: none; }
 .role-page__header { margin-bottom: var(--space-5); }
 .role-page__header-copy { max-width: 760px; }
 .role-page__notice { margin-bottom: var(--space-4); }

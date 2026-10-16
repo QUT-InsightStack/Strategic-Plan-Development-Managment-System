@@ -1,5 +1,6 @@
 import { createPageRoot } from '../../navigation/page-root.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
+import { PageHeader } from '../../components/PageHeader.js';
 import { useDialogBehaviour } from '../../components/use-dialog-behaviour.js';
 import { apiRequest } from '../../api/api-client.js';
 import { listSubmittedInputs, getSubmittedInput, reviewSubmittedInput } from '../../api/implementation-inputs-api.js';
@@ -93,44 +94,21 @@ function InputDialog({ id, close, saved }) {
 function SubmittedInputsApp() {
     const [activeTab, setActiveTab] = useState('office');
 
-const commentTabs = h(
-    'nav',
-    {
-        'aria-label': 'Feedback type',
-        style: {
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '8px',
-            marginBottom: '20px',
+// Office / Management input sources: underline tabs, shown only when there is more than one source.
+const sources = [['office', 'Office Inputs', 'bi-building'], ...(can('management_objective_comments.view') ? [['management', 'Management Inputs', 'bi-person-badge']] : [])];
+const commentTabs = sources.length > 1 ? h('nav', { className: 'consolidate-tabs', 'aria-label': 'Feedback type' },
+    sources.map(([value, label, icon]) => h('button', {
+        key: value,
+        type: 'button',
+        className: `consolidate-tab${activeTab === value ? ' is-active' : ''}`,
+        'aria-pressed': activeTab === value,
+        onClick: () => {
+            setSelected(null);
+            setNotice('');
+            setFilters({ ...emptyFilters, status: can('implementation_inputs.review') ? 'Pending Review' : '' });
+            setActiveTab(value);
         },
-    },
-    [
-        ['office', 'Office Inputs'],
-        ...(can('management_objective_comments.view')
-            ? [['management', 'Management Inputs']]
-            : []),
-    ].map(([value, label]) =>
-        h(
-            'button',
-            {
-                key: value,
-                type: 'button',
-                className: 'ui-button ui-button--secondary ui-button--sm',
-                'aria-pressed': activeTab === value,
-                onClick: () => {
-                    setSelected(null);
-setNotice('');
-setFilters({
-    ...emptyFilters,
-    status: can('implementation_inputs.review') ? 'Pending Review' : '',
-});
-setActiveTab(value);
-                },
-            },
-            label
-        )
-    )
-);
+    }, h('i', { className: `bi ${icon}`, 'aria-hidden': true }), label))) : null;
     const [rows, setRows] = useState([]);
     const [meta, setMeta] = useState({});
     const emptyFilters = {
@@ -174,7 +152,7 @@ setLoading(true); setError(''); setRows([]); setMeta({});
 
             return h('div', { className: 'office-workspace' }, h(AppSidebar, { onNotice: setNotice }),
         h('main', { className: 'office-content consolidate-content' },
-            h('header', null, h('h1', null, 'Planning Inputs'), h('p', null, 'View planning suggestions and their outcomes. Authorised reviewers can accept or decline inputs with remarks.')),
+            h(PageHeader, { section: 'Planning Inputs', title: can('implementation_inputs.review') ? 'Planning Inputs' : 'Input Status', subtitle: 'View planning suggestions and their outcomes. Authorised reviewers can accept or decline inputs with remarks.' }),
             commentTabs,
            activeTab === 'management'
     && can('management_objective_comments.view')
@@ -196,29 +174,16 @@ setLoading(true); setError(''); setRows([]); setMeta({});
         }, 'Objective suggestions are listed separately below.'),
         h(ManagementObjectiveCommentsPanel)
     ),
-            notice && h('p', { role: 'status' }, notice),
-            h('nav', {
-    'aria-label': 'Input review queues',
-    style: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '8px',
-        marginBottom: '16px',
-    },
-},
-    [
-        ['Pending Review', 'Pending Review'],
-        ['Approved', 'Accepted'],
-        ['Rejected', 'Declined'],
-        ['', 'All Inputs'],
-    ].map(([value, label]) => h('button', {
-        key: label,
-        type: 'button',
-        className: 'ui-button ui-button--secondary ui-button--sm',
-        'aria-pressed': filters.status === value,
-        onClick: () => changeFilter('status', value),
-    }, label))
-),
+            notice && h('p', { className: 'ui-status ui-status--info', role: 'status' }, notice),
+            h('div', { className: 'consolidate-queues', role: 'group', 'aria-label': 'Input review queues' },
+                [['Pending Review', 'Pending Review', 'bi-hourglass-split'], ['Approved', 'Accepted', 'bi-check-circle'], ['Rejected', 'Declined', 'bi-x-circle'], ['', 'All Inputs', 'bi-list-ul']]
+                    .map(([value, label, icon]) => h('button', {
+                        key: label,
+                        type: 'button',
+                        className: `consolidate-queue${filters.status === value ? ' is-active' : ''}`,
+                        'aria-pressed': filters.status === value,
+                        onClick: () => changeFilter('status', value),
+                    }, h('i', { className: `bi ${icon}`, 'aria-hidden': true }), label))),
             h('div', { className: 'consolidate-layout' },
                 h('section', { className: 'office-panel consolidate-register', 'aria-busy': loading },
                     h('div', { className: 'consolidate-toolbar' }, h('h2', null,

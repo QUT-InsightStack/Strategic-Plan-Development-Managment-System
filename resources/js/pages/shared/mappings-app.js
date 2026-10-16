@@ -1,4 +1,5 @@
 import { AppSidebar } from '../../components/AppSidebar.js';
+import { PageHeader } from '../../components/PageHeader.js';
 import { AppDialog } from '../../components/AppDialog.js';
 import { mountProtectedPage } from '../../access/mount-protected-page.js';
 import { listStrategicPlans } from '../../api/strategic-plans-api.js';
@@ -262,18 +263,20 @@ export function MappingApp() {
                 h('td', null, allowed('restore') && canChange(link) && button('Restore', () => setAction({ kind: 'restore', link }), false, 'mapping-action mapping-action--restore'))))
                 : h('tr', null, h('td', { colSpan: 5 }, 'No archived mappings.'))))
         : h('table', { className: 'ui-table' },
-            h('thead', null, h('tr', null, ['Agenda', 'PDP Element', 'DOST Objective', 'Agency Plan', 'Action'].map(label => h('th', { key: label, scope: 'col' }, label)))),
+            h('thead', null, h('tr', null, ['Agenda', 'PDP Element', 'DOST Objective', 'Agency Plan', ...(canRemove ? ['Action'] : [])].map(label => h('th', { key: label, scope: 'col' }, label)))),
             h('tbody', null, visibleRows.length ? visibleRows.map(row => h('tr', { key: row.key, className: row.key === editingKey ? 'is-selected' : '' },
                 h('td', null, row.agenda?.reference_title || 'Not linked'),
                 h('td', null, row.pdp?.reference_title || 'Not linked'),
                 h('td', null, row.objectives.map(item => item.objective_title).join(', ')),
                 h('td', null, unique(row.objectives.map(item => item.agency)).join(', ') || 'Not assigned'),
-                h('td', null, canRemove && h('button', { type: 'button', className: 'mapping-action mapping-action--delete', disabled: busy, onClick: () => requestRemove(row) },
+                canRemove && h('td', null, h('button', { type: 'button', className: 'mapping-action mapping-action--delete', disabled: busy, onClick: () => requestRemove(row) },
                     h('i', { className: 'bi bi-trash3-fill', 'aria-hidden': true }), 'Remove'))))
-                : h('tr', null, h('td', { colSpan: 5 }, 'No active mappings.'))));
+                : h('tr', null, h('td', { colSpan: canRemove ? 5 : 4 }, 'No active mappings.'))));
 
     return h(React.Fragment, null, h(AppSidebar), h('main', { className: 'app-shell-main mapping-page' }, h('div', { className: 'app-shell-container mapping-container' },
-        h('header', { className: 'mapping-header' }, h('h1', null, readOnly ? 'Strategic Alignment Overview' : 'Planner Plan Mapping'), h('p', null, 'Map Agenda items and PDP elements to DOST objectives, then link supporting reference sections.')),
+        h(PageHeader, { section: 'Alignment', title: readOnly ? 'Strategic Alignment Overview' : 'Strategic Mapping',
+            subtitle: readOnly ? 'See how each plan links Presidential Agenda items and PDP elements to DOST objectives and agency plans. This view is read-only.'
+                : 'Map Agenda items and PDP elements to DOST objectives, then link supporting reference sections.' }),
         h('section', { className: 'ui-card mapping-context' }, h('label', { className: 'ui-field' }, h('span', { className: 'ui-label' }, 'Strategic Plan'), h('select', { className: 'ui-select', value: planId, disabled: busy, onChange: event => { setPlanId(event.target.value); setSelected({ agenda: '', pdp: '', objectives: [] }); setNotice(''); setError(''); setEditingKey(''); setAction(null); setPage(1); } },
             h('option', { value: '', disabled: true }, 'Select a strategic plan'),
             plans.map(plan => h('option', { key: plan.record_id, value: plan.record_id }, plan.title))))),
@@ -282,7 +285,7 @@ export function MappingApp() {
             h('a', { className: 'ui-button ui-button--primary ui-button--sm', href: `/strategic-plans/${planId}/overview`, onClick: event => { if (busy) event.preventDefault(); }, 'aria-disabled': busy }, 'Review Plan')),
         notice && h('p', { className: 'ui-status ui-status--success', role: 'status' }, notice),
         error && h('p', { className: 'ui-status ui-status--error', role: 'alert' }, error),
-        loading ? h('p', { role: 'status' }, 'Loading alignments...') : !planId ? h('p', null, 'No plans are available in your scope.') : h(React.Fragment, null,
+        loading ? h('section', { className: 'ui-card ui-empty', role: 'status' }, 'Loading alignments…') : !planId ? h('section', { className: 'ui-card ui-empty mapping-empty' }, h('i', { className: 'bi bi-diagram-3', 'aria-hidden': true }), h('p', null, 'No plans are available in your scope.'), h('small', null, readOnly ? 'Plans you are authorised to view will appear here.' : 'Create a strategic plan and its objectives first, then map them here.')) : h(React.Fragment, null,
             !readOnly && data && !Object.values(capabilities).some(Boolean) && h('p', null, 'These alignments are read-only for your permissions or the current plan status.'),
             allowed('create') && h('form', { className: 'ui-card mapping-step mapping-hierarchy-step', onSubmit: add },
                 h('div', { className: 'mapping-step__heading' }, h('span', null, '1'), h('h2', null, 'Step 1. Create Three-Level Mapping')),

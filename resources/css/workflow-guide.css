@@ -1,4 +1,8 @@
 @import './app.css';
+@import './base.css';
+@import './components/buttons.css';
+@import './layouts/app-shell.css';
+@import './layouts/sidebar.css';
 
 .workflow-guide {
     --guide-blue: #174b85;
@@ -9,9 +13,10 @@
 }
 
 .workflow-guide__container {
-    max-width: 1180px;
-    margin: 0 auto;
-    padding: 32px 24px 48px;
+    /* The site gutter comes from .app-shell-main; the guide uses the standard content width. */
+    max-width: var(--content-max-width);
+    margin: 0;
+    padding: 0 0 48px;
 }
 
 .workflow-guide__hero {
@@ -263,3 +268,8 @@
         border-radius: 10px;
     }
 }
+/* Breadcrumb on the dark hero. */
+.workflow-guide__hero .ui-breadcrumb, .workflow-guide__hero .ui-breadcrumb a, .workflow-guide__hero .ui-breadcrumb [aria-current="page"] { color: rgba(255, 255, 255, .92); }
+.workflow-guide__hero .ui-breadcrumb .bi-chevron-right { color: rgba(255, 255, 255, .55); }
+.workflow-guide__hero .ui-breadcrumb .bi-house-door { color: #7fd8f8; }
+.workflow-guide__hero .ui-breadcrumb-bar { margin-bottom: 10px; }

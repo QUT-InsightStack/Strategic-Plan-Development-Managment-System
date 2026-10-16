@@ -9,7 +9,6 @@
 @import './layouts/sidebar.css';
 
 .finalize-page { background: var(--color-background); }
-.finalize-container { max-width: 1440px; }
 .finalize-breadcrumb { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1); color: var(--color-text-secondary); font-size: var(--font-size-xs); }
 .finalize-breadcrumb a { color: var(--color-primary); text-decoration: none; }
 .finalize-title { margin: 0; color: var(--color-primary); font-size: var(--font-size-3xl); }

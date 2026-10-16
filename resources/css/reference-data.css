@@ -61,7 +61,6 @@
 .template-table th:nth-child(5) { width: 115px; }
 .template-table th:nth-child(6) { width: 120px; }
 
-.admin-item-page .app-shell-container { max-width: 1320px; }
 .admin-item-header { margin-bottom: var(--space-5); }
 .admin-item-title { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-2); }
 .admin-item-title > i { display: grid; width: 42px; height: 42px; place-items: center; color: var(--color-primary); font-size: 32px; }

@@ -43,8 +43,7 @@
 .manage-plans-footer .ui-button { min-width: 140px; }
 
 /* DOST-branded preview, intentionally scoped to the Strategic Plans page. */
-.manage-plans-page .app-shell-container { max-width: 1440px; }
-.manage-plans-page .manage-plans-header { align-items: center; padding: var(--space-2) 0 var(--space-1); }
+.manage-plans-page .manage-plans-header { align-items: center; }
 .manage-plans-page .manage-plans-header__copy { min-width: 0; max-width: 780px; }
 .manage-plans-page .manage-plans-header .ui-page-title { margin-top: var(--space-2); color: var(--color-primary); font-size: var(--font-size-3xl); letter-spacing: -.02em; }
 .manage-plans-page .manage-plans-header .ui-page-subtitle { max-width: 760px; margin-top: var(--space-2); color: var(--color-text-secondary); }

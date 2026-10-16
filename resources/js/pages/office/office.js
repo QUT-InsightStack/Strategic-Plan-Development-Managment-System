@@ -50,9 +50,11 @@ function OfficeApp() {
   const firstAvailable = plans.find(plan => plan.status === 'draft');
   if (firstAvailable) setInputPlanId(String(firstAvailable.record_id));
  }, [plans, inputPlanId, view]);
- const field = (name, label, options) => h('label', { className: 'office-filter', key: name }, label,
-  options ? h('select', { value: filters[name], onChange: e => setFilters({ ...filters, [name]: e.target.value }) }, h('option', { value: '' }, `All ${label.toLowerCase()}`), options.map(option => h('option', { key: option.value ?? option, value: option.value ?? option }, option.label ?? option)))
-   : h('input', { type: name === 'year' ? 'number' : 'search', placeholder: name === 'search' ? 'Search plans...' : 'YYYY', value: filters[name], onChange: e => setFilters({ ...filters, [name]: e.target.value }) }));
+ const field = (name, label, options) => h('div', { className: 'ui-field', key: name },
+  h('label', { className: 'ui-label', htmlFor: `office-${name}` }, label),
+  options ? h('select', { className: 'ui-select', id: `office-${name}`, value: filters[name], onChange: e => setFilters({ ...filters, [name]: e.target.value }) }, h('option', { value: '' }, `All ${label.toLowerCase()}`), options.map(option => h('option', { key: option.value ?? option, value: option.value ?? option }, option.label ?? option)))
+   : name === 'search' ? h('div', { className: 'plans-search' }, h('input', { className: 'ui-input', id: `office-${name}`, type: 'search', placeholder: 'Search by plan title', value: filters[name], onChange: e => setFilters({ ...filters, [name]: e.target.value }) }), h('i', { className: 'bi bi-search', 'aria-hidden': 'true' }))
+   : h('input', { className: 'ui-input', id: `office-${name}`, type: 'number', placeholder: 'YYYY', value: filters[name], onChange: e => setFilters({ ...filters, [name]: e.target.value }) }));
 
  if (['inputs', 'agency-input'].includes(view)) {
   const draftPlans = plans.filter(plan => plan.status === 'draft');
@@ -84,31 +86,50 @@ function OfficeApp() {
 
  return h('div', { className: 'office-workspace' },
   h(AppSidebar, { active: ['mapping', 'alignment'].includes(view) ? 'Mapping Module' : 'Planning Module', onNotice: setNotice }),
-  h('main', { className: 'office-content' },
-   h('header', null, h('h1', null, titles[view] || titles.review),
-    h('p', null, view === 'comments'
+  h('main', { className: 'office-content office-plans-page manage-plans-page' },
+   h(PageHeader, { section: 'Plans & Objectives', title: titles[view] || titles.review,
+    subtitle: view === 'comments'
      ? 'Select an assigned plan to submit feedback for review.'
      : view === 'proposal' ? 'Select a plan to review its contents and propose a strategic objective.'
-     : 'Open an assigned plan to view your objectives, give feedback, or propose a new objective.')),
-   notice && h('p', { role: 'status' }, notice),
-   entry && !(view === 'progress'
+     : 'Open an assigned plan to view your objectives, give feedback, or propose a new objective.' }),
+   notice && h('p', { className: 'ui-status ui-status--info', role: 'status' }, notice),
+   (view === 'edit' && !can('strategic_objectives.update')) || (entry && !(view === 'progress'
     ? can(P.OBJECTIVES_VIEW_PROGRESS) || can(P.OBJECTIVES_UPDATE_PROGRESS) || can(P.OBJECTIVES_CORRECT_PROGRESS)
-    : canOpenPage(entry, getAccessSession())) ? h('p', { role: 'alert' }, 'You do not have permission to access this function.') : ['edit', 'progress', 'mapping', 'alignment'].includes(view) ? h(OfficeWorkflow, { view }) : h(React.Fragment, null,
-   h('form', { className: 'office-panel office-filters', onSubmit: e => { e.preventDefault(); setQuery({ ...filters, page: 1 }); } },
-    h('h2', null, 'Search and filter'), h('div', { className: 'office-filter-grid' },
-     field('search', 'Search'), field('office', 'Offices', offices), field('level', 'Type', [{ value: 'strategic_plan', label: 'Strategic plan' }, { value: 'goal', label: 'Goal' }]), field('year', 'Year', Array.from({ length: Math.max(1, new Date().getFullYear() - 1999) }, (_, index) => String(new Date().getFullYear() - index))),
-     h('button', { type: 'submit', disabled: loading }, 'Filter'), h('button', { type: 'button', onClick: () => { setFilters(empty); setQuery({ page: 1 }); } }, 'Clear'))),
-   h('section', { className: 'office-panel office-plans', 'aria-busy': loading }, h('h2', null, 'Strategic Plans'),
-    error && h('p', { role: 'alert' }, error, ' ', h('button', { onClick: () => setQuery({ ...query }) }, 'Retry')),
-    h('div', { className: 'office-table-scroll' }, h('table', null,
-     h('thead', null, h('tr', null, ['Plan ID.', 'Initial Strategic Plan', 'Status', 'Created by', 'Department', 'Latest upload', 'Action'].map(label => h('th', { key: label, scope: 'col' }, label)))),
-     h('tbody', null, loading ? h('tr', null, h('td', { colSpan: 7 }, 'Loading plans...')) : plans.length ? plans.map(plan => h('tr', { key: plan.record_id },
-      h('td', null, h('a', { href: planLink(plan.record_id) }, plan.record_id)), h('td', null, h('a', { href: planLink(plan.record_id) }, plan.title)), h('td', null, h('span', { className: `office-badge ${plan.status === 'draft' ? 'is-draft' : ''}` }, plan.status)),
-      h('td', null, plan.creator?.name || [plan.creator?.first_name, plan.creator?.last_name].filter(Boolean).join(' ') || '—'), h('td', null, plan.department_agency || plan.creator?.department || '—'), h('td', null, plan.updated_at ? new Date(plan.updated_at).toLocaleDateString('en-GB') : '—'),
-      h('td', null, h('a', { className: 'office-action-link', href: planLink(plan.record_id) }, view === 'review' ? 'View Plan' : 'Open Plan')))) : h('tr', null, h('td', { colSpan: 7 }, error ? 'Plans could not be loaded.' : 'No plans match your filters.'))))),
-    h('footer', { className: 'office-pagination' }, h('span', null, `${meta.total || 0} plan${meta.total === 1 ? '' : 's'}`),
-     h('button', { disabled: loading || query.page <= 1, onClick: () => setQuery({ ...query, page: query.page - 1 }), 'aria-label': 'Previous page' }, '‹'), h('span', null, `Page ${query.page} of ${meta.last_page || 1}`),
-     h('button', { disabled: loading || query.page >= (meta.last_page || 1), onClick: () => setQuery({ ...query, page: query.page + 1 }), 'aria-label': 'Next page' }, '›'))))));
+    : canOpenPage(entry, getAccessSession()))) ? h('p', { className: 'ui-status ui-status--error', role: 'alert' }, 'You do not have permission to access this function.') : ['edit', 'progress', 'mapping', 'alignment'].includes(view) ? h(OfficeWorkflow, { view }) : h(React.Fragment, null,
+   h('section', { className: 'ui-card plans-filter-card', 'aria-labelledby': 'office-filter-title' },
+    h('div', { className: 'plans-section-header' },
+     h('div', null, h('h2', { className: 'plans-filter-title', id: 'office-filter-title' }, 'Find strategic plans'),
+      h('p', null, 'Search the plans assigned to your Office / Unit or narrow the results using the filters.')),
+     h('i', { className: 'bi bi-funnel', 'aria-hidden': 'true' })),
+    h('div', { className: 'ui-card__body' },
+     h('form', { className: 'plans-toolbar', onSubmit: e => { e.preventDefault(); setQuery({ ...filters, page: 1 }); } },
+      field('search', 'Plan title'), field('office', 'Offices', offices), field('level', 'Type', [{ value: 'strategic_plan', label: 'Strategic plan' }, { value: 'goal', label: 'Goal' }]), field('year', 'Year', Array.from({ length: Math.max(1, new Date().getFullYear() - 1999) }, (_, index) => String(new Date().getFullYear() - index))),
+      h('div', { className: 'plans-filter-actions' },
+       h('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'submit', disabled: loading }, h('i', { className: 'bi bi-funnel-fill', 'aria-hidden': 'true' }), 'Filter'),
+       h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', disabled: loading, onClick: () => { setFilters(empty); setQuery({ page: 1 }); } }, 'Clear'))))),
+   h('section', { className: 'ui-card plans-card', 'aria-labelledby': 'office-plans-title', 'aria-busy': loading },
+    h('div', { className: 'plans-table-heading' }, h('div', null,
+     h('h2', { id: 'office-plans-title' }, 'Strategic Plans'),
+     h('p', null, loading ? 'Loading the latest plan records…' : `${meta.total || 0} plan record(s) available`))),
+    h('div', { className: 'ui-card__body' },
+     error ? h('div', { className: 'ui-status ui-status--error', role: 'alert' }, error, ' ', h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setQuery({ ...query }) }, 'Retry'))
+     : loading ? h('div', { className: 'ui-empty' }, 'Loading plans…')
+     : !plans.length ? h('div', { className: 'ui-empty' }, 'No plans match your filters.')
+     : h('div', { className: 'ui-table-wrap' }, h('table', { className: 'ui-table plans-table' },
+      h('thead', null, h('tr', null, ['Plan ID', 'Plan Title', 'Status', 'Created By', 'Department', 'Latest Upload', 'Actions'].map(label => h('th', { key: label, scope: 'col' }, label)))),
+      h('tbody', null, plans.map(plan => h('tr', { key: plan.record_id },
+       h('td', null, h('a', { className: 'plans-id', href: planLink(plan.record_id) }, String(plan.record_id).padStart(4, '0'))),
+       h('td', null, h('a', { href: planLink(plan.record_id) }, h('strong', null, plan.title))),
+       h('td', null, h('span', { className: `ui-badge ui-badge--${plan.status === 'draft' ? 'draft' : plan.status === 'finished' ? 'finished' : 'archived'}` }, plan.planning_status_label || (plan.status === 'finished' ? 'Finished' : plan.status === 'draft' ? 'Draft' : plan.status))),
+       h('td', null, plan.creator?.name || [plan.creator?.first_name, plan.creator?.last_name].filter(Boolean).join(' ') || '—'),
+       h('td', null, plan.department_agency || plan.creator?.department || '—'),
+       h('td', null, plan.updated_at ? new Date(plan.updated_at).toLocaleDateString('en-GB') : '—'),
+       h('td', { className: 'plans-actions-cell' }, h('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: planLink(plan.record_id) },
+        h('i', { className: `bi ${view === 'review' ? 'bi-eye' : 'bi-box-arrow-up-right'}`, 'aria-hidden': 'true' }), view === 'review' ? 'View Plan' : 'Open Plan'))))))),
+     !error && !loading && plans.length ? h('footer', { className: 'office-pagination' }, h('span', null, `${meta.total || 0} plan${meta.total === 1 ? '' : 's'}`),
+      h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', disabled: loading || query.page <= 1, onClick: () => setQuery({ ...query, page: query.page - 1 }), 'aria-label': 'Previous page' }, h('i', { className: 'bi bi-chevron-left', 'aria-hidden': 'true' })),
+      h('span', null, `Page ${query.page} of ${meta.last_page || 1}`),
+      h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', disabled: loading || query.page >= (meta.last_page || 1), onClick: () => setQuery({ ...query, page: query.page + 1 }), 'aria-label': 'Next page' }, h('i', { className: 'bi bi-chevron-right', 'aria-hidden': 'true' }))) : null)))));
 }
 const root = createPageRoot(document.getElementById('root'));
 root.render(h('p', { role: 'status' }, 'Loading your office access…'));

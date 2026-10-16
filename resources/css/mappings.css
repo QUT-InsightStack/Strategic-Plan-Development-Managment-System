@@ -9,7 +9,6 @@
 @import './layouts/sidebar.css';
 
 .mapping-page { background: var(--color-background); }
-.mapping-container { max-width: 1440px; }
 .mapping-header h1 { margin: 0; color: var(--color-primary); font-size: var(--font-size-3xl); }
 .mapping-header p { margin: var(--space-1) 0 var(--space-5); color: var(--color-text-secondary); font-size: var(--font-size-sm); }
 .mapping-context { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); padding: var(--space-4); margin-bottom: var(--space-4); }
@@ -154,3 +153,7 @@
 .mapping-arrow { align-self: center; justify-self: center; display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; color: #1764c0; background: #eef4ff; font-size: 18px; }
 .mapping-hierarchy-step .mapping-hierarchy-action { padding-top: 0; }
 @media (max-width: 950px) { .mapping-levels { grid-template-columns: minmax(0, 1fr); } .mapping-arrow { transform: rotate(90deg); } }
+.mapping-empty { display: grid; justify-items: center; gap: var(--space-2); padding: var(--space-10) var(--space-5); text-align: center; }
+.mapping-empty .bi { color: var(--color-brand-cyan); font-size: 28px; }
+.mapping-empty p { margin: 0; color: var(--color-primary); font-weight: var(--font-weight-semibold); }
+.mapping-empty small { color: var(--color-text-secondary); }

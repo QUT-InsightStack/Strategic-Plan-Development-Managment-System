@@ -1,3 +1,4 @@
+import { Breadcrumb } from '../../components/PageHeader.js';
 import { mountProtectedPage } from '../../access/mount-protected-page.js';
 import { getAccessSession } from '../../access/access-session.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
@@ -201,11 +202,7 @@ function WorkflowGuideApp() {
                 h(
                     'header',
                     { className: 'workflow-guide__hero' },
-                    h(
-                        'p',
-                        { className: 'workflow-guide__eyebrow' },
-                        'Your guide to strategic planning'
-                    ),
+                    h(Breadcrumb, { section: 'How SPDMS Works' }),
                     h('h1', null, 'How SPDMS Works'),
                     h(
                         'p',

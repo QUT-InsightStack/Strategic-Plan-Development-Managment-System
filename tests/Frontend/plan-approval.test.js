@@ -26,7 +26,7 @@ function host(path, dependencies, planId = 7) {
         ReactDOM: { createRoot: () => ({ render: element => { root = element; } }) },
         document: { getElementById: () => ({ dataset: { planId } }) },
         mountProtectedPage: (_element, factory) => { root = factory(); },
-        enforcePageAccess: () => {}, AppSidebar: 'aside', PageHeader: 'header',
+        enforcePageAccess: () => {}, AppSidebar: 'aside', PageHeader: 'header', Breadcrumb: 'nav',
         ...dependencies,
     });
     const source = readFileSync(new URL(`../../resources/js/pages/${path}`, import.meta.url), 'utf8');

@@ -1,0 +1,32 @@
+/* Shared page header: breadcrumb ("角标"), planning step position, title and subtitle.
+   Loaded by components/PageHeader.js so every page that uses it gets the same header. */
+.app-page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-5); margin-bottom: var(--space-6); border-bottom: 1px solid var(--color-border-subtle); padding: 0 0 var(--space-5); }
+.app-page-header__copy { min-width: 0; max-width: 860px; }
+.app-page-header__actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-3); }
+.app-page-header .ui-page-title { margin: var(--space-2) 0 0; color: var(--color-primary); font-family: var(--font-family-sans); font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); line-height: var(--line-height-tight); letter-spacing: -.02em; }
+.app-page-header .ui-page-subtitle { max-width: 780px; margin: var(--space-2) 0 0; color: var(--color-text-secondary); font-size: var(--font-size-sm); line-height: var(--line-height-body); }
+
+.ui-breadcrumb-bar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-4); }
+.ui-breadcrumb { color: var(--color-text-secondary); font-family: var(--font-family-sans); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); letter-spacing: .04em; text-transform: uppercase; }
+.ui-breadcrumb ol { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.ui-breadcrumb li { display: inline-flex; align-items: center; gap: var(--space-2); }
+.ui-breadcrumb a { color: var(--color-primary); text-decoration: none; }
+.ui-breadcrumb a:hover { text-decoration: underline; }
+.ui-breadcrumb a:focus-visible { border-radius: 2px; outline: none; box-shadow: var(--focus-ring); }
+.ui-breadcrumb [aria-current="page"] { color: var(--color-text); }
+.ui-breadcrumb .bi-chevron-right { color: var(--color-gray-400); font-size: 9px; }
+.ui-breadcrumb .bi-house-door { color: var(--color-brand-cyan); font-size: 13px; }
+
+.ui-step { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-family-sans); font-size: 12px; }
+.ui-step__count { border-radius: var(--radius-pill); padding: 2px 10px; color: var(--color-primary); background: var(--color-primary-soft); font-weight: var(--font-weight-bold); white-space: nowrap; }
+.ui-step__link { display: inline-flex; align-items: center; gap: 4px; max-width: 180px; color: var(--color-text-secondary); text-decoration: none; }
+.ui-step__link span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui-step__link:hover { color: var(--color-primary); text-decoration: underline; }
+.ui-step__link:focus-visible { border-radius: 2px; outline: none; box-shadow: var(--focus-ring); }
+
+@media (max-width: 720px) {
+    .app-page-header { align-items: stretch; flex-direction: column; padding-bottom: var(--space-4); }
+    .app-page-header .ui-page-title { font-size: var(--font-size-2xl); }
+    .app-page-header__actions { width: 100%; justify-content: flex-start; }
+}
+@media print { .ui-step { display: none; } }

@@ -3,8 +3,8 @@
 .office-input-page > header { margin-bottom: var(--space-5); }
 .office-input-page > header h1 { font-size: var(--font-size-2xl); margin: var(--space-3) 0; color: var(--color-primary); }
 .office-input-page > header p { color: var(--color-text-secondary); }
-.office-input-plan-picker { display: grid; grid-template-columns: auto minmax(240px, 420px); align-items: center; gap: var(--space-3); max-width: 600px; margin-top: var(--space-4); color: var(--color-text-secondary); font-size: var(--font-size-sm); }
-.office-input-plan-picker select { width: 100%; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3); color: var(--color-text); background: var(--color-surface); }
+.office-input-plan-card { margin-bottom: var(--space-5); padding: var(--space-4) var(--space-5); box-shadow: var(--shadow-xs); }
+.office-input-plan-picker { display: grid; max-width: 520px; gap: var(--space-2); }
 .office-input-page .office-panel { border-color: var(--color-border-subtle); border-radius: var(--radius-lg); box-shadow: var(--shadow-xs); }
 .office-input-page [hidden] { display: none !important; }
 .office-reference-category { padding: var(--space-5) var(--space-6); margin-bottom: var(--space-5); }

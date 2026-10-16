@@ -1,5 +1,6 @@
 import { apiRequest } from '../api/api-client.js';
 import { getAccessSession } from '../access/access-session.js';
+import '../../css/components/password-assistance.css';
 
 const { useEffect, useState } = React;
 const h = React.createElement;
@@ -86,44 +87,38 @@ export function PasswordAssistancePanel({ onNotice = () => {} }) {
         className: 'ui-card password-assistance-panel',
         'aria-labelledby': 'password-assistance-title',
     },
-        h('div', { className: 'password-assistance-header' },
-            h('h2', { id: 'password-assistance-title' },
-                'Password Assistance Requests'
-            ),
-            h('span', { className: 'password-assistance-count' },
-                `${meta.pending_count} Pending`
-            )
-        ),
-        h('p', null,
-            'Accept a request to reset the password in User Accounts.'
-        ),
-        h('div', { className: 'password-assistance-filters' },
-            ...Object.entries(labels).map(([status, label]) =>
-                h('button', {
-                    key: status,
-                    type: 'button',
-                    className: 'ui-button ui-button--secondary ui-button--sm',
-                    'aria-pressed': filter === status,
-                    onClick: () => {
-                        setFilter(status);
-                        setPage(1);
-                    },
-                }, label)
-            ),
+        h('div', { className: 'ui-section-header password-assistance-header' },
+            h('div', { className: 'ui-section-header__copy' },
+                h('h2', { id: 'password-assistance-title' }, 'Password Assistance Requests'),
+                h('p', null, 'Accept a request to reset the password in User Accounts.')),
+            h('span', { className: `password-assistance-count${meta.pending_count ? ' has-pending' : ''}` },
+                h('i', { className: 'bi bi-key', 'aria-hidden': true }), `${meta.pending_count} Pending`)),
+        h('div', { className: 'password-assistance-toolbar' },
+            h('div', { className: 'password-assistance-filters', role: 'group', 'aria-label': 'Request status' },
+                ...Object.entries(labels).map(([status, label]) =>
+                    h('button', {
+                        key: status,
+                        type: 'button',
+                        className: `password-assistance-filter${filter === status ? ' is-active' : ''}`,
+                        'aria-pressed': filter === status,
+                        onClick: () => {
+                            setFilter(status);
+                            setPage(1);
+                        },
+                    }, label))),
             h('button', {
                 type: 'button',
                 className: 'ui-button ui-button--secondary ui-button--sm',
                 disabled: loading || busy !== null,
                 onClick: load,
-            }, 'Refresh')
-        ),
-        error && h('p', { className: 'ui-error', role: 'alert' }, error),
+            }, h('i', { className: 'bi bi-arrow-clockwise', 'aria-hidden': true }), 'Refresh')),
+        error && h('p', { className: 'ui-status ui-status--error password-assistance-message', role: 'alert' }, error),
         loading
-            ? h('p', { role: 'status' }, 'Loading requests…')
+            ? h('p', { className: 'password-assistance-empty', role: 'status' }, 'Loading requests…')
             : requests.length === 0
-                ? h('p', null, `No ${labels[filter].toLowerCase()} requests.`)
-                : h('div', { className: 'password-assistance-table-wrap' },
-                    h('table', { className: 'password-assistance-table' },
+                ? h('p', { className: 'password-assistance-empty' }, `No ${labels[filter].toLowerCase()} requests.`)
+                : h('div', { className: 'ui-table-wrap password-assistance-table-wrap' },
+                    h('table', { className: 'ui-table password-assistance-table' },
                         h('thead', null,
                             h('tr', null,
                                 ...['User', 'Requested', 'Status', 'Handled by', 'Action']
@@ -147,12 +142,12 @@ export function PasswordAssistancePanel({ onNotice = () => {} }) {
                                     h('td', null,
                                         new Date(request.requested_at).toLocaleString()
                                     ),
-                                    h('td', null, labels[request.status]),
+                                    h('td', null, h('span', { className: `ui-badge ui-badge--${request.status === 'pending' ? 'warning' : request.status === 'ignored' ? 'neutral' : 'success'}` }, labels[request.status])),
                                     h('td', null,
                                         request.handled_by_name ||
                                         request.accepted_by_name || '—'
                                     ),
-                                    h('td', null,
+                                    h('td', null, h('div', { className: 'ui-table__actions' },
                                         request.status === 'pending' &&
                                             h('button', {
                                                 type: 'button',
@@ -174,24 +169,25 @@ export function PasswordAssistancePanel({ onNotice = () => {} }) {
                                                 disabled: busy !== null,
                                                 onClick: () => act(request, 'ignore'),
                                             }, 'Ignore')
-                                    )
+                                    ))
                                 );
                             })
                         )
                     )
                 ),
-        h('div', { className: 'password-assistance-filters' },
+        meta.last_page > 1 ? h('div', { className: 'password-assistance-pagination' },
             h('button', {
                 type: 'button',
+                className: 'ui-button ui-button--secondary ui-button--sm',
                 disabled: loading || page <= 1,
                 onClick: () => setPage(current => current - 1),
-            }, 'Previous'),
+            }, h('i', { className: 'bi bi-chevron-left', 'aria-hidden': true }), 'Previous'),
             h('span', null, `Page ${page} of ${meta.last_page}`),
             h('button', {
                 type: 'button',
+                className: 'ui-button ui-button--secondary ui-button--sm',
                 disabled: loading || page >= meta.last_page,
                 onClick: () => setPage(current => current + 1),
-            }, 'Next')
-        )
+            }, 'Next', h('i', { className: 'bi bi-chevron-right', 'aria-hidden': true }))) : null
     );
 }

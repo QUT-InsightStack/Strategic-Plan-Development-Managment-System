@@ -7,6 +7,7 @@ import { enforcePageAccess } from '../../access/access-guard.js';
 import { isManagementSession } from '../../access/management-access.js';
 import { planMatchesFilters, scopeFilters } from './management-insights.js';
 import { ManagementFilterBar, useManagementFilters } from './management-filters.js';
+import { PageHeader } from '../../components/PageHeader.js';
 import { ApprovalsPanel, managementApprovalsRedirect, mergeAssignedPlans } from './management-approvals.js';
 
 const h = React.createElement;
@@ -34,10 +35,8 @@ function AssignedReviewsPage({ session }) {
     return h('div', { className: 'app-shell management-dashboard' },
         h(AppSidebar),
         h('main', { className: 'app-shell-main' }, h('div', { className: 'management-dashboard__content' },
-            h('header', { className: 'management-dashboard__header' }, h('div', null,
-                h('p', { className: 'management-dashboard__eyebrow' }, 'Assigned reviewer'),
-                h('h1', null, 'Assigned Plan Reviews'),
-                h('p', null, `Review plans within your access. Decisions are available only when the current stage is assigned to ${session.name || 'you'}.`))),
+            h(PageHeader, { section: 'Plan Reviews', title: 'Assigned Plan Reviews',
+                subtitle: `Review plans within your access. Decisions are available only when the current stage is assigned to ${session.name || 'you'}.` }),
             state.error ? h('div', { className: 'management-dashboard__errors', role: 'alert' }, h('p', null, state.error),
                 h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setAttempt(value => value + 1) }, 'Retry')) : null,
             h(ManagementFilterBar, { filters, plans: state.plans, offices, onChange: setFilter, onReset: resetFilters, includeObjectiveStatus: false, disabled: state.loading }),

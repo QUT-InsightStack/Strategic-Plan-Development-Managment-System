@@ -10,6 +10,7 @@ import { createAccessSession, saveAccessSession, can } from '../../access/access
 import { PERMISSIONS } from '../../access/access-policy.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
 import { isManagementSession } from '../../access/management-access.js';
+import { PageHeader } from '../../components/PageHeader.js';
 
 const h = React.createElement;
 
@@ -42,13 +43,12 @@ function PlanReviewPage({ session }) {
         return () => { active = false; };
     }, [attempt]);
 
+    const selectedPlan = plans.find(plan => String(plan.record_id) === String(selectedPlanId));
     return h('div', { className: 'app-shell management-dashboard' },
         h(AppSidebar, { active: 'Planning Module' }),
         h('main', { className: 'app-shell-main' }, h('div', { className: 'management-dashboard__content' },
-            h('header', { className: 'management-dashboard__header' },
-                h('div', null, h('p', { className: 'management-dashboard__eyebrow' }, 'Management / Executive · Planning Module'),
-                    h('h1', null, 'Plan Review'),
-                    h('p', null, 'Review finalized strategic plans, foundations, objectives and comments. Drafts are not included.'))),
+            h(PageHeader, { section: 'Plan Review', title: 'Plan Review', trail: selectedPlan ? [selectedPlan.title || `Plan ${selectedPlan.record_id}`] : [],
+                subtitle: 'Review finalized strategic plans, foundations, objectives and comments. Drafts are not included.' }),
             error ? h('div', { className: 'management-dashboard__errors', role: 'alert' }, error, ' ', h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setAttempt(value => value + 1) }, 'Retry')) : null,
             !error && !selectedPlanId && can(PERMISSIONS.PLANS_VIEW, session) ? h(ManagementFilterBar, { filters, plans, offices: [...new Set(plans.map(plan => plan.department_agency).filter(Boolean))].sort(),
                 onChange: setFilter, onReset: resetFilters, includeObjectiveStatus: false, disabled: loading }) : null,
