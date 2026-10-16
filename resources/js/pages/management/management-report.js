@@ -81,9 +81,10 @@ function ReportTable({ table, section, filters, canExport, filtered, onClear }) 
 }
 
 function ReportSection({ section, filters, canExport, filtered, onClear }) {
-    const heading = `${section.number}. ${section.title}`;
     return h('section', { className: 'management-card management-report__section', 'aria-labelledby': `report-${section.id}` },
-        h('div', { className: 'management-card__heading' }, h('div', null, h('h2', { id: `report-${section.id}` }, heading), section.description ? h('p', null, section.description) : null)),
+        h('div', { className: 'management-card__heading' }, h('div', null,
+            h('h2', { id: `report-${section.id}` }, h('span', { className: 'management-report__number' }, section.number), section.title),
+            section.description ? h('p', null, section.description) : null)),
         section.kpis ? h('div', { className: 'management-report__kpis' }, section.kpis.map(kpi => h('article', { key: kpi.key, className: `management-report__kpi${kpi.available ? '' : ' is-muted'}` },
             h('small', null, kpi.label), h('strong', null, kpi.available ? kpi.value : 'No access'), h('span', null, kpi.detail)))) : null,
         (section.tables || []).filter(table => !(section.kpis && table.id === 'kpis')).map(table => h(ReportTable, { key: table.id, table, section: section.id, filters, canExport, filtered, onClear })),
@@ -107,7 +108,8 @@ export function ManagementReport({ filters, refresh, canExport, filtered, onClea
         h('div', { className: 'management-report__print-header', 'aria-hidden': true }, `${report.meta.title} · ${report.meta.planning_period}`),
         h('div', { className: 'management-report__print-footer', 'aria-hidden': true }, `Generated ${generatedText} by ${report.meta.generated_by} · ${report.meta.scope}`),
         h('article', { className: 'management-card management-report__cover', 'aria-labelledby': 'report-cover-title' },
-            h('p', { className: 'management-report__eyebrow' }, 'Management / Executive'),
+            h('div', { className: 'management-report__band', 'aria-hidden': true }),
+            h('p', { className: 'management-report__eyebrow' }, report.meta.role || 'Strategic Planning Management System'),
             h('h2', { id: 'report-cover-title' }, report.meta.title),
             h('p', { className: 'management-report__period' }, report.meta.planning_period),
             h('dl', null, cover.fields.filter(field => !(field.label === 'Sections omitted' && report.omitted_sections.length)).map(field => h(React.Fragment, { key: field.label }, h('dt', null, field.label), h('dd', null, field.value)))),

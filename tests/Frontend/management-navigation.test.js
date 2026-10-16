@@ -7,8 +7,10 @@ const management = () => flattenNavigation(navigationFor('Management'));
 
 test('management menu is a short flat list with Reports inside the Dashboard', () => {
     const top = navigationFor('Management').filter(item => !['workflow-guide', 'notifications', 'profile', 'faq'].includes(item.id));
-    assert.deepEqual(top.map(item => item.label), ['Dashboard', 'Approvals', 'Plan Review', 'Alignment', 'Input Review']);
-    assert.ok(navigationFor('Management').every(item => !item.children), 'Management links are all top-level');
+    assert.deepEqual(top.map(item => item.label), ['Dashboard', 'Approvals', 'Plan Review', 'Suggest Objectives', 'Alignment', 'Input Review', 'Planning Records']);
+    // Planning Records is the one group: the plan, objective, mapping and reference data registers Management may delete from.
+    assert.deepEqual(top.filter(item => item.children).map(item => item.id), ['management-records']);
+    assert.deepEqual(top.find(item => item.id === 'management-records').children.map(item => item.label), ['Plans', 'Objectives', 'Mappings', 'PDP Chapters', 'Presidential Agenda']);
     const items = management();
     const byId = id => items.find(item => item.id === id);
     assert.equal(byId('home'), undefined);
@@ -40,8 +42,11 @@ test('old management dashboard links resolve to the matching tab', () => {
 });
 
 test('management menu has no administration, security, backup or delete entries', () => {
+    // Planning Records links to registers shared with other roles (including the reference data page under /administrative-admin).
+    const records = new Set(navigationFor('Management').find(item => item.id === 'management-records').children.map(item => item.id));
     const items = management();
-    assert.ok(items.every(item => !/admin|security|backup|delete|role|user/i.test(`${item.id} ${item.href}`)));
+    assert.ok(items.every(item => !/security|backup|delete|role|user/i.test(`${item.id} ${item.href}`)));
+    assert.ok(items.filter(item => !records.has(item.id)).every(item => !/admin/i.test(`${item.id} ${item.href}`)));
 });
 
 test('management alignment link requires its view permission', () => {

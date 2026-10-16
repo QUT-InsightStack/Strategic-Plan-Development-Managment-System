@@ -71,6 +71,7 @@ export const roleNavigation = {
     ], 'bi-shield-check')],
     // Short menus: each function has one entry, single-item groups are top-level links, and Reports
     // is a tab inside each role's Dashboard rather than a separate link.
+    // Administrative Admin submits plans but does not approve them, so it has no Plan Reviews entry.
     administrative: [monitoringDashboard,
     group('admin-references', 'Reference Data', [
         page('agenda', 'Presidential Agenda', '/administrative-admin/reference-data?tab=agenda', ['reference_data.manage', 'presidential_agenda.view'], { icon: 'bi-bank' }),
@@ -89,8 +90,7 @@ export const roleNavigation = {
     group('admin-monitoring', 'Monitoring', [
         page('objective-progress', 'Objective Progress', '/progress-monitoring', ['strategic_records.view', 'strategic_objectives.view_progress']),
         page('system-logs', 'System Logs', '/audit-logs', ['logs.view'], { icon: 'bi-list-check' }),
-    ], 'bi-graph-up'),
-    page('reviews', 'Plan Reviews', '/management-approvals', [], { icon: 'bi-clipboard-check' })],
+    ], 'bi-graph-up')],
     planner: [monitoringDashboard,
     group('planning', 'Plans', [
         page('plans', 'Plan List', '/strategic-plans', ['strategic_records.view']),

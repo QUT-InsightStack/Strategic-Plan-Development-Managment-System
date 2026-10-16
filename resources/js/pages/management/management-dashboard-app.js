@@ -9,7 +9,7 @@ import { createAccessSession, saveAccessSession, can } from '../../access/access
 import { PERMISSIONS as P } from '../../access/access-policy.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
 import { isManagementSession } from '../../access/management-access.js';
-import { managementDashboardTab } from '../../access/navigation.js';
+import { dashboardLabels, managementDashboardTab, navigationRole } from '../../access/navigation.js';
 import { ManagementPagination, pageRows } from '../../components/ManagementPagination.js';
 import {
     chartPeriod, filterManagementRows, isAligned, objectiveRisk, officeName, officeUnitPerformance,
@@ -331,6 +331,9 @@ function ManagementDashboard({ session, management }) {
 
     const sources = [plansSource, objectivesSource, reviewsSource, inputsSource];
     const loading = sources.some(source => source.status === 'loading');
+    // "Data as of" stamp: the time the plan register last finished loading.
+    const loadedAt = React.useMemo(() => new Date(), [refresh, plansSource.status === 'ready']);
+    const loadedText = loadedAt.toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' });
     // Report master: sections and rows come from the backend for this account.
     const reportsContent = h(ManagementReport, { filters, refresh, canExport: canExportReports, filtered, onClear: resetFilters });
 
@@ -352,9 +355,13 @@ function ManagementDashboard({ session, management }) {
         h(AppSidebar),
         h('main', { className: 'app-shell-main' }, h('div', { className: 'management-dashboard__content' },
             h('header', { className: 'management-dashboard__header' },
-                h('div', null, h('h1', null, management ? 'Management Dashboard' : 'Dashboard'),
+                h('div', { className: 'management-dashboard__heading' },
+                    h('p', { className: 'management-dashboard__eyebrow' }, dashboardLabels[navigationRole(session.roleName)] || 'Dashboard'),
+                    h('h1', null, management ? 'Management Dashboard' : 'Dashboard'),
                     h('p', null, management ? 'Monitor strategic plan progress, alignment status, and planning summaries across departments and agencies.'
-                        : 'Monitor strategic plan progress and planning summaries within your authorised scope.')),
+                        : 'Monitor strategic plan progress and planning summaries within your authorised scope.'),
+                    h('p', { className: 'management-dashboard__asof' }, h('i', { className: 'bi bi-clock-history', 'aria-hidden': true }),
+                        plansSource.status === 'ready' ? ` Data as of ${loadedText}` : ' Loading the latest data…')),
                 h('div', { className: 'management-dashboard__controls' },
                     h(PlanningPeriodSelect, { filters, plans, onChange: setFilter, disabled: plansSource.status !== 'ready' }),
                     h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => setRefresh(value => value + 1), disabled: loading, 'aria-label': 'Refresh dashboard data', title: 'Refresh dashboard data' }, h('i', { className: 'bi bi-arrow-clockwise', 'aria-hidden': true })),
@@ -365,7 +372,7 @@ function ManagementDashboard({ session, management }) {
             h('nav', { className: 'management-dashboard__tabs', 'aria-label': 'Dashboard sections' }, visibleTabs.map(tab => h('button', {
                 key: tab.id, type: 'button', className: `management-dashboard__tab${activeTab === tab.id ? ' is-active' : ''}`,
                 'aria-current': activeTab === tab.id ? 'page' : undefined, onClick: () => openTab(tab.id),
-            }, tab.label))),
+            }, h('i', { className: `bi ${tab.icon}`, 'aria-hidden': true }), tab.label))),
             h('section', { className: 'management-dashboard__panel', 'aria-label': activeLabel }, pageContent),
             h('footer', { className: 'management-dashboard__footer' }, '© 2026 Strategic Planning Management System. All rights reserved.'))));
 }
