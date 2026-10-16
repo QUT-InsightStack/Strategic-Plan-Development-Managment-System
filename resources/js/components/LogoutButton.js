@@ -25,7 +25,7 @@ export function LogoutButton({ className = 'nav-link logout-link', label = 'Logo
             open,
             variant: 'danger',
             title: 'Confirm Logout',
-            message: 'Are you sure you want to log out of the Strategic Planning Management System?',
+            message: 'Are you sure you want to log out of the Strategic Plan Development Management System?',
             confirmLabel: 'Log Out',
             cancelLabel: 'Cancel',
             onConfirm: confirmLogout,

@@ -44,9 +44,9 @@ const messages = {
 function Brand() {
     return React.createElement(
         'a',
-        { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic Planning Management System home' },
+        { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic Plan Development Management System home' },
         React.createElement(BrandLogo),
-        React.createElement('span', { className: 'brand-name' }, 'Strategic Planning Management System')
+        React.createElement('span', { className: 'brand-name' }, 'Strategic Plan Development Management System')
     );
 }
 
@@ -534,7 +534,7 @@ function Footer({ onMessage }) {
     return React.createElement(
         'footer',
         { className: 'app-footer' },
-        React.createElement('span', null, String.fromCharCode(169), ' 2026 Strategic Planning Management System'),
+        React.createElement('span', null, String.fromCharCode(169), ' 2026 Strategic Plan Development Management System'),
         React.createElement('a', { href: '#', onClick: (event) => { event.preventDefault(); onMessage(messages.privacy); } }, 'Privacy Notice'),
         React.createElement('a', { href: '#', onClick: (event) => { event.preventDefault(); onMessage(messages.terms); } }, 'Terms of Use'),
         React.createElement('a', { href: '#', onClick: (event) => { event.preventDefault(); onMessage(messages.accessibility); } }, 'Accessibility')

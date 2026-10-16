@@ -68,7 +68,7 @@ function Footer() {
     return React.createElement(
         'footer',
         { className: 'app-footer' },
-        React.createElement('span', null, 'Strategic Planning Management System'),
+        React.createElement('span', null, 'Strategic Plan Development Management System'),
         React.createElement('span', null, 'For internal government use only'),
         React.createElement('a', { href: dashboardUrl }, 'Dashboard'),
         React.createElement('a', { href: usersListUrl }, 'Users')

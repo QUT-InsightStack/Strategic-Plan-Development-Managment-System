@@ -22,9 +22,9 @@ const schema = crud.getSchema(resourceName);
 function Brand() {
     return React.createElement(
         'a',
-        { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic Planning Management System home' },
+        { className: 'brand', href: dashboardUrl, 'aria-label': 'Strategic Plan Development Management System home' },
         React.createElement(BrandLogo),
-        React.createElement('span', { className: 'brand-name' }, 'Strategic Planning Management System')
+        React.createElement('span', { className: 'brand-name' }, 'Strategic Plan Development Management System')
     );
 }
 

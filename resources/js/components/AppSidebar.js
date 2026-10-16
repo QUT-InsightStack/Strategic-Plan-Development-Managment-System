@@ -36,7 +36,7 @@ export function AppSidebar() {
             : h('span', { key: item.id, className: className + ' navigation-locked', 'aria-disabled': true, title: 'Your account does not have the permissions required to open this page.' }, ...content, h('small', null, 'No access'));
     }
     return h(React.Fragment, null, h('aside', { className: 'app-sidebar', 'aria-label': 'Primary navigation', 'data-navigation-ready': session || error ? 'true' : 'false' },
-        h('a', { className: 'app-sidebar__brand', href: items[0]?.href || '/dashboard' }, h(BrandLogo, { className: 'app-sidebar__logo' }), h('span', { className: 'app-sidebar__brand-copy' }, h('strong', null, 'SPDMS'), h('small', null, 'Strategic Planning System'))),
+        h('a', { className: 'app-sidebar__brand', href: items[0]?.href || '/dashboard' }, h(BrandLogo, { className: 'app-sidebar__logo' }), h('span', { className: 'app-sidebar__brand-copy' }, h('strong', null, 'SPDMS'), h('small', null, 'Strategic Plan Development Management System'))),
         h('a', { className: 'app-sidebar__profile', href: '/profile' }, h('i', { className: 'bi bi-person-vcard-fill', 'aria-hidden': true }), h('span', null, displayRoleName(session?.roleName, 'Loading account…'))),
         h('nav', { className: 'app-sidebar__nav' },
             !session && h('p', { role: error ? 'alert' : 'status' }, error || 'Loading menu…'),

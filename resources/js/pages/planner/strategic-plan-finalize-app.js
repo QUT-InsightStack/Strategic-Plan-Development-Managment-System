@@ -116,7 +116,9 @@ function FinalizeStrategicPlanApp() {
         setLoading(true); setNotice({ type: '', message: '' });
         Promise.all([
             getStrategicPlan(planId),
-            getApprovalStatus(planId),
+            // Approval tracking is only for plan editors and workflow participants; the overview still
+            // loads without it.
+            getApprovalStatus(planId).catch(() => ({ data: null })),
             listStrategicObjectives(planId),
             apiRequest(`/api/strategic-plans/${planId}/approval-preparation`),
         ]).then(([planPayload, trackingPayload, objectivePayload, inputPayload]) => {

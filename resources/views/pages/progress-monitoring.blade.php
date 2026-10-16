@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Progress Monitoring | Strategic Planning Management System</title>
+    <title>Progress Monitoring | Strategic Plan Development Management System</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     @vite(['resources/css/progress-monitoring.css', 'resources/js/pages/planner/progress-monitoring-app.js'])
     <meta name="app-page-entry" content="{{ Vite::asset('resources/js/pages/planner/progress-monitoring-app.js') }}">

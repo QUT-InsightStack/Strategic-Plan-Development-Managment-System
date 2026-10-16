@@ -10,7 +10,7 @@
 
     <title>
         Approval Workflow Configuration |
-        Strategic Planning Management System
+        Strategic Plan Development Management System
     </title>
 
     <link

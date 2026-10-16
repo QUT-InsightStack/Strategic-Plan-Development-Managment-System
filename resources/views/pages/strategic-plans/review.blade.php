@@ -9,7 +9,7 @@
     >
 
     <title>
-        Review Submitted Strategic Plan | Strategic Planning Management System
+        Review Submitted Strategic Plan | Strategic Plan Development Management System
     </title>
 
     <link
