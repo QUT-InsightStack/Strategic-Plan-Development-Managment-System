@@ -139,5 +139,5 @@ export function TechnicalDashboard({ session }) {
                 'aria-current': activeTab.id === tab.id ? 'page' : undefined, onClick: () => navigate({ tab: tab.id }),
             }, h('i', { className: `bi ${tab.icon}`, 'aria-hidden': true }), tab.label))),
             h('section', { className: 'management-dashboard__panel', 'aria-label': activeTab.label }, content),
-            h('footer', { className: 'management-dashboard__footer' }, '© 2026 Strategic Planning Management System. All rights reserved.'))));
+            h('footer', { className: 'management-dashboard__footer' }, '© 2026 Strategic Plan Development Management System. All rights reserved.'))));
 }
