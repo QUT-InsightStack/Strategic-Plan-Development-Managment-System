@@ -1,5 +1,6 @@
 import { createPageRoot } from '../../navigation/page-root.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
+import { FilterBar, FilterDate, FilterSelect } from '../../components/FilterBar.js';
 import { useDialogBehaviour } from '../../components/use-dialog-behaviour.js';
 import { apiRequest } from '../../api/api-client.js';
 import { listSubmittedInputs, getSubmittedInput, reviewSubmittedInput } from '../../api/implementation-inputs-api.js';
@@ -168,9 +169,7 @@ setLoading(true); setError(''); setRows([]); setMeta({});
         return () => { active = false; };
     }, [filters, refresh, activeTab]);
     const changeFilter = (key, value) => setFilters(current => ({ ...current, [key]: value, ...(key === 'plan_id' ? { responsible_unit_id: '' } : {}), page: 1 }));
-    const select = (key, label, options) => h('label', { key }, h('span', { className: 'consolidate-sr' }, label),
-        h('select', { value: filters[key], disabled: loading, onChange: e => changeFilter(key, e.target.value) },
-            h('option', { value: '' }, label), options.map(([value, text]) => h('option', { key: value, value }, text))));
+    const select = (key, label, allLabel, options) => h(FilterSelect, { key, id: `inputs-${key}`, label, value: filters[key], allLabel, options, disabled: loading, onChange: value => changeFilter(key, value) });
 
             return h('div', { className: 'office-workspace' }, h(AppSidebar, { onNotice: setNotice }),
         h('main', { className: 'office-content consolidate-content' },
@@ -219,38 +218,22 @@ setLoading(true); setError(''); setRows([]); setMeta({});
         onClick: () => changeFilter('status', value),
     }, label))
 ),
+            h(FilterBar, { label: 'Filter planning inputs', onClear: () => setFilters(emptyFilters) },
+                select('plan_id', 'Strategic plan', 'All authorized plans', (meta.filters?.plans || []).map(p => [p.record_id, p.title])),
+                activeTab === 'office' && select('responsible_unit_id', 'Office', 'All authorized offices', (meta.filters?.offices || [])
+                    .filter(o => o.responsible_unit_id != null)
+                    .map(o => [o.responsible_unit_id, o.responsible_office_agency])),
+                select('feedback_category', 'Category', 'All categories', Object.entries(categories)),
+                select('status', 'Status', 'All statuses', Object.keys(statuses).map(s => [s, statusLabel(s)])),
+                h(FilterDate, { id: 'inputs-submitted-from', label: 'Submitted from', value: filters.submitted_from, disabled: loading, onChange: value => changeFilter('submitted_from', value) }),
+                h(FilterDate, { id: 'inputs-submitted-to', label: 'Submitted to', value: filters.submitted_to, disabled: loading, onChange: value => changeFilter('submitted_to', value) })),
             h('div', { className: 'consolidate-layout' },
                 h('section', { className: 'office-panel consolidate-register', 'aria-busy': loading },
                     h('div', { className: 'consolidate-toolbar' }, h('h2', null,
     activeTab === 'management'
         ? 'Management Objective Suggestions'
         : 'Office Suggestions & Feedback'
-),
-                        h('div', { className: 'consolidate-filters' },
-                            select('plan_id', 'All authorized plans', (meta.filters?.plans || []).map(p => [p.record_id, p.title])),
-                            activeTab === 'office' && select(
-    'responsible_unit_id',
-    'All authorized offices',
-    (meta.filters?.offices || [])
-        .filter(o => o.responsible_unit_id != null)
-        .map(o => [o.responsible_unit_id, o.responsible_office_agency])
-),
-                            select('feedback_category', 'All categories', Object.entries(categories)),
-                            select('status', 'All statuses', Object.keys(statuses).map(s => [s, statusLabel(s)])),
-                            h('details', null,
-    h('summary', null, 'More filters'),
-    ['submitted_from', 'submitted_to'].map(key =>
-        h('label', { key },
-            key === 'submitted_from' ? 'From ' : 'To ',
-            h('input', {
-                type: 'date',
-                value: filters[key],
-                onChange: e => changeFilter(key, e.target.value),
-            })
-        )
-    )
-),
-                            h('button', { onClick: () => setFilters(emptyFilters) }, 'Clear filters'))),
+)),
                     error && h('p', { role: 'alert' }, error, ' ', h('button', { onClick: () => setRefresh(refresh + 1) }, 'Retry')),
                     h('div', { className: 'office-table-scroll' }, h('table', null,
                         h('thead', null, h('tr', null, ['Submitted by', 'Strategic plan', 'Input type', 'Input', 'Status', 'Submitted at', 'Actions'].map(label => h('th', { scope: 'col', key: label }, label)))),

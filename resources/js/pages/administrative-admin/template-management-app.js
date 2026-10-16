@@ -1,6 +1,7 @@
 import { AdministrativeAdminSidebar } from '../../components/AdministrativeAdminSidebar.js';
 import { AdministrativeActionMenu } from '../../components/AdministrativeActionMenu.js';
 import { PageHeader } from '../../components/PageHeader.js';
+import { FilterBar, FilterSearch, FilterSelect } from '../../components/FilterBar.js';
 
 const { useMemo, useState } = React;
 
@@ -69,6 +70,11 @@ export function TemplateManagementApp() {
                     subtitle: 'Control reusable planning templates used across the system for consistent reporting, progress updates, and approvals.',
                 }),
                 notice.message ? React.createElement('div', { className: `ui-status ui-status--${notice.type} reference-notice`, role: 'status' }, notice.message) : null,
+                React.createElement(FilterBar, { label: 'Filter templates', onClear: resetFilters },
+                    React.createElement(FilterSearch, { id: 'template-search', label: 'Search', value: filters.search, placeholder: 'Search templates…', onChange: (search) => setFilters((current) => ({ ...current, search })) }),
+                    React.createElement(FilterSelect, { id: 'template-status', label: 'Status', value: filters.status, allLabel: 'All statuses', options: [['active', 'Active'], ['inactive', 'Inactive']], onChange: (status) => setFilters((current) => ({ ...current, status })) }),
+                    React.createElement(FilterSelect, { id: 'template-year', label: 'Year', value: filters.time, allLabel: 'All years', options: [['2026', '2026']], onChange: (time) => setFilters((current) => ({ ...current, time })) })
+                ),
                 React.createElement('section', { className: 'ui-card reference-workspace', 'aria-label': 'Template management workspace' },
                     React.createElement('div', { className: 'reference-tabs', role: 'tablist', 'aria-label': 'Template categories' },
                         templateTabs.map((tab) => React.createElement('button', {
@@ -79,22 +85,6 @@ export function TemplateManagementApp() {
                             'aria-selected': activeTab === tab.id,
                             onClick: () => { setActiveTab(tab.id); setNotice({ type: '', message: '' }); },
                         }, React.createElement('i', { className: `bi ${tab.icon}`, 'aria-hidden': 'true' }), tab.label))
-                    ),
-                    React.createElement('div', { className: 'reference-filter-row' },
-                        React.createElement('select', { className: 'ui-select', 'aria-label': 'Filter templates by status', value: filters.status, onChange: (event) => setFilters((current) => ({ ...current, status: event.target.value })) },
-                            React.createElement('option', { value: '' }, 'All Status'),
-                            React.createElement('option', { value: 'active' }, 'Active'),
-                            React.createElement('option', { value: 'inactive' }, 'Inactive')
-                        ),
-                        React.createElement('select', { className: 'ui-select', 'aria-label': 'Filter templates by time', value: filters.time, onChange: (event) => setFilters((current) => ({ ...current, time: event.target.value })) },
-                            React.createElement('option', { value: '' }, 'Time'),
-                            React.createElement('option', { value: '2026' }, '2026')
-                        ),
-                        React.createElement('div', { className: 'reference-search' },
-                            React.createElement('i', { className: 'bi bi-search', 'aria-hidden': 'true' }),
-                            React.createElement('input', { className: 'ui-input', value: filters.search, placeholder: 'Search templates…', 'aria-label': 'Search templates', onChange: (event) => setFilters((current) => ({ ...current, search: event.target.value })) })
-                        ),
-                        React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm reference-filter-button', type: 'button', onClick: () => setNotice({ type: 'success', message: 'Template filters applied.' }) }, React.createElement('i', { className: 'bi bi-funnel' }), 'Filter')
                     ),
                     React.createElement('div', { className: 'reference-add-row' },
                     React.createElement('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', disabled: true, title: 'No template table or API exists in the current backend.' }, React.createElement('i', { className: 'bi bi-plus-lg' }), 'Add Template')
@@ -114,7 +104,6 @@ export function TemplateManagementApp() {
                     )
                 ),
                 React.createElement('div', { className: 'reference-page-actions' },
-                    React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', onClick: resetFilters }, 'Cancel'),
                     React.createElement('button', { className: 'ui-button ui-button--danger', type: 'button', disabled: true, title: 'Select templates before deleting' }, 'Delete')
                 )
             )

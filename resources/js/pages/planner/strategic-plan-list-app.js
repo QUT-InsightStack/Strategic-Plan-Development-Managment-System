@@ -2,6 +2,7 @@ import { copyStrategicPlan, deleteStrategicPlan, listStrategicPlans, updateStrat
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { AppDialog } from '../../components/AppDialog.js';
 import { PageHeader } from '../../components/PageHeader.js';
+import { FilterBar, FilterSearch, FilterSelect } from '../../components/FilterBar.js';
 import { mountProtectedPage } from '../../access/mount-protected-page.js';
 import { PERMISSIONS } from '../../access/access-policy.js';
 import { can } from '../../access/access-session.js';
@@ -184,24 +185,12 @@ function approvalStatusClass(status) {
                 actions: canCreatePlans ? React.createElement('a', { className: 'ui-button ui-button--primary manage-plans-create', href: '/strategic-plans/create' }, React.createElement('i', { className: 'bi bi-plus-lg' }), 'Create Strategic Plan') : null,
             }),
             status.message ? React.createElement('div', { className: `ui-status ui-status--${status.type} plans-feedback`, role: 'status' }, status.message) : null,
-            React.createElement('section', { className: 'ui-card plans-filter-card', 'aria-labelledby': 'filter-title' },
-                React.createElement('div', { className: 'plans-section-header' },
-                    React.createElement('div', null,
-                        React.createElement('h2', { className: 'plans-filter-title', id: 'filter-title' }, 'Find strategic plans'),
-                        React.createElement('p', null, 'Search the plan register or narrow the results using the available filters.')
-                    ),
-                    React.createElement('i', { className: 'bi bi-funnel', 'aria-hidden': 'true' })
-                ),
-                React.createElement('div', { className: 'ui-card__body' },
-                    React.createElement('form', { className: 'plans-toolbar', onSubmit: (event) => { event.preventDefault(); load(1); } },
-                        React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'search' }, 'Plan title'), React.createElement('div', { className: 'plans-search' }, React.createElement('input', { className: 'ui-input', id: 'search', value: filters.search, placeholder: 'Search by plan title', onChange: (event) => setFilters((current) => ({ ...current, search: event.target.value })) }), React.createElement('i', { className: 'bi bi-search', 'aria-hidden': 'true' }))),
-                        React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'office' }, 'Office'), React.createElement('select', { className: 'ui-select', id: 'office', value: filters.office, onChange: (event) => { setFilters((current) => ({ ...current, office: event.target.value })); setStatus({ type: 'info', message: 'Office filtering will be enabled when the plan department field is added to the database.' }); } }, React.createElement('option', { value: '' }, 'All offices'))),
-                        React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'level' }, 'Type'), React.createElement('select', { className: 'ui-select', id: 'level', value: filters.level, onChange: (event) => setFilters((current) => ({ ...current, level: event.target.value })) }, React.createElement('option', { value: '' }, 'All types'), React.createElement('option', { value: 'strategic_plan' }, 'Strategic Plan'), React.createElement('option', { value: 'goal' }, 'Goal'))),
-                        React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'status' }, 'Status'), React.createElement('select', { className: 'ui-select', id: 'status', value: filters.status, onChange: (event) => setFilters((current) => ({ ...current, status: event.target.value })) }, React.createElement('option', { value: '' }, 'All statuses'), React.createElement('option', { value: 'draft' }, 'Draft'), React.createElement('option', { value: 'finished' }, 'Finished'), React.createElement('option', { value: 'archived' }, 'Archived'))),
-                        React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'year' }, 'Year'), React.createElement('select', { className: 'ui-select', id: 'year', value: filters.year, onChange: (event) => setFilters((current) => ({ ...current, year: event.target.value })) }, React.createElement('option', { value: '' }, 'All years'), [0,1,2,3,4].map((offset) => React.createElement('option', { value: currentYear - offset, key: currentYear - offset }, currentYear - offset)))),
-                        React.createElement('div', { className: 'plans-filter-actions' }, React.createElement('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'submit', disabled: loading }, React.createElement('i', { className: 'bi bi-funnel-fill' }), 'Filter'), React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: clearFilters, disabled: loading }, 'Clear'))
-                    )
-                )
+            React.createElement(FilterBar, { label: 'Filter strategic plans', busy: loading, onSubmit: () => load(1), onClear: clearFilters },
+                React.createElement(FilterSearch, { id: 'search', label: 'Plan title', value: filters.search, placeholder: 'Search by plan title', onChange: (search) => setFilters((current) => ({ ...current, search })) }),
+                React.createElement(FilterSelect, { id: 'office', label: 'Office', value: filters.office, allLabel: 'All offices', options: [], onChange: (office) => { setFilters((current) => ({ ...current, office })); setStatus({ type: 'info', message: 'Office filtering will be enabled when the plan department field is added to the database.' }); } }),
+                React.createElement(FilterSelect, { id: 'level', label: 'Type', value: filters.level, allLabel: 'All types', options: [['strategic_plan', 'Strategic Plan'], ['goal', 'Goal']], onChange: (level) => setFilters((current) => ({ ...current, level })) }),
+                React.createElement(FilterSelect, { id: 'status', label: 'Status', value: filters.status, allLabel: 'All statuses', options: [['draft', 'Draft'], ['finished', 'Finished'], ['archived', 'Archived']], onChange: (status) => setFilters((current) => ({ ...current, status })) }),
+                React.createElement(FilterSelect, { id: 'year', label: 'Year', value: filters.year, allLabel: 'All years', options: [0, 1, 2, 3, 4].map((offset) => [String(currentYear - offset), currentYear - offset]), onChange: (year) => setFilters((current) => ({ ...current, year })) })
             ),
             React.createElement('section', { className: 'ui-card plans-card', 'aria-labelledby': 'plans-table-title' },
                 React.createElement('div', { className: 'plans-table-heading' }, React.createElement('div', null,

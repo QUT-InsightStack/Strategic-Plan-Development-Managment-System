@@ -1,6 +1,7 @@
 @import './base.css';
 @import './components/buttons.css';
 @import './components/forms.css';
+@import './components/filter-bar.css';
 @import './components/cards.css';
 @import './components/feedback.css';
 @import './layouts/app-shell.css';
@@ -9,9 +10,6 @@
 .pdp-page { min-height: 100vh; background: var(--color-background); }
 .pdp-container { max-width: none; }
 .pdp-header { display: flex; max-width: none; align-items: center; justify-content: space-between; gap: var(--space-4); }
-.pdp-filter-card { margin-bottom: var(--space-4); overflow: hidden; }
-.pdp-toolbar { display: grid; grid-template-columns: minmax(280px, 560px) auto; align-items: end; justify-content: start; gap: var(--space-3); padding: var(--space-4); }
-.pdp-toolbar .ui-input, .pdp-toolbar .ui-button { min-height: 40px; }
 .pdp-summary { margin: 0 0 var(--space-3); color: var(--color-text-secondary); font-size: var(--font-size-xs); }
 .pdp-status { margin-bottom: var(--space-4); }
 .pdp-table-card { padding: 0; overflow: hidden; }
@@ -54,6 +52,5 @@
 
 @media (max-width: 760px) {
     .pdp-header { align-items: flex-start; flex-direction: column; }
-    .pdp-toolbar { grid-template-columns: 1fr; }
     .pdp-details__dates { grid-template-columns: 1fr; }
 }

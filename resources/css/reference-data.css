@@ -1,6 +1,7 @@
 @import './base.css';
 @import './components/buttons.css';
 @import './components/forms.css';
+@import './components/filter-bar.css';
 @import './components/cards.css';
 @import './components/tables.css';
 @import './components/badges.css';
@@ -18,11 +19,6 @@
 .reference-tab i { color: var(--color-primary); }
 .reference-tab:hover, .reference-tab:focus-visible { color: var(--color-primary); background: var(--color-primary-soft); outline: none; }
 .reference-tab.active { border-bottom-color: var(--color-brand-cyan); color: var(--color-primary); background: #f7fbfe; }
-.reference-filter-row { display: grid; grid-template-columns: 150px 120px minmax(260px, 440px) auto; align-items: center; justify-content: start; gap: var(--space-3); padding: var(--space-5); border-bottom: 1px solid var(--color-border-subtle); }
-.reference-filter-row .ui-input, .reference-filter-row .ui-select, .reference-filter-row .ui-button { min-height: 40px; }
-.reference-search { position: relative; }
-.reference-search i { position: absolute; top: 50%; left: 13px; z-index: 1; color: var(--color-gray-500); transform: translateY(-50%); }
-.reference-search .ui-input { padding-left: 38px; }
 .reference-add-row { display: flex; justify-content: flex-end; padding: var(--space-4) var(--space-5) var(--space-3); }
 .reference-table-wrap { padding: 0 var(--space-5); }
 .reference-table { min-width: 900px; table-layout: fixed; border: 1px solid var(--color-border-subtle); }
@@ -88,17 +84,13 @@
 
 @media (max-width: 980px) {
     .reference-tabs { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
-    .reference-filter-row { grid-template-columns: 1fr 1fr; }
-    .reference-search { grid-column: 1 / -1; }
     .admin-item-form { grid-template-columns: 1fr; }
     .admin-guidelines { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .admin-guidelines h2 { grid-column: 1 / -1; }
 }
 
 @media (max-width: 620px) {
-    .reference-tabs, .reference-filter-row { grid-template-columns: 1fr; }
-    .reference-search { grid-column: auto; }
-    .reference-filter-button { width: 100%; }
+    .reference-tabs { grid-template-columns: 1fr; }
     .reference-table-footer { align-items: flex-start; flex-direction: column; }
     .reference-page-actions { flex-direction: column; }
     .reference-page-actions .ui-button { width: 100%; }

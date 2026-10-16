@@ -1,6 +1,7 @@
 @import './base.css';
 @import './components/buttons.css';
 @import './components/forms.css';
+@import './components/filter-bar.css';
 @import './components/cards.css';
 @import './components/tables.css';
 @import './components/badges.css';
@@ -14,13 +15,6 @@
 .manage-plans-header { width: 100%; max-width: none; }
 .manage-plans-header > div { min-width: 0; max-width: 780px; }
 .manage-plans-create { flex: 0 0 auto; white-space: nowrap; }
-.plans-filter-card { margin-bottom: var(--space-4); }
-.plans-filter-title { margin: 0 0 var(--space-3); color: var(--color-primary); font-size: var(--font-size-xs); font-style: italic; font-weight: var(--font-weight-semibold); }
-.plans-toolbar { display: grid; grid-template-columns: minmax(190px, 1.3fr) repeat(var(--plans-filter-columns, 4), minmax(120px, .65fr)) auto; gap: var(--space-4); align-items: end; }
-.plans-search { position: relative; }
-.plans-search .ui-input { padding-right: 34px; }
-.plans-search i { position: absolute; top: 50%; right: 11px; color: var(--color-text-secondary); transform: translateY(-50%); }
-.plans-filter-actions { display: flex; gap: var(--space-2); }
 .plans-card { position: relative; overflow: visible; }
 .plans-card .ui-card__body { padding: 0; }
 .plans-feedback { margin-bottom: var(--space-4); }
@@ -53,14 +47,6 @@
 .manage-plans-page .manage-plans-breadcrumb a:hover { text-decoration: underline; }
 .manage-plans-page .manage-plans-breadcrumb i { color: var(--color-gray-400); font-size: 9px; }
 .manage-plans-page .manage-plans-create { min-width: 188px; }
-.manage-plans-page .plans-filter-card { margin-bottom: var(--space-5); overflow: hidden; }
-.manage-plans-page .plans-section-header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--color-border-subtle); background: var(--color-section-header-background); }
-.manage-plans-page .plans-section-header > i { color: var(--color-brand-cyan); font-size: var(--font-size-xl); }
-.manage-plans-page .plans-filter-title { margin: 0; font-size: var(--font-size-sm); font-style: normal; font-weight: var(--font-weight-bold); }
-.manage-plans-page .plans-section-header p { margin: 3px 0 0; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
-.manage-plans-page .plans-toolbar { grid-template-columns: minmax(230px, 1.35fr) repeat(var(--plans-filter-columns, 4), minmax(120px, .65fr)) auto; }
-.manage-plans-page .plans-filter-actions { padding-left: var(--space-2); }
-.manage-plans-page .plans-filter-actions .ui-button { min-width: 72px; }
 .manage-plans-page .plans-table-heading { min-height: 76px; padding: var(--space-4) var(--space-5); }
 .manage-plans-page .plans-table-heading h2 { color: var(--color-primary); font-size: var(--font-size-lg); }
 .manage-plans-page .plans-table-heading p { margin: 3px 0 0; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
@@ -134,6 +120,6 @@ a.plan-approval-badge:hover { text-decoration: underline; }
 
 
 
-@media (max-width: 1100px) { .plans-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); } .plans-filter-actions { align-self: end; } .manage-plans-page .plans-filter-actions { padding-left: 0; } }
+
 @media (max-width: 720px) { .manage-plans-create { align-self: flex-end; } .manage-plans-page .manage-plans-header { align-items: stretch; padding: 0; } .manage-plans-page .plans-table-heading { align-items: flex-start; flex-direction: column; } }
-@media (max-width: 600px) { .plans-toolbar { grid-template-columns: 1fr; } .plans-filter-actions, .manage-plans-footer { flex-direction: column; } .manage-plans-footer .ui-button { width: 100%; } .manage-plans-page .plans-heading-actions, .manage-plans-page .plans-pagination { width: 100%; flex-direction: column; align-items: stretch; } .manage-plans-page .manage-plans-create, .manage-plans-page .plans-filter-actions .ui-button, .manage-plans-page .plans-heading-actions .ui-button { width: 100%; } .manage-plans-page .plans-table-footer { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 600px) { .manage-plans-footer { flex-direction: column; } .manage-plans-footer .ui-button { width: 100%; } .manage-plans-page .plans-heading-actions, .manage-plans-page .plans-pagination { width: 100%; flex-direction: column; align-items: stretch; } .manage-plans-page .manage-plans-create, .manage-plans-page .plans-heading-actions .ui-button { width: 100%; } .manage-plans-page .plans-table-footer { align-items: flex-start; flex-direction: column; } }

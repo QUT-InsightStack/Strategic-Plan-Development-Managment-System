@@ -2,6 +2,7 @@ import { mountProtectedPage } from '../../access/mount-protected-page.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { AdministrativeAdminSidebar } from '../../components/AdministrativeAdminSidebar.js';
 import { PageHeader } from '../../components/PageHeader.js';
+import { FilterBar, FilterSearch, FilterSelect } from '../../components/FilterBar.js';
 import { AppDialog } from '../../components/AppDialog.js';
 import { can, getAccessSession } from '../../access/access-session.js';
 import { PERMISSIONS } from '../../access/access-policy.js';
@@ -254,11 +255,9 @@ function PdpChaptersApp() {
                 actions: isManageMode && canManagePdp ? React.createElement('button', { className: 'ui-button ui-button--primary', type: 'button', onClick: () => setDialog({ mode: 'create', chapter: null }) }, React.createElement('i', { className: 'bi bi-plus-lg' }), ' Create New Chapter') : null,
             }),
             status.message ? React.createElement('div', { className: `ui-status ui-status--${status.type} pdp-status` }, status.message) : null,
-            React.createElement('section', { className: 'ui-card pdp-filter-card', 'aria-label': 'Search PDP Chapters' },
-                React.createElement('div', { className: 'pdp-toolbar' },
-                    React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'pdp-search' }, 'Search PDP Chapters'), React.createElement('input', { id: 'pdp-search', className: 'ui-input', value: search, placeholder: 'Search title or description', onChange: (event) => setSearch(event.target.value) })),
-                    isManageMode ? React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'pdp-status' }, 'Status'), React.createElement('select', { id: 'pdp-status', className: 'ui-select', value: statusFilter, onChange: (event) => setStatusFilter(event.target.value) }, React.createElement('option', { value: 'active' }, 'Active'), React.createElement('option', { value: 'archived' }, 'Archived'), React.createElement('option', { value: 'all' }, 'All records'))) : null,
-                    React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: () => { setSearch(''); setStatusFilter('active'); } }, 'Clear'))
+            React.createElement(FilterBar, { label: 'Filter PDP Chapters', onClear: () => { setSearch(''); setStatusFilter('active'); } },
+                React.createElement(FilterSearch, { id: 'pdp-search', label: 'Search', value: search, placeholder: 'Search title or description', onChange: setSearch }),
+                isManageMode ? React.createElement(FilterSelect, { id: 'pdp-status', label: 'Status', value: statusFilter, options: [['active', 'Active'], ['archived', 'Archived'], ['all', 'All records']], onChange: setStatusFilter }) : null
             ),
             React.createElement('p', { className: 'pdp-summary' }, loading ? 'Loading PDP Chapters…' : `${visible.length} chapter(s)${!isManageMode ? ` · ${selectedIds.length} selected` : ''}`),
             React.createElement(ChapterTable, { chapters: visible, loading, selectedIds, onToggle: (id) => setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]), onOpen: (chapter) => setDialog({ mode: isManageMode ? 'edit' : 'view', chapter }), onArchive: requestArchive, onDelete: requestDelete, canManage: isManageMode && canManagePdp, canArchive: isManageMode && canArchivePdp, canDelete: isManageMode && canDeletePdp }),

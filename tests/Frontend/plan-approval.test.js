@@ -27,6 +27,7 @@ function host(path, dependencies, planId = 7) {
         document: { getElementById: () => ({ dataset: { planId } }) },
         mountProtectedPage: (_element, factory) => { root = factory(); },
         enforcePageAccess: () => {}, AppSidebar: 'aside', PageHeader: 'header',
+        FilterBar: 'form', FilterSearch: 'div', FilterSelect: 'div', FilterDate: 'div',
         ...dependencies,
     });
     const source = readFileSync(new URL(`../../resources/js/pages/${path}`, import.meta.url), 'utf8');

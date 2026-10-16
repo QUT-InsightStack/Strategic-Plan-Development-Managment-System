@@ -1,6 +1,7 @@
 import { AdministrativeAdminSidebar } from '../../components/AdministrativeAdminSidebar.js';
 import { AdministrativeActionMenu } from '../../components/AdministrativeActionMenu.js';
 import { PageHeader } from '../../components/PageHeader.js';
+import { FilterBar, FilterSearch, FilterSelect } from '../../components/FilterBar.js';
 import { AppDialog } from '../../components/AppDialog.js';
 import { apiRequest } from '../../api/api-client.js';
 import { can, getAccessSession } from '../../access/access-session.js';
@@ -86,14 +87,14 @@ export function ReferenceDataManagementApp() {
 
     const visibleRows = useMemo(() => rows, [rows]);
 
-    async function loadAgenda(nextPage = page) {
+    async function loadAgenda(nextPage = page, activeFilters = filters) {
         setLoading(true);
         try {
             const query = new URLSearchParams({
                 page: String(nextPage),
                 per_page: '10',
-                status: filters.status || 'all',
-                search: filters.search.trim(),
+                status: activeFilters.status || 'all',
+                search: activeFilters.search.trim(),
             });
             const payload = await apiRequest(`/api/presidential-agenda?${query}`);
             setRows((payload.data || []).map(agendaRow));
@@ -108,6 +109,13 @@ export function ReferenceDataManagementApp() {
     }
 
     useEffect(() => { loadAgenda(1); }, []);
+
+    function clearFilters() {
+        const cleared = { status: '', search: '' };
+        setFilters(cleared);
+        setPage(1);
+        loadAgenda(1, cleared);
+    }
 
     function closeConfirmDialog() {
         setConfirmDialog((current) => ({ ...current, open: false }));
@@ -183,20 +191,11 @@ export function ReferenceDataManagementApp() {
                     subtitle: 'Maintain agenda records used to align strategic objectives. Records and actions are loaded from the system database.',
                 }),
                 notice.message ? React.createElement('div', { className: `ui-status ui-status--${notice.type} reference-notice`, role: 'status' }, notice.message) : null,
+                React.createElement(FilterBar, { label: 'Filter presidential agenda', busy: loading, onSubmit: () => { setPage(1); loadAgenda(1); }, onClear: clearFilters },
+                    React.createElement(FilterSearch, { id: 'agenda-search', label: 'Search', value: filters.search, placeholder: 'Search presidential agenda…', onChange: (search) => setFilters((current) => ({ ...current, search })) }),
+                    React.createElement(FilterSelect, { id: 'agenda-status', label: 'Status', value: filters.status, allLabel: 'All statuses', options: [['active', 'Active'], ['archived', 'Archived'], ['inactive', 'Inactive']], onChange: (status) => setFilters((current) => ({ ...current, status })) })
+                ),
                 React.createElement('section', { className: 'ui-card reference-workspace', 'aria-label': 'Presidential agenda workspace' },
-                    React.createElement('div', { className: 'reference-filter-row' },
-                        React.createElement('select', { className: 'ui-select', 'aria-label': 'Filter by status', value: filters.status, onChange: (event) => setFilters((current) => ({ ...current, status: event.target.value })) },
-                            React.createElement('option', { value: '' }, 'All Status'),
-                            React.createElement('option', { value: 'active' }, 'Active'),
-                            React.createElement('option', { value: 'archived' }, 'Archived'),
-                            React.createElement('option', { value: 'inactive' }, 'Inactive')
-                        ),
-                        React.createElement('div', { className: 'reference-search' },
-                            React.createElement('i', { className: 'bi bi-search', 'aria-hidden': 'true' }),
-                            React.createElement('input', { className: 'ui-input', value: filters.search, placeholder: 'Search presidential agenda…', 'aria-label': 'Search presidential agenda', onChange: (event) => setFilters((current) => ({ ...current, search: event.target.value })) })
-                        ),
-                        React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm reference-filter-button', type: 'button', onClick: () => { setPage(1); loadAgenda(1); } }, React.createElement('i', { className: 'bi bi-funnel' }), 'Filter')
-                    ),
                     React.createElement('div', { className: 'reference-add-row' },
                         canManageAgenda ? React.createElement('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'button', onClick: addItem }, React.createElement('i', { className: 'bi bi-plus-lg' }), 'Add Agenda Item') : null
                     ),
@@ -219,9 +218,6 @@ export function ReferenceDataManagementApp() {
                             React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', disabled: loading || meta.current_page >= meta.last_page, 'aria-label': 'Next page', onClick: () => { const next = meta.current_page + 1; setPage(next); loadAgenda(next); } }, React.createElement('i', { className: 'bi bi-chevron-right' }))
                         )
                     )
-                ),
-                React.createElement('div', { className: 'reference-page-actions' },
-                    React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', onClick: () => { setFilters({ status: '', search: '' }); setPage(1); loadAgenda(1); } }, 'Clear filters')
                 )
             )
         )
