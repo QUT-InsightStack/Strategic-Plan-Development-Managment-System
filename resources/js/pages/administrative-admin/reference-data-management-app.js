@@ -11,11 +11,6 @@ const { useMemo, useState, useEffect } = React;
 const STATUS_LABELS = { active: 'Active', archived: 'Archived', deleted: 'Deleted', inactive: 'Inactive' };
 const STATUS_BADGES = { active: 'success', archived: 'archived', inactive: 'neutral' };
 
-const tabs = [
-    { id: 'agenda', label: 'Presidential Agenda', icon: 'bi-bank2' },
-    { id: 'pdp', label: 'PDP Chapters', icon: 'bi-journal-text' },
-];
-
 function agendaRow(item) {
     return {
         id: item.agenda_id,
@@ -75,55 +70,12 @@ row.status !== 'deleted' &&
     );
 }
 
-function ReferenceCatalogPage() {
-    const liveLists = [
-        { title: 'Presidential Agenda', description: 'Agenda records used to align strategic objectives.', source: 'tblpresidential_agenda_items', href: '/administrative-admin/reference-data?tab=agenda', icon: 'bi-bank2', action: 'Manage Agenda' },
-        { title: 'PDP Chapters', description: 'PDP chapter records used in strategic objective mapping.', source: 'tblpdp_chapters', href: '/pdp-chapters/manage', icon: 'bi-journal-text', action: 'Manage Chapters' },
-    ];
-    const unavailableLists = [
-        { title: 'DOST Priority Areas', description: 'Maintain the priority areas available for strategic planning and alignment.', icon: 'bi-building-fill' },
-        { title: 'Indicator Types', description: 'Maintain the indicator types available when defining objective measures.', icon: 'bi-speedometer2' },
-    ];
-
-    return React.createElement(React.Fragment, null,
-        React.createElement(AdministrativeAdminSidebar, { active: 'Reference Data' }),
-        React.createElement('main', { className: 'app-shell-main reference-data-page' },
-            React.createElement('div', { className: 'app-shell-container' },
-                React.createElement(PageHeader, {
-                    section: 'Administrative Administration',
-                    title: 'Reference Data',
-                    subtitle: 'Open the maintained reference lists used throughout strategic planning.',
-                }),
-                React.createElement('section', { className: 'reference-catalog-grid', 'aria-label': 'Available reference data' },
-                    liveLists.map((card) => React.createElement('article', { className: 'ui-card reference-catalog-card', key: card.title },
-                        React.createElement('i', { className: `bi ${card.icon}`, 'aria-hidden': 'true' }),
-                        React.createElement('h2', null, card.title),
-                        React.createElement('p', null, card.description),
-                        React.createElement('code', null, card.source),
-                        React.createElement('a', { className: 'ui-button ui-button--primary ui-button--sm', href: card.href }, card.action)
-                    )),
-                    unavailableLists.map((list) => React.createElement('article', { className: 'ui-card reference-catalog-card reference-catalog-card--unavailable', key: list.title },
-                        React.createElement('i', { className: `bi ${list.icon}`, 'aria-hidden': 'true' }),
-                        React.createElement('h2', null, list.title),
-                        React.createElement('p', null, list.description),
-                        React.createElement('p', { className: 'reference-catalog-empty' }, 'No records to display.'),
-                        React.createElement('span', { className: 'ui-badge ui-badge--neutral' }, 'Data connection pending')
-                    ))
-                )
-            )
-        )
-    );
-}
-
 export function ReferenceDataManagementApp() {
-    const requestedTab = new URLSearchParams(window.location.search).get('tab');
-    const initialTab = tabs.some((tab) => tab.id === requestedTab) ? requestedTab : 'agenda';
     const sidebarActive = 'Agenda';
     const accessSession = getAccessSession();
     const canManageAgenda = can(PERMISSIONS.PRESIDENTIAL_AGENDA_MANAGE, accessSession);
     const canArchiveAgenda = can(PERMISSIONS.PRESIDENTIAL_AGENDA_ARCHIVE, accessSession);
     const canDeleteAgenda = can(PERMISSIONS.PRESIDENTIAL_AGENDA_DELETE, accessSession);
-    const [activeTab, setActiveTab] = useState(initialTab);
     const [filters, setFilters] = useState({ status: '', search: '' });
     const [notice, setNotice] = useState({ type: '', message: '' });
     const [rows, setRows] = useState([]);
@@ -155,7 +107,7 @@ export function ReferenceDataManagementApp() {
         }
     }
 
-    useEffect(() => { if (requestedTab !== 'reference') loadAgenda(1); }, []);
+    useEffect(() => { loadAgenda(1); }, []);
 
     function closeConfirmDialog() {
         setConfirmDialog((current) => ({ ...current, open: false }));
@@ -208,23 +160,9 @@ export function ReferenceDataManagementApp() {
         } catch (error) { setNotice({ type: 'error', message: error.message }); }
     }
 
-    function chooseTab(tab) {
-        setActiveTab(tab.id);
-        setFilters({ status: '', search: '' });
-        setNotice({ type: '', message: '' });
-        if (tab.id === 'pdp') window.location.href = '/pdp-chapters/manage';
-    }
-
     function addItem() {
-        if (activeTab === 'agenda') {
-            window.location.href = '/administrative-admin/reference-data/agenda/create';
-            return;
-        }
-
-        setNotice({ type: 'info', message: `${tabs.find((tab) => tab.id === activeTab)?.label} is managed in its own module.` });
+        window.location.href = '/administrative-admin/reference-data/agenda/create';
     }
-
-    if (requestedTab === 'reference') return React.createElement(ReferenceCatalogPage);
 
     return React.createElement(React.Fragment, null,
         React.createElement(AdministrativeAdminSidebar, { active: sidebarActive, onNotice: (message) => setNotice({ type: 'info', message }) }),
@@ -245,17 +183,7 @@ export function ReferenceDataManagementApp() {
                     subtitle: 'Maintain agenda records used to align strategic objectives. Records and actions are loaded from the system database.',
                 }),
                 notice.message ? React.createElement('div', { className: `ui-status ui-status--${notice.type} reference-notice`, role: 'status' }, notice.message) : null,
-                React.createElement('section', { className: 'ui-card reference-workspace', 'aria-label': 'Reference data workspace' },
-                    React.createElement('div', { className: 'reference-tabs', role: 'tablist', 'aria-label': 'Reference data categories' },
-                        tabs.map((tab) => React.createElement('button', {
-                            key: tab.id,
-                            className: `reference-tab${activeTab === tab.id ? ' active' : ''}`,
-                            type: 'button',
-                            role: 'tab',
-                            'aria-selected': activeTab === tab.id,
-                            onClick: () => chooseTab(tab),
-                        }, React.createElement('i', { className: `bi ${tab.icon}`, 'aria-hidden': 'true' }), tab.label))
-                    ),
+                React.createElement('section', { className: 'ui-card reference-workspace', 'aria-label': 'Presidential agenda workspace' },
                     React.createElement('div', { className: 'reference-filter-row' },
                         React.createElement('select', { className: 'ui-select', 'aria-label': 'Filter by status', value: filters.status, onChange: (event) => setFilters((current) => ({ ...current, status: event.target.value })) },
                             React.createElement('option', { value: '' }, 'All Status'),
@@ -265,7 +193,7 @@ export function ReferenceDataManagementApp() {
                         ),
                         React.createElement('div', { className: 'reference-search' },
                             React.createElement('i', { className: 'bi bi-search', 'aria-hidden': 'true' }),
-                            React.createElement('input', { className: 'ui-input', value: filters.search, placeholder: `Search ${tabs.find((tab) => tab.id === activeTab)?.label.toLowerCase()}…`, 'aria-label': 'Search reference data', onChange: (event) => setFilters((current) => ({ ...current, search: event.target.value })) })
+                            React.createElement('input', { className: 'ui-input', value: filters.search, placeholder: 'Search presidential agenda…', 'aria-label': 'Search presidential agenda', onChange: (event) => setFilters((current) => ({ ...current, search: event.target.value })) })
                         ),
                         React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm reference-filter-button', type: 'button', onClick: () => { setPage(1); loadAgenda(1); } }, React.createElement('i', { className: 'bi bi-funnel' }), 'Filter')
                     ),

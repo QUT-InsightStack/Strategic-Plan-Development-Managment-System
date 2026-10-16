@@ -78,6 +78,9 @@
     background: var(--color-primary-soft);
     white-space: nowrap;
 }
+a.plan-approval-badge { text-decoration: none; }
+a.plan-approval-badge:hover { text-decoration: underline; }
+.plan-archived-tag { margin-left: var(--space-2); }
 .plan-approval-badge.is-approved {
     border-color: #86c99b;
     color: var(--color-success);

@@ -9,11 +9,14 @@ use App\Http\Requests\UpdatePlanRequest;
 use App\Http\Requests\UpdatePlanStatusRequest;
 use App\Models\Strategic;
 use App\Services\PlanCreationService;
+use App\Services\PlanReadinessService;
 use App\Services\StrategicPlanAuthorizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PlanCreationController extends Controller
 {
@@ -28,7 +31,10 @@ class PlanCreationController extends Controller
         $user = Auth::guard('api')->user();
         $this->authorizationService->ensureCanCreatePlan($user);
         $data = $request->validated();
-        $plan = $this->planCreationService->create($data, $user);
+        $plan = $this->saveAsFinishedOnlyWhenReady(
+            ($data['status'] ?? 'draft') === 'finished',
+            fn () => $this->planCreationService->create($data, $user)
+        );
 
         return response()->json([
             'success' => true,
@@ -96,7 +102,11 @@ $authorizedPlanIds = $this->authorizationService->authorizedPlanIdsForListing(
         abort_if(! $plan, 404, 'Strategic plan not found.');
         $this->authorizationService->ensureCanUpdatePlan($plan, $user);
 
-        $updated = $this->planCreationService->update($plan, $request->validated(), $user);
+        $data = $request->validated();
+        $updated = $this->saveAsFinishedOnlyWhenReady(
+            $plan->status === 'draft' && ($data['status'] ?? $plan->status) === 'finished',
+            fn () => $this->planCreationService->update($plan, $data, $user)
+        );
 
         return response()->json([
             'success' => true,
@@ -154,5 +164,27 @@ $authorizedPlanIds = $this->authorizationService->authorizedPlanIdsForListing(
                 : 'Strategic plan restored successfully.',
             'data' => $updated,
         ]);
+    }
+
+    /**
+     * A plan may only become Finished when every preparation field is complete,
+     * matching the Finalize Plan check. Incomplete saves are rolled back.
+     */
+    private function saveAsFinishedOnlyWhenReady(bool $becomingFinished, callable $save): Strategic
+    {
+        if (! $becomingFinished) {
+            return $save();
+        }
+
+        return DB::transaction(function () use ($save) {
+            $plan = $save();
+            $errors = app(PlanReadinessService::class)->errors(Strategic::findOrFail($plan->record_id));
+
+            if ($errors) {
+                throw ValidationException::withMessages($errors);
+            }
+
+            return $plan;
+        });
     }
 }

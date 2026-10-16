@@ -11,7 +11,7 @@ const entry = (role, id) => flattenNavigation(navigationFor(role)).find(item => 
 test('Administrative Admin menu is short, without a separate Reports link', () => {
     assert.deepEqual(menu('Administrative Admin'), [
         'Dashboard',
-        'Reference Data: Presidential Agenda, PDP Chapters, Reference Data, Templates',
+        'Reference Data: Presidential Agenda, PDP Chapters, Templates',
         'Planning: Plan List, Create Plan, Objectives, Inputs, Finalize & Submit',
         'Alignment: Strategic Mapping, Alignment View',
         'Monitoring: Objective Progress, System Logs',

@@ -11,15 +11,6 @@
 @import './layouts/sidebar.css';
 
 .reference-data-page { background: var(--color-background); }
-.reference-catalog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-5); }
-.reference-catalog-card { display: grid; align-content: start; justify-items: start; gap: var(--space-3); min-height: 210px; padding: var(--space-5); }
-.reference-catalog-card > i { color: var(--color-primary); font-size: 28px; }
-.reference-catalog-card h2, .reference-catalog-card p { margin: 0; }
-.reference-catalog-card h2 { color: var(--color-primary); font-size: var(--font-size-lg); }
-.reference-catalog-card code { color: var(--color-text-secondary); }
-.reference-catalog-empty { width: 100%; margin-top: auto !important; border: 1px dashed var(--color-border); border-radius: var(--radius-md); padding: var(--space-3); color: var(--color-text-secondary); text-align: center; }
-.reference-catalog-card .ui-button { align-self: end; margin-top: auto; }
-.reference-catalog-card--unavailable { border-style: dashed; }
 .reference-notice { margin-bottom: var(--space-4); }
 .reference-workspace { overflow: hidden; }
 .reference-tabs { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); min-height: 48px; border-bottom: 1px solid var(--color-border-subtle); background: var(--color-surface); }
