@@ -15,7 +15,7 @@ class ExampleTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk()
-            ->assertSee('Strategic Planning Management System')
+            ->assertSee('Strategic Plan Development Management System')
             ->assertSee(route('login'), false);
     }
 }

@@ -2,6 +2,8 @@ import { AppSidebar } from '../../components/AppSidebar.js';
 import { PageHeader } from '../../components/PageHeader.js';
 import { AppDialog } from '../../components/AppDialog.js';
 import { mountProtectedPage } from '../../access/mount-protected-page.js';
+import { can, getAccessSession } from '../../access/access-session.js';
+import { isManagementSession } from '../../access/management-access.js';
 import { listStrategicPlans } from '../../api/strategic-plans-api.js';
 import { apiRequest } from '../../api/api-client.js';
 import { listPlanAlignments, addAlignments, archiveAlignment, restoreAlignment, deleteAlignment, updateAlignmentReference } from '../../api/strategic-alignments-api.js';
@@ -280,9 +282,13 @@ export function MappingApp() {
         h('section', { className: 'ui-card mapping-context' }, h('label', { className: 'ui-field' }, h('span', { className: 'ui-label' }, 'Strategic Plan'), h('select', { className: 'ui-select', value: planId, disabled: busy, onChange: event => { setPlanId(event.target.value); setSelected({ agenda: '', pdp: '', objectives: [] }); setNotice(''); setError(''); setEditingKey(''); setAction(null); setPage(1); } },
             h('option', { value: '', disabled: true }, 'Select a strategic plan'),
             plans.map(plan => h('option', { key: plan.record_id, value: plan.record_id }, plan.title))))),
-        !readOnly && planId && data && !loading && h('div', { className: 'mapping-navigation-actions' },
+        // Objectives and Plan Overview are planning-editor steps; Management (which may only delete
+        // mappings) reviews the plan in Plan Review instead.
+        !readOnly && planId && data && !loading && (can('strategic_records.update') ? h('div', { className: 'mapping-navigation-actions' },
             h('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: `/strategic-plans/${planId}/objectives`, onClick: event => { if (busy) event.preventDefault(); }, 'aria-disabled': busy }, 'Back to Objectives'),
-            h('a', { className: 'ui-button ui-button--primary ui-button--sm', href: `/strategic-plans/${planId}/overview`, onClick: event => { if (busy) event.preventDefault(); }, 'aria-disabled': busy }, 'Review Plan')),
+            h('a', { className: 'ui-button ui-button--primary ui-button--sm', href: `/strategic-plans/${planId}/overview`, onClick: event => { if (busy) event.preventDefault(); }, 'aria-disabled': busy }, 'Review Plan'))
+            : isManagementSession(getAccessSession()) ? h('div', { className: 'mapping-navigation-actions' },
+                h('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: `/management-plan-review?plan=${planId}` }, 'Open in Plan Review')) : null),
         notice && h('p', { className: 'ui-status ui-status--success', role: 'status' }, notice),
         error && h('p', { className: 'ui-status ui-status--error', role: 'alert' }, error),
         loading ? h('section', { className: 'ui-card ui-empty', role: 'status' }, 'Loading alignments…') : !planId ? h('section', { className: 'ui-card ui-empty mapping-empty' }, h('i', { className: 'bi bi-diagram-3', 'aria-hidden': true }), h('p', null, 'No plans are available in your scope.'), h('small', null, readOnly ? 'Plans you are authorised to view will appear here.' : 'Create a strategic plan and its objectives first, then map them here.')) : h(React.Fragment, null,

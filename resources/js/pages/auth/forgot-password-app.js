@@ -22,13 +22,13 @@ function Brand() {
         {
             className: 'brand',
             href: loginUrl,
-            'aria-label': 'Strategic Planning Management System home',
+            'aria-label': 'Strategic Plan Development Management System home',
         },
         React.createElement(BrandLogo),
         React.createElement(
             'span',
             { className: 'brand-name' },
-            'Strategic Planning Management System'
+            'Strategic Plan Development Management System'
         )
     );
 }
@@ -300,7 +300,7 @@ function Footer({ onMessage }) {
             'span',
             null,
             String.fromCharCode(169),
-            ' 2026 Strategic Planning Management System'
+            ' 2026 Strategic Plan Development Management System'
         ),
 
         React.createElement(

@@ -109,7 +109,7 @@ export function ManagementReport({ filters, refresh, canExport, filtered, onClea
         h('div', { className: 'management-report__print-footer', 'aria-hidden': true }, `Generated ${generatedText} by ${report.meta.generated_by} · ${report.meta.scope}`),
         h('article', { className: 'management-card management-report__cover', 'aria-labelledby': 'report-cover-title' },
             h('div', { className: 'management-report__band', 'aria-hidden': true }),
-            h('p', { className: 'management-report__eyebrow' }, report.meta.role || 'Strategic Planning Management System'),
+            h('p', { className: 'management-report__eyebrow' }, report.meta.role || 'Strategic Plan Development Management System'),
             h('h2', { id: 'report-cover-title' }, report.meta.title),
             h('p', { className: 'management-report__period' }, report.meta.planning_period),
             h('dl', null, cover.fields.filter(field => !(field.label === 'Sections omitted' && report.omitted_sections.length)).map(field => h(React.Fragment, { key: field.label }, h('dt', null, field.label), h('dd', null, field.value)))),

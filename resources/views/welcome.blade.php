@@ -5,16 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>Log In | Strategic Planning Management System</title>
+    <title>Log In | Strategic Plan Development Management System</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
     <div class="login-shell" data-login-page>
         <header class="app-header" aria-label="Application header">
-            <a class="brand" href="/" aria-label="Strategic Planning Management System home">
+            <a class="brand" href="/" aria-label="Strategic Plan Development Management System home">
                 <x-brand-logo class="brand-logo" />
-                <span class="brand-name">Strategic Planning Management System</span>
+                <span class="brand-name">Strategic Plan Development Management System</span>
             </a>
 
             <nav class="top-nav" aria-label="Primary navigation">
@@ -33,7 +33,7 @@
                         <path d="M45 36a12 12 0 1 0 0 24 12 12 0 0 0 0-24Zm6.8 9.9-7.5 8.2a2 2 0 0 1-2.9.1l-4.1-4.1 2.8-2.8 2.6 2.6 6.1-6.7 3 2.7Z"/>
                     </svg>
                 </div>
-                <h1 id="access-title">Access the Strategic Planning Management System</h1>
+                <h1 id="access-title">Access the Strategic Plan Development Management System</h1>
                 <p>For account access,<br>please contact your system administrator.</p>
             </section>
 
@@ -97,7 +97,7 @@
         </main>
 
         <footer class="app-footer">
-            <span>&copy; 2026 Strategic Planning Management System</span>
+            <span>&copy; 2026 Strategic Plan Development Management System</span>
             <a href="#" data-message="Privacy Notice content is not connected yet.">Privacy Notice</a>
             <a href="#" data-message="Terms of Use content is not connected yet.">Terms of Use</a>
             <a href="#" data-message="Accessibility information is not connected yet.">Accessibility</a>

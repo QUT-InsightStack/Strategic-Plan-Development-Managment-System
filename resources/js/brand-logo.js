@@ -4,7 +4,7 @@ export function BrandLogo({ className = 'brand-logo' } = {}) {
         {
             className: `${className} code-logo`,
             role: 'img',
-            'aria-label': 'Strategic Planning Management System logo',
+            'aria-label': 'Strategic Plan Development Management System logo',
         },
         React.createElement('span', { className: 'logo-circle logo-top-left', 'aria-hidden': 'true' }),
         React.createElement('span', { className: 'logo-circle logo-top-right', 'aria-hidden': 'true' }),

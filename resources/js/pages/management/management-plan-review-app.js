@@ -55,7 +55,7 @@ function PlanReviewPage({ session }) {
             error ? null : loading ? h('p', { role: 'status', className: 'management-empty' }, 'Loading authorized plans…') : can(PERMISSIONS.PLANS_VIEW, session)
                 ? h(ManagementPlanReview, { plans, filters: scopeFilters(filters), planId: plans.some(plan => String(plan.record_id) === String(selectedPlanId)) ? selectedPlanId : '', canComment: can(PERMISSIONS.OBJECTIVE_COMMENTS_CREATE, session), onOpenPlan: choosePlan, onBack: () => choosePlan('') })
                 : h('div', { className: 'management-dashboard__errors', role: 'alert' }, 'You do not have permission to review strategic plans.'),
-            h('footer', { className: 'management-dashboard__footer' }, '© 2026 Strategic Planning Management System. All rights reserved.'))));
+            h('footer', { className: 'management-dashboard__footer' }, '© 2026 Strategic Plan Development Management System. All rights reserved.'))));
 }
 
 const root = createPageRoot(document.getElementById('root'));
