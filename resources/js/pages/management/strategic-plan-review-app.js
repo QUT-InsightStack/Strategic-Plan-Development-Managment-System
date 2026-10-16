@@ -1,3 +1,4 @@
+import { Breadcrumb } from '../../components/PageHeader.js';
 import { createPageRoot } from '../../navigation/page-root.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
@@ -997,14 +998,7 @@ h(
                     h(
                         'div',
                         null,
-                        h(
-                            'span',
-                            {
-                                className:
-                                    'plan-review-eyebrow',
-                            },
-                            'Strategic Planning'
-                        ),
+                        h(Breadcrumb, { section: 'Plan Reviews', trail: ['Review Submitted Strategic Plan'] }),
                         h(
                             'h1',
                             null,

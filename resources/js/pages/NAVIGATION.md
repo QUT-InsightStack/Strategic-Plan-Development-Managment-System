@@ -5,7 +5,7 @@
 - `access/navigation.js` defines the five role workspaces, canonical destinations, permission requirements and planned features.
 - `components/AppSidebar.js` renders that registry. Technical and Administrative sidebar modules are compatibility re-exports, not separate menu definitions.
 - `pages/shared/dashboard-app.js` renders role function cards and explicit placeholders. The Management dashboard retains its existing implementation.
-- Administrative Admin, Planning Officer, Office / Agency and Management workspaces are grouped by planning stage (see *Role workspaces* below). Technical Admin is unchanged.
+- Administrative Admin, Planning Officer, Office / Agency and Management workspaces are grouped by planning stage (see *Role workspaces* below). Technical Admin: Planning Support (Plans, Objectives, Mappings, PDP Chapters, Presidential Agenda — for authorised deletion) · Access Administration · Account Security (Login History, Audit Logs, Security Settings, Backups, System Monitoring).
 - `access/mount-protected-page.js` refreshes `/api/auth/me` before mounting the migrated administration and plan/objective registers. Existing independently bootstrapped Office/Management pages remain intact.
 - The backend remains authoritative for authorization and record scope. A visible placeholder or menu entry never grants API access.
 
@@ -43,8 +43,8 @@ Sidebars are kept short: each page has one entry, a group with a single page bec
 | --- | --- |
 | Administrative Admin | Dashboard · Reference Data (Presidential Agenda, PDP Chapters, Templates) · Planning (Plan List, Create Plan, Objectives, Inputs, Finalize & Submit) · Alignment (Strategic Mapping, Alignment View) · Monitoring (Objective Progress, System Logs). No Plan Reviews: Administrative Admin submits plans but does not approve them |
 | Planning Officer | Dashboard · Plans (Plan List, Create Plan, Objectives, Finalize & Submit) · Alignment (Strategic Mapping, Alignment View, PDP Chapters) · Planning Inputs · Objective Progress · Plan Reviews |
-| Office / Agency | Dashboard · Plans & Objectives · Inputs (Planning Inputs, Proposed Objectives, Comments, Input Status) · My Objectives (Progress Update, Edit Objectives) · Agency Mapping (read-only `/mappings?mode=view`) |
-| Management / Executive | Dashboard · Approvals · Plan Review · Suggest Objectives · Alignment · Input Review · Planning Records (Plans, Objectives, Mappings, PDP Chapters, Presidential Agenda) |
+| Office / Agency | Dashboard · Plans & Objectives · Inputs (Planning Inputs, Proposed Objectives, Comments, Input Status) · Progress Update (no Edit Objectives: Offices update progress only) · Agency Mapping (read-only `/mappings?mode=view`) |
+| Management / Executive | Dashboard · Approvals · Plan Review · Suggest Objectives · Alignment · Input Review · Audit Logs (read-only) · Planning Records (Plans, Objectives, Mappings, PDP Chapters, Presidential Agenda) |
 
 The Dashboard link stays highlighted on its Overview and Reports tabs. The sidebar is 260px wide by default and can be dragged between 200px and 360px from its right edge (keyboard: focus the handle and use the arrow keys, Home or End; double-click resets). The width is saved in the browser (`spdms.sidebar-width`) and applied to every page through `--sidebar-width`. Long labels are truncated with an ellipsis and shown in full as a tooltip. On narrow screens (720px and below) the sidebar is full width and cannot be resized.
 

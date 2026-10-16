@@ -7,8 +7,10 @@ import { myLoginHistory } from '../../api/login-history-api.js';
 import { PHOTO_ACCEPT, checkPhoto, removeProfilePhoto, uploadProfilePhoto } from '../../api/profile-photo-api.js';
 import { getCurrentUser, updateProfile } from '../../api/auth-api.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
+import { PageHeader } from '../../components/PageHeader.js';
 import { dashboardHrefFor } from '../../access/navigation.js';
 import { getAccessSession } from '../../access/access-session.js';
+import { displayRoleName } from '../../access/role-labels.js';
 
 const { useRef, useState, useEffect } = React;
 
@@ -65,30 +67,15 @@ function Header({ onMessage, onLogout, loggingOut }) {
     );
 }
 
-function Icon({ type }) {
-    const paths = {
-        employee: 'M4 5h5V3h6v2h5v16H4V5Zm7 0h2V4h-2v1Zm-4 6h10V9H7v2Zm0 4h7v-2H7v2Z',
-        lock: 'M7 10V8a5 5 0 0 1 10 0v2h1v10H6V10h1Zm2 0h6V8a3 3 0 0 0-6 0v2Z',
-        email: 'M3 5h18v14H3V5Zm9 7.1L5.8 7H5v.9l7 5.7 7-5.7V7h-.8L12 12.1Z',
-    };
-
-    return React.createElement(
-        'span',
-        { className: 'field-icon', 'aria-hidden': 'true' },
-        React.createElement(
-            'svg',
-            { viewBox: '0 0 24 24' },
-            React.createElement('path', { d: paths[type] })
-        )
-    );
-}
-
-function ProfileSideCard({ avatar, onAvatarSelect, onMessage }) {
+// Avatar with a camera button for uploading, shown in the profile card's identity row.
+function ProfileAvatar({ avatar, name = '', onAvatarSelect, onMessage }) {
     const fileInputRef = useRef(null);
     const [busy, setBusy] = useState(false);
     const [photoError, setPhotoError] = useState('');
 
     const hasPhoto = Boolean(avatar) && avatar !== defaultAvatar;
+    // Without an uploaded photo the avatar shows the person's initials.
+    const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join('') || '?';
 
     function openFilePicker() {
         fileInputRef.current.click();
@@ -145,18 +132,16 @@ function ProfileSideCard({ avatar, onAvatarSelect, onMessage }) {
     }
 
     return React.createElement(
-        'aside',
-        { className: 'profile-side-card', 'aria-label': 'Profile photo panel' },
+        'div',
+        { className: 'profile-avatar' },
         React.createElement(
             'div',
-            { className: 'avatar-frame' },
-            React.createElement('img', { className: 'avatar-image', src: avatar || defaultAvatar, alt: 'Profile avatar preview' })
-        ),
-        React.createElement(
-            'div',
-            { className: 'upload-row' },
-            React.createElement('button', { className: 'upload-button', type: 'button', onClick: openFilePicker, disabled: busy, 'aria-label': 'Upload profile photo' }, '+'),
-            React.createElement('button', { className: 'upload-action', type: 'button', onClick: openFilePicker, disabled: busy }, busy ? 'Uploading…' : 'Update your photo'),
+            { className: 'profile-avatar__frame' },
+            hasPhoto
+                ? React.createElement('img', { className: 'profile-avatar__image', src: avatar, alt: 'Profile photo' })
+                : React.createElement('span', { className: 'profile-avatar__initials', role: 'img', 'aria-label': `${name || 'Profile'} initials` }, initials),
+            React.createElement('button', { className: 'profile-avatar__upload', type: 'button', onClick: openFilePicker, disabled: busy, 'aria-label': busy ? 'Uploading photo' : 'Change profile photo', title: 'Change profile photo' },
+                React.createElement('i', { className: `bi ${busy ? 'bi-hourglass-split' : 'bi-pencil'}`, 'aria-hidden': 'true' })),
             React.createElement('input', {
                 ref: fileInputRef,
                 type: 'file',
@@ -165,38 +150,24 @@ function ProfileSideCard({ avatar, onAvatarSelect, onMessage }) {
                 onChange: handleFileChange,
             })
         ),
-        hasPhoto
-            ? React.createElement('button', { className: 'photo-remove', type: 'button', onClick: handleRemove, disabled: busy }, 'Remove photo')
-            : null,
-        photoError
-            ? React.createElement('p', { className: 'photo-error', role: 'alert' }, photoError)
-            : React.createElement('p', { className: 'photo-hint' }, 'JPG, PNG or WebP, up to 2 MB.'),
-    React.createElement('p', { className: 'side-copy' }, 'Manage your contact details', React.createElement('br'), 'and account information'),
-
-React.createElement(
-    'button',
-    {
-        className: 'action-button secondary profile-password-button',
-        type: 'button',
-        onClick: () => {
-            window.location.href = '/change-password';
-        },
-    },
-    'Change Password'
-)    
+        React.createElement(
+            'div',
+            { className: 'profile-avatar__notes' },
+            photoError
+                ? React.createElement('p', { className: 'photo-error', role: 'alert' }, photoError)
+                : React.createElement('p', { className: 'photo-hint' }, 'JPG, PNG or WebP, up to 2 MB.'),
+            hasPhoto
+                ? React.createElement('button', { className: 'profile-link-button', type: 'button', onClick: handleRemove, disabled: busy }, 'Remove photo')
+                : null
+        )
     );
 }
 
-function TextField({ id, label, value, error, type = 'text', icon, helperText, onHelperClick, onChange, disabled = false }) {
+function TextField({ id, label, value, error, type = 'text', helperText, onHelperClick, onChange, disabled = false }) {
     return React.createElement(
         'div',
         { className: `field-group ${error ? 'has-error' : ''}` },
-        React.createElement(
-            'div',
-            { className: 'field-label-row' },
-            icon ? React.createElement(Icon, { type: icon }) : null,
-            React.createElement('label', { htmlFor: id }, label)
-        ),
+        React.createElement('label', { className: 'field-label', htmlFor: id }, label),
         helperText
             ? React.createElement('button', { className: 'field-helper', type: 'button', onClick: onHelperClick }, helperText)
             : null,
@@ -219,7 +190,7 @@ function TextField({ id, label, value, error, type = 'text', icon, helperText, o
     );
 }
 
-function ProfileForm({ status, setStatus, onAvatarChange }) {
+function ProfileForm({ status, setStatus, onAvatarChange, avatar, onAvatarSelect }) {
     const [profile, setProfile] = useState(initialProfile);
     const [originalProfile, setOriginalProfile] = useState(initialProfile);
     const [errors, setErrors] = useState({});
@@ -387,172 +358,100 @@ function ProfileForm({ status, setStatus, onAvatarChange }) {
     if (loading) {
         return React.createElement(
             'section',
-            { className: 'profile-card' },
-            React.createElement('p', null, 'Loading profile...')
+            { className: 'profile-card profile-main-card' },
+            React.createElement('div', { className: 'profile-banner', 'aria-hidden': 'true' }),
+            React.createElement('p', { className: 'profile-loading', role: 'status' }, 'Loading profile…')
         );
     }
 
-return React.createElement(
-    'section',
-    { className: 'profile-card modern-card', 'aria-labelledby': 'profile-form-title' },
+    const fullName = [originalProfile.first_name, originalProfile.last_name].filter(Boolean).join(' ') || 'Your profile';
+    const roleName = displayRoleName(getAccessSession()?.roleName, '');
 
-    // HEADER
-    React.createElement(
-        'div',
-        { className: 'profile-card-header' },
+    const field = (props) => React.createElement(TextField, props);
+    return React.createElement(
+        'section',
+        { className: 'profile-card profile-main-card', 'aria-labelledby': 'profile-form-title' },
+        React.createElement('div', { className: 'profile-banner', 'aria-hidden': 'true' }),
+
+        // Identity: photo, name, sign-in email and role, with account actions on the right.
         React.createElement(
             'div',
-            { className: 'header-copy' },
-            React.createElement('h2', { id: 'profile-form-title' }, 'Edit Profile'),
-            React.createElement('p', { className: 'subtitle' }, 'Update your personal and account details')
-        )
-    ),
-
-    // FORM
-    React.createElement(
-        'form',
-        { className: 'profile-form', noValidate: true, onSubmit: handleSave },
-
-        // TWO COLUMN LAYOUT
-        React.createElement(
-            'div',
-            { className: 'form-columns' },
-
-            // ACCOUNT SECTION
+            { className: 'profile-identity' },
+            React.createElement(ProfileAvatar, { avatar, name: fullName === 'Your profile' ? '' : fullName, onAvatarSelect, onMessage: setStatus }),
             React.createElement(
                 'div',
-                { className: 'form-section' },
-                React.createElement('h3', null, 'Account Information'),
-
-                React.createElement(
-                    'div',
-                    { className: 'field-stack' },
-
-                    React.createElement(TextField, {
-                        id: 'user_id',
-                        label: 'Employee ID',
-                        icon: 'employee',
-                        value: profile.user_id,
-                        disabled: true,
-                        onChange: () => {},
-                    }),
-
-                    React.createElement(TextField, {
-                        id: 'email',
-                        label: 'Email',
-                        type: 'email',
-                        icon: 'email',
-                        value: profile.email,
-                        error: errors.email,
-                        onChange: (value) => updateField('email', value),
-                    }),
-
-                    React.createElement(TextField, {
-                        id: 'designation',
-                        label: 'Designation',
-                        icon: 'employee',
-                        value: profile.designation,
-                        error: errors.designation,
-                        onChange: (value) => updateField('designation', value),
-                    })
-                )
+                { className: 'profile-identity__copy' },
+                React.createElement('h2', { id: 'profile-form-title' }, fullName),
+                React.createElement('p', null, originalProfile.email || 'No email recorded'),
+                roleName ? React.createElement('span', { className: 'ui-badge ui-badge--info profile-role' }, React.createElement('i', { className: 'bi bi-person-badge', 'aria-hidden': 'true' }), roleName) : null
             ),
-
-            // PERSONAL SECTION
             React.createElement(
                 'div',
-                { className: 'form-section personal-section' },
-                React.createElement('h3', null, 'Personal Information'),
-
-                React.createElement(
-                    'div',
-                    { className: 'field-stack' },
-                    React.createElement(TextField, {
-                        id: 'first_name',
-                        label: 'First Name',
-                        value: profile.first_name,
-                        error: errors.first_name,
-                        onChange: (value) => updateField('first_name', value),
-                    }),
-
-                    React.createElement(TextField, {
-                        id: 'last_name',
-                        label: 'Last Name',
-                        value: profile.last_name,
-                        error: errors.last_name,
-                        onChange: (value) => updateField('last_name', value),
-                    }),
-
-                    React.createElement(TextField, {
-                        id: 'mobile',
-                        label: 'Phone',
-                        type: 'tel',
-                        value: profile.mobile,
-                        error: errors.mobile,
-                        onChange: (value) => updateField('mobile', value),
-                    })
-                )
+                { className: 'profile-identity__actions' },
+                React.createElement('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: '/change-password' },
+                    React.createElement('i', { className: 'bi bi-shield-lock', 'aria-hidden': 'true' }), 'Change Password')
             )
         ),
 
-        // ADDRESS FULL WIDTH
         React.createElement(
-            'div',
-            { className: 'address-field modern-field' },
-            React.createElement(TextField, {
-                id: 'address',
-                label: 'Address',
-                value: profile.address,
-                error: errors.address,
-                onChange: (value) => updateField('address', value),
-            })
-        ),
-
-        // ACTION BUTTONS
-        React.createElement(
-            'div',
-            { className: 'form-actions modern-actions' },
-
+            'form',
+            { className: 'profile-form', noValidate: true, onSubmit: handleSave },
+            React.createElement('h3', { className: 'profile-section-title' }, 'Personal details'),
             React.createElement(
-                'button',
-                {
-                    className: 'action-button secondary',
-                    type: 'button',
-                    disabled: saving,
-                    onClick: handleCancel,
-                },
-                'Reset'
+                'div',
+                { className: 'profile-field-grid' },
+                field({ id: 'first_name', label: 'First Name', value: profile.first_name, error: errors.first_name, onChange: (value) => updateField('first_name', value) }),
+                field({ id: 'last_name', label: 'Last Name', value: profile.last_name, error: errors.last_name, onChange: (value) => updateField('last_name', value) }),
+                field({ id: 'designation', label: 'Designation', value: profile.designation, error: errors.designation, onChange: (value) => updateField('designation', value) }),
+                field({ id: 'mobile', label: 'Phone', type: 'tel', value: profile.mobile, error: errors.mobile, onChange: (value) => updateField('mobile', value) }),
+                field({ id: 'user_id', label: 'Employee ID', value: profile.user_id, disabled: true, onChange: () => {} }),
+                field({ id: 'address', label: 'Address', value: profile.address, error: errors.address, onChange: (value) => updateField('address', value) })
+            ),
+
+            React.createElement('h3', { className: 'profile-section-title' }, 'My email address'),
+            React.createElement(
+                'div',
+                { className: 'profile-email' },
+                React.createElement('span', { className: 'profile-email__icon', 'aria-hidden': 'true' }, React.createElement('i', { className: 'bi bi-envelope-fill' })),
+                React.createElement(
+                    'div',
+                    { className: 'profile-email__field' },
+                    field({ id: 'email', label: 'Sign-in email', type: 'email', value: profile.email, error: errors.email, onChange: (value) => updateField('email', value) }),
+                    React.createElement('p', { className: 'profile-email__note' }, 'Used to sign in and to receive workflow notifications.')
+                )
             ),
 
             React.createElement(
-                'button',
-                {
-                    className: 'action-button primary',
-                    type: 'submit',
-                    // Nothing to save until something actually changes, which
-                    // also stops a second submit while the first is in flight.
-                    disabled: saving || !dirty,
-                },
-                saving ? 'Saving…' : 'Save Changes'
+                'div',
+                { className: 'profile-form__footer' },
+                React.createElement(
+                    'p',
+                    {
+                        className: `form-status modern-status is-${status.type}`,
+                        role: 'status',
+                        'aria-live': 'polite',
+                    },
+                    status.message || (dirty ? 'You have unsaved changes.' : '')
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'profile-form__actions' },
+                    React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', disabled: saving, onClick: handleCancel }, 'Reset'),
+                    React.createElement(
+                        'button',
+                        {
+                            className: 'ui-button ui-button--primary',
+                            type: 'submit',
+                            // Nothing to save until something actually changes, which
+                            // also stops a second submit while the first is in flight.
+                            disabled: saving || !dirty,
+                        },
+                        saving ? 'Saving…' : 'Save Changes'
+                    )
+                )
             )
-        ),
-
-        dirty
-            ? React.createElement('p', { className: 'form-dirty-note' }, 'You have unsaved changes.')
-            : null,
-
-        // STATUS MESSAGE
-        React.createElement(
-            'p',
-            {
-                className: `form-status modern-status is-${status.type}`,
-                role: 'status',
-                'aria-live': 'polite',
-            },
-            status.message
         )
-    )
-);
+    );
 }
 
 /**
@@ -675,22 +574,12 @@ function ProfileApp() {
             React.createElement(
                 'div',
                 { className: 'page-inner' },
+                React.createElement(PageHeader, { section: 'Profile', title: 'Profile Settings', subtitle: 'Manage your account information and contact details.' }),
                 React.createElement(
                     'div',
-                    { className: 'page-title' },
-                    React.createElement('h1', null, 'Profile Settings'),
-                    React.createElement('p', null, 'Manage your account information and contact details.')
-                ),
-                React.createElement(
-                    'div',
-                    { className: 'profile-layout' },
-                    React.createElement(ProfileSideCard, { avatar, onAvatarSelect: handleAvatarSelect, onMessage: setStatus }),
-                    React.createElement(
-                        'div',
-                        { className: 'profile-column' },
-                        React.createElement(ProfileForm, { status, setStatus, onAvatarChange: setAvatar }),
-                        React.createElement(RecentSignIns, null)
-                    )
+                    { className: 'profile-page-stack' },
+                    React.createElement(ProfileForm, { status, setStatus, onAvatarChange: setAvatar, avatar, onAvatarSelect: handleAvatarSelect }),
+                    React.createElement(RecentSignIns, null)
                 )
             )
         ),

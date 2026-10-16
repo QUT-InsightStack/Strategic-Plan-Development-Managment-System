@@ -9,7 +9,8 @@ import { createAccessSession, saveAccessSession, can } from '../../access/access
 import { PERMISSIONS as P } from '../../access/access-policy.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
 import { isManagementSession } from '../../access/management-access.js';
-import { dashboardLabels, managementDashboardTab, navigationRole } from '../../access/navigation.js';
+import { breadcrumbFor, managementDashboardTab } from '../../access/navigation.js';
+import { Breadcrumb } from '../../components/PageHeader.js';
 import { ManagementPagination, pageRows } from '../../components/ManagementPagination.js';
 import {
     chartPeriod, filterManagementRows, isAligned, objectiveRisk, officeName, officeUnitPerformance,
@@ -348,6 +349,10 @@ function ManagementDashboard({ session, management }) {
     const exportDisabled = !exportSet || exportSet.sources.some(source => source.status !== 'ready') || !exportSet.rows.length
         || (activeTab === 'overview' && !chartPlans.length);
 
+    // Tabs with their own sidebar link (Approvals, Alignment, Input Review) appear in the breadcrumb
+    // through that link; the Dashboard link's own tabs (Overview, Reports) are added as a trail.
+    const ownLink = breadcrumbFor(window.location.href, session.roleName).page;
+    const dashboardTrail = !ownLink || ['dashboard', 'monitoring-dashboard'].includes(ownLink.id) ? [TABS.find(tab => tab.id === activeTab).label] : [];
     const pageContent = { overview: overviewContent, alignment: alignmentContent, inputs: inputsContent, approvals: approvalsContent, reports: reportsContent }[activeTab];
     const activeLabel = TABS.find(tab => tab.id === activeTab).label;
 
@@ -356,7 +361,7 @@ function ManagementDashboard({ session, management }) {
         h('main', { className: 'app-shell-main' }, h('div', { className: 'management-dashboard__content' },
             h('header', { className: 'management-dashboard__header' },
                 h('div', { className: 'management-dashboard__heading' },
-                    h('p', { className: 'management-dashboard__eyebrow' }, dashboardLabels[navigationRole(session.roleName)] || 'Dashboard'),
+                    h(Breadcrumb, { trail: dashboardTrail }),
                     h('h1', null, management ? 'Management Dashboard' : 'Dashboard'),
                     h('p', null, management ? 'Monitor strategic plan progress, alignment status, and planning summaries across departments and agencies.'
                         : 'Monitor strategic plan progress and planning summaries within your authorised scope.'),

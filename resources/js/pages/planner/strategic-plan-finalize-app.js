@@ -1,5 +1,6 @@
 import { createPageRoot } from '../../navigation/page-root.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
+import { PageHeader } from '../../components/PageHeader.js';
 import { getStrategicPlan, listStrategicPlans } from '../../api/strategic-plans-api.js';
 import { listStrategicObjectives } from '../../api/strategic-objectives-api.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
@@ -290,15 +291,10 @@ function FinalizeStrategicPlanApp() {
     return h(React.Fragment, null,
         h(AppSidebar, { active: 'Finalize Plans', onNotice: message => setNotice({ type: 'info', message }) }),
         h('main', { className: 'app-shell-main finalize-page' }, h('div', { className: 'app-shell-container finalize-container' },
-            h('nav', { className: 'finalize-breadcrumb', 'aria-label': 'Breadcrumb' }, h('a', { href: '/strategic-plans' }, 'Strategic Plans'), h('i', { className: 'bi bi-chevron-right' }), h('span', null, pageTitle)),
-            h('h1', { className: 'finalize-title' }, pageTitle),
-h(
-    'p',
-    { className: 'finalize-subtitle' },
-    overviewMode
-        ? 'Review the complete plan, objectives and alignment mappings. Use the edit links to update any section.'
-        : 'Check that the plan is complete before submitting it for approval.'
-),
+            h(PageHeader, { section: 'Strategic Plans', title: pageTitle, trail: overviewMode && plan ? [plan.title || `Plan ${plan.record_id}`] : [],
+                subtitle: overviewMode
+                    ? 'Review the complete plan, objectives and alignment mappings. Use the edit links to update any section.'
+                    : 'Check that the plan is complete before submitting it for approval.' }),
             !overviewMode && plans.length > 1 && h('label', { className: 'ui-field finalize-plan-picker' }, h('span', { className: 'ui-label' }, 'Strategic plan'), h('select', { className: 'ui-select', value: planId || '', onChange: selectPlan }, plans.map(item => h('option', { value: item.record_id, key: item.record_id }, `${item.title} · ${item.planning_status_label || planStatusLabel(item.status)}`)))),
             notice.message && h('div', { className: `ui-status ui-status--${notice.type} finalize-feedback`, role: notice.type === 'error' ? 'alert' : 'status' }, notice.message),
             loading ? h('section', { className: 'ui-card ui-empty' }, 'Loading finalized plan…') : !plan ? h('section', { className: 'ui-card ui-empty' }, 'No strategic plan is available for finalization.') :

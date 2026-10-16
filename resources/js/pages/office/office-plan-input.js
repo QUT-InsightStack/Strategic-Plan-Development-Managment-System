@@ -1,3 +1,4 @@
+import { PageHeader } from '../../components/PageHeader.js';
 import { OfficeReferenceMaterials } from '../../components/OfficeReferenceMaterials.js';
 import '../../../css/office-input.css';
 import { getStrategicPlan } from '../../api/strategic-plans-api.js';
@@ -21,10 +22,11 @@ export function OfficePlanInput({ planId, planOptions = [], onPlanChange = null,
     }, [planId, attempt]);
     const allowed = plan?.status === 'draft' && can('strategic_documents.upload');
     return h('main', { className: 'office-content office-input-page', 'aria-busy': loading },
-        h('header', null, !onPlanChange && h('a', { href: back }, '← Back to plan'), h('h1', null, pageTitle),
-            h('p', null, description),
-            onPlanChange && h('label', { className: 'office-input-plan-picker' }, h('span', null, 'Strategic plan'),
-                h('select', { value: String(planId), onChange: event => onPlanChange(event.target.value) },
+        h(PageHeader, { section: 'Inputs', title: pageTitle, subtitle: description, trail: !onPlanChange && plan ? [plan.title || `Plan ${plan.record_id}`] : [],
+            actions: !onPlanChange ? h('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: back }, h('i', { className: 'bi bi-arrow-left', 'aria-hidden': 'true' }), 'Back to plan') : null }),
+        onPlanChange && h('div', { className: 'ui-card office-input-plan-card' },
+            h('label', { className: 'ui-field office-input-plan-picker' }, h('span', { className: 'ui-label' }, 'Strategic plan'),
+                h('select', { className: 'ui-select', value: String(planId), onChange: event => onPlanChange(event.target.value) },
                     h('option', { value: '', disabled: true }, plansLoading ? 'Loading plans…' : 'Select a draft plan'),
                     planOptions.map(option => h('option', { key: option.record_id, value: option.record_id }, `${String(option.record_id).padStart(4, '0')} · ${option.title}`))))),
         plansLoading && h('p', { role: 'status' }, 'Loading available draft plans…'),

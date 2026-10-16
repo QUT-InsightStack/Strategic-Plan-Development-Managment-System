@@ -475,7 +475,7 @@ canHandlePasswordAssistance
                                             canUpdateUsers ? React.createElement('div', { className: 'user-action' },
                                                 React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', disabled: loading, title: `Edit ${user.name}'s details`, onClick: () => openEditDialog(user) }, React.createElement('i', { className: 'bi bi-pencil-fill' }), 'Edit'),
                                                 React.createElement('button', { className: `ui-button ui-button--sm ${user.status === 'active' ? 'ui-button--danger' : 'ui-button--secondary'}`, type: 'button', disabled: actionDisabled, title: reason || `${actionLabel} ${user.name}`, onClick: () => requestStatusChange(user) }, actionLabel),
-                                                reason ? React.createElement('span', { className: 'user-action__reason' }, React.createElement('i', { className: 'bi bi-lock-fill' }), reason) : null
+                                                reason ? React.createElement('span', { className: 'user-action__reason', title: reason }, React.createElement('i', { className: 'bi bi-lock-fill', 'aria-hidden': 'true' }), 'Status locked', React.createElement('span', { className: 'ui-visually-hidden' }, `: ${reason}`)) : null
                                             ) : React.createElement('span', { className: 'ui-help' }, 'View only')
                                         )
                                     );

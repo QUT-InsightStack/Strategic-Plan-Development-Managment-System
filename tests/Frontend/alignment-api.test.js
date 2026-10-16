@@ -39,7 +39,7 @@ function page({ capabilities = {}, failArchive = false, mappingStatus = 'active'
         objective_title: 'Research', reference_title: 'Chapter 3', status: mappingStatus, reference_status: 'archived', objective_status: 'draft', archived_at: '2026-10-01T00:00:00Z', archived_by_name: 'Planner' };
     const context = vm.createContext({
         URLSearchParams, location: { search }, document: { getElementById: () => ({}) },
-        AppSidebar: 'sidebar', AppDialog: 'dialog', mountProtectedPage: () => {},
+        AppSidebar: 'sidebar', AppDialog: 'dialog', PageHeader: 'header', mountProtectedPage: () => {},
         React: {
             Fragment: 'fragment',
             createElement: (type, props, ...children) => ({ type, props: props || {}, children: children.flat(Infinity) }),

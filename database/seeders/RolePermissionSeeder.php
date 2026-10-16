@@ -81,6 +81,7 @@ class RolePermissionSeeder extends Seeder
             'strategic_documents.view', 'strategic_documents.download',
             'relations.view', 'plan_core_values.view',
             'reports.view', 'reports.export',
+            'logs.view',
             'strategic_records.delete',
             'strategic_objectives.delete',
             'strategic_alignments.delete',
@@ -92,7 +93,8 @@ class RolePermissionSeeder extends Seeder
         $administrativeAdminPermissions = [
             'dashboard.view',
             'reference_data.manage',
-            'pdp_chapters.manage', 'pdp_chapters.archive', 'pdp_chapters.delete',
+            // Permanent deletion of reference data belongs to Management and Technical Admin.
+            'pdp_chapters.manage', 'pdp_chapters.archive',
             'presidential_agenda.view', 'presidential_agenda.manage',
             'presidential_agenda.archive',
             'templates.manage', 'monitoring.view', 'reports.view', 'reports.export', 'logs.view',

@@ -135,7 +135,7 @@
 .management-oversight p { margin: 0; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
 @media (max-width: 900px) { .management-oversight { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 1180px) { .management-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 760px) { .management-dashboard__content { padding: var(--space-4); } .management-dashboard__header { align-items: stretch; flex-direction: column; } .management-dashboard__controls { align-items: stretch; } .management-dashboard__controls label { flex: 1; } .management-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .management-report-grid { grid-template-columns: 1fr; } .management-dashboard__panel { padding: 10px; } }
+@media (max-width: 760px) { .management-dashboard__header { align-items: stretch; flex-direction: column; } .management-dashboard__controls { align-items: stretch; } .management-dashboard__controls label { flex: 1; } .management-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .management-report-grid { grid-template-columns: 1fr; } .management-dashboard__panel { padding: 10px; } }
 @media (max-width: 480px) { .management-dashboard__controls { flex-direction: column; } .management-dashboard__controls label { min-width: 0; } .management-kpis { grid-template-columns: 1fr 1fr; gap: 7px; } .management-kpi { align-items: flex-start; flex-direction: column; padding: 9px; } .management-card__heading { align-items: flex-start; flex-direction: column; } .management-bar-row { grid-template-columns: minmax(80px, 1fr) minmax(90px, 2fr) 36px; gap: 7px; } }
 @media (max-width: 760px) { .management-report-list__row { grid-template-columns: 44px minmax(0, 1fr); } .management-report-list__row .management-report-card__actions { grid-column: 2; flex-wrap: wrap; } }
 .management-progress-legend { display: flex; flex-wrap: wrap; gap: 12px 22px; padding: 0 18px; font-size: 13px; }
@@ -328,7 +328,8 @@
 /* Dashboard and report polish: site tokens for colour, type and spacing, plus small public-sector
    touches (workspace eyebrow, data-as-of stamp, accent rules, numbered report sections). */
 .management-dashboard { background: var(--color-background); }
-.management-dashboard__content { max-width: var(--content-max-width); padding: var(--page-gutter); }
+/* The content sits inside .app-shell-main, which already applies the site gutter. */
+.management-dashboard__content { max-width: var(--content-max-width); margin: 0; padding: 0; }
 .management-dashboard__header { align-items: flex-end; margin-bottom: var(--space-6); border-bottom: 1px solid var(--color-border-subtle); padding-bottom: var(--space-5); }
 .management-dashboard__heading { min-width: 0; }
 .management-dashboard__eyebrow { display: inline-flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-2); color: var(--color-info); }

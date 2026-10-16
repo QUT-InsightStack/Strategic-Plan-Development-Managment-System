@@ -12,7 +12,6 @@
 
 body { background: var(--color-background); }
 .user-page { color: var(--color-text); }
-.user-page__header { margin-bottom: var(--space-5); }
 .user-filter-card { margin-bottom: var(--space-5); }
 .user-section-title { margin: 0 0 var(--space-4); color: var(--color-primary); font-size: var(--font-size-sm); font-style: italic; }
 .user-filters { display: grid; grid-template-columns: minmax(260px, 1.5fr) minmax(170px, .75fr) minmax(170px, .75fr) auto; gap: var(--space-4); align-items: end; }
@@ -30,15 +29,15 @@ body { background: var(--color-background); }
 .user-table th:nth-child(4) { width: 12%; }
 .user-table th:nth-child(5) { width: 9%; }
 .user-table th:nth-child(6) { width: 11%; }
-.user-table th:nth-child(7) { width: 160px; }
+.user-table th:nth-child(7) { width: 210px; }
 .user-table th:first-child, .user-table td:first-child { padding-left: var(--space-5); }
 .user-table th:last-child, .user-table td:last-child { padding-right: var(--space-5); text-align: right; }
 .user-table td { font-size: var(--font-size-sm); }
 .user-table td strong { display: inline-block; margin-right: var(--space-2); color: var(--color-text); }
 .user-email { overflow-wrap: anywhere; }
 .user-current-label { display: inline-flex; border-radius: var(--radius-pill); padding: 2px 7px; color: var(--color-info); background: var(--color-info-soft); font-size: 12px; font-weight: var(--font-weight-bold); text-transform: uppercase; }
-.user-action { display: grid; justify-items: stretch; gap: var(--space-1); width: 100%; max-width: 112px; margin-left: auto; text-align: left; }
-.user-action__reason { display: inline-flex; align-items: flex-start; gap: var(--space-1); color: var(--color-text-secondary); font-size: 12px; line-height: 1.35; }
+.user-action { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); }
+.user-action__reason { display: inline-flex; flex-basis: 100%; align-items: center; justify-content: flex-end; gap: var(--space-1); color: var(--color-text-secondary); font-size: 12px; line-height: 1.35; cursor: help; }
 .user-action__reason i { margin-top: 1px; color: var(--color-warning); }
 .user-table .ui-button { min-width: 78px; }
 /* The edit form is tall enough to overflow a laptop viewport, so the dialog
@@ -84,3 +83,6 @@ body { background: var(--color-background); }
     .account-dialog__actions { flex-direction: column-reverse; }
     .account-dialog__actions .ui-button { width: 100%; }
 }
+
+/* Section cards on this page share the site's card header and shadow. */
+.user-filter-card, .user-list-card { border-radius: var(--radius-lg); box-shadow: var(--shadow-xs); }

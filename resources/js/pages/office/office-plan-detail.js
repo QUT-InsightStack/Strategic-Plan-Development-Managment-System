@@ -1,4 +1,5 @@
 
+import { Breadcrumb } from '../../components/PageHeader.js';
 import { OfficeComments } from './office-comments.js';
 import { getStrategicPlan } from '../../api/strategic-plans-api.js';
 import { listStrategicObjectives } from '../../api/strategic-objectives-api.js';
@@ -80,6 +81,7 @@ export function OfficePlanDetail({ planId, mode = 'review', includeAllOfficePlan
     const hasInputPanel = mode === 'comments' || mode === 'proposal';
     return h('main', { className: `office-content office-detail ${hasInputPanel ? 'office-detail--with-action' : ''}`, 'aria-busy': loading },
         h('div', { className: 'office-detail-scroll' },
+        h(Breadcrumb, { section: 'Plans & Objectives', trail: [plan ? plan.title || `Plan ${plan.record_id}` : 'Plan details'], className: 'office-detail-breadcrumb' }),
         h('header', { className: 'office-detail-heading' },
             h('a', { href: '/office', className: 'office-back', 'aria-label': 'Back to plan list' }, h('i', { className: 'bi bi-chevron-left', 'aria-hidden': true })),
             h('h1', null, plan ? `${plan.record_id} ${plan.title}` : 'Plan details')),

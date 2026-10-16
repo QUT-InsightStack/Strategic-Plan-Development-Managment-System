@@ -445,11 +445,11 @@ body {
 
 /* Office/Agency review workspace */
 
-.office-content { margin-left: var(--sidebar-width); padding: 34px; min-height: 100vh; background: var(--color-background); }
-.office-content header { max-width: 900px; margin-bottom: 20px; }
-.office-content h1 { color: var(--color-primary); font-size: 28px; margin: 0 0 10px; }
-.office-content h2 { font-size: 15px; margin: 0 0 20px; }
-.office-content header p { line-height: 1.6; }
+.office-content { margin-left: var(--sidebar-width); padding: var(--page-gutter); min-height: 100vh; background: var(--color-background); }
+.office-content header:not(.app-page-header) { max-width: 900px; margin-bottom: 20px; }
+.office-content h1:not(.ui-page-title) { color: var(--color-primary); font-size: 28px; margin: 0 0 10px; }
+.office-content :where(h2) { font-size: 15px; margin: 0 0 20px; }
+.office-content header:not(.app-page-header) p { line-height: 1.6; }
 .office-eyebrow { font-size: 12px; letter-spacing: .12em; color: #61758c; }
 .office-scope { padding: 12px 16px; margin-bottom: 22px; border-left: 3px solid var(--color-primary); background: #f6faff; color: #425c75; font-size: 14px; }
 .office-panel { background: var(--color-surface); padding: 24px; border: 1px solid #dce5ef; border-radius: 5px; box-shadow: 0 2px 3px #12345612; margin-bottom: 20px; }
@@ -472,7 +472,7 @@ body {
 .office-placeholder { min-height: 300px; }
 .office-muted { color: #64748b; }
 @media(max-width: 1100px) { .office-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media(max-width: 720px) { .office-content { margin-left: 0; padding: 20px 14px; } .office-content h1 { font-size: 23px; } .office-panel { padding: 16px; } }
+@media(max-width: 720px) { .office-content { margin-left: 0; padding: 20px 14px; } .office-content h1:not(.ui-page-title) { font-size: 23px; } .office-panel { padding: 16px; } }
 
 /* Read-only plan review detail */
 .office-detail-heading { display: flex; align-items: center; gap: 16px; max-width: none !important; }
@@ -497,8 +497,8 @@ body {
 @media (max-width: 720px) { .office-detail-heading h1 { font-size: 20px; } .office-detail-panel { padding: 18px; } .office-summary-grid { grid-template-columns: 1fr; } }
 
 /* Initial plan register matches the office review reference. */
-.office-content:not(.office-detail) > header { margin-bottom: 28px; }
-.office-content:not(.office-detail) > header p { max-width: 780px; font-size: 14px; line-height: 1.35; }
+.office-content:not(.office-detail) > header:not(.app-page-header) { margin-bottom: 28px; }
+.office-content:not(.office-detail) > header:not(.app-page-header) p { max-width: 780px; font-size: 14px; line-height: 1.35; }
 .office-filters { padding: 14px 18px; box-shadow: 0 3px 3px #12345625; }
 .office-filters h2 { color: var(--color-primary); font-size: 13px; font-style: italic; font-weight: 400; margin-bottom: 14px; }
 .office-filter-grid { grid-template-columns: 1.7fr 1fr 1fr 1fr auto auto; gap: 28px; }
@@ -553,3 +553,11 @@ body {
 .office-field-group input, .office-field-group textarea { width: 100%; box-sizing: border-box; border: 1px solid #bacce3; border-radius: 4px; padding: 10px 12px; font: inherit; background: var(--color-surface); }
 .office-field-group textarea { resize: vertical; }
 .office-workflow-fields legend { margin-bottom: 20px; font-weight: 600; }
+
+/* Shared register tables inside Office pages keep the .ui-table look. */
+.office-content .ui-table th, .office-content .ui-table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border-subtle); }
+.office-content .ui-table th { color: var(--color-primary); }
+.office-content .office-pagination .ui-button { min-width: 34px; justify-content: center; }
+.office-detail-breadcrumb { margin-bottom: var(--space-3); }
+/* Same content width as .app-shell-container on other pages; overlays stay full screen. */
+.office-content > :not(.ui-dialog-backdrop):not(.consolidate-backdrop) { max-width: var(--content-max-width); }

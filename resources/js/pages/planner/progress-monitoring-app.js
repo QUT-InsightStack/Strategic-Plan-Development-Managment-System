@@ -1,3 +1,4 @@
+import { PageHeader } from '../../components/PageHeader.js';
 import { createPageRoot } from '../../navigation/page-root.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { ObjectiveProgressPanel } from '../../strategic-objectives/ObjectiveProgressPanel.js';
@@ -16,12 +17,8 @@ function ProgressMonitoringApp() {
             React.createElement(
                 'div',
                 { className: 'app-shell-container' },
-                React.createElement(
-                    'header',
-                    null,
-                    React.createElement('h1', null, 'Strategic Objective Progress Monitoring'),
-                    React.createElement('p', null, 'View and correct progress across all assigned Offices and Units. Every Planning Officer change requires a reason and is recorded in the progress history.')
-                ),
+                React.createElement(PageHeader, { section: 'Monitoring', title: 'Strategic Objective Progress Monitoring',
+                    subtitle: 'View and correct progress across all assigned Offices and Units. Every Planning Officer change requires a reason and is recorded in the progress history.' }),
                 React.createElement(ObjectiveProgressPanel)
             )
         )

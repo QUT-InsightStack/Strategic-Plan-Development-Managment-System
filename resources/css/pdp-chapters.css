@@ -7,7 +7,6 @@
 @import './layouts/sidebar.css';
 
 .pdp-page { min-height: 100vh; background: var(--color-background); }
-.pdp-container { max-width: none; }
 .pdp-header { display: flex; max-width: none; align-items: center; justify-content: space-between; gap: var(--space-4); }
 .pdp-filter-card { margin-bottom: var(--space-4); overflow: hidden; }
 .pdp-toolbar { display: grid; grid-template-columns: minmax(280px, 560px) auto; align-items: end; justify-content: start; gap: var(--space-3); padding: var(--space-4); }
