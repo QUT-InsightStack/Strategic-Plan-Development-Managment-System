@@ -1,22 +1,22 @@
-{{-- Decorative hero illustration: a secured planning data hub connected to the
-     offices, documents, analytics, science programmes and people it serves. --}}
-<svg class="hero-illustration" viewBox="0 0 560 460" role="img" aria-labelledby="hero-illustration-title">
-    <title id="hero-illustration-title">A secured planning data hub connected to DOST offices, plans, reports, science programmes and staff</title>
+{{-- Hero illustration: the planning platform at the centre, with DOST units
+     around it exchanging work through the platform and with each other. --}}
+<svg class="hero-illustration" viewBox="0 0 560 480" role="img" aria-labelledby="hero-illustration-title">
+    <title id="hero-illustration-title">The planning platform at the centre, connecting the Planning Office, Management, Regional Offices, Research Institutes, Offices and Units, and ICT Services</title>
     <defs>
         <linearGradient id="li-blue" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stop-color="#2a6cc0"/>
             <stop offset="1" stop-color="#123d73"/>
         </linearGradient>
         <linearGradient id="li-cyan" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#7fdcfb"/>
-            <stop offset="1" stop-color="#00aeef"/>
+            <stop offset="0" stop-color="#5fd0f7"/>
+            <stop offset="1" stop-color="#0098d4"/>
         </linearGradient>
         <linearGradient id="li-disk-top" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0" stop-color="#ffffff"/>
             <stop offset="1" stop-color="#d9effb"/>
         </linearGradient>
         <radialGradient id="li-halo" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0" stop-color="#00aeef" stop-opacity="0.22"/>
+            <stop offset="0" stop-color="#00aeef" stop-opacity="0.2"/>
             <stop offset="1" stop-color="#00aeef" stop-opacity="0"/>
         </radialGradient>
         <filter id="li-shadow" x="-30%" y="-30%" width="160%" height="170%">
@@ -24,121 +24,107 @@
         </filter>
     </defs>
 
-    {{-- Background halo, dotted grid and orbits --}}
-    <circle cx="280" cy="250" r="210" fill="url(#li-halo)"/>
-    <g fill="#9cc9e6" opacity="0.45">
-        <circle cx="40" cy="40" r="2"/><circle cx="64" cy="40" r="2"/><circle cx="88" cy="40" r="2"/>
-        <circle cx="40" cy="64" r="2"/><circle cx="64" cy="64" r="2"/>
-        <circle cx="472" cy="410" r="2"/><circle cx="496" cy="410" r="2"/><circle cx="520" cy="410" r="2"/>
-        <circle cx="496" cy="434" r="2"/><circle cx="520" cy="434" r="2"/>
-    </g>
-    <ellipse cx="280" cy="255" rx="226" ry="160" fill="none" stroke="#9fd6f2" stroke-width="1.5" stroke-dasharray="4 7"/>
-    <ellipse cx="280" cy="300" rx="150" ry="52" fill="none" stroke="#bfe3f6" stroke-width="1.5"/>
+    <circle cx="280" cy="240" r="215" fill="url(#li-halo)"/>
 
-    {{-- Connectors from each node to the hub --}}
-    <g stroke="#6cc1ea" stroke-width="2" stroke-dasharray="5 6" fill="none">
-        <path d="M108 112 Q190 150 236 210"/>
-        <path d="M452 112 Q370 150 324 210"/>
-        <path d="M96 270 Q160 262 208 268"/>
-        <path d="M464 270 Q400 262 352 268"/>
-        <path d="M140 378 Q200 350 228 318"/>
-        <path d="M420 378 Q360 350 332 318"/>
-    </g>
-    <g fill="#00aeef">
-        <circle cx="236" cy="210" r="4"/><circle cx="324" cy="210" r="4"/>
-        <circle cx="208" cy="268" r="4"/><circle cx="352" cy="268" r="4"/>
-        <circle cx="228" cy="318" r="4"/><circle cx="332" cy="318" r="4"/>
+    {{-- Collaboration ring linking the units to one another --}}
+    <ellipse class="li-ring" cx="280" cy="240" rx="200" ry="170" fill="none" stroke="#8ccfee" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="3 8"/>
+
+    {{-- Spokes: each unit exchanges work with the platform --}}
+    <g class="li-flow" stroke="#4fb8e6" stroke-width="2.5" stroke-dasharray="6 5" fill="none">
+        <path d="M280 70V240"/>
+        <path d="M453 155 280 240"/>
+        <path d="M453 325 280 240"/>
+        <path d="M280 410V240"/>
+        <path d="M107 325 280 240"/>
+        <path d="M107 155 280 240"/>
     </g>
 
     {{-- Platform base --}}
-    <ellipse cx="280" cy="334" rx="112" ry="30" fill="#d4ebf9"/>
-    <ellipse cx="280" cy="330" rx="96" ry="24" fill="#e9f6fd" stroke="#bfe3f6"/>
-
-    {{-- Stacked data hub --}}
+    <ellipse cx="280" cy="318" rx="132" ry="38" fill="#d4ebf9"/>
     <g filter="url(#li-shadow)">
-        <path d="M210 296v24a70 22 0 0 0 140 0v-24z" fill="url(#li-blue)"/>
-        <ellipse cx="280" cy="296" rx="70" ry="22" fill="url(#li-disk-top)" stroke="#9fd6f2"/>
-        <path d="M210 268v24a70 22 0 0 0 140 0v-24z" fill="url(#li-blue)"/>
-        <ellipse cx="280" cy="268" rx="70" ry="22" fill="url(#li-disk-top)" stroke="#9fd6f2"/>
-        <path d="M210 240v24a70 22 0 0 0 140 0v-24z" fill="url(#li-blue)"/>
-        <ellipse cx="280" cy="240" rx="70" ry="22" fill="url(#li-disk-top)" stroke="#9fd6f2"/>
+        <path d="M170 288v18a110 32 0 0 0 220 0v-18z" fill="url(#li-blue)"/>
+        <ellipse cx="280" cy="288" rx="110" ry="32" fill="url(#li-disk-top)" stroke="#9fd6f2"/>
     </g>
-    <g fill="#7fdcfb">
-        <rect x="228" y="264" width="18" height="3" rx="1.5"/><rect x="228" y="292" width="18" height="3" rx="1.5"/><rect x="228" y="320" width="18" height="3" rx="1.5"/>
-    </g>
-    <ellipse cx="280" cy="240" rx="40" ry="11" fill="#00aeef" opacity="0.18"/>
+    <ellipse cx="280" cy="288" rx="80" ry="21" fill="none" stroke="#00aeef" stroke-opacity="0.45" stroke-width="2"/>
 
-    {{-- Security shield --}}
+    {{-- Platform workstation --}}
+    <path d="M266 260h28l6 24h-40z" fill="#123d73"/>
+    <ellipse cx="280" cy="285" rx="32" ry="7" fill="#123d73"/>
     <g filter="url(#li-shadow)">
-        <path d="M280 104l54 19v40c0 31-23 52-54 61-31-9-54-30-54-61v-40z" fill="url(#li-blue)"/>
-        <path d="M280 116l42 15v32c0 24-18 41-42 48-24-7-42-24-42-48v-32z" fill="url(#li-cyan)"/>
-        <path d="M262 162l13 13 25-27" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="196" y="152" width="168" height="112" rx="10" fill="url(#li-blue)"/>
     </g>
-
-    {{-- Node: cloud services (top left) --}}
+    <rect x="204" y="160" width="152" height="94" rx="5" fill="#ffffff"/>
+    <rect x="204" y="160" width="152" height="15" rx="5" fill="#eaf4fb"/>
+    <g fill="#9fd6f2"><circle cx="213" cy="167.5" r="2.5"/><circle cx="221" cy="167.5" r="2.5"/><circle cx="229" cy="167.5" r="2.5"/></g>
+    <rect x="214" y="208" width="10" height="34" rx="2" fill="#9fd6f2"/>
+    <rect x="229" y="196" width="10" height="46" rx="2" fill="url(#li-cyan)"/>
+    <rect x="244" y="184" width="10" height="58" rx="2" fill="url(#li-blue)"/>
+    <path d="M212 243h48" stroke="#174c8f" stroke-width="1.5"/>
+    <circle cx="300" cy="206" r="17" fill="none" stroke="#eaf4fb" stroke-width="7"/>
+    <circle cx="300" cy="206" r="17" fill="none" stroke="#00aeef" stroke-width="7" stroke-dasharray="72 107" transform="rotate(-90 300 206)"/>
+    <g stroke="#cfe3f2" stroke-width="3" stroke-linecap="round">
+        <path d="M326 194h18"/><path d="M326 204h14"/><path d="M326 214h18"/><path d="M280 238h64"/>
+    </g>
     <g filter="url(#li-shadow)">
-        <rect x="58" y="66" width="80" height="76" rx="16" fill="#ffffff" stroke="#d6e6f3"/>
+        <circle cx="362" cy="156" r="17" fill="url(#li-cyan)" stroke="#ffffff" stroke-width="3"/>
     </g>
-    <path d="M80 118h38a11 11 0 0 0 0-22 15 15 0 0 0-28-4 10 10 0 0 0-10 26z" fill="url(#li-cyan)"/>
-    <path d="M98 112V100m0 0-5 5m5-5 5 5" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M354 156l6 6 10-11" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
 
-    {{-- Node: government office (top right) --}}
-    <g filter="url(#li-shadow)">
-        <rect x="422" y="66" width="80" height="76" rx="16" fill="#ffffff" stroke="#d6e6f3"/>
-    </g>
-    <path d="M440 96l22-13 22 13z" fill="url(#li-blue)"/>
-    <rect x="442" y="97" width="40" height="4" fill="#123d73"/>
-    <g fill="url(#li-cyan)">
-        <rect x="446" y="104" width="5" height="17"/><rect x="455" y="104" width="5" height="17"/>
-        <rect x="464" y="104" width="5" height="17"/><rect x="473" y="104" width="5" height="17"/>
-    </g>
-    <rect x="440" y="122" width="44" height="5" rx="1" fill="#123d73"/>
+    <rect x="222" y="314" width="116" height="24" rx="12" fill="#174c8f"/>
+    <text x="280" y="330.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#ffffff" letter-spacing="0.5">SPMS PLATFORM</text>
 
-    {{-- Node: strategic plan document (left) --}}
-    <g filter="url(#li-shadow)">
-        <rect x="16" y="232" width="80" height="76" rx="16" fill="#ffffff" stroke="#d6e6f3"/>
-    </g>
-    <rect x="40" y="248" width="32" height="44" rx="4" fill="#eaf4fb" stroke="#174c8f" stroke-width="2"/>
-    <rect x="48" y="243" width="16" height="8" rx="2" fill="#174c8f"/>
-    <g stroke="#00aeef" stroke-width="3" stroke-linecap="round">
-        <path d="M47 262h18"/><path d="M47 271h18"/><path d="M47 280h11"/>
+    {{-- Work moving along the spokes --}}
+    <g fill="#00aeef" stroke="#ffffff" stroke-width="2">
+        <circle cx="280" cy="122" r="5.5"/>
+        <circle cx="384" cy="189" r="5.5"/>
+        <circle cx="410" cy="304" r="5.5"/>
+        <circle cx="280" cy="368" r="5.5"/>
+        <circle cx="150" cy="304" r="5.5"/>
+        <circle cx="176" cy="189" r="5.5"/>
     </g>
 
-    {{-- Node: analytics dashboard (right) --}}
-    <g filter="url(#li-shadow)">
-        <rect x="464" y="232" width="80" height="76" rx="16" fill="#ffffff" stroke="#d6e6f3"/>
-    </g>
-    <rect x="482" y="272" width="8" height="18" rx="1.5" fill="#9fd6f2"/>
-    <rect x="495" y="262" width="8" height="28" rx="1.5" fill="url(#li-cyan)"/>
-    <rect x="508" y="252" width="8" height="38" rx="1.5" fill="url(#li-blue)"/>
-    <path d="M478 292h48" stroke="#174c8f" stroke-width="2" stroke-linecap="round"/>
-    <path d="M482 262l12-8 12 2 16-12" fill="none" stroke="#00aeef" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    {{-- Units --}}
+    <g font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" text-anchor="middle">
+        {{-- Planning Office (top) --}}
+        <g filter="url(#li-shadow)"><circle cx="280" cy="70" r="30" fill="#ffffff" stroke="#cfe3f2"/></g>
+        <circle cx="280" cy="70" r="22" fill="url(#li-blue)"/>
+        <path transform="translate(268 58)" fill="#ffffff" d="M9 2h6a1 1 0 0 1 1 1v1h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V3a1 1 0 0 1 1-1Zm0 2v2h6V4H9Zm-1 7v2h8v-2H8Zm0 4v2h5v-2H8Z"/>
+        <rect x="226" y="10" width="108" height="22" rx="11" fill="#ffffff" stroke="#cfe3f2"/>
+        <text x="280" y="25" fill="#174c8f">Planning Office</text>
 
-    {{-- Node: science and technology programmes (bottom left) --}}
-    <g filter="url(#li-shadow)">
-        <rect x="96" y="346" width="80" height="76" rx="16" fill="#ffffff" stroke="#d6e6f3"/>
-    </g>
-    <g fill="none" stroke="#174c8f" stroke-width="2.5">
-        <ellipse cx="136" cy="384" rx="24" ry="9"/>
-        <ellipse cx="136" cy="384" rx="24" ry="9" transform="rotate(60 136 384)"/>
-        <ellipse cx="136" cy="384" rx="24" ry="9" transform="rotate(120 136 384)"/>
-    </g>
-    <circle cx="136" cy="384" r="5" fill="#00aeef"/>
+        {{-- Management (top right) --}}
+        <g filter="url(#li-shadow)"><circle cx="453" cy="155" r="30" fill="#ffffff" stroke="#cfe3f2"/></g>
+        <circle cx="453" cy="155" r="22" fill="url(#li-cyan)"/>
+        <path transform="translate(441 143)" fill="#ffffff" d="M12 2 2 7v2h20V7L12 2ZM4 11v7h3v-7H4Zm6.5 0v7h3v-7h-3ZM17 11v7h3v-7h-3ZM2 20v2h20v-2H2Z"/>
+        <rect x="408" y="193" width="90" height="22" rx="11" fill="#ffffff" stroke="#cfe3f2"/>
+        <text x="453" y="208" fill="#174c8f">Management</text>
 
-    {{-- Node: offices and personnel (bottom right) --}}
-    <g filter="url(#li-shadow)">
-        <rect x="384" y="346" width="80" height="76" rx="16" fill="#ffffff" stroke="#d6e6f3"/>
-    </g>
-    <circle cx="435" cy="374" r="7" fill="url(#li-cyan)"/>
-    <path d="M422 402a13 12 0 0 1 26 0z" fill="url(#li-cyan)"/>
-    <circle cx="418" cy="372" r="8" fill="url(#li-blue)"/>
-    <path d="M402 404a16 14 0 0 1 32 0z" fill="url(#li-blue)"/>
+        {{-- Regional Offices (bottom right) --}}
+        <g filter="url(#li-shadow)"><circle cx="453" cy="325" r="30" fill="#ffffff" stroke="#cfe3f2"/></g>
+        <circle cx="453" cy="325" r="22" fill="url(#li-blue)"/>
+        <path transform="translate(441 313)" fill="#ffffff" d="M12 2a7 7 0 0 1 7 7c0 5.2-7 13-7 13S5 14.2 5 9a7 7 0 0 1 7-7Zm0 4.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/>
+        <rect x="396" y="363" width="114" height="22" rx="11" fill="#ffffff" stroke="#cfe3f2"/>
+        <text x="453" y="378" fill="#174c8f">Regional Offices</text>
 
-    {{-- Accent sparkles --}}
-    <g fill="#00aeef">
-        <circle cx="196" cy="70" r="3" opacity="0.6"/>
-        <circle cx="372" cy="58" r="4" opacity="0.4"/>
-        <circle cx="530" cy="180" r="3" opacity="0.5"/>
-        <circle cx="30" cy="190" r="3" opacity="0.5"/>
+        {{-- Research Institutes (bottom) --}}
+        <g filter="url(#li-shadow)"><circle cx="280" cy="410" r="30" fill="#ffffff" stroke="#cfe3f2"/></g>
+        <circle cx="280" cy="410" r="22" fill="url(#li-cyan)"/>
+        <path transform="translate(268 398)" fill="#ffffff" d="M9 2h6v2h-1v5.2l5.6 9.7A2 2 0 0 1 17.9 22H6.1a2 2 0 0 1-1.7-3.1L10 9.2V4H9V2Zm-.9 14h7.8l-2-3.5h-3.8L8.1 16Z"/>
+        <rect x="214" y="448" width="132" height="22" rx="11" fill="#ffffff" stroke="#cfe3f2"/>
+        <text x="280" y="463" fill="#174c8f">Research Institutes</text>
+
+        {{-- Offices and Units (bottom left) --}}
+        <g filter="url(#li-shadow)"><circle cx="107" cy="325" r="30" fill="#ffffff" stroke="#cfe3f2"/></g>
+        <circle cx="107" cy="325" r="22" fill="url(#li-blue)"/>
+        <path transform="translate(95 313)" fill="#ffffff" d="M9 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Zm8 0a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM1 20c0-3.3 3.6-6 8-6s8 2.7 8 6v1H1v-1Zm17.5 1v-1c0-1.8-.7-3.4-1.9-4.6 3 .3 5.4 2.2 5.4 4.6v1h-3.5Z"/>
+        <rect x="52" y="363" width="110" height="22" rx="11" fill="#ffffff" stroke="#cfe3f2"/>
+        <text x="107" y="378" fill="#174c8f">Offices &amp; Units</text>
+
+        {{-- ICT Services (top left) --}}
+        <g filter="url(#li-shadow)"><circle cx="107" cy="155" r="30" fill="#ffffff" stroke="#cfe3f2"/></g>
+        <circle cx="107" cy="155" r="22" fill="url(#li-cyan)"/>
+        <path transform="translate(95 143)" fill="#ffffff" d="M7 19a5 5 0 0 1-.7-9.95A6.5 6.5 0 0 1 18.8 9.5 4.75 4.75 0 0 1 18 19H7Z"/>
+        <rect x="60" y="193" width="94" height="22" rx="11" fill="#ffffff" stroke="#cfe3f2"/>
+        <text x="107" y="208" fill="#174c8f">ICT Services</text>
     </g>
 </svg>
