@@ -4,6 +4,7 @@ import { can, getAccessSession } from '../../access/access-session.js';
 import { displayRoleName } from '../../access/role-labels.js';
 import { createUser, listRoles, searchUsers, updateUser, updateUserStatus } from '../../api/users-api.js';
 import { AppDialog } from '../../components/AppDialog.js';
+import { FilterBar, FilterSearch, FilterSelect } from '../../components/FilterBar.js';
 import { PageHeader } from '../../components/PageHeader.js';
 import { TechnicalAdminSidebar } from '../../components/TechnicalAdminSidebar.js';
 import { useDialogBehaviour } from '../../components/use-dialog-behaviour.js';
@@ -402,46 +403,12 @@ canHandlePasswordAssistance
             setNotice({ type, message }),
     })
     : null,
-                React.createElement('section', { className: 'ui-card user-filter-card', 'aria-labelledby': 'user-filter-title' },
-                    React.createElement('div', { className: 'ui-section-header' },
-                        React.createElement('div', { className: 'ui-section-header__copy' },
-                            React.createElement('h2', { id: 'user-filter-title' }, 'Find user accounts'),
-                            React.createElement('p', null, 'Search the account register or narrow results by role and status.')
-                        ),
-                        React.createElement('i', { className: 'bi bi-funnel', 'aria-hidden': 'true' })
-                    ),
-                    React.createElement('div', { className: 'ui-card__body' },
-                        React.createElement('form', { className: 'user-filters', onSubmit: applyFilters },
-                            React.createElement('div', { className: 'ui-field user-filters__search' },
-                                React.createElement('label', { className: 'ui-label', htmlFor: 'user-search' }, 'Search'),
-                                React.createElement('div', { className: 'user-search-control' },
-                                    React.createElement('input', { id: 'user-search', className: 'ui-input', value: filters.search, placeholder: 'Search name or email', onChange: (event) => setFilters((current) => ({ ...current, search: event.target.value })) }),
-                                    React.createElement('i', { className: 'bi bi-search', 'aria-hidden': 'true' })
-                                )
-                            ),
-                            React.createElement('div', { className: 'ui-field' },
-                                React.createElement('label', { className: 'ui-label', htmlFor: 'user-role' }, 'Role'),
-                                React.createElement('select', { id: 'user-role', className: 'ui-select', value: filters.role_id, onChange: (event) => setFilters((current) => ({ ...current, role_id: event.target.value })) },
-                                    React.createElement('option', { value: '' }, 'All roles'),
-                                    roles.map((role) => React.createElement('option', { key: role.role_id, value: role.role_id }, displayRoleName(role.role_name)))
-                                )
-                            ),
-                            React.createElement('div', { className: 'ui-field' },
-                                React.createElement('label', { className: 'ui-label', htmlFor: 'user-status' }, 'Status'),
-                                React.createElement('select', { id: 'user-status', className: 'ui-select', value: filters.status, onChange: (event) => setFilters((current) => ({ ...current, status: event.target.value })) },
-                                    React.createElement('option', { value: '' }, 'All statuses'),
-                                    React.createElement('option', { value: 'active' }, 'Active'),
-                                    React.createElement('option', { value: 'inactive' }, 'Disabled'),
-                                    React.createElement('option', { value: 'suspended' }, 'Suspended')
-                                )
-                            ),
-                            React.createElement('div', { className: 'user-filter-actions' },
-                                React.createElement('button', { className: 'ui-button ui-button--primary', type: 'submit', disabled: loading }, React.createElement('i', { className: 'bi bi-funnel-fill' }), 'Filter'),
-                                React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', onClick: clearFilters, disabled: loading }, 'Clear')
-                            )
-                        )
-                    )
+                React.createElement(FilterBar, { label: 'Filter user accounts', busy: loading, onSubmit: applyFilters, onClear: clearFilters },
+                    React.createElement(FilterSearch, { id: 'user-search', label: 'Search', value: filters.search, placeholder: 'Search name or email', onChange: (search) => setFilters((current) => ({ ...current, search })) }),
+                    React.createElement(FilterSelect, { id: 'user-role', label: 'Role', value: filters.role_id, allLabel: 'All roles', options: roles.map((role) => [role.role_id, displayRoleName(role.role_name)]), onChange: (role_id) => setFilters((current) => ({ ...current, role_id })) }),
+                    React.createElement(FilterSelect, { id: 'user-status', label: 'Status', value: filters.status, allLabel: 'All statuses', options: [['active', 'Active'], ['inactive', 'Disabled'], ['suspended', 'Suspended']], onChange: (status) => setFilters((current) => ({ ...current, status })) })
                 ),
+
                 React.createElement('section', { className: 'ui-card user-list-card', 'aria-labelledby': 'user-list-title' },
                     React.createElement('div', { className: 'ui-card__header user-list-header' },
                         React.createElement('div', null,

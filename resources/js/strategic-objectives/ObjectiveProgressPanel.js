@@ -1,6 +1,7 @@
 import { calculatedProgressStatus, progressStatusLabel, listObjectiveProgress, updateObjectiveProgress, listObjectiveProgressHistory } from '../api/objective-progress-api.js';
 import { can, getAccessSession } from '../access/access-session.js';
 import { PERMISSIONS as P } from '../access/access-policy.js';
+import { FilterBar, FilterSearch, FilterSelect } from '../components/FilterBar.js';
 
 const h = React.createElement;
 const date = value => value ? new Date(value).toLocaleString() : 'No updates yet';
@@ -63,8 +64,8 @@ export function ObjectiveProgressPanel({ planId = '' }) {
     }
 
     const filter = (key, value) => { setPage(1); setFilters(current => ({ ...current, [key]: value })); };
-    const button = (label, onClick, disabled = false) => h('button', { type: 'button', className: 'ui-button ui-button--secondary ui-button--sm', onClick, disabled }, label);
     const activeFilters = Boolean(filters.search || filters.progress_status);
+    const button = (label, onClick, disabled = false) => h('button', { type: 'button', className: 'ui-button ui-button--secondary ui-button--sm', onClick, disabled }, label);
 
     const accountCard = h('section', { className: 'ui-card progress-monitor-assignment-card', 'aria-label': 'Current account information' },
         h('div', { className: 'progress-monitor-assignment-icon', 'aria-hidden': 'true' }, h('i', { className: correction ? 'bi bi-person-check-fill' : 'bi bi-building' })),
@@ -73,24 +74,9 @@ export function ObjectiveProgressPanel({ planId = '' }) {
             h('strong', null, session?.name || 'Current user'),
             h('span', null, [session?.roleLabel || session?.roleName, session?.office || session?.department].filter(Boolean).join(' · ') || 'Account details unavailable')));
 
-    const filterCard = h('section', { className: 'ui-card progress-monitor-filter-card', 'aria-labelledby': 'progress-monitor-filter-title' },
-        h('div', { className: 'ui-section-header' },
-            h('div', { className: 'ui-section-header__copy' },
-                h('h2', { id: 'progress-monitor-filter-title' }, 'Find objectives'),
-                h('p', null, 'Search objectives or filter by the calculated progress status.')),
-            h('i', { className: 'bi bi-funnel', 'aria-hidden': 'true' })),
-        h('div', { className: 'ui-card__body' },
-            h('div', { className: 'progress-monitor-filters' },
-                h('label', { className: 'ui-field' },
-                    h('span', { className: 'ui-label' }, 'Objective title'),
-                    h('input', { className: 'ui-input', type: 'search', value: filters.search, placeholder: 'Search objectives', onChange: event => filter('search', event.target.value) })),
-                h('label', { className: 'ui-field' },
-                    h('span', { className: 'ui-label' }, 'Progress status'),
-                    h('select', { className: 'ui-select', value: filters.progress_status, onChange: event => filter('progress_status', event.target.value) },
-                        h('option', { value: '' }, 'All statuses'),
-                        ...['not_started', 'in_progress', 'completed'].map(status => h('option', { key: status, value: status }, progressStatusLabel(status))))),
-                h('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', disabled: !activeFilters,
-                    onClick: () => { setPage(1); setFilters({ search: '', progress_status: '' }); } }, 'Clear'))));
+    const filterCard = h(FilterBar, { label: 'Filter objectives', onClear: () => { setPage(1); setFilters({ search: '', progress_status: '' }); } },
+        h(FilterSearch, { id: 'progress-monitor-search', label: 'Objective title', value: filters.search, placeholder: 'Search objectives', onChange: value => filter('search', value) }),
+        h(FilterSelect, { id: 'progress-monitor-status', label: 'Progress status', value: filters.progress_status, allLabel: 'All statuses', options: ['not_started', 'in_progress', 'completed'].map(status => [status, progressStatusLabel(status)]), onChange: value => filter('progress_status', value) }));
 
     const table = h('table', { className: 'ui-table progress-monitor-table' },
         h('thead', null, h('tr', null, ...['Objective', 'Strategic plan', 'Office/Unit', 'Current progress', 'Last updated', 'Actions'].map(label => h('th', { key: label, scope: 'col' }, label)))),

@@ -10,6 +10,7 @@ import { OfficePlanDetail } from './office-plan-detail.js';
 import { officePlanHref, officeViewShowsAllPlans } from './office-plan-navigation.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { PageHeader } from '../../components/PageHeader.js';
+import { FilterBar, FilterSearch, FilterSelect } from '../../components/FilterBar.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
 
 
@@ -50,9 +51,8 @@ function OfficeApp() {
   const firstAvailable = plans.find(plan => plan.status === 'draft');
   if (firstAvailable) setInputPlanId(String(firstAvailable.record_id));
  }, [plans, inputPlanId, view]);
- const field = (name, label, options) => h('label', { className: 'office-filter', key: name }, label,
-  options ? h('select', { value: filters[name], onChange: e => setFilters({ ...filters, [name]: e.target.value }) }, h('option', { value: '' }, `All ${label.toLowerCase()}`), options.map(option => h('option', { key: option.value ?? option, value: option.value ?? option }, option.label ?? option)))
-   : h('input', { type: name === 'year' ? 'number' : 'search', placeholder: name === 'search' ? 'Search plans...' : 'YYYY', value: filters[name], onChange: e => setFilters({ ...filters, [name]: e.target.value }) }));
+ const setFilter = name => value => setFilters({ ...filters, [name]: value });
+ const filterOptions = options => options.map(option => [option.value ?? option, option.label ?? option]);
 
  if (['inputs', 'agency-input'].includes(view)) {
   const draftPlans = plans.filter(plan => plan.status === 'draft');
@@ -94,10 +94,11 @@ function OfficeApp() {
    entry && !(view === 'progress'
     ? can(P.OBJECTIVES_VIEW_PROGRESS) || can(P.OBJECTIVES_UPDATE_PROGRESS) || can(P.OBJECTIVES_CORRECT_PROGRESS)
     : canOpenPage(entry, getAccessSession())) ? h('p', { role: 'alert' }, 'You do not have permission to access this function.') : ['edit', 'progress', 'mapping', 'alignment'].includes(view) ? h(OfficeWorkflow, { view }) : h(React.Fragment, null,
-   h('form', { className: 'office-panel office-filters', onSubmit: e => { e.preventDefault(); setQuery({ ...filters, page: 1 }); } },
-    h('h2', null, 'Search and filter'), h('div', { className: 'office-filter-grid' },
-     field('search', 'Search'), field('office', 'Offices', offices), field('level', 'Type', [{ value: 'strategic_plan', label: 'Strategic plan' }, { value: 'goal', label: 'Goal' }]), field('year', 'Year', Array.from({ length: Math.max(1, new Date().getFullYear() - 1999) }, (_, index) => String(new Date().getFullYear() - index))),
-     h('button', { type: 'submit', disabled: loading }, 'Filter'), h('button', { type: 'button', onClick: () => { setFilters(empty); setQuery({ page: 1 }); } }, 'Clear'))),
+   h(FilterBar, { label: 'Filter plans', busy: loading, onSubmit: () => setQuery({ ...filters, page: 1 }), onClear: () => { setFilters(empty); setQuery({ page: 1 }); } },
+    h(FilterSearch, { id: 'office-plan-search', label: 'Search', value: filters.search, placeholder: 'Search plans...', onChange: setFilter('search') }),
+    h(FilterSelect, { id: 'office-plan-office', label: 'Office', value: filters.office, allLabel: 'All offices', options: filterOptions(offices), onChange: setFilter('office') }),
+    h(FilterSelect, { id: 'office-plan-level', label: 'Type', value: filters.level, allLabel: 'All types', options: [['strategic_plan', 'Strategic plan'], ['goal', 'Goal']], onChange: setFilter('level') }),
+    h(FilterSelect, { id: 'office-plan-year', label: 'Year', value: filters.year, allLabel: 'All years', options: filterOptions(Array.from({ length: Math.max(1, new Date().getFullYear() - 1999) }, (_, index) => String(new Date().getFullYear() - index))), onChange: setFilter('year') })),
    h('section', { className: 'office-panel office-plans', 'aria-busy': loading }, h('h2', null, 'Strategic Plans'),
     error && h('p', { role: 'alert' }, error, ' ', h('button', { onClick: () => setQuery({ ...query }) }, 'Retry')),
     h('div', { className: 'office-table-scroll' }, h('table', null,

@@ -2,6 +2,7 @@ import { mountProtectedPage } from '../../access/mount-protected-page.js';
 import { listLogs } from '../../api/logs-api.js';
 import { searchUsers } from '../../api/users-api.js';
 import { PageHeader } from '../../components/PageHeader.js';
+import { FilterBar, FilterDate, FilterSearch, FilterSelect, FilterText } from '../../components/FilterBar.js';
 import { TechnicalAdminSidebar } from '../../components/TechnicalAdminSidebar.js';
 
 
@@ -176,14 +177,6 @@ function AuditLogsApp() {
         loadLogs(1, initialFilters);
     }
 
-    function field(id, label, control, error) {
-        return React.createElement('div', { className: `ui-field${error ? ' is-invalid' : ''}` },
-            React.createElement('label', { className: 'ui-label', htmlFor: id }, label),
-            control,
-            error ? React.createElement('p', { className: 'ui-error' }, error) : null
-        );
-    }
-
     return React.createElement(React.Fragment, null,
         React.createElement(TechnicalAdminSidebar, {
             active: 'Audit Logs',
@@ -201,95 +194,14 @@ function AuditLogsApp() {
                     ? React.createElement('div', { className: `ui-status ui-status--${notice.type}`, role: 'status', 'aria-live': 'polite' }, notice.message)
                     : null,
 
-                React.createElement('section', { className: 'ui-card', 'aria-labelledby': 'audit-filter-title' },
-                    React.createElement('div', { className: 'ui-section-header' },
-                        React.createElement('div', { className: 'ui-section-header__copy' },
-                            React.createElement('h2', { id: 'audit-filter-title' }, 'Find recorded activity'),
-                            React.createElement('p', null, 'Narrow the trail by account, action, resource, outcome or date range.')
-                        ),
-                        React.createElement('i', { className: 'bi bi-funnel', 'aria-hidden': 'true' })
-                    ),
-                    React.createElement('div', { className: 'ui-card__body' },
-                        React.createElement('form', { className: 'audit-filters', onSubmit: applyFilters },
-                            field('audit-search', 'Search',
-                                React.createElement('input', {
-                                    id: 'audit-search',
-                                    className: 'ui-input',
-                                    value: filters.search,
-                                    placeholder: 'Search actions, actors or resources',
-                                    maxLength: 100,
-                                    onChange: (event) => setFilters((current) => ({ ...current, search: event.target.value })),
-                                }), errors.search && errors.search[0]),
-
-                            field('audit-user', 'User',
-                                React.createElement('select', {
-                                    id: 'audit-user',
-                                    className: 'ui-select',
-                                    value: filters.user_id,
-                                    onChange: (event) => setFilters((current) => ({ ...current, user_id: event.target.value })),
-                                },
-                                    React.createElement('option', { value: '' }, 'All users'),
-                                    users.map((user) => React.createElement('option', { key: user.user_id, value: user.user_id }, user.name || user.email))
-                                ), errors.user_id && errors.user_id[0]),
-
-                            field('audit-action', 'Action',
-                                React.createElement('input', {
-                                    id: 'audit-action',
-                                    className: 'ui-input',
-                                    value: filters.action,
-                                    placeholder: 'e.g. auth.password_changed',
-                                    maxLength: 150,
-                                    onChange: (event) => setFilters((current) => ({ ...current, action: event.target.value })),
-                                }), errors.action && errors.action[0]),
-
-                            field('audit-resource', 'Resource type',
-                                React.createElement('input', {
-                                    id: 'audit-resource',
-                                    className: 'ui-input',
-                                    value: filters.resource_type,
-                                    placeholder: 'e.g. user',
-                                    maxLength: 100,
-                                    onChange: (event) => setFilters((current) => ({ ...current, resource_type: event.target.value })),
-                                }), errors.resource_type && errors.resource_type[0]),
-
-                            field('audit-outcome', 'Outcome',
-                                React.createElement('select', {
-                                    id: 'audit-outcome',
-                                    className: 'ui-select',
-                                    value: filters.outcome,
-                                    onChange: (event) => setFilters((current) => ({ ...current, outcome: event.target.value })),
-                                },
-                                    React.createElement('option', { value: '' }, 'All outcomes'),
-                                    React.createElement('option', { value: 'success' }, 'Success'),
-                                    React.createElement('option', { value: 'failure' }, 'Failure'),
-                                    React.createElement('option', { value: 'denied' }, 'Denied')
-                                ), errors.outcome && errors.outcome[0]),
-
-                            field('audit-from', 'From',
-                                React.createElement('input', {
-                                    id: 'audit-from',
-                                    className: 'ui-input',
-                                    type: 'date',
-                                    value: filters.date_from,
-                                    onChange: (event) => setFilters((current) => ({ ...current, date_from: event.target.value })),
-                                }), errors.date_from && errors.date_from[0]),
-
-                            field('audit-to', 'To',
-                                React.createElement('input', {
-                                    id: 'audit-to',
-                                    className: 'ui-input',
-                                    type: 'date',
-                                    value: filters.date_to,
-                                    onChange: (event) => setFilters((current) => ({ ...current, date_to: event.target.value })),
-                                }), errors.date_to && errors.date_to[0]),
-
-                            React.createElement('div', { className: 'audit-filter-actions' },
-                                React.createElement('button', { className: 'ui-button ui-button--primary', type: 'submit', disabled: loading },
-                                    React.createElement('i', { className: 'bi bi-search', 'aria-hidden': 'true' }), 'Apply filters'),
-                                React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', onClick: clearFilters, disabled: loading }, 'Clear')
-                            )
-                        )
-                    )
+                React.createElement(FilterBar, { label: 'Filter audit logs', busy: loading, onSubmit: applyFilters, onClear: clearFilters },
+                    React.createElement(FilterSearch, { id: 'audit-search', label: 'Search', value: filters.search, placeholder: 'Search actions, actors or resources', maxLength: 100, error: errors.search && errors.search[0], onChange: (search) => setFilters((current) => ({ ...current, search })) }),
+                    React.createElement(FilterSelect, { id: 'audit-user', label: 'User', value: filters.user_id, allLabel: 'All users', options: users.map((user) => [user.user_id, user.name || user.email]), error: errors.user_id && errors.user_id[0], onChange: (user_id) => setFilters((current) => ({ ...current, user_id })) }),
+                    React.createElement(FilterText, { id: 'audit-action', label: 'Action', value: filters.action, placeholder: 'e.g. auth.password_changed', maxLength: 150, error: errors.action && errors.action[0], onChange: (action) => setFilters((current) => ({ ...current, action })) }),
+                    React.createElement(FilterText, { id: 'audit-resource', label: 'Resource type', value: filters.resource_type, placeholder: 'e.g. user', maxLength: 100, error: errors.resource_type && errors.resource_type[0], onChange: (resource_type) => setFilters((current) => ({ ...current, resource_type })) }),
+                    React.createElement(FilterSelect, { id: 'audit-outcome', label: 'Outcome', value: filters.outcome, allLabel: 'All outcomes', options: [['success', 'Success'], ['failure', 'Failure'], ['denied', 'Denied']], error: errors.outcome && errors.outcome[0], onChange: (outcome) => setFilters((current) => ({ ...current, outcome })) }),
+                    React.createElement(FilterDate, { id: 'audit-from', label: 'From', value: filters.date_from, error: errors.date_from && errors.date_from[0], onChange: (date_from) => setFilters((current) => ({ ...current, date_from })) }),
+                    React.createElement(FilterDate, { id: 'audit-to', label: 'To', value: filters.date_to, error: errors.date_to && errors.date_to[0], onChange: (date_to) => setFilters((current) => ({ ...current, date_to })) })
                 ),
 
                 React.createElement('section', { className: 'ui-card', 'aria-labelledby': 'audit-results-title' },

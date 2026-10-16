@@ -3,6 +3,7 @@ import { getAccessSession } from '../../access/access-session.js';
 import { listLoginHistory } from '../../api/login-history-api.js';
 import { searchUsers } from '../../api/users-api.js';
 import { AdministrativeAdminSidebar } from '../../components/AdministrativeAdminSidebar.js';
+import { FilterBar, FilterDate, FilterSearch, FilterSelect } from '../../components/FilterBar.js';
 import { PageHeader } from '../../components/PageHeader.js';
 import { TechnicalAdminSidebar } from '../../components/TechnicalAdminSidebar.js';
 
@@ -91,83 +92,12 @@ function LoginHistoryApp() {
 
                 notice.message ? React.createElement('div', { className: `ui-status ui-status--${notice.type}`, role: 'status', 'aria-live': 'polite' }, notice.message) : null,
 
-                React.createElement('section', { className: 'ui-card', 'aria-labelledby': 'history-filter-title' },
-                    React.createElement('div', { className: 'ui-section-header' },
-                        React.createElement('div', { className: 'ui-section-header__copy' },
-                            React.createElement('h2', { id: 'history-filter-title' }, 'Find sign-in attempts'),
-                            React.createElement('p', null, 'Filter the audit trail by account, outcome, or date range.')
-                        ),
-                        React.createElement('i', { className: 'bi bi-funnel', 'aria-hidden': 'true' })
-                    ),
-                    React.createElement('div', { className: 'ui-card__body' },
-                        React.createElement('form', { className: 'login-history-filters', onSubmit: applyFilters },
-                            React.createElement('div', { className: 'ui-field login-history-filters__search' },
-                                React.createElement('label', { className: 'ui-label', htmlFor: 'history-search' }, 'Email'),
-                                React.createElement('input', {
-                                    id: 'history-search',
-                                    className: 'ui-input',
-                                    value: filters.search,
-                                    placeholder: 'Search the address used',
-                                    onChange: (event) => setFilters((current) => ({ ...current, search: event.target.value })),
-                                })
-                            ),
-                            React.createElement('div', { className: 'ui-field' },
-                                React.createElement('label', { className: 'ui-label', htmlFor: 'history-user' }, 'User'),
-                                React.createElement('select', {
-                                    id: 'history-user',
-                                    className: 'ui-select',
-                                    value: filters.user_id,
-                                    onChange: (event) => setFilters((current) => ({ ...current, user_id: event.target.value })),
-                                },
-                                    React.createElement('option', { value: '' }, 'All users'),
-                                    users.map((user) => React.createElement('option', { key: user.user_id, value: user.user_id }, user.name || user.email))
-                                )
-                            ),
-                            React.createElement('div', { className: 'ui-field' },
-                                React.createElement('label', { className: 'ui-label', htmlFor: 'history-outcome' }, 'Outcome'),
-                                React.createElement('select', {
-                                    id: 'history-outcome',
-                                    className: 'ui-select',
-                                    value: filters.status,
-                                    onChange: (event) => setFilters((current) => ({ ...current, status: event.target.value })),
-                                },
-                                    React.createElement('option', { value: '' }, 'All outcomes'),
-                                    React.createElement('option', { value: 'success' }, 'Successful'),
-                                    React.createElement('option', { value: 'failed' }, 'Failed')
-                                )
-                            ),
-                            React.createElement('div', { className: `ui-field${errors.date_from ? ' is-invalid' : ''}` },
-                                React.createElement('label', { className: 'ui-label', htmlFor: 'history-from' }, 'From'),
-                                React.createElement('input', {
-                                    id: 'history-from',
-                                    className: 'ui-input',
-                                    type: 'date',
-                                    value: filters.date_from,
-                                    'aria-invalid': errors.date_from ? 'true' : undefined,
-                                    'aria-describedby': errors.date_from ? 'history-from-error' : undefined,
-                                    onChange: (event) => setFilters((current) => ({ ...current, date_from: event.target.value })),
-                                }),
-                                errors.date_from ? React.createElement('p', { id: 'history-from-error', className: 'ui-error' }, errors.date_from[0]) : null
-                            ),
-                            React.createElement('div', { className: `ui-field${errors.date_to ? ' is-invalid' : ''}` },
-                                React.createElement('label', { className: 'ui-label', htmlFor: 'history-to' }, 'To'),
-                                React.createElement('input', {
-                                    id: 'history-to',
-                                    className: 'ui-input',
-                                    type: 'date',
-                                    value: filters.date_to,
-                                    'aria-invalid': errors.date_to ? 'true' : undefined,
-                                    'aria-describedby': errors.date_to ? 'history-to-error' : undefined,
-                                    onChange: (event) => setFilters((current) => ({ ...current, date_to: event.target.value })),
-                                }),
-                                errors.date_to ? React.createElement('p', { id: 'history-to-error', className: 'ui-error' }, errors.date_to[0]) : null
-                            ),
-                            React.createElement('div', { className: 'login-history-filter-actions' },
-                                React.createElement('button', { className: 'ui-button ui-button--primary', type: 'submit', disabled: loading }, React.createElement('i', { className: 'bi bi-search' }), 'Search'),
-                                React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', disabled: loading, onClick: clearFilters }, 'Clear')
-                            )
-                        )
-                    )
+                React.createElement(FilterBar, { label: 'Filter sign-in attempts', busy: loading, onSubmit: applyFilters, onClear: clearFilters },
+                    React.createElement(FilterSearch, { id: 'history-search', label: 'Email', value: filters.search, placeholder: 'Search the address used', onChange: (search) => setFilters((current) => ({ ...current, search })) }),
+                    React.createElement(FilterSelect, { id: 'history-user', label: 'User', value: filters.user_id, allLabel: 'All users', options: users.map((user) => [user.user_id, user.name || user.email]), onChange: (user_id) => setFilters((current) => ({ ...current, user_id })) }),
+                    React.createElement(FilterSelect, { id: 'history-outcome', label: 'Outcome', value: filters.status, allLabel: 'All outcomes', options: [['success', 'Successful'], ['failed', 'Failed']], onChange: (status) => setFilters((current) => ({ ...current, status })) }),
+                    React.createElement(FilterDate, { id: 'history-from', label: 'From', value: filters.date_from, error: errors.date_from && errors.date_from[0], onChange: (date_from) => setFilters((current) => ({ ...current, date_from })) }),
+                    React.createElement(FilterDate, { id: 'history-to', label: 'To', value: filters.date_to, error: errors.date_to && errors.date_to[0], onChange: (date_to) => setFilters((current) => ({ ...current, date_to })) })
                 ),
 
                 React.createElement('section', { className: 'ui-card', 'aria-labelledby': 'history-list-title' },

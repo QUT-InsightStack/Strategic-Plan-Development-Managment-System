@@ -9,9 +9,6 @@
 .progress-monitor-assignment-card strong { color: var(--color-primary); font-size: var(--font-size-sm); }
 .progress-monitor-assignment-card span { margin-top: 2px; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
 .progress-monitor-feedback { margin-bottom: var(--space-4); }
-.progress-monitor-filter-card { margin-bottom: var(--space-5); overflow: hidden; }
-.progress-monitor-filters { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(210px, .5fr) auto; gap: var(--space-4); align-items: end; }
-.progress-monitor-filters .ui-button { min-width: 90px; }
 .progress-monitor-list-card, .progress-monitor-editor, .progress-monitor-history { overflow: hidden; margin-bottom: var(--space-5); }
 .progress-monitor-list-heading { display: flex; align-items: center; justify-content: space-between; min-height: 76px; padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--color-border-subtle); }
 .progress-monitor-list-heading h2 { margin: 0; color: var(--color-primary); font-size: var(--font-size-lg); }
@@ -45,8 +42,6 @@
 .progress-monitor-history-list span, .progress-monitor-history-list p { margin: 4px 0 0; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
 .progress-monitor-history-list p { white-space: pre-wrap; }
 @media (max-width: 760px) {
-    .progress-monitor-filters { grid-template-columns: 1fr; }
-    .progress-monitor-filters .ui-button { width: 100%; }
     .progress-monitor-list-heading { padding: var(--space-3); }
     .progress-monitor-pagination { flex-wrap: wrap; justify-content: center; padding: var(--space-3); }
 }

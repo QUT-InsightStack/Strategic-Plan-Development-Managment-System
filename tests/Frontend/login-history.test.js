@@ -37,6 +37,9 @@ function page(entries) {
             return { data: entries, meta: { total: entries.length, current_page: 1, last_page: 1 } };
         },
     });
+    // The shared filter bar is loaded for real so its form and fields appear in the tree.
+    const filterBar = readFileSync(new URL('../../resources/js/components/FilterBar.js', import.meta.url), 'utf8');
+    vm.runInContext(filterBar.replace(/^export /gm, ''), context);
     const source = readFileSync(new URL('../../resources/js/pages/technical-admin/login-history-app.js', import.meta.url), 'utf8');
     vm.runInContext(source.replace(/^import .*;\r?$/gm, ''), context);
     return {
@@ -47,6 +50,7 @@ function page(entries) {
 
 function nodes(tree, predicate) {
     if (!tree || typeof tree !== 'object') return [];
+    if (typeof tree.type === 'function') return nodes(tree.type({ ...tree.props, children: tree.children }), predicate);
     return [...(predicate(tree) ? [tree] : []), ...tree.children.flatMap((child) => nodes(child, predicate))];
 }
 
