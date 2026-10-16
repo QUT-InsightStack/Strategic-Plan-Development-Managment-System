@@ -1,12 +1,37 @@
+/* Security Settings page: settings card (one row per setting) beside a plain-language policy summary. */
+.security-settings-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); align-items: start; gap: var(--space-5); }
+/* Role Management reuses .security-settings for its permission panel and keeps the narrower width. */
 .security-settings { max-width: 920px; }
-.security-settings__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
-.security-settings__field:first-child { grid-column: 1 / -1; }
-.security-settings__field { display: grid; gap: var(--space-2); align-content: start; color: var(--color-gray-800); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
-.security-settings__hint { color: var(--color-text-secondary); font-size: 12px; font-weight: var(--font-weight-normal); }
+.security-settings-layout .security-settings, .settings-summary { max-width: none; overflow: hidden; border-color: var(--color-border-subtle); border-radius: var(--radius-lg); box-shadow: var(--shadow-xs); }
+.security-settings__loading { padding: var(--space-5); color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+
+.security-settings__field { display: grid; grid-template-columns: 40px minmax(0, 1fr) 200px; align-items: center; gap: var(--space-4); border-bottom: 1px solid var(--color-border-subtle); padding: var(--space-5); }
+.security-settings__field.is-changed { background: var(--color-primary-soft); }
+.security-settings__icon { display: grid; width: 40px; height: 40px; place-items: center; border-radius: var(--radius-lg); color: var(--color-primary); background: var(--color-primary-soft); font-size: 18px; }
+.security-settings__field.is-changed .security-settings__icon { background: var(--color-surface); }
+.security-settings__copy { display: grid; min-width: 0; gap: 4px; }
+.security-settings__copy label { color: var(--color-text); font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); }
+.security-settings__hint { color: var(--color-text-secondary); font-size: var(--font-size-xs); line-height: var(--line-height-body); }
+.security-settings__default { color: var(--color-gray-800); }
 .security-settings__control { display: flex; align-items: center; gap: var(--space-2); }
-.security-settings__control .ui-input { flex: 1 1 auto; min-width: 0; }
-.security-settings__unit { color: var(--color-text-secondary); font-size: 12px; font-weight: var(--font-weight-normal); white-space: nowrap; }
+.security-settings__control .ui-input { flex: 1 1 auto; min-width: 0; font-variant-numeric: tabular-nums; text-align: right; }
+.security-settings__unit { width: 60px; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
 .security-settings__field.is-invalid .ui-input { border-color: var(--color-danger); }
-.security-settings__loading { color: var(--color-text-secondary); font-size: var(--font-size-xs); }
-.security-settings__actions { grid-column: 1 / -1; display: flex; gap: var(--space-3); flex-wrap: wrap; }
-.security-settings__form > .ui-status { grid-column: 1 / -1; justify-self: start; }
+
+.security-settings__actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); padding: var(--space-4) var(--space-5); background: var(--color-surface-header); }
+.security-settings__actions .ui-status { margin: 0; }
+.security-settings__state { color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+.security-settings__buttons { display: flex; gap: var(--space-3); margin-left: auto; }
+
+.settings-summary ul { display: grid; gap: var(--space-4); margin: 0; padding: var(--space-5); list-style: none; }
+.settings-summary li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: var(--space-3); color: var(--color-text); font-size: var(--font-size-sm); line-height: var(--line-height-body); }
+.settings-summary li .bi { color: var(--color-brand-cyan); font-size: 16px; }
+.settings-summary__note { margin: 0; border-top: 1px solid var(--color-border-subtle); padding: var(--space-4) var(--space-5); color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+
+@media (max-width: 1100px) { .security-settings-layout { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+    .security-settings__field { grid-template-columns: 40px minmax(0, 1fr); }
+    .security-settings__control { grid-column: 1 / -1; }
+    .security-settings__buttons { width: 100%; }
+    .security-settings__buttons .ui-button { flex: 1; }
+}

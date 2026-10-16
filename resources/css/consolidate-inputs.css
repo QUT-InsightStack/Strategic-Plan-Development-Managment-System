@@ -1,60 +1,101 @@
 @import './office.css';
 
+/* Planning Inputs register: source tabs, queue cards (status counts that filter the list),
+   a single-row filter bar and a full-width register card, all inside the site content width. */
 .consolidate-content { padding: var(--page-gutter); }
+.consolidate-content > .app-shell-container > .ui-status { margin-bottom: var(--space-4); }
 
-.consolidate-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: var(--space-5); align-items: start; }
-.consolidate-register { min-height: calc(100vh - 155px); display: flex; flex-direction: column; padding: 20px 14px 0; }
-.consolidate-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 0 4px 16px; flex-wrap: wrap; }
-.consolidate-toolbar h2 { color: var(--color-primary); font-size: 18px; margin: 0; }
-.consolidate-filters { display: flex; gap: 12px; flex-wrap: wrap; }
-.consolidate-filters select, .consolidate-dialog select { padding: 9px 12px; border: 1px solid #bfcbd8; border-radius: 5px; background: var(--color-surface); max-width: 100%; }
-.consolidate-register table { min-width: 760px; font-size: var(--font-size-table); }
-.consolidate-register th, .consolidate-register td { padding: 12px 8px; }
-.consolidate-register small { display: block; color: #64748b; margin-top: 5px; font-size: 12px; }
-.consolidate-office { display: flex; align-items: center; gap: 8px; min-width: 115px; }
-.consolidate-avatar { display: grid; place-items: center; border-radius: 50%; width: 24px; height: 24px; flex-shrink: 0; background: #e4edfd; color: var(--color-primary); }
-.consolidate-excerpt { max-width: 230px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-.consolidate-status { display: inline-block; padding: 5px 9px; border-radius: 3px; font-size: 12px; white-space: nowrap; }
-.is-pending { background: #fff6e7; color: #945300; }
-.is-accepted { background: #eaf7ec; color: #237237; }
-.is-merged { background: #e3eeff; color: #175bb2; }
-.is-returned { background: #fff0e9; color: #a34722; }
-.is-rejected { background: #fde9ec; color: #a5233b; }
-.consolidate-register .office-pagination { margin-bottom: 24px; }
-.consolidate-empty { height: 240px; text-align: center !important; color: #64748b; }
-.consolidate-guidance { margin-top: auto; background: var(--color-section-header-background); padding: 24px 16px; display: flex; gap: 14px; color: var(--color-primary); font-size: 13px; line-height: 1.6; }
-.consolidate-guidance i { font-size: 22px; }
-.consolidate-guidance p { margin: 0 0 8px; }
-.consolidate-summary { padding: 22px 14px; }
-.consolidate-summary h2 { color: var(--color-primary); margin-bottom: 8px; }
-.consolidate-summary > small { display: block; margin-bottom: 20px; color: #64748b; }
-.consolidate-stat { display: flex; gap: 14px; align-items: center; padding: 15px 12px; border-radius: 10px; margin-bottom: 10px; font-size: 13px; }
-.consolidate-stat i { font-size: 23px; }
-.consolidate-stat strong { display: block; margin-top: 5px; font-size: 17px; }
-.consolidate-updates { border-top: 1px solid #dce5ef; margin-top: 24px; padding-top: 16px; font-size: 13px; line-height: 1.6; }
-.consolidate-updates h3 { font-size: 14px; color: var(--color-primary); }
-.consolidate-backdrop { position: fixed; inset: 0; background: #10254380; z-index: 1000; display: grid; place-items: center; padding: 20px; }
-.consolidate-dialog { background: var(--color-surface); border-radius: 12px; padding: 24px; width: min(720px, 100%); max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px #10254340; }
-.consolidate-dialog-heading { display: flex; justify-content: space-between; gap: 20px; }
-.consolidate-dialog-heading p { font-size: 14px; color: #64748b; }
-.consolidate-dialog-heading button { align-self: start; }
-.consolidate-original { padding: 16px; background: var(--color-section-header-background); margin: 16px 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
-.consolidate-refinement { display: grid; gap: 14px; }
-.consolidate-refinement h3 { margin: 0; font-size: 16px; }
-.consolidate-refinement p { font-size: 13px; margin: 0; }
-.consolidate-content button.consolidate-primary { background: var(--color-primary); color: white; }
-.consolidate-sr { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-@media (max-width: 1150px) { .consolidate-layout { grid-template-columns: minmax(0, 1fr); } .consolidate-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; } .consolidate-summary h2, .consolidate-summary > small, .consolidate-updates { grid-column: 1 / -1; } }
-@media (max-width: 720px) { .consolidate-content { padding: 20px 12px; } .consolidate-summary { grid-template-columns: 1fr 1fr; } .consolidate-dialog { padding: 16px; } }
+/* Source tabs (underline, as on the dashboards). Selectors repeat `button` to outrank the
+   generic .office-content button rule from office.css. */
+.consolidate-tabs { display: flex; gap: var(--space-1); margin-bottom: var(--space-5); border-bottom: 1px solid var(--color-border); }
+.office-content .consolidate-tabs button.consolidate-tab { display: inline-flex; align-items: center; gap: var(--space-2); margin-bottom: -1px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; padding: var(--space-3) var(--space-4); color: var(--color-text-secondary); background: transparent; font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); }
+.office-content .consolidate-tabs button.consolidate-tab:hover { border-bottom-color: var(--color-border); color: var(--color-primary); }
+.office-content .consolidate-tabs button.consolidate-tab.is-active { border-bottom-color: var(--color-primary); color: var(--color-primary); }
+.consolidate-tab .bi { font-size: 15px; opacity: .8; }
+.consolidate-tab.is-active .bi { color: var(--color-brand-cyan); opacity: 1; }
 
-/* Source tabs (underline, as on the dashboards) and review-queue segmented control. */
-.consolidate-tabs { display: flex; gap: var(--space-1); margin-bottom: var(--space-4); border-bottom: 1px solid var(--color-border); }
-.office-content .consolidate-tab { display: inline-flex; align-items: center; gap: var(--space-2); margin-bottom: -1px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; padding: var(--space-3) var(--space-4); color: var(--color-text-secondary); background: transparent; font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); }
-.office-content .consolidate-tab:hover { color: var(--color-primary); }
-.office-content .consolidate-tab.is-active { border-bottom-color: var(--color-primary); color: var(--color-primary); }
-.consolidate-tab.is-active .bi { color: var(--color-brand-cyan); }
-.consolidate-queues { display: inline-flex; flex-wrap: wrap; gap: 2px; margin-bottom: var(--space-4); border-radius: var(--radius-md); padding: 3px; background: var(--color-surface-muted); }
-.office-content .consolidate-queue { display: inline-flex; align-items: center; gap: var(--space-2); border: 0; border-radius: var(--radius-sm); padding: 6px 14px; color: var(--color-text-secondary); background: transparent; font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
-.office-content .consolidate-queue:hover { color: var(--color-primary); }
-.office-content .consolidate-queue.is-active { color: var(--color-primary); background: var(--color-surface); box-shadow: var(--shadow-xs); }
-.consolidate-register.office-panel, .consolidate-summary.office-panel { border-color: var(--color-border-subtle); border-radius: var(--radius-lg); box-shadow: var(--shadow-xs); }
+/* Queue cards: count per review status; the active card filters the register. */
+.consolidate-queues { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); margin-bottom: var(--space-4); }
+.office-content .consolidate-queues button.consolidate-queue { display: flex; align-items: center; gap: var(--space-3); min-width: 0; border: 1px solid var(--color-border-subtle); border-radius: var(--radius-lg); padding: var(--space-4); color: var(--color-text); background: var(--color-surface); box-shadow: var(--shadow-xs); text-align: left; transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard); }
+.office-content .consolidate-queues button.consolidate-queue:hover { border-color: var(--color-border); }
+.office-content .consolidate-queues button.consolidate-queue.is-active { border-color: var(--color-primary); box-shadow: inset 0 -3px 0 var(--color-primary), var(--shadow-xs); }
+.consolidate-queue__icon { display: grid; width: 38px; height: 38px; flex: 0 0 38px; place-items: center; border-radius: 9px; font-size: 18px; color: var(--color-info); background: var(--color-info-soft); }
+.consolidate-queue.is-pending .consolidate-queue__icon { color: var(--color-warning); background: var(--color-warning-soft); }
+.consolidate-queue.is-accepted .consolidate-queue__icon { color: var(--color-success); background: var(--color-success-soft); }
+.consolidate-queue.is-rejected .consolidate-queue__icon { color: var(--color-danger); background: var(--color-danger-soft); }
+.consolidate-queue__copy { display: grid; min-width: 0; gap: 2px; }
+.consolidate-queue__copy small { color: var(--color-text-secondary); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
+.consolidate-queue__copy strong { color: var(--color-primary); font-size: 22px; line-height: 1.15; }
+
+/* Filter bar: one row of labelled controls, reset pushed to the right. */
+.consolidate-filters { display: flex; align-items: end; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-4); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4); background: var(--color-surface); box-shadow: var(--shadow-xs); }
+.consolidate-filters label { display: grid; flex: 1 1 160px; max-width: 260px; gap: 4px; color: var(--color-text-secondary); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
+.consolidate-filters label:has(input[type="date"]) { flex: 0 1 160px; }
+.consolidate-filters select, .consolidate-filters input { width: 100%; min-width: 0; min-height: 36px; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 6px 10px; color: var(--color-text); background: var(--color-surface); font: inherit; font-weight: 400; }
+.consolidate-filters select:focus-visible, .consolidate-filters input:focus-visible { border-color: var(--color-focus); outline: none; box-shadow: var(--focus-ring); }
+.consolidate-filters__reset { align-self: end; margin-left: auto; }
+
+/* Register card. */
+.consolidate-register { overflow: hidden; border: 1px solid var(--color-border-subtle); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-xs); }
+/* office.css caps every non-page header at 900px; these headers are full-width card bars. */
+.office-content .consolidate-register > header.ui-section-header, .office-content header.consolidate-dialog-heading { max-width: none; margin: 0; }
+.consolidate-register .ui-section-header__copy h2 { margin: 0; }
+.consolidate-register__error { margin: var(--space-4) var(--space-5) 0; }
+.consolidate-register .ui-table { min-width: 860px; }
+.office-content .consolidate-register .ui-table th, .office-content .consolidate-register .ui-table td { padding: var(--space-3) var(--space-4); border-bottom-color: var(--color-border-subtle); vertical-align: top; }
+.office-content .consolidate-register .ui-table th { color: var(--color-primary); }
+.consolidate-register small { display: block; margin-top: 4px; color: var(--color-text-secondary); font-size: 12px; }
+.consolidate-office { display: flex; align-items: flex-start; gap: var(--space-2); min-width: 140px; }
+.consolidate-avatar { display: grid; place-items: center; width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%; color: var(--color-primary); background: var(--color-primary-soft); font-size: 12px; }
+.consolidate-excerpt { min-width: 200px; max-width: 380px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.consolidate-register .ui-table th:nth-child(3) { min-width: 130px; }
+.consolidate-date { white-space: nowrap; }
+.office-content .consolidate-register .ui-table tbody tr:hover { background: var(--color-primary-soft); }
+.office-content .consolidate-register td.consolidate-empty { height: 220px; color: var(--color-text-secondary); text-align: center; vertical-align: middle; }
+.consolidate-empty .bi { display: block; margin-bottom: var(--space-2); color: var(--color-border); font-size: 32px; }
+.consolidate-pagination { padding: var(--space-3) var(--space-5); font-size: var(--font-size-xs); }
+.consolidate-status { display: inline-flex; align-items: center; border-radius: var(--radius-pill); padding: 3px 10px; font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); white-space: nowrap; }
+.consolidate-status.is-pending { color: var(--color-warning); background: var(--color-warning-soft); }
+.consolidate-status.is-accepted { color: var(--color-success); background: var(--color-success-soft); }
+.consolidate-status.is-rejected { color: var(--color-danger); background: var(--color-danger-soft); }
+
+/* Management objective comments: a collapsible card above the queues on the Management tab. */
+.consolidate-comments { margin-bottom: var(--space-5); overflow: hidden; border: 1px solid var(--color-border-subtle); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-xs); }
+.consolidate-comments > summary { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-4) var(--space-5); background: var(--color-section-header-background); cursor: pointer; list-style: none; }
+.consolidate-comments > summary::-webkit-details-marker { display: none; }
+.consolidate-comments > summary h2 { margin: 0; }
+.consolidate-comments > summary > .bi { color: var(--color-primary); transition: transform var(--duration-fast) var(--ease-standard); }
+.consolidate-comments[open] > summary { border-bottom: 1px solid var(--color-border-subtle); }
+.consolidate-comments[open] > summary > .bi { transform: rotate(180deg); }
+.consolidate-comments > summary:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
+.consolidate-comments__body .management-comments { margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+.consolidate-comments__body .management-comments > h2, .consolidate-comments__body .management-comments > h2 + .ui-help { display: none; }
+
+/* Input detail / review dialog. */
+.consolidate-backdrop { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: var(--page-gutter); background: rgba(17, 24, 39, .58); }
+.consolidate-dialog { width: min(720px, 100%); max-height: 90vh; overflow-y: auto; border-radius: var(--radius-xl); padding: var(--space-6); background: var(--color-surface); box-shadow: 0 20px 55px rgba(0, 0, 0, .28); }
+.consolidate-dialog-heading { display: flex; align-items: flex-start; gap: var(--space-3); }
+.consolidate-dialog-heading + * { margin-top: var(--space-4); }
+.consolidate-dialog-heading > div { flex: 1; min-width: 0; }
+.office-content .consolidate-dialog-heading h2 { margin: 0; color: var(--color-primary); font-size: var(--font-size-xl); }
+.consolidate-dialog-heading p { margin: 4px 0 0; color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+.consolidate-dialog-heading .consolidate-status { margin-top: 4px; }
+.office-content .consolidate-dialog-heading button.consolidate-close { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: var(--radius-md); padding: 0; color: var(--color-text-secondary); background: transparent; }
+.office-content .consolidate-dialog-heading button.consolidate-close:hover { color: var(--color-primary); background: var(--color-surface-muted); }
+.consolidate-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3) var(--space-5); margin: 0 0 var(--space-4); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-md); padding: var(--space-4); background: var(--color-surface-header); }
+.consolidate-meta dt { color: var(--color-text-secondary); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
+.consolidate-meta dd { margin: 2px 0 0; font-size: var(--font-size-sm); overflow-wrap: anywhere; }
+.office-content .consolidate-block-title { margin: var(--space-4) 0 var(--space-2); padding: 0; color: var(--color-primary); font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); }
+.consolidate-original { border-left: 3px solid var(--color-border); border-radius: var(--radius-sm); padding: var(--space-3) var(--space-4); background: var(--color-surface-muted); font-size: var(--font-size-sm); line-height: var(--line-height-body); white-space: pre-wrap; overflow-wrap: anywhere; }
+.consolidate-review { margin-top: var(--space-5); border-top: 1px solid var(--color-border-subtle); padding-top: var(--space-1); }
+.consolidate-review fieldset { display: grid; gap: var(--space-4); margin: 0; border: 0; padding: 0; }
+.consolidate-dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-3); }
+
+@media (max-width: 1100px) { .consolidate-queues { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px) {
+    .consolidate-content { padding: var(--space-5) var(--space-3); }
+    .consolidate-filters label, .consolidate-filters label:has(input[type="date"]) { flex: 1 1 100%; max-width: none; }
+    .consolidate-filters__reset { margin-left: 0; }
+    .consolidate-meta { grid-template-columns: 1fr; }
+    .consolidate-dialog { padding: var(--space-4); }
+}

@@ -1,0 +1,34 @@
+/* Technical Administration Dashboard: additions to the Management dashboard / report master styles. */
+
+/* Same page gutter and content width as every other page. */
+.technical-dashboard .management-dashboard__content { max-width: var(--content-max-width); margin: 0; padding: 0; }
+.technical-dashboard .management-kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.technical-dashboard .management-kpi__copy strong.is-muted { color: var(--color-text-secondary); font-size: var(--font-size-md); }
+@media (max-width: 1280px) { .technical-dashboard .management-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .technical-dashboard .management-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Attention Required: one row per technical area with its count and a link to the page that resolves it. */
+.technical-attention { display: grid; margin: 0; padding: 0; list-style: none; }
+.technical-attention li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto auto; align-items: center; gap: var(--space-3); border-bottom: 1px solid var(--color-border-subtle); padding: var(--space-3) var(--space-4); }
+.technical-attention li:last-child { border-bottom: 0; }
+.technical-attention__icon { font-size: 18px; }
+.technical-attention .is-flagged .technical-attention__icon { color: var(--color-warning); }
+.technical-attention .is-clear .technical-attention__icon { color: var(--color-success); }
+.technical-attention__copy { display: grid; min-width: 0; gap: 2px; }
+.technical-attention__copy strong { color: var(--color-text); font-size: var(--font-size-sm); }
+.technical-attention__copy small { color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+.technical-attention__count { min-width: 36px; border-radius: var(--radius-pill); padding: 2px 10px; color: var(--color-text-secondary); background: var(--color-surface-muted); font-size: var(--font-size-sm); font-weight: var(--font-weight-bold); font-variant-numeric: tabular-nums; text-align: center; }
+.technical-attention .is-flagged .technical-attention__count { color: var(--color-warning); background: var(--color-warning-soft); }
+
+/* Administration shortcuts: the sidebar groups as compact link lists. */
+.technical-shortcuts { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--space-4); padding: var(--space-4); }
+.technical-shortcuts h3 { display: flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-2); color: var(--color-primary); font-size: var(--font-size-sm); }
+.technical-shortcuts h3 .bi { color: var(--color-brand-cyan); }
+.technical-shortcuts ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.technical-shortcuts a { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); border-radius: var(--radius-sm); padding: 6px 8px; color: var(--color-text); font-size: var(--font-size-xs); text-decoration: none; }
+.technical-shortcuts a .bi { color: var(--color-text-secondary); opacity: 0; transition: opacity var(--duration-fast) var(--ease-standard); }
+.technical-shortcuts a:hover, .technical-shortcuts a:focus-visible { color: var(--color-primary); background: var(--color-primary-soft); }
+.technical-shortcuts a:hover .bi, .technical-shortcuts a:focus-visible .bi { opacity: 1; }
+
+.technical-omitted { display: flex; align-items: center; gap: var(--space-2); margin: 0; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+@media (max-width: 760px) { .technical-attention li { grid-template-columns: 24px minmax(0, 1fr) auto; } .technical-attention .ui-button { grid-column: 2 / -1; justify-self: start; } }

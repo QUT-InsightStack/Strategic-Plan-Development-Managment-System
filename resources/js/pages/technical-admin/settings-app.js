@@ -5,13 +5,13 @@ import { SecuritySettings } from '../../components/SecuritySettings.js';
 
 mountProtectedPage(document.getElementById('root'), () => {
     const SettingsApp = () => React.createElement(React.Fragment, null,
-        React.createElement(TechnicalAdminSidebar, { active: 'Settings' }),
+        React.createElement(TechnicalAdminSidebar, { active: 'Security Settings' }),
         React.createElement('main', { className: 'app-shell-main settings-page' },
             React.createElement('div', { className: 'app-shell-container' },
                 React.createElement(PageHeader, {
-                    section: 'Technical Administration',
-                    title: 'System Settings',
-                    subtitle: 'Configure authentication and session protection applied across the system.',
+                    section: 'Account Security',
+                    title: 'Security Settings',
+                    subtitle: 'Set how long sessions last and how SPDMS responds to repeated failed sign-ins.',
                 }),
                 React.createElement(SecuritySettings)
             )

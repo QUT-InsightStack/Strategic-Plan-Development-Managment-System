@@ -372,6 +372,9 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
         ->middleware('permission:reports.view');
     Route::get('management/reports/master/export', [\App\Http\Controllers\ManagementReportController::class, 'export'])
         ->middleware(['permission:reports.view', 'permission:reports.export']);
+    // Technical Admin dashboard and report: sections follow the user's technical permissions.
+    Route::get('technical/reports/activity', [\App\Http\Controllers\TechnicalActivityReportController::class, 'show']);
+    Route::get('technical/reports/activity/export', [\App\Http\Controllers\TechnicalActivityReportController::class, 'export']);
     Route::get('strategic-objectives/{objective}/progress-history', [\App\Http\Controllers\ObjectiveProgressController::class, 'history'])->whereNumber('objective');
     Route::patch('strategic-objectives/{objective}/progress', [\App\Http\Controllers\ObjectiveProgressController::class, 'update'])->whereNumber('objective');
     Route::put(

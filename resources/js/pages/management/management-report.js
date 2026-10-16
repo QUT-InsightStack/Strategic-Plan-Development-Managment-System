@@ -11,12 +11,14 @@ export function reportQueryString(filters) {
     return params.toString();
 }
 
-export function exportUrl(filters, section, table) {
-    const params = new URLSearchParams(reportQueryString(filters));
+const MANAGEMENT_ENDPOINT = '/api/management/reports/master';
+
+export function exportUrl(filters, section, table, endpoint = MANAGEMENT_ENDPOINT, toQuery = reportQueryString) {
+    const params = new URLSearchParams(toQuery(filters));
     params.set('format', 'csv');
     params.set('section', section);
     if (table) params.set('table', table);
-    return `/api/management/reports/master/export?${params}`;
+    return `${endpoint}/export?${params}`;
 }
 
 // Rows grouped by a column keep their order; a heading row starts each group.
@@ -49,12 +51,12 @@ async function downloadExport(url, fallback) {
     URL.revokeObjectURL(blobUrl);
 }
 
-function ExportButton({ filters, section, table, disabled }) {
+function ExportButton({ filters, section, table, disabled, source }) {
     const [state, setState] = React.useState({ busy: false, error: '' });
     async function run() {
         setState({ busy: true, error: '' });
         try {
-            await downloadExport(exportUrl(filters, section, table.id), `management-report-${section}-${table.id}.csv`);
+            await downloadExport(exportUrl(filters, section, table.id, source.endpoint, source.toQuery), `${source.filePrefix}-${section}-${table.id}.csv`);
             setState({ busy: false, error: '' });
         } catch (error) {
             setState({ busy: false, error: error.message });
@@ -66,13 +68,13 @@ function ExportButton({ filters, section, table, disabled }) {
         state.error ? h('span', { className: 'management-report__export-error', role: 'alert' }, state.error) : null);
 }
 
-function ReportTable({ table, section, filters, canExport, filtered, onClear }) {
+function ReportTable({ table, section, filters, canExport, filtered, onClear, source, emptyMessage }) {
     const columns = table.columns.filter(column => column.key !== table.group_by);
     return h('div', { className: 'management-report__table' },
         h('div', { className: 'management-report__table-heading' },
             h('h3', null, table.title, h('span', null, ` · ${table.rows.length} ${table.rows.length === 1 ? 'row' : 'rows'}`)),
-            canExport ? h(ExportButton, { filters, section, table }) : null),
-        !table.rows.length ? h(EmptyState, { filtered, onClear, message: 'No records in your authorised scope.' })
+            canExport ? h(ExportButton, { filters, section, table, source }) : null),
+        !table.rows.length ? h(EmptyState, { filtered, onClear, message: emptyMessage })
             : h('div', { className: 'management-table-scroll management-report__scroll' }, h('table', null,
                 h('thead', null, h('tr', null, columns.map(column => h('th', { key: column.key, scope: 'col' }, column.label)))),
                 groupRows(table.rows, table.group_by).map((group, index) => h('tbody', { key: `${group.group}-${index}` },
@@ -80,24 +82,29 @@ function ReportTable({ table, section, filters, canExport, filtered, onClear }) 
                     group.rows.map((row, rowIndex) => h('tr', { key: rowIndex }, columns.map(column => h('td', { key: column.key }, row[column.key] === '' || row[column.key] == null ? '—' : String(row[column.key]))))))))));
 }
 
-function ReportSection({ section, filters, canExport, filtered, onClear }) {
+export function ReportSection({ section, filters, canExport, filtered, onClear, source = MANAGEMENT_SOURCE, emptyMessage = 'No records in your authorised scope.', numbered = true }) {
     return h('section', { className: 'management-card management-report__section', 'aria-labelledby': `report-${section.id}` },
         h('div', { className: 'management-card__heading' }, h('div', null,
-            h('h2', { id: `report-${section.id}` }, h('span', { className: 'management-report__number' }, section.number), section.title),
+            h('h2', { id: `report-${section.id}` }, numbered ? h('span', { className: 'management-report__number' }, section.number) : null, section.title),
             section.description ? h('p', null, section.description) : null)),
         section.kpis ? h('div', { className: 'management-report__kpis' }, section.kpis.map(kpi => h('article', { key: kpi.key, className: `management-report__kpi${kpi.available ? '' : ' is-muted'}` },
             h('small', null, kpi.label), h('strong', null, kpi.available ? kpi.value : 'No access'), h('span', null, kpi.detail)))) : null,
-        (section.tables || []).filter(table => !(section.kpis && table.id === 'kpis')).map(table => h(ReportTable, { key: table.id, table, section: section.id, filters, canExport, filtered, onClear })),
-        section.kpis && canExport ? h('div', { className: 'management-report__kpi-export' }, h(ExportButton, { filters, section: section.id, table: section.tables[0] })) : null,
+        (section.tables || []).filter(table => !(section.kpis && table.id === 'kpis')).map(table => h(ReportTable, { key: table.id, table, section: section.id, filters, canExport, filtered, onClear, source, emptyMessage })),
+        section.kpis && canExport ? h('div', { className: 'management-report__kpi-export' }, h(ExportButton, { filters, section: section.id, table: section.tables[0], source })) : null,
         section.definitions ? h('dl', { className: 'management-report__definitions' }, section.definitions.map(item => h(React.Fragment, { key: item.term }, h('dt', null, item.term), h('dd', null, item.definition)))) : null);
 }
 
-export function ManagementReport({ filters, refresh, canExport, filtered, onClear }) {
-    const query = reportQueryString(filters);
-    const source = useManagementSource(() => apiRequest(`/api/management/reports/master${query ? `?${query}` : ''}`).then(response => response.data), { deps: [query, refresh] });
-    const gate = sectionGate([{ label: 'The report', source }], { lines: 8 });
+const MANAGEMENT_SOURCE = { endpoint: MANAGEMENT_ENDPOINT, toQuery: reportQueryString, filePrefix: 'management-report' };
+
+// `source` names the report endpoint, how filters become its query string and the export file prefix,
+// so other report masters (for example the Technical Admin activity report) reuse this preview.
+// `data` renders an already loaded report instead of fetching it.
+export function ManagementReport({ filters, refresh, canExport, filtered, onClear, source: reportSource = MANAGEMENT_SOURCE, data = null, emptyMessage }) {
+    const query = reportSource.toQuery(filters);
+    const loaded = useManagementSource(() => apiRequest(`${reportSource.endpoint}${query ? `?${query}` : ''}`).then(response => response.data), { enabled: !data, deps: [query, refresh] });
+    const gate = data ? null : sectionGate([{ label: 'The report', source: loaded }], { lines: 8 });
     if (gate) return h('section', { className: 'management-card' }, gate);
-    const report = source.data;
+    const report = data || loaded.data;
     const [cover, ...sections] = report.sections;
     const generated = new Date(report.meta.generated_at);
     const generatedText = Number.isNaN(generated.getTime()) ? report.meta.generated_at : generated.toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' });
@@ -119,5 +126,5 @@ export function ManagementReport({ filters, refresh, canExport, filtered, onClea
                 h('p', null, 'These sections are omitted because of access permissions. Do not read them as zero.')) : null,
             h('nav', { className: 'management-report__contents', 'aria-label': 'Report contents' }, h('strong', null, 'Contents'),
                 h('ol', null, sections.map(section => h('li', { key: section.id, value: section.number }, h('a', { href: `#report-${section.id}` }, section.title)))))),
-        sections.map(section => h(ReportSection, { key: section.id, section, filters, canExport, filtered, onClear })));
+        sections.map(section => h(ReportSection, { key: section.id, section, filters, canExport, filtered, onClear, source: reportSource, emptyMessage })));
 }
