@@ -146,7 +146,53 @@ $this->getJson('/api/pdp-chapters?status=all')
 
     $this->deleteJson($url)->assertUnprocessable();
 }
+public function test_management_can_delete_active_chapter_only_with_delete_permission(): void
+{
+    $actor = $this->createUser('Management');
 
+    $chapter = PdpChapter::create([
+        'chapter_title' => 'Management deletion test',
+        'chapter_description' => 'Disposable test chapter.',
+        'created_by' => $actor->user_id,
+    ])->refresh();
+
+    $url = '/api/pdp-chapters/'.$chapter->chapter_id;
+
+    $this->authenticateApiUser($actor);
+    $this->deleteJson($url)->assertForbidden();
+
+    $this->assertDatabaseHas('tblpdp_chapters', [
+        'chapter_id' => $chapter->chapter_id,
+        'status' => 'active',
+        'deleted_at' => null,
+    ]);
+
+    $permission = Permission::firstOrCreate(
+        ['code' => 'pdp_chapters.delete'],
+        [
+            'permission_name' => 'Delete PDP Chapters',
+            'module' => 'pdp_chapters',
+        ]
+    );
+
+    $actor->role->permissions()
+        ->syncWithoutDetaching([$permission->permission_id]);
+
+    $this->authenticateApiUser($actor->fresh());
+
+    $this->deleteJson($url)
+        ->assertOk()
+        ->assertJsonPath('data.status', 'deleted');
+
+    $this->assertDatabaseHas('tblpdp_chapters', [
+        'chapter_id' => $chapter->chapter_id,
+        'status' => 'deleted',
+        'deleted_by' => $actor->user_id,
+        'archived_at' => null,
+    ]);
+
+    $this->deleteJson($url)->assertUnprocessable();
+}
     private function createUser(string $roleName, bool $canManage = false): User
     {
         $role = Role::create([

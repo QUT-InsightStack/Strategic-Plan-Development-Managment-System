@@ -36,7 +36,7 @@ class SeededRolesTest extends TestCase
             'dashboard.view', 'strategic_records.view', 'strategic_foundations.view', 'strategic_objectives.view',
             'strategic_documents.view', 'strategic_documents.download', 'relations.view', 'plan_core_values.view',
         ];
-        foreach (['Management', 'Office'] as $name) {
+       foreach (['Management', 'Office'] as $name) {
     $codes = Role::where('role_name', $name)
         ->firstOrFail()
         ->permissions
@@ -50,12 +50,17 @@ class SeededRolesTest extends TestCase
     foreach ([
         'strategic_records.create',
         'strategic_records.update',
-        'strategic_records.delete',
         'users.create',
         'users.delete',
         'roles.manage',
     ] as $code) {
         $this->assertNotContains($code, $codes);
+    }
+
+    if ($name === 'Management') {
+        $this->assertContains('strategic_records.delete', $codes);
+    } else {
+        $this->assertNotContains('strategic_records.delete', $codes);
     }
 }
 

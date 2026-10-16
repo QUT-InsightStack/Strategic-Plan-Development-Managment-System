@@ -191,8 +191,8 @@ const officePermissions = [PERMISSIONS.DASHBOARD_VIEW, PERMISSIONS.PLANS_VIEW,
 
 const rolePolicies = {
     Administrator: { home: '/role-management', permissions: ['*'] },
-    'Administrative Admin': { home: '/dashboard', permissions: administrativeAdminPermissions },
-    'Administrative Administrator': { home: '/dashboard', permissions: administrativeAdminPermissions },
+    'Administrative Admin': { home: '/monitoring-dashboard', permissions: administrativeAdminPermissions },
+    'Administrative Administrator': { home: '/monitoring-dashboard', permissions: administrativeAdminPermissions },
     'Technical Administrator': { home: '/dashboard', permissions: technicalAdminPermissions },
     'Technical Admin': { home: '/dashboard', permissions: technicalAdminPermissions },
     test: { home: '/dashboard', permissions: ['*'] },
@@ -228,6 +228,7 @@ export function hasRolePolicy(roleName) {
 
 export const routeRules = [
     { test: /^\/management-dashboard(?:\/|$)/, permission: PERMISSIONS.DASHBOARD_VIEW },
+    { test: /^\/monitoring-dashboard(?:\/|$)/, permission: PERMISSIONS.DASHBOARD_VIEW },
     { test: /^\/management-approvals(?:\/|$)/ },
     { test: /^\/management-plan-review(?:\/|$)/, permission: PERMISSIONS.PLANS_VIEW },
     { test: /^\/progress-monitoring(?:\/|$)/, permission: PERMISSIONS.OBJECTIVES_VIEW_PROGRESS },

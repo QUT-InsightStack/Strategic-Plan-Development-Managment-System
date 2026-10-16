@@ -19,6 +19,11 @@ class ListImplementationInputsRequest extends ListObjectiveFeedbackRequest
     {
         return [...parent::rules(),
             'plan_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'source' => [
+    'sometimes',
+    'nullable',
+    Rule::in(['office', 'management']),
+],
             'objective_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'responsible_unit_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'input_type' => ['sometimes', 'nullable', Rule::in(ImplementationInput::TYPES)],

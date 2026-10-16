@@ -140,6 +140,10 @@ class PdpChapterController extends Controller
 $isTechnicalAdmin = in_array($actor?->role?->role_name, [
     'Technical Administrator',
     'Technical Admin',
+    'Management',
+'Executive',
+'Management / Executive',
+'Division Head',
 ], true);
 
 if ($locked->status !== 'archived' && ! $isTechnicalAdmin) {

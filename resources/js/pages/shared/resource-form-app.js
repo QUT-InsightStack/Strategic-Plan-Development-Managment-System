@@ -5,12 +5,14 @@ import { logout, guardAgainstBackNavigation } from '../../auth-session.js';
 import { LogoutButton } from '../../components/LogoutButton.js';
 import { getCurrentUser } from '../../api/auth-api.js';
 import { resourceRequest } from '../../api/resource-api.js';
+import { dashboardHrefFor } from '../../access/navigation.js';
+import { getAccessSession } from '../../access/access-session.js';
 
 const { useEffect, useState } = React;
 
 const rootElement = document.getElementById('root');
 const crud = window.ResourceCrud;
-const dashboardUrl = '/dashboard';
+const dashboardUrl = dashboardHrefFor(getAccessSession()?.roleName);
 const profileUrl = '/profile';
 const resourceUrl = '/resource';
 const loginUrl = '/login';

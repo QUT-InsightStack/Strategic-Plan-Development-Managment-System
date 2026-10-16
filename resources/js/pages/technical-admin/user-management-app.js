@@ -211,19 +211,33 @@ const editRequiresOffice = officeRoleNames.includes(
     }
 
     function restrictionFor(user) {
-        if (user.status !== 'active') return '';
+    if (user.status !== 'active') return '';
 
-        if (Number(user.user_id) === Number(accessSession?.userId)) {
-            return 'You cannot disable the account you are currently signed in with.';
-        }
-
-        const role = roles.find((item) => Number(item.role_id) === Number(user.role?.role_id));
-        if (role?.is_protected) {
-            return `${displayRoleName(role.role_name)} is a protected role. Change its protection or role assignment before disabling this account.`;
-        }
-
-        return '';
+    if (Number(user.user_id) === Number(accessSession?.userId)) {
+        return 'You cannot disable the account you are currently signed in with.';
     }
+
+    const role = roles.find(
+        item => Number(item.role_id) === Number(user.role?.role_id)
+    ) || user.role;
+
+    const isTechnicalAdmin = [
+        'Technical Administrator',
+        'Technical Admin',
+    ].includes(accessSession?.roleName);
+
+    const isAdministrativeAdmin = [
+        'Administrative Admin',
+        'Administrative Administrator',
+    ].includes(role?.role_name);
+
+    if (role?.is_protected
+        && !(isTechnicalAdmin && isAdministrativeAdmin)) {
+        return `${displayRoleName(role.role_name)} is a protected role. Change its protection or role assignment before disabling this account.`;
+    }
+
+    return '';
+}
 
     function requestStatusChange(user) {
         const targetStatus = user.status === 'active' ? 'inactive' : 'active';

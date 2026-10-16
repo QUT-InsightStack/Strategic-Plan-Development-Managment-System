@@ -407,6 +407,29 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
     Route::put('strategic-objectives/{id}/responsible-unit', [ResponsibleUnitController::class, 'assign'])->whereNumber('id');
     Route::get('strategic-objectives/{objectiveId}/comments', [ObjectiveCommentController::class, 'index'])->whereNumber('objectiveId');
     Route::post('strategic-objectives/{objectiveId}/comments', [ObjectiveCommentController::class, 'store'])->whereNumber('objectiveId');
+    Route::controller(
+    \App\Http\Controllers\ManagementObjectiveCommentController::class
+)->group(function () {
+    Route::get('management-objective-comments', 'index');
+
+    Route::get('management-objective-comments/{commentId}', 'show')
+        ->whereNumber('commentId');
+
+    Route::post(
+        'strategic-objectives/{objectiveId}/management-comments',
+        'store'
+    )->whereNumber('objectiveId');
+
+    Route::post(
+        'management-objective-comments/{commentId}/acknowledge',
+        'acknowledge'
+    )->whereNumber('commentId');
+
+    Route::post(
+        'management-objective-comments/{commentId}/close',
+        'close'
+    )->whereNumber('commentId');
+});
     Route::get('implementation-inputs', [ImplementationInputController::class, 'index'])->defaults('read_only', true);
     Route::get('implementation-inputs/{inputId}', [ImplementationInputController::class, 'show'])->whereNumber('inputId')->defaults('read_only', true);
     Route::post('implementation-inputs/{inputId}/review', [ImplementationInputController::class, 'review'])->whereNumber('inputId');

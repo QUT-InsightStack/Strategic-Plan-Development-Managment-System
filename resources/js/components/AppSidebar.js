@@ -7,6 +7,7 @@ import { navigationFor, navigationRole, canOpenPage, isCurrentPage } from '../ac
 import { canDeleteMappings } from '../mappings/mapping-eligibility.js';
 import '../../css/navigation.css';
 import { PasswordAssistanceIndicator } from './PasswordAssistanceIndicator.js';
+import { SidebarResizer } from './sidebar-width.js';
 export function AppSidebar() {
     const { session, error, retry } = useAccessSession();
     const [open, setOpen] = React.useState(() => {
@@ -31,10 +32,10 @@ export function AppSidebar() {
         const className = `${nested ? 'app-sidebar__subitem' : 'app-sidebar__item'}${current ? ' active' : ''}`;
         const content = [item.icon ? h('i', { key: 'icon', className: `bi ${item.icon}`, 'aria-hidden': true }) : null,
             h('span', { key: 'label' }, item.label), item.placeholder && h('small', { key: 'state' }, 'Planned')];
-        return allowed ? h('a', { key: item.id, href: item.href, className, 'aria-current': current ? 'page' : undefined }, ...content)
+        return allowed ? h('a', { key: item.id, href: item.href, className, title: item.label, 'aria-current': current ? 'page' : undefined }, ...content)
             : h('span', { key: item.id, className: className + ' navigation-locked', 'aria-disabled': true, title: 'Your account does not have the permissions required to open this page.' }, ...content, h('small', null, 'No access'));
     }
-    return h('aside', { className: 'app-sidebar', 'aria-label': 'Primary navigation', 'data-navigation-ready': session || error ? 'true' : 'false' },
+    return h(React.Fragment, null, h('aside', { className: 'app-sidebar', 'aria-label': 'Primary navigation', 'data-navigation-ready': session || error ? 'true' : 'false' },
         h('a', { className: 'app-sidebar__brand', href: items[0]?.href || '/dashboard' }, h(BrandLogo, { className: 'app-sidebar__logo' }), h('span', { className: 'app-sidebar__brand-copy' }, h('strong', null, 'SPDMS'), h('small', null, 'Strategic Planning System'))),
         h('a', { className: 'app-sidebar__profile', href: '/profile' }, h('i', { className: 'bi bi-person-vcard-fill', 'aria-hidden': true }), h('span', null, displayRoleName(session?.roleName, 'Loading account…'))),
         h('nav', { className: 'app-sidebar__nav' },
@@ -48,10 +49,11 @@ export function AppSidebar() {
                 const current = children.some(child => isCurrentPage(child, href));
                 const expanded = open[item.id] ?? current;
                 return h('div', { key: item.id, className: 'app-sidebar__group' },
-                    h('button', { type: 'button', className: `app-sidebar__item app-sidebar__toggle${current ? ' active' : ''}`, 'aria-expanded': expanded, 'aria-controls': `nav-${item.id}`, onClick: () => setOpen(value => ({ ...value, [item.id]: !expanded })) },
+                    h('button', { type: 'button', title: item.label, className: `app-sidebar__item app-sidebar__toggle${current ? ' active' : ''}`, 'aria-expanded': expanded, 'aria-controls': `nav-${item.id}`, onClick: () => setOpen(value => ({ ...value, [item.id]: !expanded })) },
                         h('i', { className: `bi ${item.icon}`, 'aria-hidden': true }), h('span', null, item.label), h('i', { className: `bi bi-chevron-${expanded ? 'up' : 'down'} app-sidebar__chevron`, 'aria-hidden': true })),
                     expanded && h('div', { id: `nav-${item.id}`, className: 'app-sidebar__submenu' }, children.map(child => leaf(child, true))));
             }),
             showAlignmentMappings && h('a', { key: 'alignment-mappings', href: '/mappings', className: `app-sidebar__item${onMappingsPage ? ' active' : ''}`, 'aria-current': onMappingsPage ? 'page' : undefined }, h('span', null, 'Alignment Mappings'))),
-        h(LogoutButton, { className: 'app-sidebar__item app-sidebar__logout', label: 'Log Out', iconClass: 'bi bi-box-arrow-left' }));
+        h(LogoutButton, { className: 'app-sidebar__item app-sidebar__logout', label: 'Log Out', iconClass: 'bi bi-box-arrow-left' })),
+        h(SidebarResizer));
 }

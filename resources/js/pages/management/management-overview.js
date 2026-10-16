@@ -109,12 +109,12 @@ export function AttentionRequired({ overdue, missingLinks, pendingInputs, inputs
         attentionList({ title: 'Missing Agenda / PDP links', icon: 'bi-link-45deg', tone: 'pending', total: missingLinks.length, emptyText: 'Every objective is linked to the Agenda and a PDP chapter.',
             items: top(missingLinks).map(objective => ({ key: objective.objective_id, title: objective.objective_title || `Objective ${objective.objective_id}`,
                 detail: `Missing ${[!(objective.presidential_agenda_items || []).length && 'Agenda', !(objective.pdp_chapters || []).length && 'PDP'].filter(Boolean).join(' and ')}` })),
-            action: { label: 'Open Alignment & Performance', onClick: () => onOpenTab('alignment') } }),
+            action: onOpenTab ? { label: 'Open Alignment & Performance', onClick: () => onOpenTab('alignment') } : null }),
         inputsState === 'forbidden' ? h('article', { className: 'management-attention__group' }, h('h3', null, h('i', { className: 'bi bi-inboxes', 'aria-hidden': true }), ' Pending inputs'),
             h('p', { className: 'management-empty' }, 'You do not have permission to view submitted inputs.'))
             : attentionList({ title: 'Pending inputs', icon: 'bi-inboxes', tone: 'in_progress', total: pendingInputs.length, emptyText: 'No inputs are waiting for review.',
                 items: top(pendingInputs).map(input => ({ key: input.input_id, title: input.objective?.objective_title || input.strategic_plan?.title || 'Plan-level input', detail: `${input.responsible_office_agency || 'Unassigned'} · submitted ${managementDateLabel(input.submitted_at)}` })),
-                action: { label: 'Open Inputs & Consolidation', onClick: () => onOpenTab('inputs') } }));
+                action: onOpenTab ? { label: 'Open Inputs & Consolidation', onClick: () => onOpenTab('inputs') } : null }));
 }
 
 export function PendingActions({ actions }) {

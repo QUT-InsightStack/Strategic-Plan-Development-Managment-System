@@ -4,12 +4,14 @@ import { BrandLogo } from '../../brand-logo.js';
 import { LogoutButton } from '../../components/LogoutButton.js';
 import { logoutUser } from '../../api/auth-api.js';
 import { resourceRequest } from '../../api/resource-api.js';
+import { dashboardHrefFor } from '../../access/navigation.js';
+import { getAccessSession } from '../../access/access-session.js';
 
 const { useEffect, useState } = React;
 
 const rootElement = document.getElementById('root');
 const crud = window.ResourceCrud;
-const dashboardUrl = '/dashboard';
+const dashboardUrl = dashboardHrefFor(getAccessSession()?.roleName);
 const profileUrl = '/profile';
 const usersListUrl = '/user-management';
 const loginUrl = '/login';

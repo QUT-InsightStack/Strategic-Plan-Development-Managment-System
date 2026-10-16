@@ -51,7 +51,15 @@ class PlanCreationController extends Controller
             'include_all_office_plans' => ['sometimes', 'boolean'],
         ]);
         $includeAllOfficePlans = (bool) ($filters['include_all_office_plans'] ?? false);
-        $authorizedPlanIds = $this->authorizationService->authorizedPlanIdsForListing($user, ['archived', 'deleted'], $includeAllOfficePlans);
+       $excludedStatuses = ($filters['status'] ?? null) === 'archived'
+    ? ['deleted']
+    : ['archived', 'deleted'];
+
+$authorizedPlanIds = $this->authorizationService->authorizedPlanIdsForListing(
+    $user,
+    $excludedStatuses,
+    $includeAllOfficePlans
+);
         $plans = $this->planCreationService->paginate($filters, $authorizedPlanIds);
 
         return response()->json([
@@ -143,7 +151,7 @@ class PlanCreationController extends Controller
             'success' => true,
             'message' => $updated->status === 'archived'
                 ? 'Strategic plan archived successfully.'
-                : 'Strategic plan restored to finished successfully.',
+                : 'Strategic plan restored successfully.',
             'data' => $updated,
         ]);
     }

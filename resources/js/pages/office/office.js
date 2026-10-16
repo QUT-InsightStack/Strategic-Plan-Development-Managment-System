@@ -2,7 +2,7 @@ import { createPageRoot } from '../../navigation/page-root.js';
 import { canonicalOfficeUrl, canOpenPage } from '../../access/navigation.js';
 import { getAccessSession } from '../../access/access-session.js';
 import { OfficeWorkflow } from './office-workflow.js';
-import { officeItems } from '../../access/office-navigation.js';
+import { officeEntryFor } from '../../access/office-navigation.js';
 import { can } from '../../access/access-session.js';
 import { PERMISSIONS as P } from '../../access/access-policy.js';
 import { OfficePlanInput } from './office-plan-input.js';
@@ -24,7 +24,7 @@ const detailId = new URLSearchParams(location.search).get('plan');
 const requestedView = new URLSearchParams(location.search).get('view') || 'review';
 const view = ['review', 'comments', 'inputs', 'agency-input', 'edit', 'proposal', 'progress', 'mapping', 'alignment'].includes(requestedView) ? requestedView : 'review';
 const entryHref = view === 'review' ? '/office' : '/office?view=' + view;
-const entry = officeItems.flatMap(item => item.children).find(item => item.href === entryHref);
+const entry = officeEntryFor(entryHref);
 const planLink = id => officePlanHref(id, view);
 const titles = { review: 'Plans & Objectives', comments: 'Plan Feedback', edit: 'Edit Assigned Draft Objectives', inputs: 'Submit Planning Inputs', 'agency-input': 'Submit Agency Input', proposal: 'Proposed Objectives', progress: 'Update and Monitor Progress', mapping: 'Agency Mapping', alignment: 'View Alignment' };
 function OfficeApp() {

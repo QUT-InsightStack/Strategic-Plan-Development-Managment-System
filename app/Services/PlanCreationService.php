@@ -31,8 +31,8 @@ class PlanCreationService
 
         if (empty($filters['status'])) {
             $query->whereIn('status', ['draft', 'finished']);
-        } elseif (in_array($filters['status'], ['archived', 'deleted'], true)) {
-            $query->whereRaw('1 = 0');
+     } elseif ($filters['status'] === 'deleted') {
+    $query->whereRaw('1 = 0');
         } else {
             $query->where('status', $filters['status']);
         }
@@ -222,41 +222,58 @@ class PlanCreationService
     }
 
     public function updateStatus(Strategic $plan, string $status, User $user): Strategic
-    {
+{
+    return DB::transaction(function () use ($plan, $status, $user): Strategic {
+        $plan = Strategic::lockForUpdate()
+            ->findOrFail($plan->record_id);
+
+        app(StrategicPlanAuthorizationService::class)
+            ->ensureCanArchivePlan($plan, $user);
+
+        // The existing API sends "finished" to request restoration.
+        // Restore archived drafts to draft instead.
+        if ($plan->status === 'archived' && $status === 'finished') {
+            $status = $plan->status_before_archive ?? 'finished';
+        }
+
         if ($plan->status === $status) {
             return $this->find($plan->record_id) ?? $plan;
         }
 
-        if ($status === 'archived' && $plan->approval_status === 'under_approval') {
+        if ($status === 'archived'
+            && $plan->approval_status === 'under_approval') {
             throw ValidationException::withMessages([
-                'status' => ['Plans under approval cannot be archived. Complete or return the current review first.'],
+                'status' => [
+                    'Plans under approval cannot be archived. Complete or return the current review first.',
+                ],
             ]);
         }
 
         $fromStatus = $plan->status;
         $before = $this->planSnapshot($plan);
+
         $this->assertStatusTransitionAllowed($plan, $status);
 
-        DB::transaction(function () use ($plan, $status, $user) {
-            if ($status === 'archived') {
-                $this->archivePlan($plan->record_id, $user->user_id);
-                return;
-            }
-
+        if ($status === 'archived') {
+            $this->archivePlan($plan->record_id, $user->user_id);
+        } else {
             $this->restorePlan($plan->record_id, $user->user_id);
-        });
+        }
+
+        $updated = $this->find($plan->record_id) ?? $plan->fresh();
 
         $this->logWriter->write('strategic_plan.status_changed', [
             'record_id' => $plan->record_id,
             'from' => $fromStatus,
-            'to' => $status,
+            'to' => $updated->status,
             'user_id' => $user->user_id,
             'before' => $before,
-            'after' => $this->planSnapshot($this->find($plan->record_id) ?? $plan),
+            'after' => $this->planSnapshot($updated),
         ]);
 
-        return $this->find($plan->record_id) ?? $plan;
-    }
+        return $updated;
+    }, 3);
+}
 
     private function normalizePlanData(array $data, string $defaultStatus): array
     {
@@ -352,31 +369,35 @@ class PlanCreationService
         }
     }
 
-    private function assertStatusTransitionAllowed(Strategic $plan, string $status): void
-    {
-        if ($plan->status === 'deleted') {
-            throw ValidationException::withMessages([
-                'status' => ['Deleted plans cannot change status.'],
-            ]);
-        }
-
-        $allowedTransitions = [
-            'finished' => ['archived'],
-            'archived' => ['finished'],
-        ];
-
-        if (! in_array($status, $allowedTransitions[$plan->status] ?? [], true)) {
-            throw ValidationException::withMessages([
-                'status' => ['Only finished plans can be archived, and only archived plans can be restored to finished.'],
-            ]);
-        }
+   private function assertStatusTransitionAllowed(Strategic $plan, string $status): void
+{
+    if ($plan->status === 'deleted') {
+        throw ValidationException::withMessages([
+            'status' => ['Deleted plans cannot change status.'],
+        ]);
     }
+
+    $allowedTransitions = [
+        'draft' => ['archived'],
+        'finished' => ['archived'],
+        'archived' => [$plan->status_before_archive ?? 'finished'],
+    ];
+
+    if (! in_array($status, $allowedTransitions[$plan->status] ?? [], true)) {
+        throw ValidationException::withMessages([
+            'status' => [
+                'Only draft or finalized plans can be archived. Archived plans must be restored to their previous status.',
+            ],
+        ]);
+    }
+}
 
     private function archivePlan(int $planId, int $userId): void
     {
         $plan = Strategic::findOrFail($planId);
 
         $plan->update([
+            'status_before_archive' => $plan->status,
             'status' => 'archived',
             'updated_by' => $userId,
             'archived_at' => now(),
@@ -395,7 +416,8 @@ class PlanCreationService
         $plan = Strategic::findOrFail($planId);
 
         $plan->update([
-            'status' => 'finished',
+           'status' => $plan->status_before_archive ?? 'finished',
+            'status_before_archive' => null,
             'updated_by' => $userId,
             'archived_at' => null,
             'archived_by' => null,

@@ -1,29 +1,32 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { navigationFor, flattenNavigation, pageForUrl, canOpenPage, managementDashboardTab } from '../../resources/js/access/navigation.js';
+import { navigationFor, flattenNavigation, pageForUrl, canOpenPage, isCurrentPage, managementDashboardTab } from '../../resources/js/access/navigation.js';
 import { ManagementPagination, pageRows } from '../../resources/js/components/ManagementPagination.js';
 
 const management = () => flattenNavigation(navigationFor('Management'));
 
-test('management menu opens the dashboard tabs, plan review and reports', () => {
-    assert.ok(navigationFor('Management').every(item => !item.children), 'Management sidebar links are all top-level');
+test('management menu is a short flat list with Reports inside the Dashboard', () => {
+    const top = navigationFor('Management').filter(item => !['workflow-guide', 'notifications', 'profile', 'faq'].includes(item.id));
+    assert.deepEqual(top.map(item => item.label), ['Dashboard', 'Approvals', 'Plan Review', 'Alignment', 'Input Review']);
+    assert.ok(navigationFor('Management').every(item => !item.children), 'Management links are all top-level');
     const items = management();
     const byId = id => items.find(item => item.id === id);
     assert.equal(byId('home'), undefined);
-    assert.equal(items[0].id, 'dashboard');
+    assert.equal(byId('reports'), undefined, 'Reports is a Dashboard tab, not a separate link');
     assert.equal(byId('dashboard').href, '/management-dashboard');
+    assert.equal(byId('reviews-approvals').href, '/management-dashboard?tab=approvals');
     assert.equal(byId('alignment-performance').href, '/management-dashboard?tab=alignment');
     assert.equal(byId('inputs-consolidation').href, '/management-dashboard?tab=inputs');
-    assert.equal(byId('reviews-approvals').href, '/management-dashboard?tab=approvals');
     assert.equal(byId('plan-review').href, '/management-plan-review');
-    assert.equal(byId('reports').href, '/management-dashboard?tab=reports');
+    assert.equal(new Set(items.map(item => item.href)).size, items.length, 'each page once');
     assert.equal(pageForUrl('/management-dashboard', 'Management').id, 'dashboard');
     assert.equal(pageForUrl('/management-dashboard?tab=overview&period=2023-2028', 'Management').id, 'dashboard');
+    assert.equal(pageForUrl('/management-dashboard?tab=reports', 'Management').id, 'dashboard', 'the Dashboard link stays highlighted on its Reports tab');
     assert.equal(pageForUrl('/management-dashboard?tab=alignment', 'Management').id, 'alignment-performance');
     assert.equal(pageForUrl('/management-dashboard?tab=alignment&section=documents', 'Management').id, 'alignment-performance');
     assert.equal(pageForUrl('/management-dashboard?tab=inputs', 'Management').id, 'inputs-consolidation');
     assert.equal(pageForUrl('/management-dashboard?tab=approvals&queue=returned', 'Management').id, 'reviews-approvals');
-    assert.equal(pageForUrl('/management-dashboard?tab=reports', 'Management').id, 'reports');
+    assert.equal(isCurrentPage(byId('dashboard'), '/management-dashboard?tab=approvals'), false);
 });
 
 test('old management dashboard links resolve to the matching tab', () => {

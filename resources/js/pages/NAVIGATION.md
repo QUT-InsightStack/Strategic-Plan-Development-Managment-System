@@ -5,6 +5,7 @@
 - `access/navigation.js` defines the five role workspaces, canonical destinations, permission requirements and planned features.
 - `components/AppSidebar.js` renders that registry. Technical and Administrative sidebar modules are compatibility re-exports, not separate menu definitions.
 - `pages/shared/dashboard-app.js` renders role function cards and explicit placeholders. The Management dashboard retains its existing implementation.
+- Administrative Admin, Planning Officer, Office / Agency and Management workspaces are grouped by planning stage (see *Role workspaces* below). Technical Admin is unchanged.
 - `access/mount-protected-page.js` refreshes `/api/auth/me` before mounting the migrated administration and plan/objective registers. Existing independently bootstrapped Office/Management pages remain intact.
 - The backend remains authoritative for authorization and record scope. A visible placeholder or menu entry never grants API access.
 
@@ -16,6 +17,7 @@ Keep page entries in their existing role directories. Shared UI belongs in `comp
 | --- | --- |
 | Role workspace | `/dashboard` |
 | Management dashboard | `/management-dashboard` |
+| Monitoring Dashboard / Reports for planning, office and administrative roles | `/monitoring-dashboard`, `/monitoring-dashboard?tab=reports` |
 | Real account management | `/user-management` |
 | Role assignment | `/role-management` |
 | Role permission settings | `/role-management?section=permissions` |
@@ -32,6 +34,21 @@ Old `view=agency-input` upload links normalize to `view=inputs`, retaining the s
 The legacy `/office?view=mapping` and `view=alignment` previews remain readable with a link to the current mapping page. The old mapping form has no working mapping-save integration; its controls are disabled rather than submitting misleading objective proposals.
 
 Standard functions without an implemented screen have a `/dashboard?feature=...` placeholder. Missing permissions produce a disabled `No access` entry; additional nonstandard capabilities are hidden if unauthorized. Do not hide implemented forms merely because the API returns no records.
+
+## Role workspaces
+
+Sidebars are kept short: each page has one entry, a group with a single page becomes a top-level link, and Reports is a tab inside each role's Dashboard rather than a separate link. Entries keep their existing permission requirements; without permission an entry is shown as *No access*. The navigation test rejects repeated sidebar destinations and single-item groups.
+
+| Role | Sidebar |
+| --- | --- |
+| Administrative Admin | Dashboard · Reference Data (Presidential Agenda, PDP Chapters, Reference Data, Templates) · Planning (Plan List, Create Plan, Objectives, Inputs, Finalize & Submit) · Alignment (Strategic Mapping, Alignment View) · Monitoring (Objective Progress, System Logs) · Plan Reviews |
+| Planning Officer | Dashboard · Plans (Plan List, Create Plan, Objectives, Finalize & Submit) · Alignment (Strategic Mapping, Alignment View, PDP Chapters) · Office Inputs · Objective Progress · Plan Reviews |
+| Office / Agency | Dashboard · Plans & Objectives · Inputs (Planning Inputs, Proposed Objectives, Comments, Input Status) · My Objectives (Progress Update, Edit Objectives) · Agency Mapping (read-only `/mappings?mode=view`) |
+| Management / Executive | Dashboard · Approvals · Plan Review · Alignment · Input Review |
+
+The Dashboard link stays highlighted on its Overview and Reports tabs. The sidebar is 260px wide by default and can be dragged between 200px and 360px from its right edge (keyboard: focus the handle and use the arrow keys, Home or End; double-click resets). The width is saved in the browser (`spdms.sidebar-width`) and applied to every page through `--sidebar-width`. Long labels are truncated with an ellipsis and shown in full as a tooltip. On narrow screens (720px and below) the sidebar is full width and cannot be resized.
+
+Every one of these workspaces starts with a top-level **Dashboard** link: `/monitoring-dashboard` (titled "Dashboard") for Administrative Admin, Planning Officer and Office / Agency, and `/management-dashboard` for Management. `dashboardHrefFor(role)` in `access/navigation.js` returns it, and every in-app "Dashboard" link (page breadcrumbs, profile and resource pages, the access-denied home button via the role home) uses it. For those three roles `/dashboard` redirects to `/monitoring-dashboard`, including the old `?view=legacy` page; `/dashboard?feature=…` placeholders (such as FAQ) still open. Administrative Admin now lands on `/monitoring-dashboard` after sign-in; Planning Officer and Office keep `/strategic-plans` and `/office`. Technical Admin keeps `/dashboard`. `/monitoring-dashboard` renders the Management Dashboard page for any account with `strategic_records.view` or `reports.view`: only the Overview and Reports tabs, each gated by permission, with data scoped by the backend. My Pending Actions appears there only for users with a plan review assigned to them.
 
 ## Data sources
 

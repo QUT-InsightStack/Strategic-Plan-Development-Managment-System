@@ -27,7 +27,8 @@ test('legacy agency upload links resolve to the same page without losing plan se
 
 test('each role has unique sidebar destinations and explicit placeholder destinations', () => {
     for (const role of ['Technical Admin', 'Administrative Admin', 'Planning Officer', 'Office', 'Management']) {
-        const items = flattenNavigation(navigationFor(role)).filter(item => !item.dashboardOnly);
+        // Intentional repeats across stages are marked alias; any other repeated destination is a mistake.
+        const items = flattenNavigation(navigationFor(role)).filter(item => !item.dashboardOnly && !item.alias);
         assert.equal(new Set(items.map(item => item.href)).size, items.length, role);
         for (const item of items.filter(item => item.placeholder)) {
             assert.equal(new URL(item.href, 'http://localhost').searchParams.get('feature'), item.id);
