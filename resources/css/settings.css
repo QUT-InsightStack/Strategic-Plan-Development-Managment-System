@@ -7,4 +7,4 @@
 @import './layouts/app-shell.css';
 @import './layouts/sidebar.css';
 
-.settings-page .security-settings { margin-top: var(--space-4); }
+.settings-page .security-settings-layout { margin-top: var(--space-2); }

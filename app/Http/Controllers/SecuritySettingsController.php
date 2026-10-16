@@ -14,7 +14,8 @@ class SecuritySettingsController extends Controller
     public function show(): JsonResponse
     {
         abort_unless($this->settings->technicalAdmin(Auth::guard('api')->user()), 403);
-        return response()->json(['success' => true, 'data' => $this->settings->all()]);
+        // Defaults let the Settings page show what each value falls back to.
+        return response()->json(['success' => true, 'data' => $this->settings->all(), 'meta' => ['defaults' => SecuritySettingsService::DEFAULTS]]);
     }
 
     public function update(UpdateSecuritySettingsRequest $request): JsonResponse
@@ -24,6 +25,7 @@ class SecuritySettingsController extends Controller
             'success' => true,
             'message' => 'Security settings updated successfully.',
             'data' => $this->settings->update($request->validated()),
+            'meta' => ['defaults' => SecuritySettingsService::DEFAULTS],
         ]);
     }
 }
