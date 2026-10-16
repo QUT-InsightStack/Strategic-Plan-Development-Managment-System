@@ -187,7 +187,7 @@ export const roleNavigation = {
 export const dashboardLabels = { technical: 'Technical Administration Dashboard', administrative: 'Administrative Dashboard', planner: 'Planning Dashboard', office: 'Office/Agency Dashboard', management: 'Executive Dashboard' };
 export function navigationFor(role) {
     const kind = navigationRole(role);
-    // Only Technical Admin keeps the /dashboard function-card page; other workspaces start with their own Dashboard link.
+    // Only Technical Admin keeps /dashboard (the Technical Administration Dashboard); other workspaces start with their own Dashboard link.
     const home = kind === 'technical' ? [page('home', 'Dashboard', '/dashboard')] : [];
     return [...home, ...roleNavigation[kind], ...(kind === 'management' ? common : [group('account', 'Account and Help', common, 'bi-person-circle')])];
 }

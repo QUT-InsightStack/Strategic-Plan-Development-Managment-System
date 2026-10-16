@@ -2,7 +2,7 @@ import { createPageRoot } from '../../navigation/page-root.js';
 import { AppSidebar } from '../../components/AppSidebar.js';
 import { PageHeader } from '../../components/PageHeader.js';
 import { loadAccessSession } from '../../access/use-access-session.js';
-import { navigationFor, navigationRole, dashboardLabels, flattenNavigation, canOpenPage, dashboardHrefFor } from '../../access/navigation.js';
+import { navigationFor, flattenNavigation, dashboardHrefFor } from '../../access/navigation.js';
 import { enforcePageAccess } from '../../access/access-guard.js';
 import '../../../css/dashboard-hub.css';
 const h = React.createElement;
@@ -21,35 +21,15 @@ function PlannedFeature({ placeholder, session }) {
                 h('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: '/how-spdms-works' }, h('i', { className: 'bi bi-signpost-split', 'aria-hidden': true }), 'How SPDMS Works'))));
 }
 
-function FunctionCard({ item, session }) {
-    const allowed = canOpenPage(item, session);
-    const description = !allowed ? 'Your account does not have access to this function.' : item.placeholder ? 'Planned — not implemented yet.'
-        : item.description || (item.source === 'local' ? 'Local demonstration. Mapping changes are stored in this browser.' : 'Open this function.');
-    return h('article', { className: `ui-card dashboard-hub__card${allowed ? '' : ' is-locked'}` },
-        h('span', { className: 'dashboard-hub__card-icon' }, h('i', { className: `bi ${allowed ? item.icon || 'bi-grid' : 'bi-lock'}`, 'aria-hidden': true })),
-        h('div', { className: 'dashboard-hub__card-copy' }, h('h3', null, item.label), h('p', null, description)),
-        allowed ? h('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: item.href, 'aria-label': `${item.placeholder ? 'View status of' : 'Open'} ${item.label}` },
-            item.placeholder ? 'View status' : 'Open', h('i', { className: 'bi bi-arrow-right', 'aria-hidden': true })) : null);
-}
-
-function Dashboard({ session }) {
-    const entries = navigationFor(session.roleName);
+// Planned-feature page (/dashboard?feature=…) for every role.
+function FeaturePage({ session }) {
     const feature = new URLSearchParams(location.search).get('feature');
-    const placeholder = flattenNavigation(entries).find(item => item.placeholder && item.id === feature);
-    const title = feature ? placeholder?.label || 'Feature unavailable' : dashboardLabels[navigationRole(session.roleName)];
+    const placeholder = flattenNavigation(navigationFor(session.roleName)).find(item => item.placeholder && item.id === feature);
+    const title = placeholder?.label || 'Feature unavailable';
     return h(React.Fragment, null, h(AppSidebar),
         h('main', { className: 'app-shell-main dashboard-hub' }, h('div', { className: 'app-shell-container' },
-            h(PageHeader, { section: title, title,
-                subtitle: feature ? null : 'Choose a function below. Access is based on the permissions currently assigned to your account.' }),
-            feature ? h(PlannedFeature, { placeholder, session })
-                : h(React.Fragment, null,
-                    entries.filter(item => item.children).map(section => h('section', { key: section.id, className: 'dashboard-hub__section', 'aria-labelledby': `hub-${section.id}` },
-                        h('h2', { id: `hub-${section.id}` }, h('i', { className: `bi ${section.icon}`, 'aria-hidden': true }), section.label),
-                        h('div', { className: 'dashboard-hub__grid' }, section.children.filter(item => !item.hideWhenDenied || canOpenPage(item, session))
-                            .map(item => h(FunctionCard, { key: item.id, item, session }))))),
-                    h('details', { className: 'ui-card dashboard-hub__legacy' }, h('summary', null, 'Existing tools / compatibility'),
-                        h('p', null, 'The previous dashboard and its generic resource tools remain available. Use the main workspace for regular work.'),
-                        h('a', { href: '/dashboard?view=legacy' }, 'Open previous dashboard'))))));
+            h(PageHeader, { section: title, title }),
+            h(PlannedFeature, { placeholder, session }))));
 }
 root.render(h('p', { role: 'status' }, 'Loading your workspace…'));
 loadAccessSession().then(async session => {
@@ -59,8 +39,15 @@ loadAccessSession().then(async session => {
         location.replace(dashboardHrefFor(session.roleName));
         return;
     }
-    if (new URLSearchParams(location.search).get('view') === 'legacy') {
+    const params = new URLSearchParams(location.search);
+    if (params.get('view') === 'legacy') {
         const { LegacyDashboardApp } = await import('./legacy-dashboard.js');
         root.render(h(LegacyDashboardApp));
-    } else root.render(h(Dashboard, { session }));
+    } else if (params.has('feature')) {
+        root.render(h(FeaturePage, { session }));
+    } else {
+        // Technical Admin Dashboard: technical activity on the dashboard and report masters.
+        const { TechnicalDashboard } = await import('../technical-admin/technical-dashboard.js');
+        root.render(h(TechnicalDashboard, { session }));
+    }
 }).catch(error => root.render(h('div', { role: 'alert' }, error.message, h('button', { onClick: () => location.reload() }, 'Retry'))));

@@ -8,25 +8,44 @@
 import { apiRequest } from '../api/api-client.js';
 
 const { useEffect, useMemo, useState } = React;
+const h = React.createElement;
 
 const SECURITY_FIELDS = [
-    { key: 'session_timeout_minutes', label: 'Session Inactivity Timeout', hint: 'Minutes without activity before a user is automatically logged out.', unit: 'minutes' },
-    { key: 'max_failed_login_attempts', label: 'Maximum Failed Login Attempts', hint: 'Failed passwords allowed before the account is locked.', unit: 'attempts' },
-    { key: 'lockout_duration_minutes', label: 'Account Lockout Duration', hint: 'Minutes an account remains locked after reaching the limit.', unit: 'minutes' },
+    { key: 'session_timeout_minutes', label: 'Session inactivity timeout', hint: 'Minutes without activity before a user is automatically signed out.', unit: 'minutes', icon: 'bi-hourglass-split' },
+    { key: 'max_failed_login_attempts', label: 'Maximum failed sign-in attempts', hint: 'Wrong passwords allowed before the account is locked.', unit: 'attempts', icon: 'bi-shield-exclamation' },
+    { key: 'lockout_duration_minutes', label: 'Account lockout duration', hint: 'Minutes an account stays locked after reaching the limit. It then unlocks automatically.', unit: 'minutes', icon: 'bi-lock' },
 ];
+
+const plural = (value, unit) => `${value} ${Number(value) === 1 ? unit.replace(/s$/, '') : unit}`;
+
+// Plain-language summary of the saved policy, shown beside the form.
+function PolicySummary({ saved }) {
+    const items = [
+        ['bi-hourglass-split', `Users are signed out after ${plural(saved.session_timeout_minutes, 'minutes')} without activity.`],
+        ['bi-shield-exclamation', `After ${plural(saved.max_failed_login_attempts, 'attempts')} with a wrong password, the account is locked.`],
+        ['bi-lock', `A locked account unlocks automatically after ${plural(saved.lockout_duration_minutes, 'minutes')}.`],
+    ];
+    return h('aside', { className: 'ui-card settings-summary', 'aria-labelledby': 'settings-summary-title' },
+        h('header', { className: 'ui-section-header' },
+            h('div', { className: 'ui-section-header__copy' }, h('h2', { id: 'settings-summary-title' }, 'Current policy'), h('p', null, 'What the saved settings mean for users.')),
+            h('i', { className: 'bi bi-info-circle', 'aria-hidden': true })),
+        h('ul', null, items.map(([icon, text]) => h('li', { key: icon }, h('i', { className: `bi ${icon}`, 'aria-hidden': true }), h('span', null, text)))),
+        h('p', { className: 'settings-summary__note' }, 'Changes apply to new sessions and sign-in attempts as soon as they are saved.'));
+}
 
 export function SecuritySettings() {
     // `values` stays null until the saved configuration arrives so that
     // placeholder numbers are never shown as if they were real settings.
     const [saved, setSaved] = useState(null);
     const [values, setValues] = useState(null);
+    const [defaults, setDefaults] = useState({});
     const [fieldErrors, setFieldErrors] = useState({});
     const [status, setStatus] = useState({ message: '', type: 'info' });
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         apiRequest('/api/security-settings')
-            .then((response) => { setSaved(response.data); setValues(response.data); })
+            .then((response) => { setSaved(response.data); setValues(response.data); setDefaults(response.meta?.defaults || {}); })
             .catch((error) => setStatus({ message: error.message, type: 'error' }));
     }, []);
 
@@ -91,28 +110,34 @@ export function SecuritySettings() {
     }
 
     const statusBanner = status.message
-        ? React.createElement('div', { className: `ui-status ui-status--${status.type}`, role: 'status' }, status.message)
+        ? h('div', { className: `ui-status ui-status--${status.type}`, role: status.type === 'error' ? 'alert' : 'status' }, status.message)
         : null;
 
-    return React.createElement('section', { className: 'ui-card role-panel security-settings', 'aria-labelledby': 'security-settings-title' },
-        React.createElement('div', { className: 'role-panel__header' },
-            React.createElement('h2', { id: 'security-settings-title' }, 'Security Settings'),
-            React.createElement('p', null, 'Configure authentication and session protection for all users.')),
+    const form = h('section', { className: 'ui-card security-settings', 'aria-labelledby': 'security-settings-title' },
+        h('header', { className: 'ui-section-header' },
+            h('div', { className: 'ui-section-header__copy' },
+                h('h2', { id: 'security-settings-title' }, 'Session and sign-in protection'),
+                h('p', null, 'Applies to every user account in SPDMS.')),
+            h('i', { className: 'bi bi-shield-lock', 'aria-hidden': true })),
         !values
-            ? React.createElement('div', { className: 'role-panel__body security-settings__loading' },
-                statusBanner || 'Loading security settings…')
-            : React.createElement('form', { className: 'role-panel__body security-settings__form', onSubmit: save },
-                ...SECURITY_FIELDS.map(({ key, label, hint, unit }) => {
+            ? h('div', { className: 'security-settings__loading' }, statusBanner || 'Loading security settings…')
+            : h('form', { className: 'security-settings__form', onSubmit: save, noValidate: true },
+                SECURITY_FIELDS.map(({ key, label, hint, unit, icon }) => {
                     const inputId = `security-${key}`;
                     const hintId = `${inputId}-hint`;
                     const errorId = `${inputId}-error`;
                     const fieldError = fieldErrors[key];
+                    const changed = saved && String(values[key]) !== String(saved[key]);
 
-                    return React.createElement('div', { key, className: `security-settings__field${fieldError ? ' is-invalid' : ''}` },
-                        React.createElement('label', { htmlFor: inputId }, React.createElement('strong', null, label)),
-                        React.createElement('span', { className: 'security-settings__hint', id: hintId }, hint),
-                        React.createElement('div', { className: 'security-settings__control' },
-                            React.createElement('input', {
+                    return h('div', { key, className: `security-settings__field${fieldError ? ' is-invalid' : ''}${changed ? ' is-changed' : ''}` },
+                        h('span', { className: 'security-settings__icon' }, h('i', { className: `bi ${icon}`, 'aria-hidden': true })),
+                        h('div', { className: 'security-settings__copy' },
+                            h('label', { htmlFor: inputId }, label),
+                            h('span', { className: 'security-settings__hint', id: hintId }, hint,
+                                defaults[key] ? h('span', { className: 'security-settings__default' }, ` Default: ${plural(defaults[key], unit)}.`) : null),
+                            fieldError ? h('p', { className: 'ui-error', id: errorId }, fieldError) : null),
+                        h('div', { className: 'security-settings__control' },
+                            h('input', {
                                 id: inputId,
                                 className: 'ui-input',
                                 type: 'number',
@@ -125,13 +150,15 @@ export function SecuritySettings() {
                                 'aria-invalid': fieldError ? 'true' : undefined,
                                 onChange: (event) => update(key, event.target.value),
                             }),
-                            React.createElement('span', { className: 'security-settings__unit' }, unit)),
-                        fieldError ? React.createElement('p', { className: 'ui-error', id: errorId }, fieldError) : null);
+                            h('span', { className: 'security-settings__unit' }, unit)));
                 }),
-                statusBanner,
-                React.createElement('div', { className: 'security-settings__actions' },
-                    React.createElement('button', { className: 'ui-button ui-button--primary', type: 'submit', disabled: saving || !isDirty },
-                        React.createElement('i', { className: 'bi bi-check2-circle' }),
-                        saving ? 'Saving…' : 'Save Security Settings'),
-                    React.createElement('button', { className: 'ui-button ui-button--secondary', type: 'button', onClick: reset, disabled: saving || !isDirty }, 'Discard Changes'))));
+                h('footer', { className: 'security-settings__actions' },
+                    statusBanner || h('span', { className: 'security-settings__state' }, isDirty ? 'You have unsaved changes.' : 'All changes saved.'),
+                    h('div', { className: 'security-settings__buttons' },
+                        h('button', { className: 'ui-button ui-button--secondary', type: 'button', onClick: reset, disabled: saving || !isDirty }, 'Discard changes'),
+                        h('button', { className: 'ui-button ui-button--primary', type: 'submit', disabled: saving || !isDirty },
+                            h('i', { className: 'bi bi-check2-circle', 'aria-hidden': true }),
+                            saving ? 'Saving…' : 'Save settings')))));
+
+    return h('div', { className: 'security-settings-layout' }, form, saved ? h(PolicySummary, { saved }) : null);
 }
