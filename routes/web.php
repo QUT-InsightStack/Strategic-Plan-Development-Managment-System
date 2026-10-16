@@ -3,7 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/login');
+Route::view('/', 'pages.landing')->name('home');
 
 Route::view('/login', 'pages.login')->name('login');
 Route::view('/forgot-password', 'pages.forgot-password')->name('forgot-password');
