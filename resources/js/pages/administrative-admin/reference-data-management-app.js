@@ -75,46 +75,6 @@ row.status !== 'deleted' &&
     );
 }
 
-function ReferenceCatalogPage() {
-    const liveLists = [
-        { title: 'Presidential Agenda', description: 'Agenda records used to align strategic objectives.', source: 'tblpresidential_agenda_items', href: '/administrative-admin/reference-data?tab=agenda', icon: 'bi-bank2', action: 'Manage Agenda' },
-        { title: 'PDP Chapters', description: 'PDP chapter records used in strategic objective mapping.', source: 'tblpdp_chapters', href: '/pdp-chapters/manage', icon: 'bi-journal-text', action: 'Manage Chapters' },
-    ];
-    const unavailableLists = [
-        { title: 'DOST Priority Areas', description: 'Maintain the priority areas available for strategic planning and alignment.', icon: 'bi-building-fill' },
-        { title: 'Indicator Types', description: 'Maintain the indicator types available when defining objective measures.', icon: 'bi-speedometer2' },
-    ];
-
-    return React.createElement(React.Fragment, null,
-        React.createElement(AdministrativeAdminSidebar, { active: 'Reference Data' }),
-        React.createElement('main', { className: 'app-shell-main reference-data-page' },
-            React.createElement('div', { className: 'app-shell-container' },
-                React.createElement(PageHeader, {
-                    section: 'Administrative Administration',
-                    title: 'Reference Data',
-                    subtitle: 'Open the maintained reference lists used throughout strategic planning.',
-                }),
-                React.createElement('section', { className: 'reference-catalog-grid', 'aria-label': 'Available reference data' },
-                    liveLists.map((card) => React.createElement('article', { className: 'ui-card reference-catalog-card', key: card.title },
-                        React.createElement('i', { className: `bi ${card.icon}`, 'aria-hidden': 'true' }),
-                        React.createElement('h2', null, card.title),
-                        React.createElement('p', null, card.description),
-                        React.createElement('code', null, card.source),
-                        React.createElement('a', { className: 'ui-button ui-button--primary ui-button--sm', href: card.href }, card.action)
-                    )),
-                    unavailableLists.map((list) => React.createElement('article', { className: 'ui-card reference-catalog-card reference-catalog-card--unavailable', key: list.title },
-                        React.createElement('i', { className: `bi ${list.icon}`, 'aria-hidden': 'true' }),
-                        React.createElement('h2', null, list.title),
-                        React.createElement('p', null, list.description),
-                        React.createElement('p', { className: 'reference-catalog-empty' }, 'No records to display.'),
-                        React.createElement('span', { className: 'ui-badge ui-badge--neutral' }, 'Data connection pending')
-                    ))
-                )
-            )
-        )
-    );
-}
-
 export function ReferenceDataManagementApp() {
     const requestedTab = new URLSearchParams(window.location.search).get('tab');
     const initialTab = tabs.some((tab) => tab.id === requestedTab) ? requestedTab : 'agenda';
@@ -155,7 +115,7 @@ export function ReferenceDataManagementApp() {
         }
     }
 
-    useEffect(() => { if (requestedTab !== 'reference') loadAgenda(1); }, []);
+    useEffect(() => { loadAgenda(1); }, []);
 
     function closeConfirmDialog() {
         setConfirmDialog((current) => ({ ...current, open: false }));
@@ -223,8 +183,6 @@ export function ReferenceDataManagementApp() {
 
         setNotice({ type: 'info', message: `${tabs.find((tab) => tab.id === activeTab)?.label} is managed in its own module.` });
     }
-
-    if (requestedTab === 'reference') return React.createElement(ReferenceCatalogPage);
 
     return React.createElement(React.Fragment, null,
         React.createElement(AdministrativeAdminSidebar, { active: sidebarActive, onNotice: (message) => setNotice({ type: 'info', message }) }),

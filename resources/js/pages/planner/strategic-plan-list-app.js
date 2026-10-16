@@ -8,6 +8,13 @@ import { can } from '../../access/access-session.js';
 
 const { useEffect, useState } = React;
 const currentYear = new Date().getFullYear();
+// The register shows plan preparation status only; approval progress has its own column.
+const PLAN_STATUS_LABELS = { draft: 'Draft', finished: 'Finished' };
+
+function planStatus(plan) {
+    const status = plan.status === 'archived' ? plan.status_before_archive : plan.status;
+    return status === 'draft' ? 'draft' : 'finished';
+}
 
 function StrategicPlanListApp() {
     const canCreatePlans = can(PERMISSIONS.PLANS_CREATE);
@@ -93,7 +100,7 @@ function StrategicPlanListApp() {
             variant: 'danger',
             title: restoring ? 'Restore strategic plan' : 'Archive strategic plan',
             message: restoring
-                ? `Restore “${plan.title}” to Finished?`
+                ? `Restore “${plan.title}” to ${PLAN_STATUS_LABELS[planStatus(plan)]}?`
                 : `Archive “${plan.title}”? The plan will be retained and can be restored later.`,
             ids: [plan.record_id],
             action: 'status',
@@ -190,7 +197,7 @@ function approvalStatusClass(status) {
                         React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'search' }, 'Plan title'), React.createElement('div', { className: 'plans-search' }, React.createElement('input', { className: 'ui-input', id: 'search', value: filters.search, placeholder: 'Search by plan title', onChange: (event) => setFilters((current) => ({ ...current, search: event.target.value })) }), React.createElement('i', { className: 'bi bi-search', 'aria-hidden': 'true' }))),
                         React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'office' }, 'Office'), React.createElement('select', { className: 'ui-select', id: 'office', value: filters.office, onChange: (event) => { setFilters((current) => ({ ...current, office: event.target.value })); setStatus({ type: 'info', message: 'Office filtering will be enabled when the plan department field is added to the database.' }); } }, React.createElement('option', { value: '' }, 'All offices'))),
                         React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'level' }, 'Type'), React.createElement('select', { className: 'ui-select', id: 'level', value: filters.level, onChange: (event) => setFilters((current) => ({ ...current, level: event.target.value })) }, React.createElement('option', { value: '' }, 'All types'), React.createElement('option', { value: 'strategic_plan' }, 'Strategic Plan'), React.createElement('option', { value: 'goal' }, 'Goal'))),
-                        React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'status' }, 'Status'), React.createElement('select', { className: 'ui-select', id: 'status', value: filters.status, onChange: (event) => setFilters((current) => ({ ...current, status: event.target.value })) }, React.createElement('option', { value: '' }, 'All statuses'), React.createElement('option', { value: 'draft' }, 'Draft'), React.createElement('option', { value: 'finished' }, 'Finalized'), React.createElement('option', { value: 'archived' }, 'Archived'))),
+                        React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'status' }, 'Status'), React.createElement('select', { className: 'ui-select', id: 'status', value: filters.status, onChange: (event) => setFilters((current) => ({ ...current, status: event.target.value })) }, React.createElement('option', { value: '' }, 'All statuses'), React.createElement('option', { value: 'draft' }, 'Draft'), React.createElement('option', { value: 'finished' }, 'Finished'), React.createElement('option', { value: 'archived' }, 'Archived'))),
                         React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'year' }, 'Year'), React.createElement('select', { className: 'ui-select', id: 'year', value: filters.year, onChange: (event) => setFilters((current) => ({ ...current, year: event.target.value })) }, React.createElement('option', { value: '' }, 'All years'), [0,1,2,3,4].map((offset) => React.createElement('option', { value: currentYear - offset, key: currentYear - offset }, currentYear - offset)))),
                         React.createElement('div', { className: 'plans-filter-actions' }, React.createElement('button', { className: 'ui-button ui-button--primary ui-button--sm', type: 'submit', disabled: loading }, React.createElement('i', { className: 'bi bi-funnel-fill' }), 'Filter'), React.createElement('button', { className: 'ui-button ui-button--secondary ui-button--sm', type: 'button', onClick: clearFilters, disabled: loading }, 'Clear'))
                     )
@@ -213,17 +220,22 @@ function approvalStatusClass(status) {
                         canSelectPlans ? React.createElement('td', { className: 'plans-select-column' }, React.createElement('input', { type: 'checkbox', checked: selectedIds.includes(plan.record_id), onChange: () => toggleSelection(plan.record_id), 'aria-label': `Select ${plan.title}` })) : null,
                         React.createElement('td', null, React.createElement('span', { className: 'plans-id' }, String(plan.record_id).padStart(4, '0'))),
                         React.createElement('td', null, React.createElement('strong', null, plan.title)),
-                        React.createElement('td', null, React.createElement('span', { className: `ui-badge ui-badge--${plan.status || 'draft'}` }, plan.planning_status_label || (plan.status || 'draft').replace(/^./, (letter) => letter.toUpperCase()))),
+                        React.createElement('td', null,
+                            React.createElement('span', { className: `ui-badge ui-badge--${planStatus(plan)}` }, PLAN_STATUS_LABELS[planStatus(plan)]),
+                            plan.status === 'archived' ? React.createElement('span', { className: 'ui-badge ui-badge--archived plan-archived-tag' }, 'Archived') : null
+                        ),
                         React.createElement(
     'td',
     null,
-    plan.approval_status
+    plan.approval_status && plan.approval_status !== 'not_submitted'
         ? React.createElement(
-            'span',
+            'a',
             {
                 className:
                     `ui-badge plan-approval-badge ` +
                     `${approvalStatusClass(plan.approval_status)}`,
+                href: `/strategic-plans/${plan.record_id}/approval-status`,
+                title: 'View approval status and history',
             },
             approvalStatusLabel(
                 plan.approval_status
@@ -244,7 +256,6 @@ function approvalStatusClass(status) {
                         React.createElement('td', null, creatorName(plan)), React.createElement('td', null, plan.creator?.department || 'Pending DB field'),
                         React.createElement('td', null, plan.updated_at ? new Date(plan.updated_at).toLocaleDateString() : '—'),
                         React.createElement('td', { className: 'plans-actions-cell' }, hasPlanActions ? React.createElement('div', { className: 'ui-table__actions' },
-                            plan.approval_status && plan.approval_status !== 'not_submitted' && React.createElement('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: `/strategic-plans/${plan.record_id}/approval-status` }, 'Approval status'),
                             canUpdatePlans && ['draft', 'finished'].includes(plan.status) ? React.createElement('a', { className: 'ui-button ui-button--secondary ui-button--sm', href: `/strategic-plans/${plan.record_id}/finalize`, 'aria-label': `Finalize ${plan.title}` }, React.createElement('i', { className: 'bi bi-clipboard-check' }), plan.status === 'finished' ? 'Finalized View' : 'Finalize') : null,
                             canUpdatePlans && (plan.status === 'draft' || plan.approval_status === 'rejected')
     ? React.createElement(

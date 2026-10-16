@@ -41,7 +41,7 @@ Sidebars are kept short: each page has one entry, a group with a single page bec
 
 | Role | Sidebar |
 | --- | --- |
-| Administrative Admin | Dashboard · Reference Data (Presidential Agenda, PDP Chapters, Reference Data, Templates) · Planning (Plan List, Create Plan, Objectives, Inputs, Finalize & Submit) · Alignment (Strategic Mapping, Alignment View) · Monitoring (Objective Progress, System Logs) · Plan Reviews |
+| Administrative Admin | Dashboard · Reference Data (Presidential Agenda, PDP Chapters, Templates) · Planning (Plan List, Create Plan, Objectives, Inputs, Finalize & Submit) · Alignment (Strategic Mapping, Alignment View) · Monitoring (Objective Progress, System Logs) · Plan Reviews |
 | Planning Officer | Dashboard · Plans (Plan List, Create Plan, Objectives, Finalize & Submit) · Alignment (Strategic Mapping, Alignment View, PDP Chapters) · Office Inputs · Objective Progress · Plan Reviews |
 | Office / Agency | Dashboard · Plans & Objectives · Inputs (Planning Inputs, Proposed Objectives, Comments, Input Status) · My Objectives (Progress Update, Edit Objectives) · Agency Mapping (read-only `/mappings?mode=view`) |
 | Management / Executive | Dashboard · Approvals · Plan Review · Alignment · Input Review |

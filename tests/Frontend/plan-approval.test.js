@@ -201,3 +201,25 @@ test('the plan register uses persisted approval status and routes resubmission t
     assert.equal(destination, '/strategic-plans/7/finalize');
     assert.ok(nodes(tree, node => node.type === 'a' && node.props.href === '/strategic-plans/7/approval-status').length);
 });
+
+test('the plan register shows only Draft or Finished as plan status and keeps approval links out of Actions', async () => {
+    const app = host('planner/strategic-plan-list-app.js', {
+        listStrategicPlans: async () => ({ data: [
+            { ...plan, record_id: 7, status: 'finished', approval_status: 'under_approval', planning_status_label: 'Awaiting Approval' },
+            { ...plan, record_id: 8, status: 'archived', status_before_archive: 'draft', approval_status: 'not_submitted' },
+        ], meta: { current_page: 1, last_page: 1, total: 2 } }),
+        can: () => true, PERMISSIONS: {}, AppDialog: 'dialog',
+        window: { sessionStorage: { getItem: () => null }, location: { assign: () => {} } },
+    });
+    const tree = await app.load();
+    const rows = nodes(tree, node => node.type === 'tr').slice(1);
+    const statusBadges = row => nodes(row, node => node.type === 'span' && /ui-badge--(draft|finished)/.test(node.props.className || '')).map(text);
+    assert.deepEqual(statusBadges(rows[0]), ['Finished']);
+    assert.deepEqual(statusBadges(rows[1]), ['Draft']);
+    assert.match(text(rows[1]), /Archived/);
+    assert.doesNotMatch(text(tree), /Awaiting Approval/);
+    const actions = nodes(tree, node => node.props?.className === 'plans-actions-cell');
+    assert.ok(actions.length);
+    actions.forEach(cell => assert.equal(nodes(cell, node => node.type === 'a' && /approval-status$/.test(node.props.href || '')).length, 0));
+    assert.ok(nodes(rows[0], node => node.type === 'a' && node.props.href === '/strategic-plans/7/approval-status').length);
+});

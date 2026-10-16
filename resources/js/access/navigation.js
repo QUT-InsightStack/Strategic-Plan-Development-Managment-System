@@ -75,7 +75,6 @@ export const roleNavigation = {
     group('admin-references', 'Reference Data', [
         page('agenda', 'Presidential Agenda', '/administrative-admin/reference-data?tab=agenda', ['reference_data.manage', 'presidential_agenda.view'], { icon: 'bi-bank' }),
         page('pdp', 'PDP Chapters', '/pdp-chapters/manage', ['pdp_chapters.manage'], { icon: 'bi-journal-bookmark' }),
-        page('reference', 'Reference Data', '/administrative-admin/reference-data?tab=reference', ['reference_data.manage'], { icon: 'bi-collection' }),
         page('templates', 'Templates', '/administrative-admin/templates', ['templates.manage'], { icon: 'bi-file-earmark-text' }),
     ], 'bi-journal-check'),
     // Planning support granted by the enable_administrative_admin_planning migration.
