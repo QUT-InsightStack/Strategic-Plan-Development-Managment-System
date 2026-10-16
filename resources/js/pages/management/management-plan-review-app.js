@@ -37,7 +37,13 @@ function PlanReviewPage({ session }) {
     React.useEffect(() => {
         let active = true;
         setLoading(true); setError('');
-        listAuthorizedManagementPlans().then(rows => { if (active) setPlans(rows.filter(plan => plan.review_ready)); })
+        listAuthorizedManagementPlans().then(rows => {
+    if (active) {
+        setPlans(rows.filter(plan =>
+            ['draft', 'finished'].includes(plan.status)
+        ));
+    }
+})
             .catch(reason => { if (active) setError(reason.message || 'Unable to load authorized plans.'); })
             .finally(() => { if (active) setLoading(false); });
         return () => { active = false; };

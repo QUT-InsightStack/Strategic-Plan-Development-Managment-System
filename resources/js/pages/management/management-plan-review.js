@@ -32,7 +32,12 @@ export function ManagementPlanReview({ plans, planId, filters = {}, onOpenPlan, 
         Promise.all([getStrategicPlan(planId), listStrategicObjectives(planId)])
             .then(([planPayload, objectivePayload]) => {
                 if (!active) return;
-                if (!planPayload.data?.review_ready) throw new Error('This plan is not finalized and ready for Management review.');
+                if (
+    !planPayload.data
+    || !['draft', 'finished'].includes(planPayload.data.status)
+) {
+    throw new Error('This plan is unavailable for viewing and objective comments.');
+}
                 setPlan(planPayload.data);
                 setObjectives((objectivePayload.data || []).filter(item => !['archived', 'deleted'].includes(item.status)));
             })
@@ -46,8 +51,8 @@ export function ManagementPlanReview({ plans, planId, filters = {}, onOpenPlan, 
     useEffect(() => { setPage(1); }, [JSON.stringify(filters)]);
     if (!planId) return h('section', { className: 'management-card management-table-card' },
         h('div', { className: 'management-card__heading' }, h('div', null,
-            h('h2', null, 'Strategic Plans for Review'),
-            h('p', null, 'Open a plan to review its summary, foundations and comments.')),
+            h('h2', null, 'Strategic Plans and Objective Comments'),
+            h('p', null, 'View draft and finalized plans and provide comments on their objectives. Approval decisions are handled separately.')),
             h('label', { className: 'management-approvals__search' }, h('span', null, 'Search plans'), h('input', { type: 'search', value: search, onChange: event => { setSearch(event.target.value); setPage(1); }, placeholder: 'Plan title, ID or agency' }))),
         h('div', { className: 'management-table-scroll' }, h('table', null,
             h('thead', null, h('tr', null, ['Plan ID', 'Strategic Plan', 'Department / Agency', 'Period', 'Status', 'Action'].map(label => h('th', { key: label, scope: 'col' }, label)))),
