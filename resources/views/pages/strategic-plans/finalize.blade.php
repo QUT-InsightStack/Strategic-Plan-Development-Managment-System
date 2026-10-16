@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ ($overviewMode ?? false) ? 'Plan Overview' : 'Finalize Strategic Plan' }} | Strategic Planning Management System</title>
+    <title>{{ ($overviewMode ?? false) ? 'Plan Overview' : 'Finalize Strategic Plan' }} | Strategic Plan Development Management System</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     @vite(['resources/css/strategic-plan-finalize.css', 'resources/js/pages/planner/strategic-plan-finalize-app.js'])
     <meta name="app-page-entry" content="{{ Vite::asset('resources/js/pages/planner/strategic-plan-finalize-app.js') }}">

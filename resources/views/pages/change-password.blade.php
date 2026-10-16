@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Change Password | Strategic Planning Management System</title>
+    <title>Change Password | Strategic Plan Development Management System</title>
 
     @vite([
         'resources/css/change-password.css',

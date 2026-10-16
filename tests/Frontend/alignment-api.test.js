@@ -40,6 +40,7 @@ function page({ capabilities = {}, failArchive = false, mappingStatus = 'active'
     const context = vm.createContext({
         URLSearchParams, location: { search }, document: { getElementById: () => ({}) },
         AppSidebar: 'sidebar', AppDialog: 'dialog', PageHeader: 'header', mountProtectedPage: () => {},
+        can: () => true, getAccessSession: () => ({ permissions: [] }), isManagementSession: () => false,
         React: {
             Fragment: 'fragment',
             createElement: (type, props, ...children) => ({ type, props: props || {}, children: children.flat(Infinity) }),

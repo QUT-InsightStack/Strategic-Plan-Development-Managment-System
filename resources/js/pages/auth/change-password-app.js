@@ -27,7 +27,7 @@ function Brand() {
         {
             className: 'brand',
             href: dashboardUrl,
-            'aria-label': 'Strategic Planning Management System home',
+            'aria-label': 'Strategic Plan Development Management System home',
         },
         React.createElement(BrandLogo),
         React.createElement(
@@ -516,7 +516,7 @@ function Footer({ onMessage }) {
             'span',
             null,
             String.fromCharCode(169),
-            ' 2026 Strategic Planning Management System'
+            ' 2026 Strategic Plan Development Management System'
         ),
         React.createElement(
             'a',

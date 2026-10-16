@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome | Strategic Planning Management System</title>
+    <title>Welcome | Strategic Plan Development Management System</title>
     <meta name="description" content="DOST internal work platform for preparing, aligning and monitoring strategic plans.">
     @vite(['resources/css/landing.css'])
 </head>
@@ -11,16 +11,10 @@
     <a class="skip-link" href="#main">Skip to main content</a>
 
     <div class="landing-shell">
-        <div class="gov-strip">
-            <span>Republic of the Philippines</span>
-            <span class="gov-strip__divider" aria-hidden="true"></span>
-            <span>Department of Science and Technology</span>
-        </div>
-
         <header class="app-header" aria-label="Site header">
-            <a class="brand" href="{{ url('/') }}" aria-label="Strategic Planning Management System home">
+            <a class="brand" href="{{ url('/') }}" aria-label="Strategic Plan Development Management System home">
                 <x-brand-logo />
-                <span class="brand-name">Strategic Planning Management System</span>
+                <span class="brand-name">Strategic Plan Development Management System</span>
             </a>
             <nav class="top-nav" aria-label="Primary navigation">
                 <a class="nav-link nav-link--login" href="{{ route('login') }}">Sign in</a>
@@ -32,7 +26,7 @@
                 <div class="hero-inner">
                     <div class="hero-copy">
                         <p class="eyebrow">DOST Internal Work Platform</p>
-                        <h1 id="hero-title">Strategic Planning Management System</h1>
+                        <h1 id="hero-title">Strategic Plan Development Management System</h1>
                         <p class="hero-tagline">Aligned, Accountable and Transparent Planning</p>
                         <p class="hero-lead">
                             Prepare strategic plans, align objectives with national development priorities,
@@ -65,7 +59,7 @@
             <div class="footer-column">
                 <h3>System</h3>
                 <ul>
-                    <li><span>Strategic Planning Management System</span></li>
+                    <li><span>Strategic Plan Development Management System</span></li>
                     <li><span>For internal government use only</span></li>
                 </ul>
             </div>

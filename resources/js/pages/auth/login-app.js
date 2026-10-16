@@ -14,7 +14,7 @@ const messages = {
     privacy: 'Privacy Notice content is not connected yet.',
     terms: 'Terms of Use content is not connected yet.',
     accessibility: 'Accessibility information is not connected yet.',
-    version: 'Strategic Planning Management System, Version 1.0.',
+    version: 'Strategic Plan Development Management System, Version 1.0.',
     internalUse: 'This system is for internal government use only.',
 };
 
@@ -57,9 +57,9 @@ async function currentUserRequest() {
 function Brand() {
     return React.createElement(
         'a',
-        { className: 'brand', href: '/', 'aria-label': 'Strategic Planning Management System home' },
+        { className: 'brand', href: '/', 'aria-label': 'Strategic Plan Development Management System home' },
         React.createElement(BrandLogo),
-        React.createElement('span', { className: 'brand-name' }, 'Strategic Planning Management System')
+        React.createElement('span', { className: 'brand-name' }, 'Strategic Plan Development Management System')
     );
 }
 
@@ -93,7 +93,7 @@ function AccessIntro() {
                 React.createElement('path', { d: 'M45 36a12 12 0 1 0 0 24 12 12 0 0 0 0-24Zm6.8 9.9-7.5 8.2a2 2 0 0 1-2.9.1l-4.1-4.1 2.8-2.8 2.6 2.6 6.1-6.7 3 2.7Z' })
             )
         ),
-        React.createElement('h1', { id: 'access-title' }, 'Access the Strategic Planning Management System'),
+        React.createElement('h1', { id: 'access-title' }, 'Access the Strategic Plan Development Management System'),
         React.createElement('p', null, 'For account access,', React.createElement('br'), 'please contact your system administrator.')
     );
 }
@@ -417,7 +417,7 @@ function Footer({ onMessage }) {
         React.createElement(FooterColumn, {
             heading: 'System',
             items: [
-                { label: 'Strategic Planning Management System', onClick: () => onMessage(messages.version) },
+                { label: 'Strategic Plan Development Management System', onClick: () => onMessage(messages.version) },
                 { label: 'For internal government use only' },
             ],
         }),

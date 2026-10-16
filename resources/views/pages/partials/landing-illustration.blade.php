@@ -1,7 +1,7 @@
-{{-- Hero illustration: the planning platform at the centre, with DOST units
+{{-- Hero illustration: the planning platform at the centre, with the five system roles
      around it exchanging work through the platform and with each other. --}}
 <svg class="hero-illustration" viewBox="0 0 560 480" role="img" aria-labelledby="hero-illustration-title">
-    <title id="hero-illustration-title">The planning platform at the centre, connecting the Planning Office, Management, Regional Offices, Research Institutes, Offices and Units, and ICT Services</title>
+    <title id="hero-illustration-title">The planning platform at the centre, connecting the Planning Officer, Management, Offices and Units, the Administrative Admin and the Technical Admin</title>
     <defs>
         <linearGradient id="li-blue" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stop-color="#2a6cc0"/>
@@ -34,7 +34,6 @@
         <path d="M280 70V240"/>
         <path d="M453 155 280 240"/>
         <path d="M453 325 280 240"/>
-        <path d="M280 410V240"/>
         <path d="M107 325 280 240"/>
         <path d="M107 155 280 240"/>
     </g>
@@ -71,26 +70,25 @@
     <path d="M354 156l6 6 10-11" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
 
     <rect x="222" y="314" width="116" height="24" rx="12" fill="#174c8f"/>
-    <text x="280" y="330.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#ffffff" letter-spacing="0.5">SPMS PLATFORM</text>
+    <text x="280" y="330.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" fill="#ffffff" letter-spacing="0.5">SPDMS PLATFORM</text>
 
     {{-- Work moving along the spokes --}}
     <g fill="#00aeef" stroke="#ffffff" stroke-width="2">
         <circle cx="280" cy="122" r="5.5"/>
         <circle cx="384" cy="189" r="5.5"/>
         <circle cx="410" cy="304" r="5.5"/>
-        <circle cx="280" cy="368" r="5.5"/>
         <circle cx="150" cy="304" r="5.5"/>
         <circle cx="176" cy="189" r="5.5"/>
     </g>
 
     {{-- Units --}}
     <g font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" text-anchor="middle">
-        {{-- Planning Office (top) --}}
+        {{-- Planning Officer (top) --}}
         <g filter="url(#li-shadow)"><circle cx="280" cy="70" r="30" fill="#ffffff" stroke="#cfe3f2"/></g>
         <circle cx="280" cy="70" r="22" fill="url(#li-blue)"/>
         <path transform="translate(268 58)" fill="#ffffff" d="M9 2h6a1 1 0 0 1 1 1v1h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V3a1 1 0 0 1 1-1Zm0 2v2h6V4H9Zm-1 7v2h8v-2H8Zm0 4v2h5v-2H8Z"/>
-        <rect x="226" y="10" width="108" height="22" rx="11" fill="#ffffff" stroke="#cfe3f2"/>
-        <text x="280" y="25" fill="#174c8f">Planning Office</text>
+        <rect x="222" y="10" width="116" height="22" rx="11" fill="#ffffff" stroke="#cfe3f2"/>
+        <text x="280" y="25" fill="#174c8f">Planning Officer</text>
 
         {{-- Management (top right) --}}
         <g filter="url(#li-shadow)"><circle cx="453" cy="155" r="30" fill="#ffffff" stroke="#cfe3f2"/></g>
@@ -99,32 +97,25 @@
         <rect x="408" y="193" width="90" height="22" rx="11" fill="#ffffff" stroke="#cfe3f2"/>
         <text x="453" y="208" fill="#174c8f">Management</text>
 
-        {{-- Regional Offices (bottom right) --}}
+        {{-- Office / Unit (bottom right) --}}
         <g filter="url(#li-shadow)"><circle cx="453" cy="325" r="30" fill="#ffffff" stroke="#cfe3f2"/></g>
         <circle cx="453" cy="325" r="22" fill="url(#li-blue)"/>
-        <path transform="translate(441 313)" fill="#ffffff" d="M12 2a7 7 0 0 1 7 7c0 5.2-7 13-7 13S5 14.2 5 9a7 7 0 0 1 7-7Zm0 4.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/>
-        <rect x="396" y="363" width="114" height="22" rx="11" fill="#ffffff" stroke="#cfe3f2"/>
-        <text x="453" y="378" fill="#174c8f">Regional Offices</text>
+        <path transform="translate(441 313)" fill="#ffffff" d="M9 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Zm8 0a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM1 20c0-3.3 3.6-6 8-6s8 2.7 8 6v1H1v-1Zm17.5 1v-1c0-1.8-.7-3.4-1.9-4.6 3 .3 5.4 2.2 5.4 4.6v1h-3.5Z"/>
+        <rect x="403" y="363" width="100" height="22" rx="11" fill="#ffffff" stroke="#cfe3f2"/>
+        <text x="453" y="378" fill="#174c8f">Office / Unit</text>
 
-        {{-- Research Institutes (bottom) --}}
-        <g filter="url(#li-shadow)"><circle cx="280" cy="410" r="30" fill="#ffffff" stroke="#cfe3f2"/></g>
-        <circle cx="280" cy="410" r="22" fill="url(#li-cyan)"/>
-        <path transform="translate(268 398)" fill="#ffffff" d="M9 2h6v2h-1v5.2l5.6 9.7A2 2 0 0 1 17.9 22H6.1a2 2 0 0 1-1.7-3.1L10 9.2V4H9V2Zm-.9 14h7.8l-2-3.5h-3.8L8.1 16Z"/>
-        <rect x="214" y="448" width="132" height="22" rx="11" fill="#ffffff" stroke="#cfe3f2"/>
-        <text x="280" y="463" fill="#174c8f">Research Institutes</text>
-
-        {{-- Offices and Units (bottom left) --}}
+        {{-- Administrative Admin (bottom left) --}}
         <g filter="url(#li-shadow)"><circle cx="107" cy="325" r="30" fill="#ffffff" stroke="#cfe3f2"/></g>
         <circle cx="107" cy="325" r="22" fill="url(#li-blue)"/>
-        <path transform="translate(95 313)" fill="#ffffff" d="M9 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Zm8 0a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM1 20c0-3.3 3.6-6 8-6s8 2.7 8 6v1H1v-1Zm17.5 1v-1c0-1.8-.7-3.4-1.9-4.6 3 .3 5.4 2.2 5.4 4.6v1h-3.5Z"/>
-        <rect x="52" y="363" width="110" height="22" rx="11" fill="#ffffff" stroke="#cfe3f2"/>
-        <text x="107" y="378" fill="#174c8f">Offices &amp; Units</text>
+        <path transform="translate(95 313)" fill="#ffffff" d="M6 2h9l5 5v15H6V2Zm8 1.5V8h4.5L14 3.5ZM9 12h8v2H9v-2Zm0 4h8v2H9v-2Z"/>
+        <rect x="30" y="363" width="154" height="22" rx="11" fill="#ffffff" stroke="#cfe3f2"/>
+        <text x="107" y="378" fill="#174c8f">Administrative Admin</text>
 
-        {{-- ICT Services (top left) --}}
+        {{-- Technical Admin (top left) --}}
         <g filter="url(#li-shadow)"><circle cx="107" cy="155" r="30" fill="#ffffff" stroke="#cfe3f2"/></g>
         <circle cx="107" cy="155" r="22" fill="url(#li-cyan)"/>
-        <path transform="translate(95 143)" fill="#ffffff" d="M7 19a5 5 0 0 1-.7-9.95A6.5 6.5 0 0 1 18.8 9.5 4.75 4.75 0 0 1 18 19H7Z"/>
-        <rect x="60" y="193" width="94" height="22" rx="11" fill="#ffffff" stroke="#cfe3f2"/>
-        <text x="107" y="208" fill="#174c8f">ICT Services</text>
+        <path transform="translate(95 143)" fill="#ffffff" d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Zm-1.2 14.2-3.5-3.5 1.4-1.4 2.1 2.1 4.6-4.6 1.4 1.4-6 6Z"/>
+        <rect x="50" y="193" width="114" height="22" rx="11" fill="#ffffff" stroke="#cfe3f2"/>
+        <text x="107" y="208" fill="#174c8f">Technical Admin</text>
     </g>
 </svg>

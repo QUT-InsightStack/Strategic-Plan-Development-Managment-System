@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resource Form | Strategic Planning Management System</title>
+    <title>Resource Form | Strategic Plan Development Management System</title>
     @vite(['resources/css/profile.css', 'resources/js/pages/shared/resource-form-app.js'])
     <meta name="app-page-entry" content="{{ Vite::asset('resources/js/pages/shared/resource-form-app.js') }}">
 </head>

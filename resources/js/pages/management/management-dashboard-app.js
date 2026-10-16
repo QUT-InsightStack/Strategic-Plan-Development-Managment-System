@@ -379,7 +379,7 @@ function ManagementDashboard({ session, management }) {
                 'aria-current': activeTab === tab.id ? 'page' : undefined, onClick: () => openTab(tab.id),
             }, h('i', { className: `bi ${tab.icon}`, 'aria-hidden': true }), tab.label))),
             h('section', { className: 'management-dashboard__panel', 'aria-label': activeLabel }, pageContent),
-            h('footer', { className: 'management-dashboard__footer' }, '© 2026 Strategic Planning Management System. All rights reserved.'))));
+            h('footer', { className: 'management-dashboard__footer' }, '© 2026 Strategic Plan Development Management System. All rights reserved.'))));
 }
 
 const root = createPageRoot(document.getElementById('root'));
