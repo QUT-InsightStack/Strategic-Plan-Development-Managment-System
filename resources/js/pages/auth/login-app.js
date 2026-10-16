@@ -57,7 +57,7 @@ async function currentUserRequest() {
 function Brand() {
     return React.createElement(
         'a',
-        { className: 'brand', href: '/login', 'aria-label': 'Strategic Planning Management System home' },
+        { className: 'brand', href: '/', 'aria-label': 'Strategic Planning Management System home' },
         React.createElement(BrandLogo),
         React.createElement('span', { className: 'brand-name' }, 'Strategic Planning Management System')
     );

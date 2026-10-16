@@ -10,6 +10,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/css/create-user.css',
                 'resources/css/login.css',
+                'resources/css/landing.css',
                 'resources/css/change-password.css',
                 'resources/css/user-search.css',
                 'resources/css/office.css',
