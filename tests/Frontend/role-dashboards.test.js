@@ -15,7 +15,6 @@ test('Administrative Admin menu is short, without a separate Reports link', () =
         'Planning: Plan List, Create Plan, Objectives, Inputs, Finalize & Submit',
         'Alignment: Strategic Mapping, Alignment View',
         'Monitoring: Objective Progress, System Logs',
-        'Plan Reviews',
     ]);
 });
 
@@ -24,7 +23,7 @@ test('Planning Officer menu is short, without a separate Reports link', () => {
         'Dashboard',
         'Plans: Plan List, Create Plan, Objectives, Finalize & Submit',
         'Alignment: Strategic Mapping, Alignment View, PDP Chapters',
-        'Office Inputs',
+        'Planning Inputs',
         'Objective Progress',
         'Plan Reviews',
     ]);

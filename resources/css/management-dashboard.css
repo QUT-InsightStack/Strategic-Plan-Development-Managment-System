@@ -324,3 +324,107 @@
     .management-report__kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .management-report__contents a { color: inherit; text-decoration: none; }
 }
+
+/* Dashboard and report polish: site tokens for colour, type and spacing, plus small public-sector
+   touches (workspace eyebrow, data-as-of stamp, accent rules, numbered report sections). */
+.management-dashboard { background: var(--color-background); }
+.management-dashboard__content { max-width: var(--content-max-width); padding: var(--page-gutter); }
+.management-dashboard__header { align-items: flex-end; margin-bottom: var(--space-6); border-bottom: 1px solid var(--color-border-subtle); padding-bottom: var(--space-5); }
+.management-dashboard__heading { min-width: 0; }
+.management-dashboard__eyebrow { display: inline-flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-2); color: var(--color-info); }
+.management-dashboard__eyebrow::before { content: ''; width: 18px; height: 3px; border-radius: var(--radius-pill); background: var(--color-brand-cyan); }
+.management-dashboard__header h1 { color: var(--color-primary); font-size: var(--font-size-3xl); line-height: var(--line-height-tight); letter-spacing: -.02em; }
+.management-dashboard__heading > p:not(.management-dashboard__eyebrow) { max-width: 680px; margin: var(--space-2) 0 0; color: var(--color-text-secondary); font-size: var(--font-size-sm); line-height: var(--line-height-body); }
+.management-dashboard__heading > p.management-dashboard__asof { display: flex; align-items: center; gap: 6px; color: var(--color-gray-500); font-size: var(--font-size-xs); }
+.management-dashboard__controls label { font-weight: var(--font-weight-semibold); }
+.management-dashboard__controls select { min-height: var(--control-height-sm); }
+
+/* KPI row: left-aligned figures under a coloured top rule, tabular numbers. */
+.management-kpis { gap: var(--space-4); margin-bottom: var(--space-5); }
+.management-kpi { --kpi-accent: #2460a8; position: relative; min-height: 0; align-items: flex-start; justify-content: flex-start; flex-direction: column; gap: var(--space-3);
+    overflow: hidden; border: 1px solid var(--color-border-subtle); border-radius: var(--radius-lg); padding: var(--space-5) var(--space-4) var(--space-4); box-shadow: var(--shadow-xs); text-align: left;
+    transition: box-shadow var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard); }
+.management-kpi::before { content: ''; position: absolute; inset: 0 0 auto; height: 3px; background: var(--kpi-accent); }
+.management-kpi:hover { border-color: #c9d6e6; box-shadow: var(--shadow-sm); }
+.management-kpi.is-green { --kpi-accent: #248452; }
+.management-kpi.is-red { --kpi-accent: #c84646; }
+.management-kpi.is-purple { --kpi-accent: #7750a8; }
+.management-kpi.is-cyan { --kpi-accent: #087990; }
+.management-kpi.is-amber { --kpi-accent: #a35f00; }
+.management-kpi__icon { width: 36px; height: 36px; flex-basis: 36px; border-radius: var(--radius-lg); font-size: 17px; }
+.management-kpi__copy { justify-items: start; gap: 2px; }
+.management-kpi__copy small { color: var(--color-text-secondary); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
+.management-kpi__copy strong { margin: 2px 0; font-size: var(--font-size-3xl); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.management-kpi__copy > span { color: var(--color-text-secondary); font-size: 12px; line-height: 1.35; }
+.management-kpi__details { width: 100%; }
+
+/* Filter bar and tabs. */
+.management-scope-filters { gap: var(--space-3); margin-bottom: var(--space-5); border-color: var(--color-border-subtle); border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4); box-shadow: var(--shadow-xs); }
+.management-scope-filters label { font-weight: var(--font-weight-semibold); }
+.management-dashboard__tabs { gap: var(--space-1); margin-bottom: var(--space-5); border-bottom-color: var(--color-border); }
+.management-dashboard__tab { display: inline-flex; align-items: center; gap: var(--space-2); margin-bottom: -1px; padding: var(--space-3) var(--space-4); font-weight: var(--font-weight-semibold);
+    transition: color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard); }
+.management-dashboard__tab .bi { font-size: 15px; opacity: .8; }
+.management-dashboard__tab:hover { border-bottom-color: var(--color-border); color: var(--color-primary); }
+.management-dashboard__tab.is-active { border-bottom-color: var(--color-primary); color: var(--color-primary); }
+.management-dashboard__tab.is-active .bi { color: var(--color-brand-cyan); opacity: 1; }
+.management-dashboard__panel { gap: var(--space-5); }
+.management-overview-grid { gap: var(--space-5); }
+
+/* Section cards share the site's section header. */
+.management-card { border-color: var(--color-border-subtle); border-radius: var(--radius-lg); box-shadow: var(--shadow-xs); }
+.management-card__heading { border-bottom-color: var(--color-border-subtle); padding: var(--space-4) var(--space-5); background: var(--color-section-header-background); }
+.management-card__heading h2 { display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-size-lg); line-height: var(--line-height-heading); }
+.management-card__heading h2::before { content: ''; width: 4px; height: 18px; flex: 0 0 4px; border-radius: 2px; background: var(--color-brand-cyan); }
+.management-card__heading p { max-width: 860px; margin-top: var(--space-1); font-size: var(--font-size-xs); line-height: var(--line-height-body); }
+.management-empty { padding: var(--space-5); }
+
+/* Tables follow .ui-table: primary-coloured headers, comfortable rows, tabular figures. */
+.management-table-scroll table { font-size: var(--font-size-sm); font-variant-numeric: tabular-nums; }
+.management-table-scroll th { border-bottom: 2px solid #d6e2ef; padding: var(--space-3) var(--space-4); color: var(--color-primary); background: var(--color-surface-header); font-size: var(--font-size-xs); letter-spacing: .02em; }
+.management-table-scroll td { border-top-color: var(--color-border-subtle); padding: var(--space-3) var(--space-4); color: var(--color-gray-800); line-height: 1.45; }
+.management-table-scroll tbody tr:nth-child(even) { background: #fafcfe; }
+.management-table-scroll tbody tr:hover { background: var(--color-primary-soft); }
+.management-table-scroll td p { margin: 2px 0 0; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+.management-status { border-radius: var(--radius-pill); padding: 3px 9px; font-size: 11px; }
+.management-dashboard__footer { margin-top: var(--space-6); border-top: 1px solid var(--color-border-subtle); padding: var(--space-4) 0 var(--space-1); font-size: 12px; }
+
+/* Report: brand band on the cover, numbered section headings. */
+.management-report { gap: var(--space-5); }
+.management-report__toolbar { border-color: #cfe3f3; border-left: 4px solid var(--color-info); border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4); background: var(--color-info-soft); }
+.management-report__toolbar p { display: flex; align-items: center; gap: 6px; color: #1f4f7a; font-size: var(--font-size-sm); }
+.management-report__cover { position: relative; padding: calc(var(--space-8) + 6px) var(--space-8) var(--space-8); }
+.management-report__band { position: absolute; inset: 0 0 auto; height: 6px; background: linear-gradient(90deg, var(--color-primary) 0 72%, var(--color-brand-cyan) 72% 100%); }
+.management-report__cover h2 { font-size: clamp(24px, 2.2vw, 30px); line-height: var(--line-height-tight); letter-spacing: -.01em; }
+.management-report__period { margin: var(--space-2) 0 var(--space-6); color: var(--color-info); }
+.management-report__cover dl { gap: 0; border-top: 1px solid var(--color-border-subtle); }
+.management-report__cover dt, .management-report__cover dd { border-bottom: 1px solid var(--color-border-subtle); padding: var(--space-2) 0; }
+.management-report__contents { margin-top: var(--space-6); border-radius: var(--radius-lg); padding: var(--space-4) var(--space-5); background: var(--color-gray-50); }
+.management-report__contents strong { color: var(--color-primary); font-size: var(--font-size-xs); letter-spacing: .06em; text-transform: uppercase; }
+.management-report__contents li { padding: 3px 0; }
+.management-report__contents a { text-decoration: none; }
+.management-report__contents a:hover { text-decoration: underline; }
+.management-report__number { display: inline-grid; min-width: 26px; height: 26px; place-items: center; border-radius: var(--radius-md); padding: 0 6px; color: #fff; background: var(--color-primary); font-size: var(--font-size-xs); font-variant-numeric: tabular-nums; }
+.management-report__section .management-card__heading h2::before { display: none; }
+.management-report__kpis { gap: var(--space-3); padding: var(--space-4) var(--space-5); }
+.management-report__kpi { border-color: var(--color-border-subtle); border-top: 3px solid var(--color-primary); border-radius: var(--radius-lg); padding: var(--space-3) var(--space-3) var(--space-4); background: var(--color-surface); text-align: left; }
+.management-report__kpi strong { color: var(--color-primary); font-size: var(--font-size-2xl); font-variant-numeric: tabular-nums; }
+.management-report__table-heading { padding: var(--space-3) var(--space-5); }
+.management-report__table-heading h3 { font-size: var(--font-size-md); }
+.management-report__group th { color: var(--color-primary); background: var(--color-primary-soft); font-size: var(--font-size-xs); letter-spacing: .02em; }
+.management-report__definitions { gap: 0; padding: var(--space-4) var(--space-5) var(--space-5); }
+.management-report__definitions dt, .management-report__definitions dd { border-bottom: 1px solid var(--color-border-subtle); padding: var(--space-2) 0; }
+@media (max-width: 760px) {
+    .management-dashboard__header { padding-bottom: var(--space-4); }
+    .management-dashboard__header h1 { font-size: var(--font-size-2xl); }
+    .management-kpi { padding: var(--space-4) var(--space-3) var(--space-3); }
+    .management-kpi__copy strong { font-size: var(--font-size-2xl); }
+    .management-card__heading { padding: var(--space-3) var(--space-4); }
+    .management-report__cover { padding: var(--space-8) var(--space-5) var(--space-5); }
+}
+@media print {
+    .management-dashboard--report .management-card__heading { background: none; }
+    .management-report__band { position: static; margin-bottom: 10mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .management-report__number { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .management-dashboard--report .management-table-scroll tbody tr:nth-child(even) { background: none; }
+}
