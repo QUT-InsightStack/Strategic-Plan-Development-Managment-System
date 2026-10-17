@@ -76,7 +76,7 @@ export function PlanSupportingDocumentsPanel() {
         setMeta({});
         setError('');
 
-        
+
 
         setLoading(true);
 
@@ -208,7 +208,7 @@ apiRequest(`/api/strategic-documents?${query}`)
             role: 'alert',
         }, error),
 
-        
+
         h(React.Fragment, null,
             h('p', { className: 'ui-help' },
                 selectedPlan?.title || 'All authorised plans',
