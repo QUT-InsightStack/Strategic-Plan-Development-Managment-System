@@ -297,6 +297,7 @@ Route::middleware(['auth:api','auth.version','auth.session','system.available',]
 Route::middleware(['auth:api', 'auth.version','auth.session','system.available',])->group(function () {
     Route::get('approval-workflow', [\App\Http\Controllers\ApprovalWorkflowController::class, 'show']);
     Route::put('approval-workflow', [\App\Http\Controllers\ApprovalWorkflowController::class, 'update']);
+    Route::post('approval-workflow', [\App\Http\Controllers\ApprovalWorkflowController::class,'store',]);
     Route::get('plan-reviews', [\App\Http\Controllers\PlanApprovalController::class, 'index']);
     Route::get('workflow-notifications', [\App\Http\Controllers\WorkflowNotificationController::class, 'index']);
     Route::patch('workflow-notifications/{notification}/read', [\App\Http\Controllers\WorkflowNotificationController::class, 'read'])->whereNumber('notification');

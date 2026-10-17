@@ -55,6 +55,241 @@ class PlanApprovalTest extends TestCase
             'indicator' => 'Participant count', 'status' => 'draft',
         ]);
     }
+    public function test_new_submission_uses_the_active_workflow_instead_of_workflow_one(): void
+{
+    $this->configure();
+
+    $alternative = [
+        'name' => 'Alternative workflow',
+        'status' => 'active',
+        'version' => 0,
+        'stages' => [
+            [
+                'name' => 'Alternative review',
+                'sequence' => 1,
+                'user_id' => $this->finalReviewer->user_id,
+            ],
+        ],
+    ];
+
+    $workflow = $this->postJson('/api/approval-workflow', $alternative)
+        ->assertCreated()
+        ->json('data');
+
+    $this->prepareWorkflowTestPlan();
+    $this->authenticateApiUser($this->planner);
+
+    $submission = $this->postJson($this->url('submit'))
+        ->assertCreated()
+        ->assertJsonPath('data.workflow_id', $workflow['id'])
+        ->assertJsonPath(
+            'data.workflow_snapshot.name',
+            'Alternative workflow'
+        )
+        ->assertJsonCount(1, 'data.stages')
+        ->assertJsonPath(
+            'data.stages.0.name',
+            'Alternative review'
+        )
+        ->json('data');
+
+    $this->assertDatabaseHas('plan_stage_reviewers', [
+        'stage_id' => $submission['stages'][0]['id'],
+        'user_id' => $this->finalReviewer->user_id,
+    ]);
+}
+
+public function test_switching_workflow_preserves_current_cycle_and_resubmission_uses_active_workflow(): void
+{
+    $this->configure();
+    $this->prepareWorkflowTestPlan();
+    $this->authenticateApiUser($this->planner);
+
+    $original = $this->postJson($this->url('submit'))
+        ->assertCreated()
+        ->json('data');
+
+    $before = PlanSubmission::with('stages.reviewers')
+        ->findOrFail($original['id']);
+
+    $snapshotBefore = $before->workflow_snapshot;
+    $stagesBefore = $before->stages->toArray();
+
+    $this->authenticateApiUser($this->admin);
+
+    $alternative = [
+        'name' => 'Replacement workflow',
+        'status' => 'active',
+        'version' => 0,
+        'stages' => [
+            [
+                'name' => 'Replacement review',
+                'sequence' => 1,
+                'user_id' => $this->finalReviewer->user_id,
+            ],
+        ],
+    ];
+
+    $replacement = $this->postJson(
+        '/api/approval-workflow',
+        $alternative
+    )->assertCreated()->json('data');
+
+    $unchanged = PlanSubmission::with('stages.reviewers')
+        ->findOrFail($original['id']);
+
+    $this->assertSame($snapshotBefore, $unchanged->workflow_snapshot);
+    $this->assertSame($stagesBefore, $unchanged->stages->toArray());
+    $this->assertSame(1, (int) $unchanged->workflow_id);
+
+    // The original assigned reviewer can still decide the current cycle.
+    $this->authenticateApiUser($this->reviewer);
+
+    $this->postJson($this->url('approval/decision'), [
+        'submission_id' => $original['id'],
+        'stage_id' => $original['stages'][0]['id'],
+        'decision' => 'reject',
+        'comment' => 'Please clarify the objective target.',
+    ])->assertOk()->assertJsonPath('data.status', 'rejected');
+
+    // Resubmission starts a new cycle using the currently active workflow.
+    $this->authenticateApiUser($this->planner);
+
+    $this->postJson($this->url('resubmit'), [
+        'previous_submission_id' => $original['id'],
+        'note' => 'Resubmitted for review.',
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.workflow_id', $replacement['id'])
+        ->assertJsonPath(
+            'data.previous_submission_id',
+            $original['id']
+        )
+        ->assertJsonCount(1, 'data.stages')
+        ->assertJsonPath(
+            'data.stages.0.name',
+            'Replacement review'
+        );
+
+    $this->assertSame(
+        $snapshotBefore,
+        PlanSubmission::findOrFail($original['id'])->workflow_snapshot
+    );
+}
+    public function test_multiple_workflows_can_be_saved_with_only_one_active(): void
+{
+    $this->configure();
+
+    $payload = $this->configuration();
+    $payload['name'] = 'Alternative approval workflow';
+    $payload['status'] = 'draft';
+    $payload['version'] = 0;
+
+    $created = $this->postJson('/api/approval-workflow', $payload)
+        ->assertCreated()
+        ->assertJsonPath('data.status', 'draft')
+        ->json('data');
+
+    $this->assertDatabaseCount('approval_workflows', 2);
+
+    $this->getJson('/api/approval-workflow')
+        ->assertOk()
+        ->assertJsonCount(2, 'workflows')
+        ->assertJsonPath('active_workflow_id', 1);
+
+    $payload['workflow_id'] = $created['id'];
+    $payload['version'] = $created['version'];
+    $payload['status'] = 'active';
+
+    $this->putJson('/api/approval-workflow', $payload)
+        ->assertOk()
+        ->assertJsonPath('data.status', 'active');
+
+    $this->assertDatabaseHas('approval_workflows', [
+        'id' => 1,
+        'status' => 'inactive',
+        'version' => 2,
+    ]);
+
+    $this->assertSame(
+        1,
+        DB::table('approval_workflows')->where('status', 'active')->count()
+    );
+
+    $this->getJson('/api/approval-workflow')
+        ->assertOk()
+        ->assertJsonPath('active_workflow_id', $created['id'])
+        ->assertJsonPath('data.id', $created['id']);
+
+    $this->getJson('/api/approval-workflow?workflow_id=1')
+        ->assertOk()
+        ->assertJsonPath('data.id', 1)
+        ->assertJsonCount(2, 'data.stages');
+
+    // Switching workflows must invalidate a stale editor's version.
+    $stale = $this->configuration();
+    $stale['workflow_id'] = 1;
+    $stale['version'] = 1;
+
+    $this->putJson('/api/approval-workflow', $stale)
+        ->assertConflict();
+
+    $this->assertDatabaseHas('approval_workflows', [
+        'id' => $created['id'],
+        'status' => 'active',
+    ]);
+}
+
+public function test_invalid_new_workflow_does_not_deactivate_current_workflow(): void
+{
+    $this->configure();
+
+    $payload = $this->configuration();
+    $payload['name'] = 'Invalid workflow';
+    $payload['version'] = 0;
+    $payload['status'] = 'active';
+    $payload['stages'] = [];
+
+    $this->postJson('/api/approval-workflow', $payload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('stages');
+
+    $this->assertDatabaseCount('approval_workflows', 1);
+    $this->assertDatabaseHas('approval_workflows', [
+        'id' => 1,
+        'status' => 'active',
+        'version' => 1,
+    ]);
+    $this->assertDatabaseCount('approval_workflow_stages', 2);
+}
+
+public function test_workflow_creation_requires_authenticated_technical_authority(): void
+{
+    $this->postJson('/api/approval-workflow', $this->configuration())
+        ->assertUnauthorized();
+
+    $this->authenticateApiUser($this->planner);
+
+    $this->postJson('/api/approval-workflow', $this->configuration())
+        ->assertForbidden();
+
+    $this->assertDatabaseCount('approval_workflows', 1);
+}
+
+public function test_database_prevents_two_active_workflows(): void
+{
+    $this->configure();
+
+    $this->expectException(QueryException::class);
+
+    DB::table('approval_workflows')->insert([
+        'name' => 'Second active workflow',
+        'status' => 'active',
+        'version' => 1,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+}
 
     public function test_workflow_and_review_endpoints_require_authentication(): void
     {
@@ -663,7 +898,28 @@ public function test_a_stage_with_only_the_submitter_blocks_submission(): void
 
         return $this->postJson($this->url('submit'))->assertCreated()->json('data');
     }
+    private function prepareWorkflowTestPlan(): void
+{
+    $this->plan->update([
+        'planning_start_date' => '2026-01-01',
+        'planning_end_date' => '2031-12-31',
+    ]);
 
+    $this->plan->objectives()->update([
+        'target' => '100 participants',
+        'responsible_office_agency' => 'Research Office',
+    ]);
+
+    $this->plan->refresh()->unsetRelations();
+
+    $this->assertSame(
+        [],
+        app(\App\Services\PlanReadinessService::class)
+            ->errors($this->plan)
+    );
+
+    $this->plan->forceFill(['status' => 'finished'])->save();
+}
     private function configuration(): array
     {
         // Deliberately reversed array order: persisted sequence determines execution.

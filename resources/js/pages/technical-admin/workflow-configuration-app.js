@@ -13,6 +13,8 @@ function fromServer(data) {
 }
 function WorkflowConfigurationApp() {
     const [workflow, setWorkflow] = useState(blankWorkflow);
+    const [workflows, setWorkflows] = useState([]);
+    const [savedSnapshot, setSavedSnapshot] = useState('');
     const [errors, setErrors] = useState({});
     const [notice, setNotice] = useState(null);
     const [dialog, setDialog] = useState({
@@ -22,16 +24,87 @@ function WorkflowConfigurationApp() {
     const [approverOptions, setApproverOptions] = useState({ role: [], user: [] });
     const [busy, setBusy] = useState(true);
     const [loaded, setLoaded] = useState(false);
-    useEffect(() => {
-        apiRequest('/api/approval-workflow').then(payload => {
-            setWorkflow(fromServer(payload.data));
-            setApproverOptions({
-                role: payload.options.roles.map(role => ({ id: String(role.role_id), label: role.role_name })),
-                user: payload.options.users.map(user => ({ id: String(user.user_id), label: [user.first_name, user.last_name].filter(Boolean).join(' ') })),
-            });
-            setLoaded(true);
-        }).catch(error => setNotice({ type: 'error', message: error.message })).finally(() => setBusy(false));
-    }, []);
+  function applyPayload(payload) {
+    const selected = fromServer(payload.data);
+
+    setWorkflows(payload.workflows || []);
+    setWorkflow(selected);
+    setSavedSnapshot(JSON.stringify(selected));
+    setErrors({});
+    setApproverOptions({
+        role: payload.options.roles.map(role => ({
+            id: String(role.role_id),
+            label: role.role_name,
+        })),
+        user: payload.options.users.map(user => ({
+            id: String(user.user_id),
+            label: [user.first_name, user.last_name]
+                .filter(Boolean)
+                .join(' '),
+        })),
+    });
+    setLoaded(true);
+}
+
+useEffect(() => {
+    let active = true;
+
+    apiRequest('/api/approval-workflow')
+        .then(payload => {
+            if (active) applyPayload(payload);
+        })
+        .catch(error => {
+            if (active) {
+                setNotice({ type: 'error', message: error.message });
+            }
+        })
+        .finally(() => {
+            if (active) setBusy(false);
+        });
+
+    return () => { active = false; };
+}, []);
+
+function confirmDiscard() {
+    return JSON.stringify(workflow) === savedSnapshot
+        || window.confirm('Discard unsaved workflow changes?');
+}
+
+async function selectWorkflow(id) {
+    if (busy || !id || !confirmDiscard()) return;
+
+    setBusy(true);
+    setNotice(null);
+
+    try {
+        const payload = await apiRequest(
+            `/api/approval-workflow?workflow_id=${encodeURIComponent(id)}`
+        );
+        applyPayload(payload);
+    } catch (error) {
+        setNotice({ type: 'error', message: error.message });
+    } finally {
+        setBusy(false);
+    }
+}
+
+function newWorkflow() {
+    if (busy || !confirmDiscard()) return;
+
+    const empty = {
+        ...blankWorkflow,
+        name: '',
+        stages: [],
+    };
+
+    setWorkflow(empty);
+    setSavedSnapshot(JSON.stringify(empty));
+    setErrors({});
+    setNotice({
+        type: 'info',
+        message: 'Enter a name and add approval stages, then save the new workflow.',
+    });
+}
 
     const isActive = workflow.status === 'active';
     const hasStages = workflow.stages.length > 0;
@@ -218,25 +291,87 @@ function WorkflowConfigurationApp() {
     }
 
     async function persist(status) {
-        if (busy || !loaded || !validateWorkflow()) return;
-        setBusy(true);
-        try {
-            const response = await apiRequest('/api/approval-workflow', {
-                method: 'PUT', body: JSON.stringify({
-                    name: workflow.name, description: workflow.description, version: workflow.version, status,
-                    stages: workflow.stages.map((stage, index) => ({
-                        name: stage.name, sequence: index + 1,
-                        user_id: stage.approverType === 'user' ? Number(stage.approver) : null,
-                        role_id: stage.approverType === 'role' ? Number(stage.approver) : null,
-                    })),
-                }),
-            });
-            setWorkflow(fromServer(response.data));
-            setNotice({ type: 'success', message: `Workflow saved (${status}).` });
-        } catch (error) {
-            setNotice({ type: 'error', message: Object.values(error.errors || {}).flat().join(' ') || error.message });
-        } finally { setBusy(false); setDialog({ open: false }); }
+    if (busy || !loaded || !validateWorkflow()) return;
+
+    const previouslyActive = workflows.some(item =>
+        String(item.id) === String(workflow.id)
+        && item.status === 'active'
+    );
+
+    if (
+        status === 'draft'
+        && previouslyActive
+        && !window.confirm(
+            'Saving this active workflow as Draft will leave no active workflow. '
+            + 'New submissions will be blocked until a workflow is activated. Continue?'
+        )
+    ) {
+        return;
     }
+
+    setBusy(true);
+    let saved = false;
+
+    try {
+        const response = await apiRequest('/api/approval-workflow', {
+            method: workflow.id ? 'PUT' : 'POST',
+            body: JSON.stringify({
+                ...(workflow.id ? { workflow_id: workflow.id } : {}),
+                name: workflow.name,
+                description: workflow.description,
+                version: workflow.version,
+                status,
+                stages: workflow.stages.map((stage, index) => ({
+                    name: stage.name,
+                    sequence: index + 1,
+                    user_id: stage.approverType === 'user'
+                        ? Number(stage.approver)
+                        : null,
+                    role_id: stage.approverType === 'role'
+                        ? Number(stage.approver)
+                        : null,
+                })),
+            }),
+        });
+
+        saved = true;
+
+        // Retain the saved ID even if refreshing the register fails.
+        const selected = fromServer(response.data);
+        setWorkflow(selected);
+        setSavedSnapshot(JSON.stringify(selected));
+
+        const payload = await apiRequest(
+            `/api/approval-workflow?workflow_id=${response.data.id}`
+        );
+        applyPayload(payload);
+
+        setNotice({
+            type: 'success',
+            message: status === 'active'
+                ? 'Workflow activated. It will be used for new submissions and resubmissions. Existing approval cycles retain their captured stages.'
+                : `Workflow saved (${status}).`,
+        });
+    } catch (error) {
+        if (saved) {
+            setLoaded(false);
+            setNotice({
+                type: 'error',
+                message: 'The workflow was saved, but the list could not be refreshed. Refresh this page before continuing.',
+            });
+        } else {
+            setNotice({
+                type: 'error',
+                message: Object.values(error.errors || {})
+                    .flat()
+                    .join(' ') || error.message,
+            });
+        }
+    } finally {
+        setBusy(false);
+        setDialog({ open: false });
+    }
+}
 
     function saveDraft() { return persist('draft'); }
 
@@ -252,8 +387,8 @@ function WorkflowConfigurationApp() {
                 ? 'Deactivate workflow?'
                 : 'Activate workflow?',
             message: isActive
-                ? 'New strategic plan submissions will not use this workflow while it is inactive.'
-                : 'New strategic plan submissions will follow these stages from first to final approval.',
+    ? 'Deactivate this workflow? New submissions and resubmissions will be blocked until a workflow is activated. Existing approval cycles will continue.'
+    : 'Activate this workflow and save these stages? Any currently active workflow will become inactive. New submissions and resubmissions will use this workflow; existing approval cycles will retain their captured stages.',
             action: 'toggle-status',
         });
     }
@@ -528,7 +663,65 @@ function WorkflowConfigurationApp() {
                     subtitle:
                         'Define the sequential approval stages used when a strategic plan is submitted for review.',
                 }),
-
+                React.createElement(
+    'section',
+    {
+        className: 'ui-card workflow-overview',
+        'aria-labelledby': 'saved-workflows-title',
+    },
+    React.createElement(
+        'h2',
+        { id: 'saved-workflows-title' },
+        'Saved Approval Workflows'
+    ),
+    React.createElement(
+        'p',
+        null,
+        'Keep multiple workflows and activate one for new submissions. Each workflow can contain multiple approval stages.'
+    ),
+    React.createElement(
+        'label',
+        { htmlFor: 'saved-workflow' },
+        'Select workflow'
+    ),
+    React.createElement(
+        'select',
+        {
+            id: 'saved-workflow',
+            className: 'ui-select',
+            value: workflow.id ? String(workflow.id) : '',
+            disabled: busy || !loaded,
+            onChange: event => selectWorkflow(event.target.value),
+        },
+        React.createElement(
+            'option',
+            { value: '', disabled: true },
+            'New unsaved workflow'
+        ),
+        workflows.map(item => React.createElement(
+            'option',
+            { key: item.id, value: String(item.id) },
+            `${item.name} — ${item.status}`
+        ))
+    ),
+    React.createElement(
+        'p',
+        null,
+        workflows.some(item => item.status === 'active')
+            ? `Currently active: ${workflows.find(item => item.status === 'active').name}`
+            : 'No workflow is active. New submissions and resubmissions are blocked.'
+    ),
+    React.createElement(
+        'button',
+        {
+            className: 'ui-button ui-button--secondary',
+            type: 'button',
+            disabled: busy || !loaded,
+            onClick: newWorkflow,
+        },
+        'New Workflow'
+    )
+),
                 notice
                     ? React.createElement(
                         'div',

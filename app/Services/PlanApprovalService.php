@@ -59,7 +59,7 @@ class PlanApprovalService
 );
 
         return DB::transaction(function () use ($planId, $actor, $previousSubmissionId, $note) {
-            $workflow = ApprovalWorkflow::lockForUpdate()->findOrFail(1);
+            $workflow = $this->workflows->activeForSubmission();
             $plan = Strategic::lockForUpdate()->findOrFail($planId);
             $this->access->ensureCanUpdatePlan($plan, $actor);
             abort_if($plan->approval_status === 'under_approval', 409, 'This plan is already under approval.');
