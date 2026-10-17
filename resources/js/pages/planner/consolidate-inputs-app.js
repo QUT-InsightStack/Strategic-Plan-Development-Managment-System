@@ -8,6 +8,7 @@ import { createAccessSession, saveAccessSession } from '../../access/access-sess
 import { enforcePageAccess } from '../../access/access-guard.js';
 import { can } from '../../access/access-session.js';
 import { ManagementObjectiveCommentsPanel } from '../../components/ManagementObjectiveCommentsPanel.js';
+import { PlanSupportingDocumentsPanel } from '../../components/PlanSupportingDocumentsPanel.js';
 const h = React.createElement;
 const { useState, useEffect } = React;
 const statuses = { 'Pending Review': 'pending', Approved: 'accepted', Rejected: 'rejected' };
@@ -129,6 +130,7 @@ function InputDialog({ id, close, saved }) {
 
 function SubmittedInputsApp() {
     const [activeTab, setActiveTab] = useState('office');
+    const [officeView, setOfficeView] = useState('inputs');
     const [rows, setRows] = useState([]);
     const [meta, setMeta] = useState({});
     const [filters, setFilters] = useState(initialFilters);
@@ -154,6 +156,7 @@ function SubmittedInputsApp() {
         setNotice('');
         setFilters(initialFilters());
         setActiveTab(value);
+        setOfficeView('inputs');
     };
 
     // Office / Management input sources: underline tabs, shown only when there is more than one source.
@@ -167,6 +170,37 @@ function SubmittedInputsApp() {
             onClick: () => switchSource(value),
         }, h('i', { className: `bi ${icon}`, 'aria-hidden': true }), label))) : null;
 
+        const showDocuments = activeTab === 'office'
+    && officeView === 'documents'
+    && can('implementation_inputs.review')
+    && can('strategic_documents.view');
+
+const officeTabs = activeTab === 'office'
+    && can('implementation_inputs.review')
+    && can('strategic_documents.view')
+    && h('nav', {
+        className: 'consolidate-tabs',
+        'aria-label': 'Office contribution type',
+    },
+        [
+            ['inputs', 'Suggestions & Feedback', 'bi-chat-left-text'],
+            ['documents', 'Supporting Documents', 'bi-folder2-open'],
+        ].map(([value, label, icon]) => h('button', {
+            key: value,
+            type: 'button',
+            className: `consolidate-tab${officeView === value ? ' is-active' : ''}`,
+            'aria-pressed': officeView === value,
+            onClick: () => {
+                setSelected(null);
+                setNotice('');
+                setOfficeView(value);
+            },
+        },
+            h('i', { className: `bi ${icon}`, 'aria-hidden': true }),
+            ' ',
+            label
+        ))
+    );
     const summary = meta.summary || {};
     const total = Object.keys(statuses).reduce((sum, key) => sum + (summary[key] || 0), 0);
     const queueCards = h('section', { className: 'consolidate-queues', 'aria-label': 'Input review queues' },
@@ -252,12 +286,16 @@ function SubmittedInputsApp() {
         h('main', { className: 'office-content consolidate-content' },
             h('div', { className: 'app-shell-container' },
                 h(PageHeader, { section: 'Planning Inputs', title: can('implementation_inputs.review') ? 'Planning Inputs' : 'Input Status', subtitle: 'View planning suggestions and their outcomes. Authorised reviewers can accept or decline inputs with remarks.' }),
-                sourceTabs,
-                notice && h('p', { className: 'ui-status ui-status--info', role: 'status' }, notice),
-                objectiveComments,
-                queueCards,
-                filterBar,
-                register),
+              sourceTabs,
+officeTabs,
+notice && h('p', {
+    className: 'ui-status ui-status--info',
+    role: 'status',
+}, notice),
+objectiveComments,
+showDocuments
+    ? h(PlanSupportingDocumentsPanel)
+    : h(React.Fragment, null, queueCards, filterBar, register)),
             selected && h(InputDialog, { key: selected, id: selected, close: () => setSelected(null), saved: () => {
                 setSelected(null); setNotice('Input review saved.'); setRefresh(refresh + 1);
             } })));

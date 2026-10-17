@@ -12,6 +12,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
+use App\Models\ResponsibleUnit;
+use App\Models\StrategicObjective;
+use App\Models\ObjectiveResponsibleUnit;
 
 class StrategicDocumentUploadTest extends TestCase
 {
@@ -35,6 +38,26 @@ class StrategicDocumentUploadTest extends TestCase
             'title' => 'Office Plan', 'level' => 'strategic_plan', 'mission' => 'Research',
             'vision' => 'Better services', 'core_values' => ['Integrity'], 'status' => 'draft',
         ], $user);
+        $unit = ResponsibleUnit::create([
+    'responsible_office_agency' => 'Research Office',
+    'name_key' => ResponsibleUnit::nameKey('Research Office'),
+    'is_active' => true,
+]);
+
+$objective = StrategicObjective::create([
+    'strategic_plan_id' => $plan->record_id,
+    'objective_title' => 'Improve research services',
+    'expected_outcome' => 'Improved services',
+    'responsible_office_agency' => 'Research Office',
+    'created_by' => $user->user_id,
+    'status' => 'draft',
+]);
+
+ObjectiveResponsibleUnit::create([
+    'objective_id' => $objective->objective_id,
+    'responsible_unit_id' => $unit->responsible_unit_id,
+    'assigned_by' => $user->user_id,
+]);
         $this->authenticateApiUser($user);
 
         $response = $this->post('/api/strategic-plans/'.$plan->record_id.'/documents', [

@@ -310,6 +310,8 @@ Route::middleware(['auth:api', 'auth.version','auth.session','system.available',
     Route::post('strategic-plans/{plan}/approval/decision', [\App\Http\Controllers\PlanApprovalController::class, 'decide'])->whereNumber('plan');
     Route::get('plan-submissions/{submission}/documents/{document}', [\App\Http\Controllers\PlanApprovalController::class, 'document'])
         ->whereNumber('submission')->whereNumber('document');
+    Route::get('strategic-documents', [StrategicDocumentController::class, 'listing'])
+    ->middleware('permission:strategic_documents.view');
     Route::get('strategic-plans/{plan}/documents', [StrategicDocumentController::class, 'planIndex'])
         ->whereNumber('plan')->middleware('permission:strategic_documents.view');
     Route::post('strategic-plans/{plan}/documents', [StrategicDocumentController::class, 'storeForPlan'])
