@@ -85,7 +85,10 @@ const stages = [
             'Missing indicators must be added inside the relevant objectives.',
             'Pending inputs must be reviewed and consolidated before submission.',
             'Finalising a plan does not mean it has been approved.',
-            'Submission requires an active, valid approval workflow.',
+            'Technical Admin can save multiple workflows, each with multiple approval levels, and keep only one active at a time.',
+'New submissions and resubmissions automatically use the currently active workflow.',
+'Switching the active workflow does not change stages or reviewers for plans already under approval.',
+'Submission is blocked when no valid workflow is active.',
         ],
     },
     {
