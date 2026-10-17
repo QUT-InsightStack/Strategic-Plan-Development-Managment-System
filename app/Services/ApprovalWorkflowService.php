@@ -18,25 +18,121 @@ class ApprovalWorkflowService
             403, 'Only authorised administrators may configure approval workflows.');
     }
 
-    public function save(array $payload, User $actor): ApprovalWorkflow
-    {
-        $this->authorize($actor);
+    public function lockConfiguration(): void
+{
+    $control = DB::table('approval_workflow_control')
+        ->where('id', 1)
+        ->lockForUpdate()
+        ->first();
 
-        return DB::transaction(function () use ($payload) {
-            $workflow = ApprovalWorkflow::lockForUpdate()->findOrFail(1);
-            $data = $this->validate($payload);
-            abort_unless((int) $data['version'] === (int) $workflow->version, 409,
-                'The workflow was changed by another administrator. Reload before saving.');
-            $workflow->update([
-                'name' => trim($data['name']), 'description' => $data['description'] ?? null,
-                'status' => $data['status'], 'version' => $workflow->version + 1,
-            ]);
-            $workflow->stages()->delete();
-            $workflow->stages()->createMany($data['stages']);
-
-            return $workflow->load('stages');
-        });
+    if (! $control) {
+        throw new \RuntimeException(
+            'Approval workflow configuration control is missing.'
+        );
     }
+}
+
+public function activeForSubmission(): ApprovalWorkflow
+{
+    // Called inside the submission transaction.
+    $this->lockConfiguration();
+
+    $workflow = ApprovalWorkflow::where('status', 'active')
+        ->lockForUpdate()
+        ->first();
+
+    if (! $workflow) {
+        throw ValidationException::withMessages([
+            'workflow' => [
+                'No active approval workflow exists. Contact a Technical Administrator before submitting.',
+            ],
+        ]);
+    }
+
+    return $workflow;
+}
+
+public function save(
+    array $payload,
+    User $actor,
+    ?int $workflowId = 1
+): ApprovalWorkflow {
+    $this->authorize($actor);
+
+    return DB::transaction(function () use ($payload, $actor, $workflowId) {
+        $this->lockConfiguration();
+
+        $workflow = $workflowId === null
+            ? new ApprovalWorkflow()
+            : ApprovalWorkflow::lockForUpdate()->findOrFail($workflowId);
+
+        $data = $this->validate($payload);
+        $creating = ! $workflow->exists;
+
+        abort_unless(
+            (int) $data['version'] === (
+                $creating ? 0 : (int) $workflow->version
+            ),
+            409,
+            'The workflow was changed by another administrator. Reload before saving.'
+        );
+
+        $previousStatus = $creating ? null : $workflow->status;
+
+        if ($data['status'] === 'active') {
+            $otherActive = ApprovalWorkflow::where('status', 'active')
+                ->when(
+                    ! $creating,
+                    fn ($query) => $query->where('id', '!=', $workflow->id)
+                )
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($otherActive as $other) {
+                $other->update([
+                    'status' => 'inactive',
+                    'version' => (int) $other->version + 1,
+                ]);
+
+                app(\App\Contracts\StrategicLogWriter::class)->write(
+                    'approval_workflow.deactivated',
+                    [
+                        'actor_user_id' => $actor->user_id,
+                        'resource_type' => 'approval_workflow',
+                        'resource_id' => $other->id,
+                        'reason' => 'Another workflow was activated.',
+                    ]
+                );
+            }
+        }
+
+        $workflow->fill([
+            'name' => trim($data['name']),
+            'description' => $data['description'] ?? null,
+            'status' => $data['status'],
+            'version' => $creating ? 1 : (int) $workflow->version + 1,
+        ]);
+        $workflow->saveOrFail();
+
+        $workflow->stages()->delete();
+        $workflow->stages()->createMany($data['stages']);
+
+        app(\App\Contracts\StrategicLogWriter::class)->write(
+            $creating ? 'approval_workflow.created' : 'approval_workflow.updated',
+            [
+                'actor_user_id' => $actor->user_id,
+                'resource_type' => 'approval_workflow',
+                'resource_id' => $workflow->id,
+                'name' => $workflow->name,
+                'previous_status' => $previousStatus,
+                'status' => $workflow->status,
+                'version' => $workflow->version,
+            ]
+        );
+
+        return $workflow->refresh()->load('stages');
+    }, 3);
+}
 
     public function validate(array $payload): array
     {
