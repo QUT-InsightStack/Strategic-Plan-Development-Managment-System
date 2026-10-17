@@ -93,7 +93,28 @@ const saveStatus =
                 React.createElement(Field, { label: 'Plan Title', name: 'title', value: form.title, onChange: updateField, error: errors.title, placeholder: 'Enter the plan title', required: true }),
                 React.createElement('div', { className: 'plan-two-columns' },
                     React.createElement('div', { className: 'ui-field' }, React.createElement('label', { className: 'ui-label', htmlFor: 'level' }, 'Strategic Plan Level', React.createElement('span', { className: 'ui-required' }, ' *')), React.createElement('select', { className: 'ui-select', id: 'level', name: 'level', value: form.level, onChange: updateField }, React.createElement('option', { value: 'strategic_plan' }, 'Strategic Plan'), React.createElement('option', { value: 'goal' }, 'Goal'))),
-                    React.createElement('div', { className: 'plan-period' }, React.createElement(Field, { label: 'Planning Period — Start', name: 'planning_start_date', type: 'date', value: form.planning_start_date, onChange: updateField, error: errors.planning_start_date }), React.createElement(Field, { label: 'End', name: 'planning_end_date', type: 'date', value: form.planning_end_date, onChange: updateField, error: errors.planning_end_date }))
+                    React.createElement('div', { className: 'plan-period' },
+    React.createElement(Field, {
+        label: 'Planning Period — Start',
+        name: 'planning_start_date',
+        type: 'date',
+        value: form.planning_start_date,
+        onChange: updateField,
+        error: errors.planning_start_date,
+        required: true,
+    }),
+    React.createElement(Field, {
+        label: 'End',
+        name: 'planning_end_date',
+        type: 'date',
+        value: form.planning_end_date,
+        onChange: updateField,
+        error: errors.planning_end_date,
+        required: true,
+    }),
+    React.createElement('small', { className: 'ui-help' },
+        'Both dates are required before plan submission. They may be left incomplete while drafting.'),
+)
                 ),
                 React.createElement(Field, { label: 'Department/Agency', name: 'department_agency', value: form.department_agency, onChange: updateField, error: errors.department_agency, placeholder: 'Enter department or agency' })
             ),

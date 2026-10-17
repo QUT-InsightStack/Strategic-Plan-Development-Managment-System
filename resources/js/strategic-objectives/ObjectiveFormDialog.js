@@ -171,18 +171,20 @@ export function ObjectiveFormDialog({
             onChange: change,
             error: errors.indicator,
             textarea: true,
+            required: true,
             disabled: readOnly || submitting,
             placeholder: 'How progress will be measured',
         }),
         React.createElement(ObjectiveField, {
-            label: 'Target', name: 'target', value: form.target, onChange: change, error: errors.target,
+            label: 'Target', name: 'target', value: form.target, onChange: change, error: errors.target, required: true,
             disabled: readOnly || submitting, placeholder: 'e.g. 50 projects by 2032',
         }),
         React.createElement('div', { className: 'ui-field' },
     React.createElement('label', {
-        className: 'ui-label',
-        htmlFor: 'objective-responsible-office',
-    }, 'Responsible Office/Unit'),
+    className: 'ui-label',
+    htmlFor: 'objective-responsible-office',
+}, 'Responsible Office/Unit',
+    React.createElement('span', { className: 'ui-required' }, ' *')),
 
     React.createElement('select', {
         id: 'objective-responsible-office',
@@ -209,7 +211,7 @@ export function ObjectiveFormDialog({
     ),
 
     React.createElement('small', { className: 'ui-help' },
-        'Select the Office/Unit responsible for this objective.'),
+        'Select the Office/Unit responsible for this objective. Indicator, target and responsible Office/Unit may be left incomplete while drafting, but must be completed before submitting the plan for approval.'),
 
     errors.responsible_office_agency && React.createElement('p', {
         className: 'ui-error',
