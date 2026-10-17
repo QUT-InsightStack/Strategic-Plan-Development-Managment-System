@@ -16,9 +16,25 @@ class StrategicDocumentService
     private const DIRECTORY = 'strategic-documents';
 
     public function listFor(string $column, int $id, int $perPage = 25): LengthAwarePaginator
-    {
-        return StrategicDocument::query()->where($column, $id)->latest()->paginate($perPage);
-    }
+{
+    return StrategicDocument::query()
+        ->with('uploader')
+        ->where($column, $id)
+        ->orderByDesc('created_at')
+        ->orderByDesc('document_id')
+        ->paginate($perPage);
+}
+public function listForPlans(
+    array $planIds,
+    int $perPage = 25
+): LengthAwarePaginator {
+    return StrategicDocument::query()
+        ->with('uploader', 'plan')
+        ->whereIn('strategic_plan_id', $planIds)
+        ->orderByDesc('created_at')
+        ->orderByDesc('document_id')
+        ->paginate($perPage);
+}
 
     public function store(UploadedFile $file, User $user, string $column, int $id, string $referenceLevel, string $contentCategory): StrategicDocument
     {
