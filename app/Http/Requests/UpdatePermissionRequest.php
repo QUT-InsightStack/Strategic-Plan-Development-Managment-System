@@ -2,13 +2,14 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
+use App\Validation\PermissionValidationRules;
+use App\Validation\ValidationAttributes;
 
 class UpdatePermissionRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['permissions.update'];
     }
 
     public function rules(): array
@@ -16,22 +17,15 @@ class UpdatePermissionRequest extends ApiFormRequest
         $permissionId = $this->route('permission');
 
         return [
-            'permission_name' => [
-                'sometimes',
-                'string',
-                'max:255',
-                Rule::unique('tblpermissions', 'permission_name')
-                    ->ignore($permissionId, 'permission_id'),
-            ],
-            'code' => [
-                'sometimes',
-                'string',
-                'max:255',
-                Rule::unique('tblpermissions', 'code')
-                    ->ignore($permissionId, 'permission_id'),
-            ],
-            'module' => ['sometimes', 'string', 'max:255'],
-            'description' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'permission_name' => PermissionValidationRules::permissionNameOptional(),
+            'description'     => PermissionValidationRules::descriptionOptional(),
+            'code'            => PermissionValidationRules::codeOptional($permissionId),
+            'module'          => PermissionValidationRules::moduleOptional(),
         ];
+    }
+
+    public function attributes(): array
+    {
+        return ValidationAttributes::all();
     }
 }

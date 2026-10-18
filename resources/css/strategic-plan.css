@@ -1,0 +1,133 @@
+@import './design-tokens.css';
+@import './base.css';
+@import './components/buttons.css';
+@import './components/forms.css';
+@import './components/cards.css';
+@import './components/feedback.css';
+@import './layouts/app-shell.css';
+@import './layouts/sidebar.css';
+
+:root {
+    --plan-primary: var(--color-primary);
+    --plan-primary-hover: var(--color-primary-hover);
+    --plan-line: var(--color-gray-300);
+    --plan-muted: var(--color-gray-600);
+    --plan-panel: var(--color-surface);
+    --plan-bg: var(--color-background);
+    --plan-shadow: none;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-width: 320px;
+    color: var(--color-gray-950);
+    background: var(--plan-bg);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-md);
+    line-height: var(--line-height-body);
+}
+
+button, input, select, textarea { font: inherit; }
+
+.create-plan-header { margin: 0 auto 18px; max-width: 1120px; }
+.create-plan-header h1 { margin: 0; color: var(--plan-primary); font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); }
+.create-plan-header p { margin: 5px 0 0; color: var(--plan-muted); }
+
+.create-plan-layout {
+    display: grid;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    align-items: start;
+    gap: 22px;
+}
+
+.plan-form-card, .structure-card {
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 10px;
+    background: var(--plan-panel);
+    box-shadow: var(--plan-shadow);
+}
+
+.plan-form-card { padding: 20px; }
+.plan-section { display: grid; gap: 13px; padding: 0 0 18px; border-bottom: 1px solid var(--plan-line); }
+.plan-section + .plan-section { padding-top: 17px; }
+.plan-section:last-of-type { border-bottom: 0; }
+.plan-section h2 { margin: 0; color: var(--plan-primary); font-size: var(--font-size-sm); font-weight: var(--font-weight-bold); }
+.plan-section h2 span { margin-right: 4px; }
+
+.plan-two-columns { display: grid; grid-template-columns: minmax(180px, 0.85fr) minmax(300px, 1.35fr); gap: 16px; }
+.plan-period { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.plan-field { display: grid; gap: 5px; }
+.plan-field label { color: var(--color-gray-800); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
+.required-mark { color: var(--color-danger); }
+
+.plan-field input, .plan-field select, .plan-field textarea, .core-value-entry input {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid var(--plan-line);
+    border-radius: 6px;
+    padding: 9px 11px;
+    color: var(--color-gray-950);
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(23, 76, 143, 0.08);
+}
+
+.plan-field textarea { resize: vertical; line-height: var(--line-height-body); }
+.plan-field input:focus, .plan-field select:focus, .plan-field textarea:focus, .core-value-entry input:focus {
+    border-color: var(--color-brand-cyan);
+    outline: 3px solid rgba(0, 174, 239, 0.18);
+}
+.plan-field.has-error input, .plan-field.has-error select, .plan-field.has-error textarea { border-color: var(--color-danger); }
+.plan-error { margin: 0; color: var(--color-danger); font-size: 12px; font-weight: var(--font-weight-semibold); }
+
+.core-value-entry { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+.core-value-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.core-value-chip { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #cab7de; border-radius: 7px; padding: 6px 9px; background: #f5eafa; color: #5c3585; }
+.core-value-chip.tone-1 { border-color: #a9d7b2; background: #ebf8ee; color: #2f6f3e; }
+.core-value-chip.tone-2 { border-color: #aac7e5; background: #edf5fc; color: #315f8c; }
+.core-value-chip.tone-3 { border-color: #f0c995; background: #fff5e8; color: #9a5b08; }
+.core-value-chip button { border: 0; padding: 0; color: inherit; background: transparent; font-size: 17px; line-height: 1; cursor: pointer; }
+
+.plan-form-actions { display: flex; justify-content: flex-end; gap: 12px; padding-top: 18px; }
+.plan-button { min-height: 40px; border: 1px solid var(--plan-primary); border-radius: 6px; padding: 8px 18px; font-weight: var(--font-weight-semibold); cursor: pointer; }
+.plan-button.primary { color: #fff; background: var(--plan-primary); }
+.plan-button.primary:hover { background: var(--plan-primary-hover); }
+.plan-button.secondary { color: var(--plan-primary); background: #fff; }
+.plan-button.secondary:hover { background: var(--color-primary-soft); }
+.plan-button:disabled { opacity: 0.55; cursor: wait; }
+
+.structure-card { padding: 22px 16px; }
+.structure-card h2 { margin: 0; color: var(--plan-primary); font-size: var(--font-size-sm); font-weight: var(--font-weight-bold); }
+.structure-card > p { margin: 6px 0 14px; color: var(--plan-muted); font-size: 12px; }
+.structure-list { display: grid; gap: 8px; }
+.structure-item { display: flex; gap: 12px; border-radius: 8px; padding: 10px; }
+.structure-item > i { width: 25px; font-size: 23px; }
+.structure-item span { display: grid; gap: 2px; }
+.structure-item strong { font-size: 13px; }
+.structure-item small { color: var(--color-gray-800); font-size: 12px; line-height: 1.35; }
+.structure-item.green { color: #3f7c38; background: #f0f8ef; }
+.structure-item.purple { color: #5c3d8e; background: #f5f0f8; }
+.structure-item.blue { color: #285eb2; background: #eff5fc; }
+.structure-item.cyan { color: #177a9b; background: #eef9fb; }
+.structure-item.orange { color: #d8750e; background: #fff5e9; }
+.structure-item.pink { color: #d43c88; background: #fff0f7; }
+
+.plan-status { max-width: 1120px; margin: 0 auto 14px; border: 1px solid; border-radius: 6px; padding: 10px 13px; }
+.plan-status.info { border-color: #9cc7e8; color: var(--color-info); background: #eef7fd; }
+.plan-status.success { border-color: #9fd1b9; color: var(--color-success); background: #edf9f3; }
+.plan-status.error { border-color: #e2aaa5; color: var(--color-danger); background: #fff2f1; }
+
+@media (max-width: 980px) {
+    .create-plan-layout { grid-template-columns: 1fr; }
+    .structure-card { order: -1; }
+    .structure-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720px) {
+    .plan-two-columns, .plan-period, .structure-list { grid-template-columns: 1fr; }
+    .plan-form-actions { align-items: stretch; flex-direction: column; }
+}

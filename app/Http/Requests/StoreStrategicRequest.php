@@ -2,32 +2,34 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
+use App\Validation\StrategicValidationRules;
+use App\Validation\ValidationAttributes;
 
 class StoreStrategicRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['strategic_records.create'];
     }
 
     public function rules(): array
     {
         return [
-            'created_by'   => ['required', 'integer', Rule::exists('tblusers', 'user_id')],
-            'updated_by'   => ['nullable', 'integer', Rule::exists('tblusers', 'user_id')],
-            'level'        => ['required', 'string', 'max:255'],
-            'title'        => ['required', 'string', 'max:255'],
-            'description'  => ['nullable', 'string'],
-            'file_path'    => ['nullable', 'string', 'max:255'],
-            'mission_id'   => ['required', 'integer', Rule::exists('tblstrategic_foundations', 'foundation_id')],
-            'vision_id'    => ['required', 'integer', Rule::exists('tblstrategic_foundations', 'foundation_id')],
-            'parent_ids'   => ['sometimes', 'array'],
-            'parent_ids.*' => [
-                'integer',
-                'distinct',
-                Rule::exists('tblstrategic_record', 'record_id'),
-            ],
+            'created_by' => StrategicValidationRules::createdByRequired(),
+            'updated_by' => StrategicValidationRules::updatedByOptional(),
+            'level' => StrategicValidationRules::levelRequired(),
+            'title' => StrategicValidationRules::titleRequired(),
+            'description' => StrategicValidationRules::descriptionOptional(),
+            'file_path' => StrategicValidationRules::filePathOptional(),
+            'mission_id' => StrategicValidationRules::missionIdRequired(),
+            'vision_id' => StrategicValidationRules::visionIdRequired(),
+            'parent_ids' => StrategicValidationRules::parentIdsOptional(),
+            'parent_ids.*' => StrategicValidationRules::parentIdItem(),
         ];
+    }
+
+    public function attributes(): array
+    {
+        return ValidationAttributes::all();
     }
 }

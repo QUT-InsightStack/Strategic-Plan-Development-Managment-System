@@ -2,6 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Validation\AuthValidationRules;
+use App\Validation\ValidationAttributes;
+
 class LoginRequest extends ApiFormRequest
 {
     /**
@@ -12,22 +15,27 @@ class LoginRequest extends ApiFormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $email = $this->input('email');
+
+        if (is_string($email)) {
+            $this->merge([
+                'email' => mb_strtolower(trim($email)),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
-            'email'    => ['required', 'string', 'email', 'max:255'],
-            'password' => ['required', 'string'],
+            'email' => AuthValidationRules::loginEmail(),
+            'password' => AuthValidationRules::loginPassword(),
         ];
     }
 
-    /**
-     * Friendly field names for error messages.
-     */
     public function attributes(): array
     {
-        return [
-            'email'    => 'email address',
-            'password' => 'password',
-        ];
+        return ValidationAttributes::all();
     }
 }

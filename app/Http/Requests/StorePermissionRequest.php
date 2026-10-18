@@ -2,32 +2,28 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
+use App\Validation\PermissionValidationRules;
+use App\Validation\ValidationAttributes;
 
 class StorePermissionRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['permissions.create'];
     }
 
     public function rules(): array
     {
         return [
-            'permission_name' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('tblpermissions', 'permission_name'),
-            ],
-            'code' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('tblpermissions', 'code'),
-            ],
-            'module' => ['required', 'string', 'max:255'],
-            'description' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'permission_name' => PermissionValidationRules::permissionNameRequired(),
+            'description'     => PermissionValidationRules::descriptionOptional(),
+            'code'            => PermissionValidationRules::codeRequired(),
+            'module'          => PermissionValidationRules::moduleRequired(),
         ];
+    }
+
+    public function attributes(): array
+    {
+        return ValidationAttributes::all();
     }
 }

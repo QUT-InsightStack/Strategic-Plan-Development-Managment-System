@@ -1,0 +1,205 @@
+@import './base.css';
+@import './layouts/app-shell.css';
+@import './layouts/sidebar.css';
+@import './components/cards.css';
+@import './components/forms.css';
+@import './components/buttons.css';
+@import './components/feedback.css';
+@import './components/badges.css';
+@import './components/tables.css';
+@import './components/pagination.css';
+
+.sysmon-page .ui-status { margin-bottom: var(--space-4); }
+.sysmon-updated { margin: calc(var(--space-3) * -1) 0 var(--space-4); color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+
+/* ---- header controls ---- */
+.sysmon-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-3); }
+.sysmon-controls .ui-select { width: auto; min-width: 170px; }
+.sysmon-check { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-gray-800); font-size: var(--font-size-sm); cursor: pointer; }
+.sysmon-check input { width: 16px; height: 16px; accent-color: var(--color-primary); }
+
+/* ---- status banner ---- */
+.sysmon-banner {
+    display: flex;
+    gap: var(--space-4);
+    align-items: flex-start;
+    margin-bottom: var(--space-5);
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--sysmon-border, var(--color-border-subtle));
+    border-left-width: 6px;
+    border-radius: var(--radius-lg);
+    background: var(--sysmon-soft, var(--color-surface));
+}
+.sysmon-banner > i { color: var(--sysmon-ink, var(--color-text-secondary)); font-size: var(--font-size-2xl); line-height: 1; }
+.sysmon-banner strong { display: block; color: var(--color-text); font-size: var(--font-size-md); }
+.sysmon-banner ul, .sysmon-banner p { margin: var(--space-1) 0 0; padding-left: 18px; color: var(--color-gray-800); font-size: var(--font-size-sm); }
+.sysmon-banner p { padding-left: 0; }
+.sysmon-banner small { display: block; margin-top: var(--space-2); color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+.sysmon-banner.is-success { --sysmon-border: #72b58e; --sysmon-soft: var(--color-success-soft); --sysmon-ink: var(--color-success); }
+.sysmon-banner.is-warning { --sysmon-border: #d6b656; --sysmon-soft: var(--color-warning-soft); --sysmon-ink: var(--color-warning); }
+.sysmon-banner.is-danger { --sysmon-border: #e38b82; --sysmon-soft: var(--color-danger-soft); --sysmon-ink: var(--color-danger); }
+
+/* ---- tiles ---- */
+.sysmon-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); margin-bottom: var(--space-5); }
+.sysmon-tile {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    min-width: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border-subtle);
+    border-top: 4px solid var(--sysmon-tone, var(--color-primary));
+    border-radius: var(--radius-xl);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-xs);
+}
+.sysmon-tile > i { color: var(--sysmon-tone, var(--color-primary)); font-size: var(--font-size-xl); line-height: 1; }
+.sysmon-tile > div { display: grid; min-width: 0; gap: 2px; }
+.sysmon-tile__label { color: var(--color-text-secondary); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
+.sysmon-tile__value { color: var(--color-text); font-size: var(--font-size-2xl); line-height: var(--line-height-tight); font-variant-numeric: tabular-nums; }
+.sysmon-tile small { color: var(--color-text-secondary); font-size: 11px; }
+.sysmon-tile--info { --sysmon-tone: var(--color-info); }
+.sysmon-tile--success { --sysmon-tone: var(--color-success); }
+.sysmon-tile--warning { --sysmon-tone: var(--color-warning); }
+.sysmon-tile--danger { --sysmon-tone: var(--color-danger); }
+
+/* ---- sections ---- */
+.sysmon-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); margin-bottom: var(--space-5); }
+.sysmon-section { min-width: 0; }
+.sysmon-section--wide { margin-bottom: var(--space-5); }
+.sysmon-section .ui-card__body { display: grid; gap: var(--space-4); align-content: start; }
+.sysmon-empty { margin: 0; padding: var(--space-6) var(--space-4); color: var(--color-text-secondary); text-align: center; }
+.sysmon-error {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid #e38b82;
+    border-radius: var(--radius-md);
+    color: var(--color-danger);
+    background: var(--color-danger-soft);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+}
+.sysmon-section .sysmon-error { margin-bottom: 0; }
+.sysmon-badge { gap: 5px; white-space: nowrap; }
+.sysmon-badge i { font-size: 11px; }
+.sysmon-code { display: block; margin-top: 2px; color: var(--color-text-secondary); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; overflow-wrap: anywhere; }
+.sysmon-muted { color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+
+/* ---- health ---- */
+.sysmon-health { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.sysmon-health__item { padding: var(--space-3) var(--space-4); border: 1px solid var(--color-border-subtle); border-left: 4px solid var(--sysmon-tone, var(--color-gray-400)); border-radius: var(--radius-md); }
+.sysmon-health__item.is-success { --sysmon-tone: var(--color-success); }
+.sysmon-health__item.is-warning { --sysmon-tone: var(--color-warning); }
+.sysmon-health__item.is-danger { --sysmon-tone: var(--color-danger); }
+.sysmon-health__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-bottom: var(--space-2); }
+.sysmon-health__head strong { color: var(--color-text); font-size: var(--font-size-sm); }
+.sysmon-health__facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-1) var(--space-3); margin: 0; }
+.sysmon-health__facts dt { color: var(--color-text-secondary); font-size: 11px; }
+.sysmon-health__facts dd { margin: 0; color: var(--color-gray-800); font-size: var(--font-size-xs); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+/* ---- alerts ---- */
+.sysmon-alerts { display: grid; margin: 0; padding: 0; list-style: none; }
+.sysmon-alerts li { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) 0; border-bottom: 1px solid var(--color-border-subtle); }
+.sysmon-alerts li:first-child { padding-top: 0; }
+.sysmon-alerts li:last-child { border-bottom: 0; }
+.sysmon-alerts li > div:first-child { display: grid; min-width: 0; gap: 2px; }
+.sysmon-alerts strong { color: var(--color-text); font-size: var(--font-size-sm); }
+.sysmon-alerts small { color: var(--color-text-secondary); font-size: 11px; }
+.sysmon-alerts__badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-1); }
+
+/* ---- chart ---- */
+.sysmon-chart { display: grid; gap: var(--space-3); }
+.sysmon-chart__legend { display: flex; flex-wrap: wrap; gap: var(--space-4); color: var(--color-gray-800); font-size: var(--font-size-xs); }
+.sysmon-chart__legend span { display: inline-flex; align-items: center; gap: var(--space-2); }
+.sysmon-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+.sysmon-swatch--ok, .sysmon-chart__bar { fill: var(--color-primary); background: var(--color-primary); }
+.sysmon-swatch--error, .sysmon-chart__bar--error { fill: var(--color-danger); background: var(--color-danger); }
+.sysmon-chart__frame { position: relative; }
+.sysmon-chart__frame svg { display: block; width: 100%; height: auto; overflow: visible; }
+.sysmon-chart__grid { stroke: var(--color-border-subtle); stroke-width: 1; }
+.sysmon-chart__axis { fill: var(--color-text-secondary); font-size: 11px; font-variant-numeric: tabular-nums; }
+.sysmon-chart__hit { fill: transparent; cursor: default; outline: none; }
+.sysmon-chart__hit:focus-visible { stroke: var(--color-focus); stroke-width: 2; }
+.sysmon-chart g.is-active .sysmon-chart__bar { opacity: 0.8; }
+.sysmon-chart__tooltip {
+    position: absolute;
+    top: 0;
+    z-index: 2;
+    display: grid;
+    gap: 2px;
+    min-width: 190px;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-gray-800);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-md);
+    font-size: var(--font-size-xs);
+    pointer-events: none;
+    transform: translateX(-50%);
+}
+.sysmon-chart__tooltip strong { color: var(--color-text); }
+.sysmon-chart__summary { margin: 0; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+
+/* ---- filters and tables ---- */
+.sysmon-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; gap: var(--space-3); align-items: end; }
+.sysmon-filters--compact { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: end; }
+.sysmon-filters--compact .ui-field { min-width: 180px; }
+.sysmon-filters--compact .sysmon-check { min-height: var(--control-height-md); }
+.sysmon-filters__actions { display: flex; gap: var(--space-2); }
+.sysmon-filters__actions .ui-button { min-height: var(--control-height-md); }
+.sysmon-table td { font-size: var(--font-size-sm); }
+.sysmon-table td strong { display: block; color: var(--color-text); font-size: var(--font-size-sm); }
+.sysmon-when { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sysmon-route { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; color: var(--color-primary); overflow-wrap: anywhere; }
+.sysmon-slow { color: var(--color-warning); font-weight: var(--font-weight-bold); }
+.sysmon-pager { margin-top: 0; }
+.sysmon-pager__count { margin: 0; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+.ui-pagination.sysmon-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.sysmon-pager .ui-pagination__actions { display: flex; gap: var(--space-2); }
+
+/* ---- event dialog ---- */
+.sysmon-dialog-backdrop { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: var(--space-4); background: rgba(15, 23, 42, 0.5); }
+.sysmon-dialog { display: flex; flex-direction: column; width: min(620px, 100%); max-height: 86vh; }
+.sysmon-dialog__header { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-5); border-bottom: 1px solid var(--color-border-subtle); }
+.sysmon-dialog__header h2 { margin: 0 0 2px; color: var(--color-primary); font-size: var(--font-size-lg); }
+.sysmon-dialog__header p { margin: 0; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+.sysmon-dialog__close { margin-left: auto; border: 0; padding: var(--space-1); color: var(--color-text-secondary); background: none; line-height: 1; }
+.sysmon-dialog__close:hover { color: var(--color-text); }
+.sysmon-dialog__body { display: grid; gap: var(--space-5); padding: var(--space-5); overflow-y: auto; }
+.sysmon-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); margin: 0; }
+.sysmon-facts__wide { grid-column: 1 / -1; }
+.sysmon-facts dt { margin-bottom: 2px; color: var(--color-text-secondary); font-size: 11px; font-weight: var(--font-weight-semibold); letter-spacing: 0.04em; text-transform: uppercase; }
+.sysmon-facts dd { margin: 0; color: var(--color-text); font-size: var(--font-size-sm); overflow-wrap: anywhere; }
+.sysmon-context h3 { margin: 0 0 var(--space-2); color: var(--color-text); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); letter-spacing: 0.04em; text-transform: uppercase; }
+.sysmon-context pre { margin: 0; padding: var(--space-3); max-height: 260px; overflow: auto; border-radius: var(--radius-md); background: var(--color-gray-100); color: var(--color-text); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.5; }
+.sysmon-context p { margin: 0; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+
+/* ---- loading ---- */
+.sysmon-skeleton__banner, .sysmon-skeleton__tile { border-radius: var(--radius-xl); background: linear-gradient(90deg, var(--color-gray-100) 25%, var(--color-gray-50) 50%, var(--color-gray-100) 75%); background-size: 200% 100%; animation: sysmon-shimmer 1.4s ease-in-out infinite; }
+.sysmon-skeleton__banner { height: 88px; margin-bottom: var(--space-5); }
+.sysmon-skeleton__tile { height: 96px; }
+.sysmon-spin { display: inline-block; animation: sysmon-rotate 0.9s linear infinite; }
+@keyframes sysmon-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes sysmon-rotate { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .sysmon-skeleton__banner, .sysmon-skeleton__tile, .sysmon-spin { animation: none; } }
+
+/* ---- responsive ---- */
+@media (max-width: 1200px) {
+    .sysmon-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sysmon-filters__actions { grid-column: 1 / -1; }
+}
+@media (max-width: 980px) {
+    .sysmon-grid { grid-template-columns: 1fr; }
+    .sysmon-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .app-page-header { flex-direction: column; align-items: flex-start; }
+    .sysmon-controls { justify-content: flex-start; }
+}
+@media (max-width: 620px) {
+    .sysmon-tiles, .sysmon-filters, .sysmon-health, .sysmon-facts { grid-template-columns: 1fr; }
+    .sysmon-controls .ui-select { width: 100%; }
+}

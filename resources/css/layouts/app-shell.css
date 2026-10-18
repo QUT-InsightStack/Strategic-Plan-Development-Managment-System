@@ -1,0 +1,10 @@
+/* Page header and breadcrumb styles live in components/page-header.css (loaded by PageHeader.js). */
+.app-shell-main { min-height: 100vh; margin-left: var(--sidebar-width); padding: var(--page-gutter); background: var(--color-background); }
+/* One page gutter and one content width for every page: .app-shell-main (and .office-content) pad by
+   --page-gutter, and page containers stop at --content-max-width, aligned left beside the sidebar. */
+.app-shell-container { width: 100%; max-width: var(--content-max-width); margin: 0; }
+.ui-section-header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--color-border-subtle); background: var(--color-section-header-background); }
+.ui-section-header__copy h2 { margin: 0; color: var(--color-primary); font-size: var(--font-size-lg); }
+.ui-section-header__copy p { margin: 3px 0 0; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+.ui-section-header > i { color: var(--color-brand-cyan); font-size: var(--font-size-xl); }
+@media (max-width: 720px) { .app-shell-main { margin-left: 0; padding: var(--space-5) var(--space-3); } }

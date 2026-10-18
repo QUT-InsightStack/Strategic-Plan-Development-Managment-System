@@ -7,7 +7,7 @@
 ## System Description
 
 SPMS is an internal web application for DOST managing strategic plans.
-Users include Planning Officers, Division Heads, and Administrators.
+Users include Planning Officers, Management, Office, and Administrators.
 Data is classified as OFFICIAL. No public internet access is intended.
 
 ## Trust Boundaries

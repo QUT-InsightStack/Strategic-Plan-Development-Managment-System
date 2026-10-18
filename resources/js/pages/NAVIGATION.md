@@ -1,0 +1,78 @@
+# Frontend navigation and data boundaries
+
+## Ownership
+
+- `access/navigation.js` defines the five role workspaces, canonical destinations, permission requirements and planned features.
+- `components/AppSidebar.js` renders that registry. Technical and Administrative sidebar modules are compatibility re-exports, not separate menu definitions.
+- `pages/shared/dashboard-app.js` renders the Technical Administration Dashboard (`pages/technical-admin/technical-dashboard.js`) and explicit `?feature=` placeholders. The Technical Admin dashboard follows the Management dashboard and report masters; its KPIs, tabs and Reports tab all read `/api/technical/reports/activity`, whose sections follow the user's technical permissions (accounts, sign-ins, audit, password assistance, system health, backups, approval workflow).
+- Administrative Admin, Planning Officer, Office / Agency and Management workspaces are grouped by planning stage (see *Role workspaces* below). Technical Admin: Planning Support (Plans, Objectives, Mappings, PDP Chapters, Presidential Agenda — for authorised deletion) · Access Administration · Account Security (Login History, Audit Logs, Security Settings, Backups, System Monitoring).
+- `access/mount-protected-page.js` refreshes `/api/auth/me` before mounting the migrated administration and plan/objective registers. Existing independently bootstrapped Office/Management pages remain intact.
+- The backend remains authoritative for authorization and record scope. A visible placeholder or menu entry never grants API access.
+
+Keep page entries in their existing role directories. Shared UI belongs in `components`, API adapters in `api`, and browser-only storage in `data` or the existing mapping storage module. Update Blade and Vite inputs only when adding a browser entry, not for imported components.
+
+## Canonical destinations
+
+| Function | Destination |
+| --- | --- |
+| Role workspace | `/dashboard` |
+| Management dashboard | `/management-dashboard` |
+| Monitoring Dashboard / Reports for planning, office and administrative roles | `/monitoring-dashboard`, `/monitoring-dashboard?tab=reports` |
+| Real account management | `/user-management` |
+| Role assignment | `/role-management` |
+| Role permission settings | `/role-management?section=permissions` |
+| Office plan review and plan-level comments/proposals | `/office` |
+| Office document/video upload | `/office?view=inputs` |
+| Shared objective progress | `/office?view=progress` |
+| Input status / consolidation | `/consolidate-inputs` |
+| Mapping / read-only mapping | `/mappings` / `/mappings?mode=view` |
+| Management plan review | `/management-plan-review` |
+| Approval list | `/management-approvals` (`/strategic-plan-reviews` redirects here) |
+
+Old `view=agency-input` upload links normalize to `view=inputs`, retaining the selected plan. Existing objective comments and local comment history remain in clearly labeled expandable compatibility sections. The previous generic dashboard is accessible through `/dashboard?view=legacy`.
+
+The legacy `/office?view=mapping` and `view=alignment` previews remain readable with a link to the current mapping page. The old mapping form has no working mapping-save integration; its controls are disabled rather than submitting misleading objective proposals.
+
+Standard functions without an implemented screen have a `/dashboard?feature=...` placeholder. Missing permissions produce a disabled `No access` entry; additional nonstandard capabilities are hidden if unauthorized. Do not hide implemented forms merely because the API returns no records.
+
+## Role workspaces
+
+Sidebars are kept short: each page has one entry, a group with a single page becomes a top-level link, and Reports is a tab inside each role's Dashboard rather than a separate link. Entries keep their existing permission requirements; without permission an entry is shown as *No access*. The navigation test rejects repeated sidebar destinations and single-item groups.
+
+| Role | Sidebar |
+| --- | --- |
+| Administrative Admin | Dashboard · Reference Data (Presidential Agenda, PDP Chapters, Templates) · Planning (Plan List, Create Plan, Objectives, Inputs, Finalize & Submit) · Alignment (Strategic Mapping, Alignment View) · Monitoring (Objective Progress, System Logs). No Plan Reviews: Administrative Admin submits plans but does not approve them |
+| Planning Officer | Dashboard · Plans (Plan List, Create Plan, Objectives, Finalize & Submit) · Alignment (Strategic Mapping, Alignment View, PDP Chapters) · Planning Inputs · Objective Progress · Plan Reviews |
+| Office / Agency | Dashboard · Plans & Objectives · Inputs (Planning Inputs, Proposed Objectives, Comments, Input Status) · Progress Update (no Edit Objectives: Offices update progress only) · Agency Mapping (read-only `/mappings?mode=view`) |
+| Management / Executive | Dashboard · Approvals · Plan Review · Suggest Objectives · Alignment · Input Review · Audit Logs (read-only) · Planning Records (Plans, Objectives, Mappings, PDP Chapters, Presidential Agenda) |
+
+The Dashboard link stays highlighted on its Overview and Reports tabs. The sidebar is 260px wide by default and can be dragged between 200px and 360px from its right edge (keyboard: focus the handle and use the arrow keys, Home or End; double-click resets). The width is saved in the browser (`spdms.sidebar-width`) and applied to every page through `--sidebar-width`. Long labels are truncated with an ellipsis and shown in full as a tooltip. On narrow screens (720px and below) the sidebar is full width and cannot be resized.
+
+Every one of these workspaces starts with a top-level **Dashboard** link: `/monitoring-dashboard` (titled "Dashboard") for Administrative Admin, Planning Officer and Office / Agency, and `/management-dashboard` for Management. `dashboardHrefFor(role)` in `access/navigation.js` returns it, and every in-app "Dashboard" link (page breadcrumbs, profile and resource pages, the access-denied home button via the role home) uses it. For those three roles `/dashboard` redirects to `/monitoring-dashboard`, including the old `?view=legacy` page; `/dashboard?feature=…` placeholders (such as FAQ) still open. Administrative Admin now lands on `/monitoring-dashboard` after sign-in; Planning Officer and Office keep `/strategic-plans` and `/office`. Technical Admin keeps `/dashboard`, now the Technical Administration Dashboard (technical activity only, no planning content). `/monitoring-dashboard` renders the Management Dashboard page for any account with `strategic_records.view` or `reports.view`: only the Overview and Reports tabs, each gated by permission, with data scoped by the backend. My Pending Actions appears there only for users with a plan review assigned to them.
+
+## Data sources
+
+- Plans, objective progress, uploads, live comments/proposals, account administration and approval workflows use existing APIs. Errors must remain visible; do not replace failed API data with local examples.
+- The mapping editor still stores mapping links/reference selections in the browser. Its notice distinguishes these from remotely loaded plans/objectives/PDP chapters and remote responsible-unit assignments. This cleanup does not implement database mapping persistence.
+- `legacy-office-comments.js`, `legacy-office-updates.js` and the compatibility `office-api.js` preserve existing local demo history. They do not represent shared submissions.
+- Backend comment tables, permissions and record scope must already be configured. No backend migrations or permission grants are performed by this frontend cleanup.
+
+## Why screens appeared to disappear
+
+Multiple sidebar definitions and duplicate URLs selected different components. Old local demos shared names with API-backed pages. Cached permissions could disagree with a freshly loaded menu. Empty lists removed entire forms. Unresolved merge markers broke the Office comments module, and previously built assets could lag behind source edits.
+
+## Validation and builds
+
+Run `npm run test:frontend` and `npm run build`. Build/dev scripts use Vite's native configuration loader to avoid the configuration bundling subprocess that failed in this Windows environment. This is not a universal fix for locked native files or every possible EPERM error.
+
+After pulling changes, rebuild assets or restart Vite. Test each role with its real account, checking an allowed page, a disabled permission, an empty result, and an API error. Do not treat a successful build or mocked frontend tests as proof of database permissions or end-to-end submissions.
+
+## Strategic objective workflow
+
+- `/strategic-objectives` is a plan chooser only. It has no create/edit/archive/delete implementations.
+- `/strategic-plans/{id}/objectives` renders the original plan-scoped page, using `strategic-objectives-app.js` and `strategic-objectives.css`.
+- Legacy `?plan_id=...&edit=...` or `&create=1` links redirect in the chooser to that canonical page. Plan creation and editing link there directly.
+- Target and Responsible Office/Agency use existing objective fields. Notes/Comment uses the existing plan Description/Notes field, not a new comment store.
+- Each objective form saves immediately. Save as a draft saves plan notes only for editable drafts, preserving current MVC, dates, and title through the existing update API. Finished plans cannot be reset to draft here.
+- Next: Strategic Mapping saves changed draft notes first and navigates to `/mappings?plan_id=...`. Mapping retains the selected plan and does not silently switch to another plan if it is unavailable.
+- The obsolete cross-plan editor and its dedicated list stylesheet were removed; progress, assignment, review, archive/restore, and delete remain available on the single plan-scoped page.

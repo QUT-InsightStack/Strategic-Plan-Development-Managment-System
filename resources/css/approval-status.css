@@ -1,0 +1,237 @@
+.approval-status-page {
+    background: #f4f7fb;
+    min-height: 100vh;
+}
+
+.approval-status-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.approval-status-card {
+    background: #fff;
+    border: 1px solid #dce4ef;
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 2px 8px rgba(18, 52, 86, 0.06);
+}
+
+.approval-status-card__label {
+    display: block;
+    margin-bottom: 0.45rem;
+    color: #607086;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.approval-status-card__value {
+    color: #163f73;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.approval-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-radius: 999px;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    background: #e8edf3;
+    color: #536273;
+}
+
+.approval-status-badge--under-approval {
+    background: #fff3d6;
+    color: #8a5600;
+}
+
+.approval-status-badge--approved {
+    background: #dcf5e5;
+    color: #176b39;
+}
+
+.approval-status-badge--rejected {
+    background: #fde2e2;
+    color: #a72424;
+}
+
+.approval-status-badge--not-submitted {
+    background: #e8edf3;
+    color: #536273;
+}
+
+.approval-current-stage {
+    border-left: 5px solid #1f65b7;
+    margin-bottom: 1.25rem;
+}
+
+.approval-current-stage__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.approval-current-stage__number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #e6f0ff;
+    color: #17569d;
+    font-weight: 800;
+}
+
+.approval-current-stage__title {
+    flex: 1;
+}
+
+.approval-current-stage__title h2 {
+    margin: 0 0 0.25rem;
+    color: #173f72;
+}
+
+.approval-current-stage__title p {
+    margin: 0;
+    color: #64748b;
+}
+
+.approval-reviewer-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.approval-reviewer {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    background: #edf4ff;
+    color: #194f8c;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.approval-stage-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.approval-stage-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid #dce4ef;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.approval-stage-item--current {
+    border-color: #2c72c7;
+    background: #f2f7ff;
+}
+
+.approval-stage-item__number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: #e7edf5;
+    color: #364b63;
+    font-weight: 700;
+}
+
+.approval-stage-item--current .approval-stage-item__number {
+    background: #2469b7;
+    color: #fff;
+}
+
+.approval-stage-item__name {
+    color: #203b5c;
+    font-weight: 700;
+}
+
+.approval-stage-item__approver {
+    margin-top: 0.2rem;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.approval-history-section {
+    margin-top: 1.25rem;
+}
+
+.approval-history-section h2 {
+    margin-top: 0;
+    color: #173f72;
+}
+
+.approval-history-comment {
+    min-width: 12rem;
+    white-space: normal;
+}
+
+.approval-empty-state {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    color: #617086;
+}
+
+.approval-empty-state i {
+    display: block;
+    margin-bottom: 0.75rem;
+    color: #7d91a9;
+    font-size: 2rem;
+}
+
+.approval-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 900px) {
+    .approval-status-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .approval-stage-item {
+        grid-template-columns: auto 1fr;
+    }
+
+    .approval-stage-item > :last-child {
+        grid-column: 2;
+    }
+}
+
+@media (max-width: 600px) {
+    .approval-current-stage__header {
+        align-items: flex-start;
+    }
+
+    .approval-status-card {
+        padding: 1rem;
+    }
+
+    .plans-table-wrap {
+        overflow-x: auto;
+    }
+}

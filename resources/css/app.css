@@ -1,4 +1,7 @@
 @import 'tailwindcss';
+@import './brand-logo.css';
+@import './design-tokens.css';
+@import './components/buttons.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -10,14 +13,14 @@
 }
 
 :root {
-    --page-bg: #dceaf7;
-    --primary: #1f4fa5;
-    --primary-dark: #16428e;
-    --header-bg: #204f9e;
-    --header-border: #0789ff;
+    --page-bg: var(--color-background);
+    --primary: var(--color-primary);
+    --primary-dark: var(--color-primary-hover);
+    --header-bg: var(--color-primary);
+    --header-border: var(--color-brand-cyan);
     --text: #11254a;
     --muted: #7b8ca8;
-    --panel: #ffffff;
+    --panel: var(--color-surface);
     --danger: #b42318;
     --success: #157347;
     --shadow: 0 2px 8px rgba(17, 37, 74, 0.18);
@@ -32,7 +35,9 @@ body {
     min-width: 320px;
     color: var(--text);
     font-family: var(--font-sans);
-    background: #eef5fc;
+    font-size: var(--font-size-md);
+    line-height: var(--line-height-body);
+    background: var(--color-background);
 }
 
 button,
@@ -62,9 +67,9 @@ button {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    min-height: 70px;
-    border: 4px solid var(--header-border);
-    padding: 0 80px;
+    min-height: 64px;
+    border: 0;
+    padding: 0 var(--page-gutter);
 }
 
 .brand {
@@ -75,31 +80,10 @@ button {
     text-decoration: none;
 }
 
-.brand-mark {
-    display: grid;
-    width: 34px;
-    height: 34px;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 3px;
-    padding: 4px;
-    border-radius: 6px;
-    background: #062f69;
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.8);
-}
-
-.brand-mark span {
-    border-radius: 3px;
-    background: #ffffff;
-}
-
-.brand-mark span:nth-child(2),
-.brand-mark span:nth-child(3) {
-    background: #5eb7ff;
-}
-
 .brand-name {
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: 15px;
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
     white-space: nowrap;
 }
 
@@ -110,18 +94,39 @@ button {
 }
 
 .nav-link {
-    min-width: 94px;
+    min-width: var(--nav-button-min-width);
+    height: var(--nav-button-height);
     border: 0;
     border-left: 1px solid rgba(255, 255, 255, 0.22);
-    color: #ffffff;
+    border-radius: var(--nav-button-radius);
+    padding: 0 var(--nav-button-padding-x);
+    color: var(--color-brand-white);
     background: transparent;
-    font-size: 12px;
+    font-size: var(--nav-button-font-size);
+    font-weight: var(--nav-button-font-weight);
 }
 
 .nav-link:hover,
 .nav-link:focus-visible {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--nav-button-hover-bg);
     outline: none;
+}
+
+.nav-link.logout-link {
+    min-width: var(--logout-button-min-width);
+    color: var(--logout-button-color);
+    font-size: var(--logout-button-font-size);
+    font-weight: var(--logout-button-font-weight);
+}
+
+.nav-link.logout-link:hover,
+.nav-link.logout-link:focus-visible {
+    background: var(--logout-button-hover-bg);
+}
+
+.nav-link:disabled {
+    cursor: wait;
+    opacity: 0.7;
 }
 
 .login-main {
@@ -129,8 +134,11 @@ button {
     grid-template-columns: minmax(280px, 420px) minmax(320px, 526px);
     align-items: center;
     justify-content: center;
-    gap: 130px;
-    padding: 70px 56px;
+    gap: clamp(40px, 6vw, 80px);
+    width: 100%;
+    max-width: var(--content-max-width);
+    margin: 0 auto;
+    padding: var(--space-8) var(--page-gutter);
 }
 
 .access-intro {
@@ -161,7 +169,7 @@ button {
 .access-intro p {
     margin: 0;
     color: #000000;
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.2;
     font-weight: 700;
 }
@@ -216,9 +224,9 @@ button {
     border-radius: 6px;
     padding: 0 42px 0 40px;
     color: var(--text);
-    background: #ffffff;
+    background: var(--color-surface);
     box-shadow: var(--shadow);
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .field-group input::placeholder {
@@ -266,7 +274,7 @@ button {
     min-height: 14px;
     margin: 0;
     color: var(--danger);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .form-options {
@@ -282,7 +290,7 @@ button {
     align-items: center;
     gap: 8px;
     color: var(--primary);
-    font-size: 10px;
+    font-size: 12px;
 }
 
 .remember-option input {
@@ -295,7 +303,7 @@ button {
     border: 0;
     color: var(--primary);
     background: transparent;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -310,35 +318,14 @@ button {
 .signin-button {
     justify-self: center;
     width: 180px;
-    min-height: 48px;
-    border: 0;
-    border-radius: 6px;
-    color: #ffffff;
-    background: var(--primary);
-    font-size: 13px;
-    font-weight: 700;
-    box-shadow: 0 2px 6px rgba(31, 79, 165, 0.32);
-    transition: background 160ms ease, transform 160ms ease;
-}
-
-.signin-button:hover,
-.signin-button:focus-visible {
-    background: var(--primary-dark);
-    outline: none;
-    transform: translateY(-1px);
-}
-
-.signin-button:disabled {
-    cursor: wait;
-    opacity: 0.72;
-    transform: none;
+    font-size: var(--font-size-sm);
 }
 
 .form-status {
     min-height: 18px;
     margin: -10px 0 0;
     text-align: center;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
 }
 
@@ -355,7 +342,7 @@ button {
     max-width: 260px;
     margin: 0 auto;
     color: #000000;
-    font-size: 9px;
+    font-size: 12px;
     line-height: 1.35;
 }
 
@@ -365,7 +352,7 @@ button {
     grid-template-columns: 1fr repeat(3, 210px);
     align-items: center;
     padding: 0 46px;
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .app-footer span {

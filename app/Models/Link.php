@@ -17,7 +17,19 @@ class Link extends Model
         'plan_id',
         'created_by',
         'updated_by',
+        'status',
+        'archived_at',
+        'archived_by',
+        'deleted_at',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'archived_at' => 'datetime',
+            'deleted_at' => 'datetime',
+        ];
+    }
 
     public function coreValue()
     {

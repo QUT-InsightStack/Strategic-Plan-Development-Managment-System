@@ -2,17 +2,22 @@
 
 namespace App\Services;
 
+use App\Contracts\StrategicLogWriter;
+use App\Models\Permission;
+use App\Models\User;
 use App\Repositories\PermissionRepository;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PermissionService
 {
-    protected $permissionRepository;
-
-    public function __construct(PermissionRepository $permissionRepository)
-    {
-        $this->permissionRepository = $permissionRepository;
+    public function __construct(
+        protected PermissionRepository $permissionRepository,
+        private readonly StrategicLogWriter $logWriter
+    ) {
     }
 
     public function getAllPermissions(): Collection
@@ -27,20 +32,87 @@ class PermissionService
 
     public function createPermission(array $data): Model
     {
-        return $this->permissionRepository->create($data);
+        $actor = $this->authenticatedActor();
+
+        return DB::transaction(function () use (
+            $data,
+            $actor
+        ): Model {
+            $permission = $this->permissionRepository->create($data);
+
+            $this->logWriter->write('permission.created', [
+                'actor_user_id' => $actor->user_id,
+                'resource_type' => 'permission',
+                'resource_id' => $permission->permission_id,
+                'permission_code' => $permission->code,
+                'permission_name' => $permission->permission_name,
+            ]);
+
+            return $permission;
+        });
     }
 
     public function updatePermission(int $id, array $data): bool
     {
-        return $this->permissionRepository->update($id, $data);
+        $permission = $this->permissionRepository->find($id);
+
+        if (! $permission instanceof Permission) {
+            return false;
+        }
+
+        $actor = $this->authenticatedActor();
+
+        return DB::transaction(function () use (
+            $id,
+            $permission,
+            $data,
+            $actor
+        ): bool {
+            $updated = $this->permissionRepository->update($id, $data);
+
+            if (! $updated) {
+                return false;
+            }
+
+            $this->logWriter->write('permission.updated', [
+                'actor_user_id' => $actor->user_id,
+                'resource_type' => 'permission',
+                'resource_id' => $permission->permission_id,
+                'permission_code' => $permission->code,
+                'changed_fields' => array_keys($data),
+            ]);
+
+            return true;
+        });
     }
 
     public function deletePermission(int $id): bool
     {
-        return $this->permissionRepository->delete($id);
+        $permission = $this->permissionRepository->find($id);
+
+        if (! $permission instanceof Permission) {
+            return false;
+        }
+
+        $actor = $this->authenticatedActor();
+
+        return DB::transaction(function () use (
+            $id,
+            $permission,
+            $actor
+        ): bool {
+            $this->logWriter->write('permission.deleted', [
+                'actor_user_id' => $actor->user_id,
+                'resource_type' => 'permission',
+                'resource_id' => $permission->permission_id,
+                'permission_code' => $permission->code,
+                'permission_name' => $permission->permission_name,
+            ]);
+
+            return $this->permissionRepository->delete($id);
+        });
     }
 
-    // Unified CRUD methods for BaseCrudController
     public function getAll(): Collection
     {
         return $this->getAllPermissions();
@@ -64,5 +136,16 @@ class PermissionService
     public function delete(int $id): bool
     {
         return $this->deletePermission($id);
+    }
+
+    private function authenticatedActor(): User
+    {
+        $actor = Auth::guard('api')->user();
+
+        if (! $actor instanceof User) {
+            throw new AuthorizationException('Unauthenticated.');
+        }
+
+        return $actor;
     }
 }

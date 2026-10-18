@@ -2,6 +2,13 @@
 
 # Environment Setup Guide
 
+Automated tests use a separate MySQL database, `db_spdms_test`. Follow the
+[MySQL test environment guide](docs/mysql-testing.md) to configure `.env.testing`,
+then run `php artisan test`. Tests do not use the application's business database.
+
+For objective progress permissions, API endpoints, audit history and setup, see
+[strategic objective progress](docs/strategic-objective-progress.md).
+
 ---
 
 ## 1. Prerequisites
@@ -235,8 +242,111 @@ cp .env.example .env
 php artisan key:generate
 
 ---
+## 8. Configure JWT Authentication
 
-## 8. Configure Database
+This project uses `tymon/jwt-auth` for API authentication. JWT is configured in `config/jwt.php`, and the API guard is configured in `config/auth.php` with the `jwt` driver.
+
+### Step 1: Generate JWT Secret
+
+After creating the `.env` file and generating the Laravel application key, generate a JWT signing secret:
+
+```bash
+php artisan jwt:secret
+```
+
+This command adds a generated secret to `.env`:
+
+```env
+JWT_SECRET=your_generated_secret
+```
+
+Important:
+
+* Do not commit your personal `.env` file to Git.
+* Each developer must generate their own local JWT secret.
+* Keep the `JWT_SECRET` placeholder in `.env.example`; never store a real secret in the repository.
+
+### Step 2: Check JWT Environment Values
+
+The default JWT values are already included in `.env.example`:
+
+```env
+JWT_SECRET=
+JWT_TTL=30
+JWT_REFRESH_TTL=10080
+JWT_BLACKLIST_ENABLED=true
+JWT_COOKIE_SECURE=false
+```
+
+Meaning:
+
+* `JWT_TTL=30` keeps access tokens valid for 30 minutes.
+* `JWT_REFRESH_TTL=10080` allows refresh for 7 days.
+* `JWT_BLACKLIST_ENABLED=true` invalidates tokens on logout/refresh.
+* `JWT_COOKIE_SECURE=false` supports local HTTP development. Set this to `true` in production when the app runs over HTTPS.
+
+After generating the JWT secret or changing `.env`, clear Laravel's cached configuration:
+
+```bash
+php artisan config:clear
+php artisan cache:clear
+php artisan optimize:clear
+```
+
+### Step 3: How JWT Is Used In This Project
+
+On successful login, the API returns the JWT token in the JSON response and also sets it as an HttpOnly cookie named `access_token`.
+
+Browser requests should use cookies:
+
+* The login frontend posts to `/api/login` with `credentials: 'include'`.
+* The `access_token` cookie is HttpOnly, so JavaScript cannot read it directly.
+* `JwtCookieMiddleware` copies the cookie into an `Authorization: Bearer <token>` header internally so `jwt-auth` can authenticate the request.
+
+External API clients can send the token manually:
+
+```http
+Authorization: Bearer <token>
+```
+
+Requests without a valid JWT will receive a JSON `401 Unauthenticated` response.
+
+### Step 4: Auth Endpoints
+
+Login:
+
+```http
+POST /api/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password"
+}
+```
+
+Response includes:
+
+```json
+{
+  "success": true,
+  "message": "Logged in successfully.",
+  "token": "<jwt_token>"
+}
+```
+
+Current auth routes:
+
+* `POST /api/login` - login and issue JWT.
+* `POST /api/logout` - blacklist the current JWT and clear the cookie.
+* `POST /api/refresh` - rotate the JWT within the refresh window.
+* `GET /api/me` - return the authenticated user.
+* `PUT /api/profile` - update the authenticated user's profile.
+
+The project also exposes `/api/auth/login`, `/api/auth/logout`, `/api/auth/refresh`, `/api/auth/me`, and `/api/auth/profile` variants.
+
+## 9. Configure Database
 
 ### Step 1: Create Database
 
@@ -260,7 +370,7 @@ DB_PASSWORD=your_password
 - Use lowercase `mysql` as the connection name (not `MySQL`)
 ---
 
-## 9. Run Database Migrations
+## 10. Run Database Migrations
 
 php artisan migrate
 
@@ -269,7 +379,7 @@ php artisan db:seed
 
 ---
 
-## 10. Run the Application
+## 11. Run the Application
 
 After completing the environment and database configuration, the application can be started as follows.
 
@@ -346,7 +456,7 @@ public/build/manifest.json
 This usually means the Vite development server has not been started.
 
 
-## 11. Verification
+## 12. Verification
 
 To verify that the setup is successful:
 
@@ -356,7 +466,7 @@ To verify that the setup is successful:
 
 ---
 
-## 12. Notes
+## 13. Notes
 
 * Ensure both backend and frontend servers are running during development
 * The frontend server (`npm run dev`) is required for asset compilation
@@ -374,7 +484,7 @@ php artisan config:clear
 
 ---
 
-## 13. Common Issues
+## 14. Common Issues
 
 ### Xdebug Timeout Message
 
@@ -453,10 +563,11 @@ Run:
 ```bash
 php artisan config:clear
 php artisan cache:clear
+php artisan optimize:clear
 ```
 ---
 
-## 14. Security Considerations
+## 15. Security Considerations
 
 * Each team member must use their own GitHub token
 * Follow the principle of least privilege (read-only access where possible)
@@ -466,7 +577,7 @@ php artisan cache:clear
 
 ---
 
-## 15. About Laravel
+## 16. About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
 
@@ -480,7 +591,7 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
-## 16. Version Control
+## 17. Version Control
 
 This project uses a Laravel-standard `.gitignore` configuration to exclude:
 
@@ -490,7 +601,7 @@ This project uses a Laravel-standard `.gitignore` configuration to exclude:
 
 This ensures security and consistency across development environments.
 
-## 17. Summary
+## 18. Summary
 
 To set up the project locally:
 
@@ -499,7 +610,7 @@ To set up the project locally:
 3. Clone repository
 4. Install dependencies
 5. Configure environment
-6. Run migrations
+6. Initialize the empty database with `php artisan migrate --seed` (see [database initialization](docs/database-initialization.md) for existing databases)
 7. Start the application
 
 This ensures consistency across all development environments.

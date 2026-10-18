@@ -3,53 +3,27 @@
 namespace App\Services;
 
 use App\Models\Log;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Model;
+use App\Repositories\LogRepository;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class LogService
 {
-    public function getAll(array $filters = []): Collection
-    {
-        $query = Log::with('user')->latest();
-
-        if (!empty($filters['user_id'])) {
-            $query->where('user_id', $filters['user_id']);
-        }
-
-        if (!empty($filters['states'])) {
-            $query->where('states', $filters['states']);
-        }
-
-        return $query->get();
+    public function __construct(
+        private readonly LogRepository $logRepository
+    ) {
     }
 
-    public function getById(int $id): ?Model
+    public function search(array $filters): LengthAwarePaginator
     {
-        return Log::with('user')->find($id);
+        $filters['sort_by'] ??= 'created_at';
+        $filters['sort_direction'] ??= 'desc';
+        $filters['per_page'] ??= 25;
+
+        return $this->logRepository->search($filters);
     }
 
-    public function create(array $data): Model
+    public function getById(int $id): ?Log
     {
-        return Log::create($data)->load('user');
-    }
-
-    public function update(int $id, array $data): ?Model
-    {
-        $log = Log::find($id);
-
-        if (!$log) {
-            return null;
-        }
-
-        $log->update($data);
-
-        return $log->load('user');
-    }
-
-    public function delete(int $id): bool
-    {
-        $log = Log::find($id);
-
-        return $log ? (bool) $log->delete() : false;
+        return $this->logRepository->find($id);
     }
 }

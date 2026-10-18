@@ -2,28 +2,27 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
+use App\Validation\LogValidationRules;
+use App\Validation\ValidationAttributes;
 
 class UpdateLogRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['logs.update'];
     }
 
     public function rules(): array
     {
         return [
-            'user_id'   => ['sometimes', 'integer', Rule::exists('tblusers', 'user_id')],
-            'operation' => ['sometimes', 'string'],
-            'states'    => ['nullable', 'string', 'max:255'],
+            'user_id'   => LogValidationRules::userIdOptional(),
+            'operation' => LogValidationRules::operationOptional(),
+            'states'    => LogValidationRules::statesOptional(),
         ];
     }
 
     public function attributes(): array
     {
-        return [
-            'user_id' => 'user',
-        ];
+        return ValidationAttributes::all();
     }
 }

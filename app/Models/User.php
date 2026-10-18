@@ -2,30 +2,44 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable implements JWTSubject
+class User extends Authenticatable implements JWTSubject, CanResetPasswordContract
 {
-    use HasFactory, Notifiable;
+    use CanResetPassword, HasFactory, Notifiable;
 
     protected $table      = 'tblusers';
     protected $primaryKey = 'user_id';
 
     protected $fillable = [
-        'name',
         'first_name',
         'last_name',
-        'department',
         'email',
         'password',
+        'mobile',
+        'department',
+        'unit',
+        'office',
+        'position',
+        'designation',
         'role_id',
         'status',
-        'mobile',
+        'failed_login_attempts',
+        'locked_until',
+        'last_activity_at',
         'address',
+        'gender',
+        'date_of_birth',
         'profile_picture',
+        'unit',
+        'office',
+        'position',
+
     ];
 
     protected $hidden = [
@@ -37,7 +51,12 @@ class User extends Authenticatable implements JWTSubject
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
+            'date_of_birth' => 'date',
+            'auth_version' => 'integer',
+            'password' => 'hashed',
+            'locked_until' => 'datetime',
+            'last_activity_at' => 'datetime',
+            'failed_login_attempts' => 'integer',
         ];
     }
 
@@ -75,6 +94,7 @@ class User extends Authenticatable implements JWTSubject
         return [
             'role_id'   => $this->role_id,
             'role_name' => $this->role?->role_name,
+            'auth_version' => (int) $this->auth_version,
         ];
     }
 

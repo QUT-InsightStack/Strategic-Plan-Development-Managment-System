@@ -2,24 +2,23 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Rule;
+use App\Validation\FoundationValidationRules;
 
 class StoreFoundationsRequest extends ApiFormRequest
 {
-    public function authorize(): bool
+    protected function requiredPermissions(): array
     {
-        return true;
+        return ['strategic_foundations.create'];
     }
 
     public function rules(): array
     {
         return [
-            'created_by' => ['required', 'integer', Rule::exists('tblusers', 'user_id')],
-            'updated_by' => ['nullable', 'integer', Rule::exists('tblusers', 'user_id')],
-            'type'       => ['required', 'string', Rule::in(['MISSION', 'VISION', 'CORE_VALUE'])],
-            'content'    => ['required', 'string'],
-            'version'    => ['required', 'string', 'max:255'],
+            'created_by' => FoundationValidationRules::createdByRequired(),
+            'updated_by' => FoundationValidationRules::updatedByOptional(),
+            'type'       => FoundationValidationRules::typeRequired(),
+            'content'    => FoundationValidationRules::contentRequired(),
+            'version'    => FoundationValidationRules::versionRequired(),
         ];
     }
 }
-
