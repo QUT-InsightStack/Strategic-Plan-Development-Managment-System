@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Http\Middleware\ValidateAuthVersion;
 use App\Models\Log;
 use App\Models\Role;
 use App\Models\User;
@@ -35,8 +34,8 @@ class ProfileTest extends TestCase
     {
         $user = $this->createUser(['designation' => 'Senior Analyst']);
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->getJson('/api/auth/me')
             ->assertOk()
             ->assertJsonPath('data.email', $user->email)
@@ -48,8 +47,8 @@ class ProfileTest extends TestCase
     {
         $user = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $response = $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $response = $this
             ->getJson('/api/auth/me')
             ->assertOk();
 
@@ -63,8 +62,8 @@ class ProfileTest extends TestCase
     {
         $user = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->putJson('/api/auth/profile', [
                 'first_name'  => 'Updated',
                 'last_name'   => 'Name',
@@ -90,8 +89,8 @@ class ProfileTest extends TestCase
             'address'     => 'Original address',
         ]);
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->putJson('/api/auth/profile', ['first_name' => 'OnlyThis'])
             ->assertOk();
 
@@ -105,8 +104,8 @@ class ProfileTest extends TestCase
     {
         $user = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->putJson('/api/auth/profile', ['designation' => 'Director'])
             ->assertOk();
 
@@ -125,8 +124,8 @@ class ProfileTest extends TestCase
     {
         $user = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->putJson('/api/auth/profile', ['email' => 'not-an-email'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('email');
@@ -137,8 +136,8 @@ class ProfileTest extends TestCase
         $other = $this->createUser(['email' => 'taken@example.com']);
         $user  = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->putJson('/api/auth/profile', ['email' => 'taken@example.com'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('email');
@@ -148,8 +147,8 @@ class ProfileTest extends TestCase
     {
         $user = $this->createUser(['email' => 'mine@example.com']);
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->putJson('/api/auth/profile', ['email' => 'mine@example.com'])
             ->assertOk();
     }
@@ -158,8 +157,8 @@ class ProfileTest extends TestCase
     {
         $user = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->putJson('/api/auth/profile', ['designation' => str_repeat('a', 256)])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('designation');
@@ -179,8 +178,8 @@ class ProfileTest extends TestCase
         foreach (UserValidationRules::GENDERS as $code) {
             $user = $this->createUser();
 
-            $this->actingAs($user, 'api');
-            $this->withoutMiddleware(ValidateAuthVersion::class)
+            $this->authenticateApiUser($user);
+            $this
                 ->putJson('/api/auth/profile', ['gender' => $code])
                 ->assertOk();
 
@@ -192,8 +191,8 @@ class ProfileTest extends TestCase
     {
         $user = $this->createUser(['gender' => 'female']);
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->putJson('/api/auth/profile', ['gender' => null])
             ->assertOk();
 
@@ -208,8 +207,8 @@ class ProfileTest extends TestCase
     {
         $user = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->putJson('/api/auth/profile', ['gender' => true])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('gender');
@@ -221,8 +220,8 @@ class ProfileTest extends TestCase
     {
         $user = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             // Labels are an interface concern; only the codes are stored.
             ->putJson('/api/auth/profile', ['gender' => 'Female'])
             ->assertUnprocessable()
@@ -239,8 +238,8 @@ class ProfileTest extends TestCase
         $user  = $this->createUser();
         $originalRoleId = $user->role_id;
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->putJson('/api/auth/profile', [
                 'first_name' => 'Updated',
                 'role_id'    => $role->role_id,
@@ -257,8 +256,8 @@ class ProfileTest extends TestCase
     {
         $user = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->putJson('/api/auth/profile', ['status' => 'suspended'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('status');
@@ -271,8 +270,8 @@ class ProfileTest extends TestCase
     {
         $user = $this->createUser(['department' => 'Planning']);
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->putJson('/api/auth/profile', [
                 'department' => 'Executive',
                 'unit'       => 'Strategy',
@@ -291,8 +290,8 @@ class ProfileTest extends TestCase
         $user = $this->createUser();
         $originalHash = $user->password;
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->putJson('/api/auth/profile', ['password' => 'new-password-123'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('password');
@@ -310,8 +309,8 @@ class ProfileTest extends TestCase
 
         // user_id is restricted, so an attempt to target another account
         // is rejected outright rather than silently ignored.
-        $this->actingAs($actor, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->putJson('/api/auth/profile', [
                 'user_id'    => $victim->user_id,
                 'first_name' => 'Hijacked',
@@ -330,8 +329,8 @@ class ProfileTest extends TestCase
         $other = $this->createUser(['first_name' => 'Other']);
         $actor = $this->createUser(['first_name' => 'Actor']);
 
-        $this->actingAs($actor, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->putJson('/api/auth/profile', ['first_name' => 'Renamed'])
             ->assertOk();
 

@@ -43,7 +43,7 @@ class AuthenticationLoginService
                 $this->history->recordFailedLogin(
                     $email,
                     $request,
-                    'locked_out'
+                    'account_locked'
                 );
 
                 return [
@@ -100,7 +100,8 @@ class AuthenticationLoginService
                 $this->history->recordFailedLogin(
                     $email,
                     $request,
-                    'invalid_credentials'
+                    $state->locked_until ? 'account_locked'
+                        : (! $user ? 'unknown_email' : (! $matches ? 'invalid_credentials' : 'inactive_account'))
                 );
 
                 return [

@@ -4,14 +4,14 @@ import { canonicalOfficeUrl, navigationFor, flattenNavigation, canOpenPage, isCu
 import { listUploadPlans } from '../../resources/js/api/strategic-plans-api.js';
 import { officePlanHref, officeViewShowsAllPlans } from '../../resources/js/pages/office/office-plan-navigation.js';
 
-test('Office plan actions keep their own destination and all-plan read scope', () => {
+test('Office plan actions keep their destination and assigned-plan scope', () => {
     for (const view of ['review', 'comments', 'proposal']) {
         const url = new URL(officePlanHref(17, view), 'http://localhost');
         assert.equal(url.searchParams.get('plan'), '17');
         assert.equal(url.searchParams.get('view') || 'review', view);
-        assert.equal(url.searchParams.get('include_all_office_plans'), '1');
-        assert.equal(officeViewShowsAllPlans(view), true);
-        assert.equal(pageForUrl(url.href, 'Office').id, view === 'review' ? 'office-review' : view === 'comments' ? 'comments' : 'proposals');
+        assert.equal(url.searchParams.has('include_all_office_plans'), false);
+        assert.equal(officeViewShowsAllPlans(view), false);
+        assert.equal(pageForUrl(url.href, 'Office').id, view === 'review' ? 'office-review' : view === 'comments' ? 'office-comments' : 'office-proposals');
     }
     assert.equal(officeViewShowsAllPlans('inputs'), false);
     assert.equal(new URL(officePlanHref(17, 'inputs'), 'http://localhost').searchParams.has('include_all_office_plans'), false);
@@ -68,5 +68,5 @@ test('draft upload selector loads all result pages and never asks for broader Of
 
 test('read-only mapping resolves independently from the mapping editor', () => {
     assert.equal(pageForUrl('/mappings?mode=view', 'Office').id, 'alignment');
-    assert.equal(pageForUrl('/mappings', 'Office').id, 'mapping');
+    assert.equal(pageForUrl('/mappings', 'Office'), undefined);
 });

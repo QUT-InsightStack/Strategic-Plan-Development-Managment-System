@@ -106,7 +106,7 @@ class SystemMonitoringService
             if ($metrics['failed_backups'] > 0) {
                 $issues[] = 'backup.failed';
             }
-            $consecutive = LoginHistory::where('status', 'failed')
+            $consecutive = LoginHistory::select('email')->where('status', 'failed')
                 ->whereBetween('attempted_at', [now()->subMinutes(config('monitoring.window_minutes')), now()])
                 ->whereNotExists(function ($query): void {
                     $query->selectRaw('1')->from('tbllogin_history as success')

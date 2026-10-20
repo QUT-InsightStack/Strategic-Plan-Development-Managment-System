@@ -26,7 +26,7 @@ function host(path, dependencies, planId = 7) {
         ReactDOM: { createRoot: () => ({ render: element => { root = element; } }) },
         document: { getElementById: () => ({ dataset: { planId } }) },
         mountProtectedPage: (_element, factory) => { root = factory(); },
-        enforcePageAccess: () => {}, AppSidebar: 'aside', PageHeader: 'header', Breadcrumb: 'nav',
+        enforcePageAccess: () => {}, can: () => true, AppSidebar: 'aside', PageHeader: 'header', Breadcrumb: 'nav',
         ...dependencies,
     });
     const source = readFileSync(new URL(`../../resources/js/pages/${path}`, import.meta.url), 'utf8');
@@ -48,10 +48,11 @@ function text(tree) {
 }
 
 const plan = {
-    record_id: 7, title: 'Submitted research strategy', status: 'finished', approval_status: 'not_submitted',
+    record_id: 7, title: 'Submitted research strategy', level: 'strategic_plan', status: 'finished', approval_status: 'not_submitted',
+    planning_start_date: '2026-01-01', planning_end_date: '2031-12-31',
     mission_foundation: { content: 'Research for all' }, vision_foundation: { content: 'Better outcomes' },
     core_values: [{ content: 'Integrity' }], creator: { first_name: 'Plan', last_name: 'Author' },
-    objectives: [{ objective_id: 3, objective_title: 'Access', expected_outcome: 'Participation', indicator: 'Count', status: 'draft', comments: [] }],
+    objectives: [{ objective_id: 3, objective_title: 'Access', expected_outcome: 'Participation', indicator: 'Count', target: '100', responsible_office_agency: 'Research Office', status: 'draft', comments: [] }],
     documents: [{ document_id: 12, original_filename: 'Evidence.pdf' }],
 };
 

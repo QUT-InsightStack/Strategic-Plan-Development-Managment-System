@@ -3,6 +3,8 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/storage/avatars/{filename}', [\App\Http\Controllers\ProfilePhotoController::class, 'show']);
+
 Route::view('/', 'pages.landing')->name('home');
 
 Route::view('/login', 'pages.login')->name('login');

@@ -23,7 +23,7 @@ function panel(roleName) {
         can: permission => permission === (roleName === 'Planning Officer' ? PERMISSIONS.OBJECTIVES_CORRECT_PROGRESS : PERMISSIONS.OBJECTIVES_UPDATE_PROGRESS),
         getAccessSession: () => ({ roleName, roleLabel: roleName, name: `${roleName} User`, office: 'ICT Office' }), P: PERMISSIONS,
         calculatedProgressStatus, progressStatusLabel,
-        listObjectiveProgress: async () => ({ data: [{ objective_id: 7, objective_title: 'Research capability', progress_percentage: 40, progress_status: 'in_progress', status: 'published', strategic_plan: { title: 'Plan', status: 'finished' } }], meta: { last_page: 1, total: 1 } }),
+        listObjectiveProgress: async () => ({ data: [{ objective_id: 7, objective_title: 'Research capability', progress_percentage: 40, progress_status: 'in_progress', status: 'published', strategic_plan: { title: 'Plan', status: 'finished', approval_status: 'approved' } }], meta: { last_page: 1, total: 1 } }),
         listObjectiveProgressHistory: async () => ({ data: [], meta: { last_page: 1 } }),
         updateObjectiveProgress: async (...args) => { sent = args; },
     });

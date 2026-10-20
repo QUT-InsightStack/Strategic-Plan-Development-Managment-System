@@ -48,7 +48,7 @@ class LoginHistoryRecorder
             ->where('email', $normalizedEmail)
             ->first();
     
-        return LoginHistory::query()->create([
+        $history = LoginHistory::query()->create([
             'user_id' => $user?->user_id,
             'user_name' => $user
                 ? $this->userName($user)

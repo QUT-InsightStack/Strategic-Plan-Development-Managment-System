@@ -24,6 +24,9 @@ function host(file, globals = {}) {
         getAccessSession: () => ({ office: 'ICT Office' }),
         objectivesAssignedToOffice: objectives => objectives,
         can: () => true,
+        navigationRole: () => 'office',
+        Breadcrumb: 'nav', ObjectiveFeedback: 'objective-feedback',
+        listPlanAlignments: async () => ({ data: [] }),
         ...globals,
     });
     const source = readFileSync(new URL(`../../resources/js/pages/office/${file}`, import.meta.url), 'utf8')
@@ -43,7 +46,7 @@ test('plan review is read-only while comments and proposals use separate fixed a
         const component = host('office-plan-detail.js', {
             OfficeComments: 'action-panel',
             getStrategicPlan: async (id, params) => { calls.push(['plan', id, params.include_all_office_plans]); return { data: plan }; },
-            listStrategicObjectives: async (id, params) => { calls.push(['objectives', id, params.include_all_office_plans]); return { data: [] }; },
+            listStrategicObjectives: async id => { calls.push(['objectives', id]); return { data: [] }; },
         });
         const tree = await component.load({ planId: 17, mode, includeAllOfficePlans: true });
         const actions = treeNodes(tree, node => node.type === 'action-panel');
@@ -51,7 +54,7 @@ test('plan review is read-only while comments and proposals use separate fixed a
         if (actions.length) assert.equal(actions[0].props.mode, mode);
         assert.equal(tree.props.className.includes('office-detail--with-action'), mode !== 'review');
         assert.equal(treeNodes(tree, node => node.props.className === 'office-detail-scroll').length, 1);
-        assert.deepEqual(calls.map(call => [...call]), [['plan', 17, 1], ['objectives', 17, 1]]);
+        assert.deepEqual(calls.map(call => [...call]), [['plan', 17, 1], ['objectives', 17]]);
     }
 });
 
@@ -74,10 +77,10 @@ test('proposal panel sends a plan-level objective proposal without a comment for
     assert.equal('objective_id' in requests[0][1], false);
 });
 
-test('comment panel submits against the plan and contains no objective proposal fields', async () => {
+test('comment panel submits plan feedback for planning review without proposal fields', async () => {
     const requests = [];
     const component = host('office-comments.js', {
-        addStrategicPlanComment: async (...args) => { requests.push(args); },
+        submitPlanInput: async (...args) => { requests.push(args); },
         listStrategicPlanComments: async () => ({ data: [], meta: { last_page: 1 } }),
     });
     let tree = component.render({ plan, mode: 'comments' });
@@ -85,5 +88,8 @@ test('comment panel submits against the plan and contains no objective proposal 
     treeNodes(tree, node => node.props.id === 'office-plan-comment')[0].props.onChange({ target: { value: 'Plan-level feedback' } });
     tree = component.render({ plan, mode: 'comments' });
     await treeNodes(tree, node => node.type === 'form')[0].props.onSubmit({ preventDefault() {} });
-    assert.deepEqual(requests, [[17, 'Plan-level feedback']]);
+    assert.equal(requests[0][0], 17);
+    assert.equal(requests[0][1].content, 'Plan feedback:\nPlan-level feedback');
+    assert.equal(requests[0][1].feedback_category, 'plan_feedback');
+    assert.equal(requests[0][1].input_type, 'change_request');
 });

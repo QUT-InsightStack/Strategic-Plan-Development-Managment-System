@@ -420,11 +420,11 @@ class SystemMonitoringTest extends TestCase
     public function test_query_plans_use_time_indexes_for_events_and_audits(): void
     {
         foreach ([['severity', 'error', 'system_events_severity_time'], ['source', 'http', 'system_events_source_time']] as [$field, $value, $index]) {
-            $plan = DB::select("EXPLAIN QUERY PLAN SELECT * FROM tblsystem_events WHERE $field = ? AND occurred_at >= ? AND occurred_at <= ? ORDER BY occurred_at DESC, id DESC LIMIT 25", [$value, now()->subHour(), now()]);
+            $plan = DB::select("EXPLAIN SELECT * FROM tblsystem_events WHERE $field = ? AND occurred_at >= ? AND occurred_at <= ? ORDER BY occurred_at DESC, id DESC LIMIT 25", [$value, now()->subHour(), now()]);
             $this->assertStringContainsString($index, json_encode($plan));
             $this->assertStringNotContainsString('USE TEMP B-TREE', json_encode($plan));
         }
-        $plan = DB::select('EXPLAIN QUERY PLAN SELECT * FROM tbllog WHERE created_at >= ? AND created_at < ? ORDER BY created_at DESC, log_id DESC LIMIT 25', [now()->subHour(), now()]);
+        $plan = DB::select('EXPLAIN SELECT * FROM tbllog WHERE created_at >= ? AND created_at < ? ORDER BY created_at DESC, log_id DESC LIMIT 25', [now()->subHour(), now()]);
         $this->assertStringContainsString('tbllog_created_log_idx', json_encode($plan));
         $this->artisan('monitoring:explain')->assertExitCode(0);
     }

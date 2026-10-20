@@ -39,6 +39,7 @@ class ManagementProgressTimelineTest extends TestCase
     public function test_management_receives_objectives_and_progress_history_for_the_plan(): void
     {
         $objective = $this->objective('ICT Office');
+        $this->plan->forceFill(['status' => 'finished', 'approval_status' => 'approved'])->save();
         $this->authenticateApiUser($this->planner);
         $this->patchJson('/api/strategic-objectives/'.$objective->objective_id.'/progress', ['progress_percentage' => 40, 'reason' => 'First report'])->assertOk();
         $this->patchJson('/api/strategic-objectives/'.$objective->objective_id.'/progress', ['progress_percentage' => 100, 'reason' => 'Completed'])->assertOk();

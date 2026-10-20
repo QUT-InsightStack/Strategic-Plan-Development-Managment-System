@@ -70,18 +70,19 @@ class BackupService
                 @unlink($path);
             }
 
+            $message = $this->sanitize($exception->getMessage(), $connection);
             $backup = Backup::create([
                 'filename' => $filename,
                 'size_bytes' => null,
                 'driver' => (string) $driver,
                 'status' => 'failed',
-                'error_message' => $this->sanitize($exception->getMessage(), $connection),
+                'error_message' => $message,
                 'created_by' => $actor->user_id,
             ]);
 
             $this->audit($actor, 'backup.failed', $backup, 'failed');
 
-            throw $exception;
+            throw new RuntimeException($message, 0, $exception);
         }
 
         $backup = Backup::create([
@@ -297,7 +298,7 @@ class BackupService
             $result = Process::path(dirname($path))
                 ->timeout(self::TIMEOUT)
                 ->run([
-                    'mysql',
+                    (string) config('backup.mysql_path', 'mysql'),
                     '--defaults-extra-file=' . $defaultsFile,
                     '--database=' . $config['database'],
                     '--execute=source ' . basename($path),
@@ -305,7 +306,7 @@ class BackupService
 
             if (! $result->successful()) {
                 throw new RuntimeException(
-                    'mysql restore failed: ' . trim($result->errorOutput() ?: $result->output())
+                    $this->sanitize('mysql restore failed: ' . trim($result->errorOutput() ?: $result->output()), $connection)
                 );
             }
         } finally {
@@ -396,7 +397,9 @@ class BackupService
             $message = str_replace($password, '[redacted]', $message);
         }
 
-        return Str::limit($message, self::ERROR_LIMIT);
+        // JSON and MySQL require UTF-8 even when Windows command output uses
+        // a legacy code page. Preserve an actionable error instead of a JSON error.
+        return Str::limit(mb_scrub($message, 'UTF-8'), self::ERROR_LIMIT);
     }
 
     private function audit(User $actor, string $event, Backup $backup, string $state): void
