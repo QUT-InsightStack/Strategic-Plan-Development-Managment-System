@@ -126,8 +126,24 @@
     color: var(--color-text-secondary);
     font-size: 12px;
 }
-.finalize-actions { display: grid; grid-template-columns: 1fr 1.25fr; gap: var(--space-2); padding: var(--space-3); border-top: 1px solid var(--color-border-subtle); }
-.finalize-actions .ui-button { width: 100%; white-space: nowrap; }
+.finalize-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-top: 1px solid var(--color-border-subtle);
+    min-width: 0;
+}
+
+.finalize-actions .ui-button {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+}
 .finalize-feedback { margin-bottom: var(--space-4); }
 .finalize-dialog .ui-dialog__icon { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-info-soft); }
 .finalize-dialog .ui-dialog__actions { display: grid; grid-template-columns: 1fr 1fr; }
