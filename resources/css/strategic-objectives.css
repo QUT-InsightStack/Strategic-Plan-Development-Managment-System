@@ -14,7 +14,36 @@
 .objectives-back { display: inline-block; margin-bottom: var(--space-3); color: var(--color-primary); }
 .objectives-notes { margin: var(--space-4) var(--space-5) 0; padding-top: var(--space-4); border-top: 1px solid var(--color-border-subtle); }
 .objectives-progress { margin-top: var(--space-5); }
-.objective-plan-picker__fields { display: grid; grid-template-columns: 1fr 1.5fr; gap: var(--space-4); margin-bottom: var(--space-4); }
+/* Objectives list: the same single-row labelled filter bar as Planning Inputs and the Management dashboard. */
+.objectives-filters { display: flex; align-items: end; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-4); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4); background: var(--color-surface); box-shadow: var(--shadow-xs); }
+.objectives-filters label { display: grid; flex: 1 1 160px; max-width: 260px; gap: 4px; color: var(--color-text-secondary); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); }
+.objectives-filters .objectives-filters__search { flex: 2 1 240px; max-width: 360px; }
+.objectives-filters select, .objectives-filters input { width: 100%; min-width: 0; min-height: 36px; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 6px 10px; color: var(--color-text); background: var(--color-surface); font: inherit; font-weight: 400; }
+.objectives-filters select:focus-visible, .objectives-filters input:focus-visible { border-color: var(--color-focus); outline: none; box-shadow: var(--focus-ring); }
+.objectives-filters__reset { align-self: end; margin-left: auto; }
+.objectives-heading .ui-help { margin: 2px 0 0; }
+.objectives-card .ui-error { margin: var(--space-4) var(--space-5) 0; }
+.objectives-register__row { cursor: pointer; }
+.objectives-register__row:hover td { background: var(--color-surface-muted); }
+/* Register columns size to their content within a minimum and maximum width. The width limits sit on an
+   inner wrapper because browsers ignore max-width on table cells. */
+.objectives-table.objectives-register th:first-child, .objectives-table.objectives-register td:first-child { width: auto; text-align: left; }
+.objectives-table.objectives-register td { overflow-wrap: break-word; }
+.objectives-register__cell { min-width: var(--cell-min); max-width: var(--cell-max); }
+.objectives-register td:nth-child(1) { --cell-min: 220px; --cell-max: 460px; }
+.objectives-register td:nth-child(2) { --cell-min: 160px; --cell-max: 300px; }
+.objectives-register td:nth-child(3) { --cell-min: 140px; --cell-max: 240px; }
+.objectives-register th:nth-child(n+4), .objectives-register td:nth-child(n+4) { width: 1%; white-space: nowrap; }
+.objectives-register__open { border: 0; padding: 0; color: var(--color-primary); background: transparent; font: inherit; font-weight: var(--font-weight-semibold); text-align: left; cursor: pointer; }
+.objectives-register__open:hover { text-decoration: underline; }
+.objectives-register__open:focus-visible { border-radius: var(--radius-sm); outline: none; box-shadow: var(--focus-ring); }
+/* Read-only objective view */
+.objective-view { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); margin: 0; }
+.objective-view__item { display: grid; gap: var(--space-1); }
+.objective-view__item:nth-child(-n+3) { grid-column: 1 / -1; }
+.objective-view dt { color: var(--color-text-secondary); font-size: 12px; }
+.objective-view dd { margin: 0; color: var(--color-text); font-size: var(--font-size-sm); overflow-wrap: anywhere; white-space: pre-line; }
+.objective-view dd ul { margin: 0; padding-left: var(--space-4); }
 .objectives-table th { white-space: normal; }
 .objectives-table td { overflow-wrap: anywhere; vertical-align: top; }
 .objectives-table__actions { flex-wrap: wrap; }
@@ -40,7 +69,9 @@
 .objectives-page-actions { display: flex; justify-content: space-between; gap: var(--space-4); padding: var(--space-5) var(--space-2) 0; }
 @media (max-width: 900px) { .plan-summary-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
 @media (max-width: 560px) {
-    .objective-plan-picker__fields { grid-template-columns: 1fr; }
+    .objectives-filters label, .objectives-filters .objectives-filters__search { flex: 1 1 100%; max-width: none; }
+    .objectives-filters__reset { margin-left: 0; }
+    .objective-view { grid-template-columns: 1fr; }
     .plan-summary-grid {
         grid-template-columns: 1fr;
     }
