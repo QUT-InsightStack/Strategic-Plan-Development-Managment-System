@@ -54,8 +54,7 @@ class ManagementObjectiveCommentPermissionSeeder extends Seeder
             'Planner/Encoder' => $planner,
             'Administrative Admin' => $planner,
             'Administrative Administrator' => $planner,
-            'Administrator' => array_keys($definitions),
-            'test' => array_keys($definitions),
+            
         ];
 
         foreach ($assignments as $roleName => $codes) {
