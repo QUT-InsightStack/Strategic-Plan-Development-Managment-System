@@ -19,11 +19,12 @@ function host(file, overrides = {}, search = '') {
         mountProtectedPage: (_element, factory) => { root = factory(); },
         document: { getElementById: () => ({ dataset: { planId: '17' } }) }, URL, URLSearchParams,
         window: { location: { href: `http://localhost/strategic-objectives${search}`, search, assign: value => navigation.push(value), replace: value => navigation.push(value) }, history: { replaceState() {} }, addEventListener() {}, removeEventListener() {} },
-        P, can: () => true, getAccessSession: () => ({}), getAssignableUnits: () => [],
+        P, can: () => true, getAccessSession: () => ({}), getAssignableUnits: () => [], useDialogBehaviour: () => ({ current: null }),
         AppSidebar: 'aside', AppDialog: 'confirmation', PageHeader: 'header', ObjectiveProgressPanel: 'progress', ObjectiveFormDialog: 'objective-form', AssignUnitDialog: 'assign',
         listStrategicPlans: async () => ({ data: [plan, { ...plan, record_id: 18, title: 'Second plan' }], meta: { last_page: 1 } }),
         listResponsibleUnits: async () => ({ data: [] }),
         listStrategicObjectives: async () => ({ data: [] }),
+        listAllStrategicObjectives: async () => ({ data: [], meta: { current_page: 1, last_page: 1, total: 0 } }),
         getStrategicPlan: async () => ({ data: plan }),
         ...overrides,
     });
@@ -36,19 +37,85 @@ function text(tree) { return tree == null || tree === false ? '' : typeof tree !
 function find(tree, id) { return nodes(tree, node => node.props.id === id)[0]; }
 function button(tree, label) { return nodes(tree, node => node.type === 'button' && text(node).trim() === label)[0]; }
 
-test('selection entry only chooses a plan and opens its original objective page', async () => {
+// Function components are not rendered by this host, so render the view and header actions directly.
+function objectiveView(tree) { const element = nodes(tree, node => node.type?.name === 'ObjectiveViewDialog')[0]; return element.type(element.props); }
+function headerAction(tree) { return nodes(tree, node => node.type === 'header')[0].props.actions; }
+const listed = { objective_id: 42, strategic_plan_id: 17, objective_title: 'Grow research income', expected_outcome: 'More grants', target: '50 grants',
+    responsible_office_agency: 'Research Office', status: 'draft', updated_at: '2026-10-01T00:00:00Z', strategic_plan: { record_id: 17, title: 'Research plan', status: 'draft' } };
+
+test('objectives page lists objectives with a filter bar instead of a plan selector', async () => {
+    const requests = [];
+    const app = host('strategic-objectives-list-app.js', {
+        listAllStrategicObjectives: async params => { requests.push(params); return { data: [listed], meta: { current_page: 1, last_page: 1, total: 1 } }; },
+        listResponsibleUnits: async () => ({ data: [{ responsible_office_agency: 'Research Office' }] }),
+    });
+    let tree = await app.init();
+    assert.equal(find(tree, 'selected-plan'), undefined);
+    assert.match(text(tree), /Grow research income/);
+    assert.match(text(tree), /Research Office/);
+    assert.match(text(find(tree, 'objective-filter-plan_id')), /Second plan/);
+    find(tree, 'objective-filter-plan_id').props.onChange({ target: { value: '18' } });
+    await setImmediate(); tree = app.render();
+    find(tree, 'objective-filter-status').props.onChange({ target: { value: 'archived' } });
+    await setImmediate(); tree = app.render();
+    assert.equal(requests.at(-1).plan_id, '18');
+    assert.equal(requests.at(-1).status, 'archived');
+    nodes(tree, node => node.type === 'button' && /Reset filters/.test(text(node)))[0].props.onClick();
+    await setImmediate();
+    assert.equal(requests.at(-1).plan_id, '');
+    assert.equal(requests.at(-1).status, '');
+});
+
+test('maintainers who select an objective are taken to the add page with it open', async () => {
+    const app = host('strategic-objectives-list-app.js', {
+        listAllStrategicObjectives: async () => ({ data: [listed], meta: { current_page: 1, last_page: 1, total: 1 } }),
+    });
+    const tree = await app.init();
+    nodes(tree, node => node.type === 'button' && text(node).trim() === 'Grow research income')[0].props.onClick({ stopPropagation() {} });
+    assert.deepEqual(app.navigation, ['/strategic-plans/17/objectives?edit=42']);
+});
+
+test('objectives of approved plans open read-only even for maintainers', async () => {
+    const approved = { ...listed, strategic_plan: { ...listed.strategic_plan, approval_status: 'approved' } };
+    const app = host('strategic-objectives-list-app.js', {
+        listStrategicPlans: async () => ({ data: [], meta: { last_page: 1 } }),
+        listAllStrategicObjectives: async () => ({ data: [approved], meta: { current_page: 1, last_page: 1, total: 1 } }),
+    });
+    let tree = await app.init();
+    nodes(tree, node => node.props.className === 'objectives-register__row')[0].props.onClick();
+    tree = app.render();
+    const view = objectiveView(tree);
+    assert.equal(app.navigation.length, 0);
+    assert.match(text(view), /View Strategic Objective/);
+    assert.match(text(view), /50 grants/);
+    assert.equal(nodes(view, node => ['input', 'textarea', 'select'].includes(node.type)).length, 0, 'the view has no editable fields');
+    assert.equal(nodes(view, node => node.type === 'a').length, 0);
+});
+
+test('read-only accounts get no link to the add page and no add button', async () => {
+    const app = host('strategic-objectives-list-app.js', {
+        can: permission => permission === P.OBJECTIVES_VIEW,
+        listAllStrategicObjectives: async () => ({ data: [listed], meta: { current_page: 1, last_page: 1, total: 1 } }),
+    });
+    let tree = await app.init();
+    assert.equal(headerAction(tree), null);
+    nodes(tree, node => node.props.className === 'objectives-register__row')[0].props.onClick();
+    tree = app.render();
+    const view = objectiveView(tree);
+    assert.match(text(view), /Grow research income/);
+    assert.equal(nodes(view, node => node.type === 'a').length, 0);
+});
+
+test('add objective opens the add page for the filtered plan', async () => {
     const app = host('strategic-objectives-list-app.js');
     let tree = await app.init();
-    assert.equal(nodes(tree, node => node.type === 'objective-form').length, 0);
-    assert.equal(button(tree, 'Open Objectives').props.disabled, true);
-    find(tree, 'plan-search').props.onChange({ target: { value: 'Second' } });
-    tree = app.render();
-    assert.match(text(find(tree, 'selected-plan')), /Second plan/);
-    assert.doesNotMatch(text(find(tree, 'selected-plan')), /Research plan/);
-    find(tree, 'selected-plan').props.onChange({ target: { value: '18' } });
-    tree = app.render();
-    nodes(tree, node => node.type === 'form')[0].props.onSubmit({ preventDefault() {} });
-    assert.deepEqual(app.navigation, ['/strategic-plans/18/objectives']);
+    headerAction(tree).props.onClick(); tree = app.render();
+    assert.equal(app.navigation.length, 0);
+    assert.match(text(tree), /Choose a Strategic Plan/);
+    find(tree, 'objective-filter-plan_id').props.onChange({ target: { value: '17' } });
+    await setImmediate(); tree = app.render();
+    headerAction(tree).props.onClick();
+    assert.deepEqual(app.navigation, ['/strategic-plans/17/objectives?create=1']);
 });
 
 test('old plan_id deep links preserve create/edit intent and use the original page', async () => {
