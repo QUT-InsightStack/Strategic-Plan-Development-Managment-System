@@ -1,4 +1,4 @@
-import { listOfficeUpdates, saveOfficeUpdate } from '../../api/office-api.js';
+/*import { listOfficeUpdates, saveOfficeUpdate } from '../../api/office-api.js';
 import { can, getAccessSession } from '../../access/access-session.js';
 const h = React.createElement;
 export function LegacyOfficeComments({ plan }) {
@@ -13,4 +13,4 @@ export function LegacyOfficeComments({ plan }) {
   allowed ? h('form', { onSubmit: submit }, h('label', { htmlFor: 'office-comment' }, 'Your comment'), h('textarea', { id: 'office-comment', required: true, maxLength: 5000, value: notes, onChange: e => setNotes(e.target.value), disabled: busy, rows: 4 }), h('div', { className: 'office-detail-actions' }, h('button', { type: 'button', onClick: () => setNotes(''), disabled: busy }, 'Clear'), h('button', { type: 'submit', disabled: busy || !notes.trim() }, busy ? 'Submitting…' : 'Submit')))
    : h('p', { className: 'office-muted' }, 'Comments are read-only for this plan or your account.'));
 }
-
+*/
