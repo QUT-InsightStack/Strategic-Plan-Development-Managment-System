@@ -299,6 +299,12 @@ On successful login, the API returns the JWT token in the JSON response and also
 
 Browser requests should use cookies:
 
+Set `APP_URL` to the exact address used in the browser, including protocol,
+hostname and port (for example `http://127.0.0.1:8000`). For a separate frontend,
+also set `FRONTEND_URL`. Cookie-authenticated writes, refresh and logout reject
+origins that do not match these values. Run `php artisan config:clear` after
+changing them.
+
 * The login frontend posts to `/api/login` with `credentials: 'include'`.
 * The `access_token` cookie is HttpOnly, so JavaScript cannot read it directly.
 * `JwtCookieMiddleware` copies the cookie into an `Authorization: Bearer <token>` header internally so `jwt-auth` can authenticate the request.

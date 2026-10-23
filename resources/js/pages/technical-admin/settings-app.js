@@ -11,7 +11,7 @@ mountProtectedPage(document.getElementById('root'), () => {
                 React.createElement(PageHeader, {
                     section: 'Account Security',
                     title: 'Security Settings',
-                    subtitle: 'Set how long sessions last and how SPDMS responds to repeated failed sign-ins.',
+                    subtitle: 'Set session, sign-in, password and maintenance rules for SPDMS.',
                 }),
                 React.createElement(SecuritySettings)
             )

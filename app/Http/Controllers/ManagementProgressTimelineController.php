@@ -49,8 +49,8 @@ class ManagementProgressTimelineController extends Controller
 
         return response()->json(['success' => true, 'data' => [
             'plan_id' => $plan->record_id,
-            'planning_start_date' => $plan->planning_start_date,
-            'planning_end_date' => $plan->planning_end_date,
+            'planning_start_date' => $plan->planning_start_date?->format('Y-m-d'),
+            'planning_end_date' => $plan->planning_end_date?->format('Y-m-d'),
             'objectives' => $objectives,
             'updates' => $updates,
         ]]);

@@ -471,7 +471,7 @@ public function test_repeated_archive_request_is_handled_safely(): void
     );
 }
 
-    public function test_archiving_is_rejected_when_the_parent_plan_is_not_finished(): void
+    public function test_archiving_a_draft_plan_preserves_its_objectives(): void
     {
         $actor = $this->createUserWithPermissions(['strategic_records.archive']);
         $plan = $this->createPlan($actor, ['status' => 'draft']);
@@ -483,8 +483,8 @@ public function test_repeated_archive_request_is_handled_safely(): void
             ->patchJson("/api/strategic-plans/{$plan->record_id}/status", [
                 'status' => 'archived',
             ])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['status']);
+            ->assertOk()
+            ->assertJsonPath('data.status', 'archived');
 
         $objective->refresh();
         $this->assertSame('draft', $objective->status);

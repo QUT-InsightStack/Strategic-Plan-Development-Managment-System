@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Http\Middleware\ValidateAuthVersion;
 use App\Models\Backup;
 use App\Models\Log;
 use App\Models\Permission;
@@ -25,6 +24,7 @@ class BackupTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        config(['backup.mysqldump_path' => 'mysqldump', 'backup.mysql_path' => 'mysql']);
         $this->testStorage = sys_get_temp_dir() . '/spdms-backup-tests-' . \Illuminate\Support\Str::uuid();
         mkdir($this->testStorage . '/app/backups', 0750, true);
         $this->app->useStoragePath($this->testStorage);
@@ -65,8 +65,8 @@ class BackupTest extends TestCase
     {
         $actor = $this->createUserWithPermissions(['users.view']);
 
-        $this->actingAs($actor, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->getJson('/api/backups')
             ->assertForbidden();
     }
@@ -76,8 +76,8 @@ class BackupTest extends TestCase
         // Being able to see backups is deliberately not enough to run one.
         $actor = $this->createUserWithPermissions(['backups.view']);
 
-        $this->actingAs($actor, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->postJson('/api/backups')
             ->assertForbidden();
 
@@ -90,8 +90,8 @@ class BackupTest extends TestCase
         $actor = $this->createUserWithPermissions(['backups.view', 'backups.create']);
         $backup = $this->completedBackup($actor);
 
-        $this->actingAs($actor, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->get("/api/backups/{$backup->backup_id}/download")
             ->assertForbidden();
     }
@@ -110,8 +110,8 @@ class BackupTest extends TestCase
         $actor = $this->createUserWithPermissions(['backups.view', 'backups.download']);
         $backup = $this->completedBackup($actor);
 
-        $this->actingAs($actor, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->postJson("/api/backups/{$backup->backup_id}/restore")
             ->assertForbidden();
     }
@@ -123,8 +123,8 @@ class BackupTest extends TestCase
         $actor = $this->createUserWithPermissions(['backups.view', 'backups.create']);
         $this->useSqliteFileDatabase();
 
-        $this->actingAs($actor, 'api');
-        $response = $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $response = $this
             ->postJson('/api/backups')
             ->assertCreated()
             ->assertJsonPath('success', true)
@@ -146,8 +146,8 @@ class BackupTest extends TestCase
         $actor = $this->createUserWithPermissions(['backups.create']);
         $this->useSqliteFileDatabase();
 
-        $this->actingAs($actor, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->postJson('/api/backups')
             ->assertCreated();
 
@@ -166,8 +166,8 @@ class BackupTest extends TestCase
         $actor = $this->createUserWithPermissions(['backups.view', 'backups.create', 'logs.view']);
         Process::fake(['*' => Process::result(errorOutput: 'Simulated dump failure', exitCode: 1)]);
 
-        $this->actingAs($actor, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->postJson('/api/backups')
             ->assertStatus(500)
             ->assertJsonPath('success', false);
@@ -193,6 +193,19 @@ class BackupTest extends TestCase
             ->assertJsonPath('data.0.metadata.backup_id', (int) Backup::value('backup_id'));
     }
 
+    public function test_non_utf8_process_errors_are_reported_as_json_without_exposing_credentials(): void
+    {
+        $actor = $this->createUserWithPermissions(['backups.create']);
+        config(['database.connections.mysql_testing.password' => 'test-secret']);
+        Process::fake(['*' => Process::result(errorOutput: "Cannot start tool: \xFF\xFE test-secret", exitCode: 1)]);
+        $this->authenticateApiUser($actor);
+        $response = $this->postJson('/api/backups')->assertStatus(500)
+            ->assertJsonPath('success', false);
+        $this->assertStringContainsString('Cannot start tool', $response->json('message'));
+        $this->assertStringNotContainsString('test-secret', $response->getContent());
+        $this->assertTrue(mb_check_encoding(Backup::latest('backup_id')->value('error_message'), 'UTF-8'));
+    }
+
     public function test_backup_directory_failure_is_also_audited_and_emits_an_event(): void
     {
         config(['monitoring.enabled' => true]);
@@ -201,7 +214,8 @@ class BackupTest extends TestCase
         rmdir($directory);
         file_put_contents($directory, 'occupied');
         $this->temporaryFiles[] = $directory;
-        $this->actingAs($actor, 'api')->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->postJson('/api/backups')->assertStatus(500);
         $this->assertDatabaseHas('tblbackups', ['status' => 'failed']);
         $this->assertDatabaseHas('tbllog', ['operation' => 'backup.failed', 'outcome' => 'failure']);
@@ -221,8 +235,8 @@ class BackupTest extends TestCase
             'created_by' => $actor->user_id,
         ]);
 
-        $this->actingAs($actor, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->get("/api/backups/{$backup->backup_id}/download")
             ->assertNotFound();
     }
@@ -240,8 +254,8 @@ class BackupTest extends TestCase
             'created_by' => $actor->user_id,
         ]);
 
-        $this->actingAs($actor, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->postJson("/api/backups/{$backup->backup_id}/restore")
             ->assertStatus(422)
             ->assertJsonPath('success', false);
@@ -254,8 +268,8 @@ class BackupTest extends TestCase
 
         @unlink(storage_path('app/backups/' . $backup->filename));
 
-        $this->actingAs($actor, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->postJson("/api/backups/{$backup->backup_id}/restore")
             ->assertStatus(422)
             ->assertJsonPath('message', 'This backup file is no longer available.');
@@ -267,8 +281,8 @@ class BackupTest extends TestCase
         $backup = $this->completedBackup($actor);
         $backup->forceFill(['driver' => 'sqlite'])->save();
 
-        $this->actingAs($actor, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->postJson("/api/backups/{$backup->backup_id}/restore")
             ->assertStatus(422)
             ->assertJsonPath(
@@ -301,8 +315,8 @@ class BackupTest extends TestCase
             'database.connections.mysql_testing.port' => 3306,
         ]);
 
-        $this->actingAs($actor, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->postJson('/api/backups')
             ->assertCreated()
             ->assertJsonPath('data.driver', 'mysql');
@@ -343,8 +357,8 @@ class BackupTest extends TestCase
             'database.connections.mysql_testing.password' => 'sup3r-s3cret-pw',
         ]);
 
-        $this->actingAs($actor, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->postJson('/api/backups')
             ->assertCreated();
 
@@ -373,8 +387,8 @@ class BackupTest extends TestCase
         $older->forceFill(['created_at' => now()->subDay()])->save();
         $newer = $this->completedBackup($actor, 'spdms-backup-newer.sql');
 
-        $this->actingAs($actor, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->getJson('/api/backups')
             ->assertOk()
             ->assertJsonPath('data.0.filename', $newer->filename)
@@ -387,8 +401,8 @@ class BackupTest extends TestCase
         $actor = $this->createUserWithPermissions(['backups.view', 'backups.download']);
         $backup = $this->completedBackup($actor);
 
-        $this->actingAs($actor, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->get("/api/backups/{$backup->backup_id}/download")
             ->assertOk()
             ->assertDownload($backup->filename);
@@ -406,8 +420,8 @@ class BackupTest extends TestCase
 
         @unlink(storage_path('app/backups/' . $backup->filename));
 
-        $this->actingAs($actor, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($actor);
+        $this
             ->get("/api/backups/{$backup->backup_id}/download")
             ->assertNotFound();
     }

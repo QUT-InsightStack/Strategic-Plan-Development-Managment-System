@@ -42,6 +42,7 @@ class ObjectiveCollaborationTest extends TestCase
             'strategic_objectives.assign_responsible_unit', 'objective_comments.view_all', 'implementation_inputs.view_all',
         ]);
         $this->office = $this->user(['objective_comments.create', 'implementation_inputs.create'], 'ICT Office');
+        $this->office->role->update(['role_name' => 'Office']);
         $this->plan = $this->plan();
         $this->objective = $this->objective($this->plan);
         app(ResponsibleUnitService::class)->assign([$this->objective->objective_id], [
@@ -240,7 +241,7 @@ class ObjectiveCollaborationTest extends TestCase
         $this->getJson($url)->assertOk()->assertJsonCount(2, 'data');
     }
 
-    public function test_office_can_propose_an_objective_for_an_unassigned_draft_plan_without_gaining_objective_input_access(): void
+    public function test_office_cannot_propose_an_objective_or_read_inputs_for_an_unassigned_plan(): void
     {
         $otherPlan = $this->plan();
         $otherObjective = $this->objective($otherPlan);
@@ -248,9 +249,9 @@ class ObjectiveCollaborationTest extends TestCase
         $this->login($this->office);
         $url = '/api/strategic-plans/'.$otherPlan->record_id.'/inputs';
 
-        $this->postJson($url, $this->input('change_request'))
-            ->assertCreated()->assertJsonPath('data.objective_id', null);
-        $this->getJson($url)->assertOk()->assertJsonCount(1, 'data');
+        $this->postJson($url, $this->input('change_request'))->assertForbidden();
+        $this->getJson($url)->assertForbidden();
+        $this->assertDatabaseCount('tblimplementation_inputs', 0);
         $this->postJson($url, $this->input('progress_update'))->assertForbidden();
         $this->postJson('/api/strategic-objectives/'.$otherObjective->objective_id.'/inputs', $this->input('change_request'))
             ->assertForbidden();
@@ -322,6 +323,7 @@ class ObjectiveCollaborationTest extends TestCase
         $this->postJson($this->commentsUrl(), ['content' => 'No longer in office'])->assertForbidden();
         $this->postJson($this->inputsUrl(), $this->input())->assertForbidden();
         $this->office->update(['office' => '  ict office  ']);
+        auth('api')->forgetUser();
         $this->postJson($this->commentsUrl(), ['content' => 'Case normalized'])->assertCreated();
         ResponsibleUnit::query()->update(['is_active' => false]);
         $this->postJson($this->inputsUrl(), $this->input())->assertForbidden();
@@ -390,6 +392,10 @@ class ObjectiveCollaborationTest extends TestCase
         $this->plan = $this->plan();
         $this->objective = $this->objective($this->plan);
         $this->objective->update(['responsible_office_agency' => 'ICT Office']);
+        // A later feature references the composite key introduced by this
+        // migration. Remove that dependent table before testing its rollback.
+        Schema::dropIfExists('tblmanagement_objective_comments');
+        Schema::dropIfExists('tblstrategic_plan_comments');
         $migration = require database_path('migrations/2026_09_14_000001_create_objective_collaboration_tables.php');
         $migration->down();
         $this->assertFalse(Schema::hasTable('tblobjective_comments'));

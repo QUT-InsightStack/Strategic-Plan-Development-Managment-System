@@ -110,7 +110,8 @@ class StrategicObjectiveAlignmentService
                 continue;
             }
 
-            $additions[$field] = array_values(array_diff($requested, $existingActive));
+            // Preserve request indexes so validation highlights the correct row.
+            $additions[$field] = array_diff($requested, $existingActive);
         }
 
         if ($errors !== []) {
@@ -128,7 +129,7 @@ class StrategicObjectiveAlignmentService
             );
 
             if ($added !== []) {
-                $changes[$field] = ['added' => $added];
+                $changes[$field] = ['added' => array_values($added)];
             }
         }
 

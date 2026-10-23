@@ -368,7 +368,7 @@ class StrategicObjectiveAlignmentTest extends TestCase
             'effective_date' => '2026-01-01',
             'note' => 'Reference note',
             'created_by' => $this->officer->user_id,
-        ], $overrides));
+        ], $overrides))->refresh();
     }
 
     private function link(StrategicObjective $objective, PdpChapter $chapter, PresidentialAgendaItem $agenda): void

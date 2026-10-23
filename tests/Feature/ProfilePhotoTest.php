@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Http\Middleware\ValidateAuthVersion;
 use App\Models\Log;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -45,8 +44,8 @@ class ProfilePhotoTest extends TestCase
     {
         $user = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $response = $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $response = $this
             ->postJson('/api/auth/profile/photo', [
                 'photo' => UploadedFile::fake()->image('me.jpg', 200, 200),
             ])
@@ -60,6 +59,15 @@ class ProfilePhotoTest extends TestCase
         $this->assertSame($user->profile_picture, $response->json('data.profile_picture'));
 
         Storage::disk('public')->assertExists('avatars/' . basename($user->profile_picture));
+        $this->get($user->profile_picture)->assertOk()
+            ->assertHeader('X-Content-Type-Options', 'nosniff');
+    }
+
+    public function test_avatar_route_does_not_serve_other_public_files(): void
+    {
+        Storage::disk('public')->put('private.txt', 'unrelated file');
+        $this->get('/storage/avatars/private.txt')->assertNotFound();
+        $this->get('/storage/avatars/'.str_repeat('a', 40).'.png')->assertNotFound();
     }
 
     /**
@@ -70,8 +78,8 @@ class ProfilePhotoTest extends TestCase
     {
         $user = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->postJson('/api/auth/profile/photo', [
                 'photo' => UploadedFile::fake()->image('../../evil name.jpg', 64, 64),
             ])
@@ -90,8 +98,8 @@ class ProfilePhotoTest extends TestCase
     {
         $user = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->postJson('/api/auth/profile/photo', [
                 'photo' => UploadedFile::fake()->create('notes.txt', 8, 'text/plain'),
             ])
@@ -109,8 +117,8 @@ class ProfilePhotoTest extends TestCase
     {
         $user = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->postJson('/api/auth/profile/photo', [
                 'photo' => UploadedFile::fake()->create('payload.jpg', 8, 'image/jpeg'),
             ])
@@ -127,8 +135,8 @@ class ProfilePhotoTest extends TestCase
         // size() takes kilobytes; the rule caps the upload at 2048.
         $photo = UploadedFile::fake()->image('huge.jpg', 500, 500)->size(3000);
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->postJson('/api/auth/profile/photo', ['photo' => $photo])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('photo');
@@ -138,8 +146,8 @@ class ProfilePhotoTest extends TestCase
     {
         $user = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->postJson('/api/auth/profile/photo', [])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('photo');
@@ -149,8 +157,8 @@ class ProfilePhotoTest extends TestCase
     {
         $user = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->postJson('/api/auth/profile/photo', [
                 'photo' => UploadedFile::fake()->image('me.jpg', 64, 64),
             ])
@@ -169,8 +177,8 @@ class ProfilePhotoTest extends TestCase
     {
         $user = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->postJson('/api/auth/profile/photo', [
                 'photo' => UploadedFile::fake()->image('first.jpg', 64, 64),
             ])
@@ -178,7 +186,7 @@ class ProfilePhotoTest extends TestCase
 
         $first = basename($user->fresh()->profile_picture);
 
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this
             ->postJson('/api/auth/profile/photo', [
                 'photo' => UploadedFile::fake()->image('second.jpg', 64, 64),
             ])
@@ -195,8 +203,8 @@ class ProfilePhotoTest extends TestCase
     {
         $user = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->postJson('/api/auth/profile/photo', [
                 'photo' => UploadedFile::fake()->image('me.jpg', 64, 64),
             ])
@@ -204,7 +212,7 @@ class ProfilePhotoTest extends TestCase
 
         $filename = basename($user->fresh()->profile_picture);
 
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this
             ->deleteJson('/api/auth/profile/photo')
             ->assertOk();
 
@@ -230,8 +238,8 @@ class ProfilePhotoTest extends TestCase
         $user->profile_picture = '/storage/other/keep.png';
         $user->save();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->postJson('/api/auth/profile/photo', [
                 'photo' => UploadedFile::fake()->image('me.jpg', 64, 64),
             ])
@@ -245,8 +253,8 @@ class ProfilePhotoTest extends TestCase
         $user = $this->createUser();
         $other = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->postJson('/api/auth/profile/photo', [
                 'photo' => UploadedFile::fake()->image('me.jpg', 64, 64),
             ])
@@ -266,8 +274,8 @@ class ProfilePhotoTest extends TestCase
     {
         $user = $this->createUser();
 
-        $this->actingAs($user, 'api');
-        $this->withoutMiddleware(ValidateAuthVersion::class)
+        $this->authenticateApiUser($user);
+        $this
             ->putJson('/api/auth/profile', [
                 'first_name' => 'Jane',
                 'profile_picture' => 'data:image/png;base64,' . str_repeat('A', 500),

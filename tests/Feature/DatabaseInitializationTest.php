@@ -44,19 +44,14 @@ class DatabaseInitializationTest extends TestCase
 
     public function test_empty_database_can_be_initialized_seeded_rolled_back_and_initialized_again(): void
     {
-        // A dedicated in-memory connection avoids both the application database
-        // and the shared RefreshDatabase transaction used by other feature tests.
-        config([
-            'database.default' => 'initialization_test',
-            'database.connections.initialization_test' => [
-                'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '',
-                'foreign_key_constraints' => true,
-            ],
-            'monitoring.enabled' => false,
-        ]);
+        // Tests\TestCase has already guarded this disposable MySQL test schema.
+        // Do not require SQLite or additional CREATE DATABASE privileges.
+        config(['monitoring.enabled' => false]);
+        \Tests\Support\MySqlTestDatabase::assertSafe(app()->environment(), app()->configurationIsCached(),
+            config('database.default'), config('database.connections.'.config('database.default')));
 
         try {
-            $this->assertSame(0, Artisan::call('migrate', ['--force' => true]));
+            $this->assertSame(0, Artisan::call('migrate:fresh', ['--force' => true]));
             $this->assertInitializedSchema();
             $this->seed(DatabaseSeeder::class);
             $this->assertInitialPermissions();
@@ -74,7 +69,7 @@ class DatabaseInitializationTest extends TestCase
             $this->assertSame(0, Artisan::call('migrate', ['--force' => true]));
             $this->assertInitializedSchema();
         } finally {
-            DB::purge('initialization_test');
+            \Illuminate\Foundation\Testing\RefreshDatabaseState::$migrated = false;
         }
     }
 

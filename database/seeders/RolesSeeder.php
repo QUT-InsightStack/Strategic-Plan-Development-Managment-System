@@ -12,19 +12,7 @@ class RolesSeeder extends Seeder
     {
         RoleNameUpgrade::run();
 
-        $roles = [
-            [
-                'role_name' => 'Administrator',
-                'description' => 'Legacy full-access role retained for existing accounts. Not available for new assignments.',
-                'is_assignable' => false,
-                'is_protected' => true,
-            ],
-            [
-                'role_name'   => 'test',
-                'description' => 'Test account with full backend access.',
-                'is_assignable' => true,
-                'is_protected' => true,
-            ],
+        $roles = [                     
             [
                 'role_name'   => 'Planning Officer',
                 'description' => 'Creates and manages strategic plans and performance indicators.',

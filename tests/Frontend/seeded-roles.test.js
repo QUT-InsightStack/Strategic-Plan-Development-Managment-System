@@ -49,7 +49,7 @@ test('test account has full permissions and can enter workflow configuration', (
     assert.equal(routeRules.find(rule => rule.test.test('/workflow-configuration')).roles.includes('test'), true);
     assert.equal(session.roleLabel, 'test');
     assert.equal(displayRoleName('Management'), 'Management');
-    assert.equal(displayRoleName('Office'), 'Office');
+    assert.equal(displayRoleName('Office'), 'Office / Unit User');
 });
 
 test('role assignment is persisted through the authenticated user role API', async () => {

@@ -21,7 +21,6 @@ use App\Services\AccessTokenCookieService;
 use App\Services\AuthenticationLoginService;
 use App\Services\AuthenticationSessionService;
 use App\Services\LoginHistoryRecorder;
-use App\Models\Log as LogModel;
 use App\Services\ProfilePhotoService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
@@ -311,12 +310,16 @@ class AuthController extends Controller
             ]);
         }
 
-        $user->save();
-        LogModel::create([
-            'user_id'   => $user->user_id,
-            'operation' => 'Profile updated: ' . implode(', ', $changed),
-            'states'    => 'success',
-        ]);
+        DB::transaction(function () use ($user, $changed): void {
+            $user->save();
+            $this->auditWriter->write('user.profile_updated', [
+                'actor_user_id' => $user->user_id,
+                'resource_type' => 'user',
+                'resource_id' => $user->user_id,
+                'fields' => $changed,
+                'states' => 'success',
+            ]);
+        });
 
         return response()->json([
             'success' => true,

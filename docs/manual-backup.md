@@ -25,6 +25,13 @@ permission.
 
 ## Where files live
 
+The application discovers `mysqldump` and `mysql` on PATH and, on Windows,
+in standard MySQL Server installation directories. Set `BACKUP_MYSQLDUMP_PATH`
+and `BACKUP_MYSQL_PATH` to override their full executable paths. After changing
+these values, run `php artisan config:clear`. Both backup and restore use
+argument arrays and a temporary credentials file. Process errors are redacted
+and converted to valid UTF-8 before they reach the database or JSON response.
+
 `storage/app/backups/`, which is outside the document root and therefore not
 reachable by URL. The only route to a file is the download endpoint, which is
 permission-checked and audited.

@@ -30,12 +30,11 @@ class ObjectiveCollaborationPermissionSeeder extends Seeder
         // Preserve grants for existing collaboration roles without creating
         // another default role. Office retains the former Viewer's access.
         $assignments = [
-            'Administrator' => array_keys($permissions),
             'Planning Officer' => ['strategic_objectives.assign_responsible_unit', 'objective_comments.view_all', 'implementation_inputs.view_all', 'implementation_inputs.view', 'implementation_inputs.review'],
             'Management' => ['implementation_inputs.view', 'implementation_inputs.view_all'],
             'Executive' => ['implementation_inputs.view', 'implementation_inputs.view_all'],
             'Management / Executive' => ['implementation_inputs.view', 'implementation_inputs.view_all'],
-            'Administrative Admin' => ['strategic_records.view','strategic_objectives.view','implementation_inputs.view','implementation_inputs.view_all', 'implementation_inputs.review','objective_comments.view_all',],
+            'Administrative Admin' => ['strategic_records.view','strategic_objectives.view','implementation_inputs.view','implementation_inputs.view_all', 'implementation_inputs.review','implementation_inputs.manage_scope','objective_comments.view_all',],
         ];
         foreach (['Office', 'Responsible Unit User', 'Office Representative', 'Office/Agency', 'Offices / Agencies'] as $roleName) {
             $assignments[$roleName] = ['strategic_records.view', 'strategic_objectives.view', 'strategic_documents.upload', 'objective_comments.create', 'implementation_inputs.create', 'implementation_inputs.view'];

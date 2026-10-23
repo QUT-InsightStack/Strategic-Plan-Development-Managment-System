@@ -318,6 +318,7 @@ public function test_database_prevents_two_active_workflows(): void
 
     public function test_test_role_can_configure_and_submit_but_must_be_assigned_to_decide(): void
     {
+        $this->prepareWorkflowTestPlan();
         $tester = $this->user('test');
         $this->authenticateApiUser($tester);
         $this->putJson('/api/approval-workflow', $this->configuration())->assertOk();
@@ -369,7 +370,7 @@ public function test_database_prevents_two_active_workflows(): void
 
     public function test_ineligible_or_unauthorised_plans_cannot_be_submitted(): void
     {
-        $this->configure();
+        $this->configure(false);
         $this->authenticateApiUser($this->reviewer);
         $this->postJson($this->url('submit'))->assertForbidden();
         $this->authenticateApiUser($this->planner);
@@ -565,6 +566,8 @@ public function test_database_prevents_two_active_workflows(): void
     {
         $submission = $this->submit();
         $this->reject($submission);
+        $permission = Permission::firstOrCreate(['code' => 'strategic_records.archive'], ['permission_name' => 'Archive plans', 'module' => 'strategic_records']);
+        $this->planner->role->permissions()->syncWithoutDetaching([$permission->permission_id]);
         app(PlanCreationService::class)->updateStatus($this->plan->refresh(), 'archived', $this->planner);
         $this->authenticateApiUser($this->planner);
         $this->postJson($this->url('resubmit'), ['previous_submission_id' => $submission['id']])->assertUnprocessable();
@@ -644,6 +647,7 @@ public function test_database_prevents_two_active_workflows(): void
 
 public function test_event_recipient_unique_constraint_and_recipient_overlap(): void
 {
+    $this->prepareWorkflowTestPlan();
     $this->authenticateApiUser($this->admin);
 
     $configuration = $this->configuration();
@@ -805,6 +809,7 @@ public function test_event_recipient_unique_constraint_and_recipient_overlap(): 
     }
 public function test_administrative_admin_can_submit_but_only_another_assigned_user_can_approve(): void
 {
+    $this->prepareWorkflowTestPlan();
     $submitter = $this->user('Administrative Admin');
     $peer = $this->user('Administrative Admin');
 
@@ -861,6 +866,7 @@ public function test_administrative_admin_can_submit_but_only_another_assigned_u
 
 public function test_a_stage_with_only_the_submitter_blocks_submission(): void
 {
+    $this->prepareWorkflowTestPlan();
     $configuration = $this->configuration();
     $configuration['stages'] = [
         [
@@ -879,14 +885,17 @@ public function test_a_stage_with_only_the_submitter_blocks_submission(): void
         ->assertJsonValidationErrors('workflow');
 
     $this->assertDatabaseCount('plan_submissions', 0);
-    $this->assertSame('draft', $this->plan->fresh()->status);
+    $this->assertSame('finished', $this->plan->fresh()->status);
     $this->assertSame(
         'not_submitted',
         $this->plan->fresh()->approval_status
     );
 }
-    private function configure(): void
+    private function configure(bool $ready = true): void
     {
+        if ($ready) {
+            $this->prepareWorkflowTestPlan();
+        }
         $this->authenticateApiUser($this->admin);
         $this->putJson('/api/approval-workflow', $this->configuration())->assertOk();
     }

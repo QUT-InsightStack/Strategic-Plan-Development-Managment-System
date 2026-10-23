@@ -143,7 +143,13 @@ class CommitCompatibilityTest extends TestCase
         $objective->pdpChapters()->attach($chapter->chapter_id);
         $pair = '/api/strategic-objectives/'.$objective->objective_id.'/alignments/pdp-chapter/'.$chapter->chapter_id;
         $list = '/api/strategic-plans/'.$plan->record_id.'/alignments';
-        $this->authenticateApiUser($this->user('Management'));
+        $management = $this->user('Management');
+        // Management now receives deletion by default. Explicitly revoke it
+        // here to test the permission boundary independently of role defaults.
+        $management->role->permissions()->detach(
+            \App\Models\Permission::where('code', 'strategic_alignments.delete')->value('permission_id')
+        );
+        $this->authenticateApiUser($management);
         $this->getJson($list)->assertOk()->assertJsonPath('meta.capabilities.delete', false);
         $this->patchJson($pair.'/archive')->assertForbidden();
         $this->patchJson($pair.'/restore')->assertForbidden();

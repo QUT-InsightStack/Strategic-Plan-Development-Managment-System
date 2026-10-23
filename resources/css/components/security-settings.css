@@ -17,6 +17,8 @@
 .security-settings__control .ui-input { flex: 1 1 auto; min-width: 0; font-variant-numeric: tabular-nums; text-align: right; }
 .security-settings__unit { width: 60px; color: var(--color-text-secondary); font-size: var(--font-size-xs); }
 .security-settings__field.is-invalid .ui-input { border-color: var(--color-danger); }
+.security-settings__switch { width: 20px; height: 20px; margin-left: auto; accent-color: var(--color-primary); cursor: pointer; }
+.security-settings__switch:disabled { cursor: not-allowed; }
 
 .security-settings__actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); padding: var(--space-4) var(--space-5); background: var(--color-surface-header); }
 .security-settings__actions .ui-status { margin: 0; }

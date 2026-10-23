@@ -58,7 +58,7 @@ class StrategicObjectiveAlignmentUpdateTest extends TestCase
         $this->objective->presidentialAgendaItems()->attach($this->agenda->agenda_id);
     }
 
-    public function test_officer_can_add_remove_and_retain_mappings_without_changing_other_objectives(): void
+    public function test_officer_can_add_and_retain_mappings_without_changing_other_objectives(): void
     {
         $retainedChapter = $this->createChapter();
         $retainedAgenda = $this->createAgenda();
@@ -78,8 +78,8 @@ class StrategicObjectiveAlignmentUpdateTest extends TestCase
         $before = $this->snapshot();
         $otherObjectives = DB::table('tblstrategic_objectives')->where('objective_id', '!=', $this->objective->objective_id)->get()->all();
         $payload = [
-            'pdp_chapter_ids' => [$addedChapter->chapter_id, $retainedChapter->chapter_id],
-            'presidential_agenda_item_ids' => [$addedAgenda->agenda_id, $retainedAgenda->agenda_id],
+            'pdp_chapter_ids' => [$this->chapter->chapter_id, $addedChapter->chapter_id, $retainedChapter->chapter_id],
+            'presidential_agenda_item_ids' => [$this->agenda->agenda_id, $addedAgenda->agenda_id, $retainedAgenda->agenda_id],
         ];
         $this->travel(1)->minutes();
         $this->authenticateApiUser($this->officer);
@@ -87,21 +87,21 @@ class StrategicObjectiveAlignmentUpdateTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.objective_id', $this->objective->objective_id)
             ->assertJsonPath('data.updated_by', $this->officer->user_id)
-            ->assertJsonCount(2, 'data.pdp_chapters')
-            ->assertJsonCount(2, 'data.presidential_agenda_items');
+            ->assertJsonCount(3, 'data.pdp_chapters')
+            ->assertJsonCount(3, 'data.presidential_agenda_items');
 
         foreach ([
             ['tblobjective_pdp_chapter', 'chapter_id', $this->chapter->chapter_id, $addedChapter->chapter_id],
             ['tblobjective_presidential_agenda', 'agenda_id', $this->agenda->agenda_id, $addedAgenda->agenda_id],
         ] as [$table, $key, $removed, $added]) {
-            $this->assertDatabaseMissing($table, ['objective_id' => $this->objective->objective_id, $key => $removed]);
+            $this->assertDatabaseHas($table, ['objective_id' => $this->objective->objective_id, $key => $removed]);
             $this->assertDatabaseHas($table, ['objective_id' => $this->objective->objective_id, $key => $added, 'created_at' => now()->toDateTimeString()]);
             foreach ($before[$table] as $row) {
                 if ($row->objective_id !== $this->objective->objective_id || $row->{$key} !== $removed) {
                     $this->assertDatabaseHas($table, (array) $row);
                 }
             }
-            $this->assertDatabaseCount($table, 6);
+            $this->assertDatabaseCount($table, 7);
         }
         $this->assertEquals($otherObjectives, DB::table('tblstrategic_objectives')->where('objective_id', '!=', $this->objective->objective_id)->get()->all());
         $this->assertSame($before['objective']['created_by'], $this->objective->fresh()->created_by);
@@ -113,8 +113,8 @@ class StrategicObjectiveAlignmentUpdateTest extends TestCase
         $this->assertSame($this->officer->user_id, $log->user_id);
         $this->assertSame($this->objective->objective_id, $log->resource_id);
         $this->assertSame([
-            'pdp_chapter_ids' => ['added' => [$addedChapter->chapter_id], 'removed' => [$this->chapter->chapter_id]],
-            'presidential_agenda_item_ids' => ['added' => [$addedAgenda->agenda_id], 'removed' => [$this->agenda->agenda_id]],
+            'pdp_chapter_ids' => ['added' => [$addedChapter->chapter_id]],
+            'presidential_agenda_item_ids' => ['added' => [$addedAgenda->agenda_id]],
         ], $log->metadata['changes']);
     }
 
@@ -138,31 +138,33 @@ class StrategicObjectiveAlignmentUpdateTest extends TestCase
     }
 
     #[DataProvider('mappingFields')]
-    public function test_empty_list_clears_only_that_framework_and_omitted_framework_is_unchanged(string $field, string $cleared, string $retained): void
+    public function test_empty_list_cannot_remove_active_mappings(string $field, string $cleared, string $retained): void
     {
         $before = $this->snapshot();
         $this->authenticateApiUser($this->officer);
-        $this->putJson($this->endpoint(), [$field => []])->assertOk();
-        $this->assertDatabaseCount($cleared, 0);
-        $this->assertEquals($before[$retained], $this->snapshot()[$retained]);
+        $this->putJson($this->endpoint(), [$field => []])->assertUnprocessable()->assertJsonValidationErrors($field);
+        $this->assertUnchanged($before);
         $this->assertNotNull($this->chapter->fresh());
         $this->assertNotNull($this->agenda->fresh());
     }
 
-    public function test_both_frameworks_can_be_cleared_and_repopulated(): void
+    public function test_both_frameworks_require_explicit_archive_and_restore(): void
     {
         $this->authenticateApiUser($this->officer);
         $this->putJson($this->endpoint(), ['pdp_chapter_ids' => [], 'presidential_agenda_item_ids' => []])
-            ->assertOk()->assertJsonPath('data.pdp_chapters', [])->assertJsonPath('data.presidential_agenda_items', []);
-        $this->assertDatabaseCount('tblobjective_pdp_chapter', 0);
-        $this->assertDatabaseCount('tblobjective_presidential_agenda', 0);
-        $clearedAt = $this->objective->fresh()->getRawOriginal('updated_at');
-        $this->travel(1)->minutes();
+            ->assertUnprocessable()->assertJsonValidationErrors(['pdp_chapter_ids', 'presidential_agenda_item_ids']);
+        $pairs = ['pdp-chapter/'.$this->chapter->chapter_id, 'presidential-agenda/'.$this->agenda->agenda_id];
+        foreach ($pairs as $pair) {
+            $this->patchJson($this->endpoint().'/'.$pair.'/archive')->assertOk();
+        }
+        $this->putJson($this->endpoint(), $this->payload())->assertUnprocessable();
+        foreach ($pairs as $pair) {
+            $this->patchJson($this->endpoint().'/'.$pair.'/restore')->assertOk();
+        }
         $this->putJson($this->endpoint(), $this->payload())->assertOk()
             ->assertJsonCount(1, 'data.pdp_chapters')->assertJsonCount(1, 'data.presidential_agenda_items');
         $this->assertDatabaseCount('tblobjective_pdp_chapter', 1);
         $this->assertDatabaseCount('tblobjective_presidential_agenda', 1);
-        $this->assertNotEquals($clearedAt, $this->objective->fresh()->getRawOriginal('updated_at'));
     }
 
     public static function invalidPayloads(): array
@@ -198,31 +200,30 @@ class StrategicObjectiveAlignmentUpdateTest extends TestCase
     {
         $before = $this->snapshot();
         $payload = $this->payload();
-        $payload['pdp_chapter_ids'] = [$this->createChapter()->chapter_id];
+        $payload['pdp_chapter_ids'][] = $this->createChapter()->chapter_id;
         $payload[$field] = [$this->payload()[$field][0], 999999];
         $this->authenticateApiUser($this->officer);
         $this->putJson($this->endpoint(), $payload)->assertUnprocessable()->assertJsonValidationErrors($field.'.1');
         $this->assertUnchanged($before);
     }
 
-    public function test_inactive_existing_agenda_can_be_retained_or_removed_but_cannot_be_added(): void
+    public function test_inactive_existing_agenda_can_be_retained_but_not_added_or_implicitly_removed(): void
     {
-        $this->agenda->update(['status' => 'inactive']);
+        $this->agenda->forceFill(['status' => 'inactive'])->save();
         $inactive = $this->createAgenda();
-        $inactive->update(['status' => 'inactive']);
+        $inactive->forceFill(['status' => 'inactive'])->save();
         $this->authenticateApiUser($this->officer);
         $this->putJson($this->endpoint(), [
-            'pdp_chapter_ids' => [$this->createChapter()->chapter_id],
+            'pdp_chapter_ids' => [$this->chapter->chapter_id, $this->createChapter()->chapter_id],
             'presidential_agenda_item_ids' => [$this->agenda->agenda_id],
         ])->assertOk()->assertJsonPath('data.presidential_agenda_items.0.status', 'inactive');
         $before = $this->snapshot();
         $this->putJson($this->endpoint(), [
-            'pdp_chapter_ids' => [],
             'presidential_agenda_item_ids' => [$this->agenda->agenda_id, $inactive->agenda_id],
         ])->assertUnprocessable()->assertJsonValidationErrors('presidential_agenda_item_ids.1');
         $this->assertEquals($before, $this->snapshot());
-        $this->putJson($this->endpoint(), ['presidential_agenda_item_ids' => []])->assertOk();
-        $this->assertDatabaseCount('tblobjective_presidential_agenda', 0);
+        $this->putJson($this->endpoint(), ['presidential_agenda_item_ids' => []])->assertUnprocessable();
+        $this->assertDatabaseCount('tblobjective_presidential_agenda', 1);
     }
 
     public static function unauthorizedActors(): array
@@ -304,8 +305,9 @@ class StrategicObjectiveAlignmentUpdateTest extends TestCase
         $this->objective->update(['status' => 'published', 'objective_description' => 'Description',
             'expected_outcome' => 'Outcome', 'target' => 'Target', 'responsible_office_agency' => 'Planning Office']);
         $this->authenticateApiUser($this->officer);
-        $this->putJson($this->endpoint(), ['pdp_chapter_ids' => []])->assertOk()->assertJsonPath('data.status', 'published');
-        $this->assertDatabaseCount('tblobjective_pdp_chapter', 0);
+        $this->putJson($this->endpoint(), ['pdp_chapter_ids' => [$this->chapter->chapter_id, $this->createChapter()->chapter_id]])
+            ->assertOk()->assertJsonPath('data.status', 'published');
+        $this->assertDatabaseCount('tblobjective_pdp_chapter', 2);
     }
 
     public function test_audit_failure_rolls_back_additions_removals_and_objective_metadata(): void
@@ -318,8 +320,8 @@ class StrategicObjectiveAlignmentUpdateTest extends TestCase
         $this->withoutExceptionHandling();
         try {
             $this->putJson($this->endpoint(), [
-                'pdp_chapter_ids' => [$this->createChapter()->chapter_id],
-                'presidential_agenda_item_ids' => [],
+                'pdp_chapter_ids' => [$this->chapter->chapter_id, $this->createChapter()->chapter_id],
+                'presidential_agenda_item_ids' => [$this->agenda->agenda_id],
             ]);
             $this->fail('The audit failure should propagate.');
         } catch (RuntimeException $exception) {
@@ -342,8 +344,8 @@ class StrategicObjectiveAlignmentUpdateTest extends TestCase
         });
         $this->authenticateApiUser($this->officer);
         $this->putJson($this->endpoint(), [
-            'pdp_chapter_ids' => [$this->createChapter()->chapter_id],
-            'presidential_agenda_item_ids' => [$added->agenda_id],
+            'pdp_chapter_ids' => [$this->chapter->chapter_id, $this->createChapter()->chapter_id],
+            'presidential_agenda_item_ids' => [$this->agenda->agenda_id, $added->agenda_id],
         ])->assertUnprocessable()->assertJsonValidationErrors('presidential_agenda_item_ids');
         $this->assertTrue($injected);
         $this->assertUnchanged($before);
@@ -377,7 +379,7 @@ class StrategicObjectiveAlignmentUpdateTest extends TestCase
     private function createPlan(): Strategic
     {
         return app(PlanCreationService::class)->create(['level' => 'strategic_plan', 'title' => 'Plan',
-            'mission' => 'Mission', 'vision' => 'Vision', 'core_values' => ['Integrity'], 'status' => 'finished'], $this->officer);
+            'mission' => 'Mission', 'vision' => 'Vision', 'core_values' => ['Integrity'], 'status' => 'draft'], $this->officer);
     }
 
     private function createChapter(): PdpChapter

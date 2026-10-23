@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Http\Middleware\ValidateAuthVersion;
 use App\Models\Log;
 use App\Models\LoginHistory;
 use App\Models\Role;
@@ -63,7 +62,7 @@ class ActivityHistoryTest extends TestCase
             $this->seed([RolesSeeder::class, PermissionSeeder::class, RolePermissionSeeder::class]);
         }
         $this->assertSame(1, Role::where('role_name', 'Technical Administrator')->count());
-        foreach (['Technical Administrator', 'Technical Admin', 'test'] as $name) {
+        foreach (['Technical Administrator', 'test'] as $name) {
             $role = Role::where('role_name', $name)->firstOrFail();
             $this->assertSame(3, $role->permissions()->whereIn('code', [
                 'logs.view', 'login_history.view', 'system_monitoring.view',
@@ -129,12 +128,13 @@ class ActivityHistoryTest extends TestCase
 
     public function test_account_lock_and_repeated_locked_attempts_are_recorded_once_each(): void
     {
+        app(\App\Services\SystemSettingsService::class)->current()->update(['login_attempt_limit' => 3]);
         $user = $this->user();
         for ($i = 0; $i < 2; $i++) {
             $this->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'wrong'])->assertUnauthorized();
         }
         for ($i = 0; $i < 2; $i++) {
-            $this->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'wrong'])->assertStatus(423);
+            $this->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'wrong'])->assertStatus(429);
         }
         $this->assertSame(4, LoginHistory::count());
         $this->assertSame(2, LoginHistory::where('failure_reason', 'account_locked')->count());
@@ -143,6 +143,9 @@ class ActivityHistoryTest extends TestCase
 
     public function test_throttled_login_is_recorded_once_and_remains_a_429(): void
     {
+        // Exercise request throttling independently from the per-email lockout.
+        config(['security.login_lockout_minutes' => 15]);
+        app(\App\Services\SystemSettingsService::class)->current()->update(['login_attempt_limit' => 10]);
         for ($i = 0; $i < 5; $i++) {
             $this->postJson('/api/auth/login', ['email' => 'unknown@example.com', 'password' => 'wrong'])->assertUnauthorized();
         }
@@ -165,8 +168,7 @@ class ActivityHistoryTest extends TestCase
     {
         $this->seed([RolesSeeder::class, PermissionSeeder::class, RolePermissionSeeder::class]);
         $user = $this->user(['role_id' => Role::where('role_name', 'Technical Administrator')->value('role_id')]);
-        $this->actingAs($user, 'api')->withoutMiddleware(ValidateAuthVersion::class);
-
+        $this->authenticateApiUser($user);
         return $user;
     }
 
