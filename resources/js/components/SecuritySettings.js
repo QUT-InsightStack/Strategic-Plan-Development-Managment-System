@@ -47,7 +47,7 @@ function PolicySummary({ saved }) {
             h('div', { className: 'ui-section-header__copy' }, h('h2', { id: 'settings-summary-title' }, 'Current policy'), h('p', null, 'What the saved settings mean for users.')),
             h('i', { className: 'bi bi-info-circle', 'aria-hidden': true })),
         h('ul', null, items.map(([icon, text]) => h('li', { key: icon }, h('i', { className: `bi ${icon}`, 'aria-hidden': true }), h('span', null, text)))),
-        h('p', { className: 'settings-summary__note' }, 'Changes apply to new sessions and sign-in attempts as soon as they are saved.'));
+        h('p', { className: 'settings-summary__note' }, 'Idle timeout and maintenance mode apply immediately, including to signed-in users. Sign-in limits apply to the next attempt. Password rules apply only when a password is next set or changed.'));
 }
 
 export function SecuritySettings() {
