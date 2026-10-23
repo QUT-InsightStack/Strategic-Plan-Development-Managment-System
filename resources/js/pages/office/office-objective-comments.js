@@ -1,3 +1,4 @@
+/*
 import { can } from '../../access/access-session.js';
 import { addObjectiveComment, listObjectiveComments } from '../../api/strategic-objectives-api.js';
 
@@ -67,3 +68,4 @@ export function ObjectiveComments({ plan, objectives = [] }) {
                         busyObjective === objective.objective_id ? 'Submitting…' : 'Submit comment')));
         }) : h('p', { className: 'office-muted' }, 'Comments become available after objectives are assigned to your Office/Unit.'));
 }
+*/
