@@ -13,6 +13,8 @@ class RolePermissionSeeder extends Seeder
     public function run(): void
     {
         $this->call(ManagementObjectiveCommentPermissionSeeder::class);
+        $this->call(ObjectiveCollaborationPermissionSeeder::class);
+        $this->call(ObjectiveProgressPermissionSeeder::class);
         $permissionsByCode = Permission::query()->get()->keyBy('code');
 
         $planningPermissions = [
@@ -107,9 +109,7 @@ class RolePermissionSeeder extends Seeder
             'relations.view', 'plan_core_values.view',
         ];
 
-        $assignments = [
-            'Administrator' => $permissionsByCode->keys()->all(),
-            'test' => $permissionsByCode->keys()->all(),
+        $assignments = [           
             'Technical Administrator' => $technicalPermissions,
             'Administrative Admin' => $administrativeAdminPermissions,
             'Management' => $managementPermissions,
@@ -199,24 +199,10 @@ class RolePermissionSeeder extends Seeder
             }
         });
 
-        $this->call(ObjectiveCollaborationPermissionSeeder::class);
-        $this->call(ObjectiveProgressPermissionSeeder::class);
+        
         $this->call(AdministrativePlanningPermissionSeeder::class);
         $this->call(ClientRolePermissionCorrectionSeeder::class);
 
-        // Include permissions created by the feature seeders above as well.
-        $testRole = Role::query()->where('role_name', 'test')->first();
-
-        if ($testRole) {
-            $changes = $testRole->permissions()->syncWithoutDetaching(
-                Permission::query()->pluck('permission_id')->all()
-            );
-
-            if (($changes['attached'] ?? []) !== []) {
-                DB::table('tblusers')
-                    ->where('role_id', $testRole->role_id)
-                    ->increment('auth_version');
-            }
-        }
+        
     }
 }

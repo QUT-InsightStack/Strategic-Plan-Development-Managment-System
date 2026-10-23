@@ -15,12 +15,12 @@ class SystemSettingsPermissionSeeder extends Seeder
     {
         DB::transaction(function (): void {
             $role = Role::query()
-                ->where('role_name', 'Administrator')
+                ->where('role_name', 'Technical Administrator')
                 ->lockForUpdate()
                 ->first();
 
             if (! $role) {
-                throw new RuntimeException('Administrator role was not found.');
+                throw new RuntimeException('Technical Administrator role was not found.');
             }
 
             $ids = [];

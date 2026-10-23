@@ -16,18 +16,16 @@ class Role extends Model
      * Roles counted by the last-administrator safeguards. A test account
      * must not replace the last real Administrator.
      */
-    public const ADMIN_ROLES = ['Administrator'];
+    public const ADMIN_ROLES = ['Technical Administrator'];
 
     /**
      * Roles that grant administrative privilege. Assigning one is treated as
      * privilege escalation and is restricted accordingly.
      */
-    public const PRIVILEGED_ROLES = ['Administrator', 'Technical Administrator', 'Technical Admin', 'test'];
+    public const PRIVILEGED_ROLES = [ 'Technical Administrator', 'Technical Admin'];
 
-    public const FULL_ACCESS_ROLES = ['Administrator', 'test'];
+    public const FULL_ACCESS_ROLES = [];
     public const PLANNING_ROLES = [
-    'Administrator',
-    'test',
     'Planning Officer',
     'Planner/Encoder',
     'Administrative Admin',
